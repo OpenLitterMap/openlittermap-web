@@ -4,78 +4,94 @@ namespace App\Http\Controllers\Location;
 
 use App\Http\Controllers\Controller;
 use App\Services\Locations\LocationService;
-use Illuminate\Http\Request;
+use App\Http\Requests\Location\IndexRequest;
+use App\Http\Requests\Location\TagsRequest;
+use App\Http\Resources\LocationResource;
+use App\Http\Resources\PaginatedLocationsResource;
+use App\Http\Resources\GlobalStatsResource;
+use App\Http\Resources\TagsResource;
+use App\Enums\LocationType;
 
+/**
+ * Lean LocationController v1
+ *
+ * Shipping only essential endpoints:
+ * - index (list with pagination)
+ * - show (single location)
+ * - global (global stats)
+ * - topTags (tag breakdown)
+ *
+ * Deferred to v1.1: timeseries, leaderboard, summary
+ */
 class LocationController extends Controller
 {
-    private LocationService $service;
+    public function __construct(
+        private readonly LocationService $service
+    ) {}
 
-    public function __construct(LocationService $service)
+    /**
+     * Helper to validate and get location type
+     */
+    private function getType(string $type): LocationType
     {
-        $this->service = $service;
+        $locationType = LocationType::try($type);
+        abort_if(!$locationType, 400, 'Invalid location type');
+        return $locationType;
     }
 
-    public function index(Request $request, string $type = 'country')
+    /**
+     * Get paginated locations
+     */
+    public function index(IndexRequest $request, string $type = 'country')
     {
-        if (!in_array($type, ['country', 'state', 'city'])) {
-            return response()->json(['error' => 'Invalid location type'], 400);
-        }
+        $locationType = $this->getType($type);
 
-        $data = $this->service->getLocations($type, $request->all());
+        $data = $this->service->getLocations(
+            $locationType,
+            $request->validated()
+        );
 
-        return response()->json($data);
+        return new PaginatedLocationsResource($data);
     }
 
+    /**
+     * Get single location details
+     */
     public function show(string $type, int $id)
     {
-        if (!in_array($type, ['country', 'state', 'city'])) {
-            return response()->json(['error' => 'Invalid location type'], 400);
-        }
+        $locationType = $this->getType($type);
+        abort_if($id < 1, 400, 'Invalid location ID');
 
-        $data = $this->service->getLocationDetails($type, $id);
+        $location = $this->service->getLocationDetails($locationType, $id, []);
 
-        return response()->json($data);
+        return new LocationResource($location);
     }
 
-    public function categories(Request $request, string $type, int $id)
-    {
-        $data = $this->service->getCategoryBreakdown($type, $id);
-
-        return response()->json($data);
-    }
-
-    public function timeseries(Request $request, string $type, int $id)
-    {
-        $period = $request->input('period', 'daily');
-        $data = $this->service->getTimeSeries($type, $id, $period);
-
-        return response()->json($data);
-    }
-
-    public function leaderboard(Request $request, string $type, int $id)
-    {
-        $period = $request->input('period', 'all_time');
-        $data = $this->service->getLeaderboard($type, $id, $period);
-
-        return response()->json($data);
-    }
-
+    /**
+     * Get global statistics
+     */
     public function global()
     {
-        $data = $this->service->getGlobalStats();
+        $stats = $this->service->getGlobalStats();
 
-        return response()->json($data);
+        return new GlobalStatsResource($stats);
     }
 
-    public function worldCup(Request $request)
+    /**
+     * Get top tags for a location
+     */
+    public function topTags(TagsRequest $request, string $type, int $id)
     {
-        $countries = $this->service->getLocations('country', $request->all());
-        $global = $this->service->getGlobalStats();
+        $locationType = $this->getType($type);
+        abort_if($id < 1, 400, 'Invalid location ID');
 
-        return response()->json([
-            'countries' => $countries['locations'],
-            'pagination' => $countries['pagination'],
-            'global_stats' => $global,
-        ]);
+        $tags = $this->service->getTopTags(
+            $locationType,
+            $id,
+            $request->getDimension(),
+            $request->getLimit()
+        );
+
+        return new TagsResource($tags);
     }
 }

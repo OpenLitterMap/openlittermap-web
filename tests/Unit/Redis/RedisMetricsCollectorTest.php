@@ -12,7 +12,6 @@ use App\Models\Users\User;
 use App\Services\Redis\RedisMetricsCollector;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
@@ -32,9 +31,6 @@ class RedisMetricsCollectorTest extends TestCase
 
         // Warm up the TagKeyCache and get IDs for test data
         TagKeyCache::preloadAll();
-
-        // Preload Lua scripts for Redis metrics collector
-        RedisMetricsCollector::preloadLuaScript();
 
         // Pre-create the tag IDs we'll need
         $this->tagIds = [

@@ -6,6 +6,7 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
 use App\Services\Redis\RedisMetricsCollector;
+use App\Services\Redis\UserMetricsService;
 use App\Services\Tags\UpdateTagsService;
 use App\Services\Timeseries\TimeSeriesService;
 use App\Services\Achievements\Tags\TagKeyCache;
@@ -42,21 +43,20 @@ class MigrationScript extends Command
             return self::FAILURE;
         }
 
+        // Add processed_at and processed_tags columns if missing
+        $this->ensureRedisTrackingColumns();
+
         $this->seedReferenceTables();
         TagKeyCache::preloadAll();
 
-        // Check and display initial memory limit
         $memoryLimit = ini_get('memory_limit');
         $this->info("Memory limit: {$memoryLimit}");
 
-        // Check if specific user requested
         $specificUserId = $this->option('user');
 
         if ($specificUserId) {
-            // Single user mode
             $userIds = collect([(int)$specificUserId]);
 
-            // Verify user exists and has unmigrated photos
             $photoCount = DB::table('photos')
                 ->where('user_id', $specificUserId)
                 ->whereNull('migrated_at')
@@ -69,7 +69,6 @@ class MigrationScript extends Command
 
             $this->info("Processing single user #{$specificUserId} with {$photoCount} photos");
         } else {
-            // All users mode
             $userIds = DB::table('photos')
                 ->whereNull('migrated_at')
                 ->distinct()
@@ -92,7 +91,6 @@ class MigrationScript extends Command
         foreach ($userIds as $index => $userId) {
             $this->newLine();
 
-            // Calculate and display ETA (only for multiple users)
             if (!$specificUserId && $index > 0) {
                 $elapsed = microtime(true) - $this->globalStartTime;
                 $avgTimePerUser = $elapsed / $index;
@@ -116,12 +114,22 @@ class MigrationScript extends Command
         return self::SUCCESS;
     }
 
+    private function ensureRedisTrackingColumns(): void
+    {
+        if (!DB::getSchemaBuilder()->hasColumn('photos', 'processed_at')) {
+            DB::statement('ALTER TABLE photos ADD COLUMN processed_at TIMESTAMP NULL');
+        }
+
+        if (!DB::getSchemaBuilder()->hasColumn('photos', 'processed_tags')) {
+            DB::statement('ALTER TABLE photos ADD COLUMN processed_tags TEXT NULL');
+        }
+    }
+
     private function migrateSingleUser(int $userId): void
     {
         $user = User::find($userId);
         $name = $user?->name ?? "User {$userId}";
 
-        // Count photos to migrate
         $this->currentUserPhotos = Photo::where('user_id', $userId)
             ->whereNull('migrated_at')
             ->count();
@@ -137,7 +145,6 @@ class MigrationScript extends Command
         $failedForUser = 0;
         $startTime = microtime(true);
         $totalBatchTime = 0;
-
         $batchNumber = 0;
 
         Photo::where('user_id', $userId)
@@ -148,15 +155,19 @@ class MigrationScript extends Command
                 $batchStartTime = microtime(true);
                 $memoryBefore = memory_get_usage(true);
                 $batchSize = $photos->count();
-                $photoIds = [];
+                $successfulPhotos = [];
                 $batchFailed = 0;
 
                 foreach ($photos as $photo) {
                     try {
+                        // Update tags and generate summary
                         $this->updateTagsService->updateTags($photo);
                         $this->timeSeriesService->updateTimeSeries($photo);
 
-                        $photoIds[] = $photo->id;
+                        // Process Redis metrics
+                        RedisMetricsCollector::processPhoto($photo);
+
+                        $successfulPhotos[] = $photo->id;
                         $processedForUser++;
                         $this->processed++;
                     } catch (\Throwable $e) {
@@ -170,21 +181,9 @@ class MigrationScript extends Command
                     }
                 }
 
-                // Update Redis metrics and mark as migrated
-                if (!empty($photoIds)) {
-                    try {
-                        // Update everything on Redis in a single batch
-                        RedisMetricsCollector::queueBatch($userId, Photo::whereIn('id', $photoIds)->get());
-
-                        // Mark photos as migrated
-                        Photo::whereIn('id', $photoIds)->update(['migrated_at' => now()]);
-                    } catch (\Throwable $e) {
-                        $this->error("    ❌ Failed to update Redis/DB for batch");
-                        Log::critical("Write-phase failure for user {$userId}", [
-                            'error' => $e->getMessage(),
-                            'photo_ids' => $photoIds
-                        ]);
-                    }
+                // Mark photos as migrated (already marked as processed by RedisMetricsCollector)
+                if (!empty($successfulPhotos)) {
+                    Photo::whereIn('id', $successfulPhotos)->update(['migrated_at' => now()]);
                 }
 
                 // Calculate batch metrics
@@ -196,7 +195,6 @@ class MigrationScript extends Command
                 $photosPerSecond = $batchDuration > 0 ? round($batchSize / $batchDuration, 1) : 0;
                 $percent = round(($processedForUser / $this->currentUserPhotos) * 100);
 
-                // Build status message
                 $status = sprintf(
                     "    Batch %d: %d/%d photos (%d%%) | Time: %ss | Speed: %s/s | Memory: %sMB %s",
                     $batchNumber,
@@ -215,7 +213,6 @@ class MigrationScript extends Command
 
                 $this->info($status);
 
-                // Memory warning
                 if ($currentMemory > 1024) {
                     $this->warn("⚠️ High memory usage: {$currentMemory}MB");
                 }
@@ -252,69 +249,51 @@ class MigrationScript extends Command
         $this->info("    Summary for User #{$userId}:");
         $this->info("    ────────────────────────");
 
-        // Basic migration stats
         $this->info("    ✅ Photos migrated: " . number_format($processed));
         if ($failed > 0) {
             $this->error("    ❌ Photos failed: " . number_format($failed));
         }
 
-        // Processing stats
         $avgBatchTime = $totalBatches > 0 ? round($totalBatchTime / $totalBatches, 2) : 0;
         $avgPhotosPerSecond = $totalBatchTime > 0 ? round($processed / $totalBatchTime, 1) : 0;
         $this->info("    ⚡ Total batches: {$totalBatches}");
         $this->info("    ⏱️  Avg batch time: {$avgBatchTime}s");
         $this->info("    🚀 Avg speed: {$avgPhotosPerSecond} photos/s");
 
-        // Get current totals from Redis
+        // Get metrics from new Redis system
         try {
-            $stats = RedisMetricsCollector::getUserCountsWithKeys($userId);
+            $summary = UserMetricsService::getUserSummary($userId);
 
-            // Core stats
-            $this->info("    📊 Total uploads: " . number_format($stats['uploads']));
-            $this->info("    ⚡ Total XP: " . number_format((int)$stats['xp']));
-            $this->info("    🔥 Current streak: " . number_format($stats['streak']) . " days");
-
-            // Count items across dimensions
-            $totalItems = 0;
-            foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags'] as $dim) {
-                $totalItems += array_sum($stats[$dim] ?? []);
-            }
-            $this->info("    📦 Total litter items: " . number_format($totalItems));
+            $this->info("    📊 Total uploads: " . number_format($summary['stats']['uploads']));
+            $this->info("    ⚡ Total XP: " . number_format($summary['stats']['xp']));
+            $this->info("    🔥 Current streak: " . number_format($summary['stats']['streak']) . " days");
+            $this->info("    📦 Total litter items: " . number_format($summary['stats']['litter']));
 
             // Top categories
-            if (!empty($stats['categories'])) {
-                arsort($stats['categories']);
-                $topCategories = array_slice($stats['categories'], 0, 3, true);
-                $this->info("    🏷️  Top categories: " . implode(', ', array_map(
-                        fn($cat, $count) => "$cat (" . number_format($count) . ")",
-                        array_keys($topCategories),
-                        $topCategories
-                    )));
+            if (!empty($summary['top_categories'])) {
+                $topCats = array_map(
+                    fn($name, $count) => "$name (" . number_format($count) . ")",
+                    array_keys($summary['top_categories']),
+                    $summary['top_categories']
+                );
+                $this->info("    🏷️  Top categories: " . implode(', ', array_slice($topCats, 0, 3)));
             }
 
-            // Count unique types
-            $uniqueCounts = [
-                'Categories' => count($stats['categories'] ?? []),
-                'Objects' => count($stats['objects'] ?? []),
-                'Materials' => count($stats['materials'] ?? []),
-                'Brands' => count($stats['brands'] ?? []),
-                'Custom tags' => count($stats['custom_tags'] ?? [])
-            ];
-
-            $this->info("    📋 Unique types: " . implode(', ', array_map(
-                    fn($type, $count) => "$count $type",
-                    array_keys($uniqueCounts),
-                    $uniqueCounts
-                )));
+            // Rankings
+            if (!empty($summary['rankings'])) {
+                $rankStrings = [];
+                foreach ($summary['rankings'] as $scope => $rank) {
+                    $rankStrings[] = ucfirst($scope) . ": #{$rank}";
+                }
+                $this->info("    🏅 Rankings: " . implode(', ', $rankStrings));
+            }
 
         } catch (\Throwable $e) {
-            // Redis stats are optional, don't fail if unavailable
             Log::warning("Could not fetch Redis stats for user {$userId}", [
                 'error' => $e->getMessage()
             ]);
         }
 
-        // Migration completion status
         $remainingPhotos = Photo::where('user_id', $userId)
             ->whereNull('migrated_at')
             ->count();
@@ -369,25 +348,5 @@ class MigrationScript extends Command
             $minutes = floor(($seconds % 3600) / 60);
             return "{$hours}h {$minutes}m";
         }
-    }
-
-    private function getMemoryLimitInMB(): int
-    {
-        $limit = ini_get('memory_limit');
-
-        if ($limit === '-1') {
-            return -1; // No limit
-        }
-
-        $limit = strtoupper(trim($limit));
-        $lastChar = substr($limit, -1);
-        $value = (int) substr($limit, 0, -1);
-
-        return match ($lastChar) {
-            'G' => $value * 1024,
-            'M' => $value,
-            'K' => (int)($value / 1024),
-            default => (int)($limit / 1024 / 1024),
-        };
     }
 }

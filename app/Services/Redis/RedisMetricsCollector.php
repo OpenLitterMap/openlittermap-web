@@ -5,866 +5,538 @@ declare(strict_types=1);
 namespace App\Services\Redis;
 
 use App\Models\Photo;
-use App\Services\Achievements\Tags\TagKeyCache;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 /**
- * RedisMetricsCollector - Production-ready metrics tracking service
+ * Simplified Redis metrics collector for v5 tagging system
  *
- * Tracks user and location metrics from photo uploads with:
- * - O(1) reads via denormalized totals
- * - Correct streak tracking for non-contiguous dates
- * - Memory-bounded ranking ZSETs with automatic trimming
- * - Data validation to prevent abuse
- * - Redis Cluster compatibility via hash-tags
- *
- * Key Structure:
- * - {u:ID}:stats         - User stats (uploads, xp, streak, litter)
- * - {u:ID}:up            - Bitmap for daily uploads (streak calculation)
- * - {u:ID}:c/t/m/brands  - User category/object/material/brand counts
- * - {g}:stats            - Global denormalized totals
- * - {c:ID}:stats         - Location denormalized totals
- * - {c:ID}:rank:s:litter - State rankings within country
- * - {scope}:t:p          - Daily time series (2-year TTL)
+ * Processes photo summaries into Redis metrics across:
+ * - 4 location scopes (global, country, state, city)
+ * - 5 time windows (daily, weekly, monthly, yearly, all-time)
  */
 final class RedisMetricsCollector
 {
-    // Configuration constants
-    private const MAX_ITEMS_PER_PHOTO = 1000;
-    private const MAX_QUANTITY_PER_ITEM = 100;
-    private const MAX_RANKING_ITEMS = 500;
-    private const CHUNK_SIZE = 500;
-
-    // TTL settings
-    private const TIME_SERIES_TTL_MS = 60 * 60 * 24 * 365 * 2 * 1000; // 2 years in ms
-    private const MONTHLY_RANKING_TTL = 60 * 60 * 24 * 90; // 90 days in seconds
-
-    // Key patterns
-    private const USER_STATS_KEY = '{u:%d}:stats';
-    private const USER_BITMAP_KEY = '{u:%d}:up';
-    private const USER_CATEGORIES_KEY = '{u:%d}:c';
-    private const USER_OBJECTS_KEY = '{u:%d}:t';
-    private const USER_MATERIALS_KEY = '{u:%d}:m';
-    private const USER_BRANDS_KEY = '{u:%d}:brands';
-    private const USER_CUSTOM_KEY = '{u:%d}:custom';
-
-    private const GLOBAL_STATS = '{g}:stats';
-    private const GLOBAL_CATEGORIES = '{g}:c';
-    private const GLOBAL_OBJECTS = '{g}:t';
-    private const GLOBAL_MATERIALS = '{g}:m';
-    private const GLOBAL_BRANDS = '{g}:brands';
-
-    // Ranking ZSETs
-    private const GLOBAL_COUNTRY_LITTER_RANKING = '{g}:rank:c:litter';
-    private const GLOBAL_COUNTRY_PHOTOS_RANKING = '{g}:rank:c:photos';
+    // TTLs in seconds
+    private const TTL_DAILY = 7776000;    // 90 days
+    private const TTL_WEEKLY = 63072000;   // 2 years
+    private const TTL_MONTHLY = 157680000; // 5 years
+    // Yearly and all-time have no TTL
 
     /**
-     * Process a single photo
+     * Process a single photo into Redis metrics
      */
-    public static function queue(Photo $photo): void
+    public static function processPhoto(Photo $photo): void
     {
-        // Mark as processed atomically
-        $updated = Photo::where('id', $photo->id)
-            ->whereNull('processed_at')
-            ->update(['processed_at' => now('UTC')]);
-
-        if ($updated === 0) {
-            return; // Already processed
+        // Skip if already processed
+        if ($photo->processed_at !== null) {
+            return;
         }
 
-        self::processSinglePhoto($photo);
+        // Simple lock with short TTL
+        $lockKey = "lock:p:{$photo->id}";
+        if (!Redis::set($lockKey, 1, 'NX', 'EX', 30)) {
+            return; // Another process is handling this
+        }
+
+        try {
+            // Extract metrics from pre-computed summary
+            $metrics = self::extractFromSummary($photo);
+
+            // Update all metrics in a single pipeline
+            self::updateAllMetrics($photo, $metrics);
+
+            // Store what we processed for future updates
+            $photo->update([
+                'processed_at' => now(),
+                'processed_tags' => json_encode($metrics['tags'])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to process photo metrics', [
+                'photo_id' => $photo->id,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        } finally {
+            Redis::del($lockKey);
+        }
     }
 
     /**
-     * Process a batch of photos with deduplication
+     * Process a batch of photos for a user
      */
-    public static function queueBatch(int $userId, Collection $photos): void
+    public static function processBatch(int $userId, Collection $photos): void
     {
+        $photos = $photos->filter(fn($p) => $p->processed_at === null);
+
         if ($photos->isEmpty()) {
             return;
         }
 
-        // Deduplicate and mark as processed
-        $unprocessedIds = self::markPhotosAsProcessed($photos);
+        // Process each photo individually for simplicity
+        // The pipeline in updateAllMetrics handles efficiency
+        foreach ($photos as $photo) {
+            self::processPhoto($photo);
+        }
+    }
 
-        if (empty($unprocessedIds)) {
+    /**
+     * Update existing photo (handles tag changes)
+     */
+    public static function updatePhoto(Photo $photo): void
+    {
+        if ($photo->processed_at === null) {
+            // Never processed, just process normally
+            self::processPhoto($photo);
             return;
         }
 
-        // Process only newly marked photos
-        $photosToProcess = $photos->whereIn('id', $unprocessedIds)->keyBy('id')->values();
-        self::processBatch($userId, $photosToProcess);
-    }
-
-    /**
-     * Mark photos as processed and return IDs of newly processed ones
-     */
-    private static function markPhotosAsProcessed(Collection $photos): array
-    {
-        $ids = $photos->pluck('id')->unique()->values()->all();
-
-        // Check which are already processed
-        $processed = Photo::whereIn('id', $ids)
-            ->whereNotNull('processed_at')
-            ->pluck('id')
-            ->all();
-
-        $unprocessedIds = array_diff($ids, $processed);
-
-        if (empty($unprocessedIds)) {
-            return [];
+        $lockKey = "lock:p:{$photo->id}";
+        if (!Redis::set($lockKey, 1, 'NX', 'EX', 30)) {
+            return;
         }
 
-        // Mark as processed atomically
-        $updated = Photo::whereIn('id', $unprocessedIds)
-            ->whereNull('processed_at')
-            ->update(['processed_at' => now('UTC')]);
+        try {
+            // Get old and new metrics
+            $oldTags = json_decode($photo->processed_tags ?? '{}', true);
+            $newMetrics = self::extractFromSummary($photo);
+            $newTags = $newMetrics['tags'];
 
-        return $updated > 0 ? $unprocessedIds : [];
+            // Calculate deltas
+            $deltas = self::calculateDeltas($oldTags, $newTags);
+
+            if (empty($deltas['increments']) && empty($deltas['decrements'])) {
+                return; // No changes
+            }
+
+            // Apply deltas
+            self::applyDeltas($photo, $newMetrics, $deltas);
+
+            // Update processed tags
+            $photo->update([
+                'processed_tags' => json_encode($newTags)
+            ]);
+
+        } finally {
+            Redis::del($lockKey);
+        }
     }
 
     /**
-     * Process a single photo with all metrics updates
+     * Delete photo metrics (full removal)
      */
-    private static function processSinglePhoto(Photo $photo): void
+    public static function deletePhoto(Photo $photo): void
     {
-        $userId = $photo->user_id;
-        $xp = (int) ($photo->xp ?? 0);
-        $createdAt = $photo->created_at ?? now('UTC');
-        $date = $createdAt->setTimezone('UTC')->format('Y-m-d');
-        $month = $createdAt->format('Y-m');
+        if ($photo->processed_at === null || empty($photo->processed_tags)) {
+            return; // Nothing to delete
+        }
 
-        // Extract and validate tag deltas
-        $deltas = self::extractValidatedDeltas($photo);
-        $litterTotal = array_sum($deltas['objects']);
+        $lockKey = "lock:p:{$photo->id}";
+        if (!Redis::set($lockKey, 1, 'NX', 'EX', 30)) {
+            return;
+        }
 
-        // Get all location scopes
-        $scopes = self::getLocationScopes($photo->country_id, $photo->state_id, $photo->city_id);
+        try {
+            $tags = json_decode($photo->processed_tags, true);
+            $metrics = [
+                'litter' => $photo->summary['totals']['total_objects'] ?? 0,
+                'xp' => $photo->xp,
+                'tags' => $tags
+            ];
 
-        // Prepare ranking updates
-        $rankingUpdates = self::prepareRankingUpdates($deltas, $scopes, $month);
+            // Apply negative deltas to remove counts
+            $deltas = [
+                'increments' => [],
+                'decrements' => $tags
+            ];
 
-        // Execute all updates in a single pipeline
-        Redis::pipeline(function ($pipe) use (
-            $userId, $xp, $date, $month, $deltas, $photo, $litterTotal, $scopes, $rankingUpdates
-        ) {
-            // User metrics
-            self::updateUserMetrics($pipe, $userId, $xp, $litterTotal, $deltas);
+            self::applyDeltas($photo, $metrics, $deltas, true);
 
-            // Global metrics
-            self::updateGlobalMetrics($pipe, $month, $xp, $litterTotal, $deltas);
+            // Clear processed data
+            $photo->update([
+                'processed_at' => null,
+                'processed_tags' => null
+            ]);
 
-            // Location metrics
-            foreach ($scopes as $scope) {
-                if ($scope !== '{g}') {
-                    self::updateLocationMetrics($pipe, $scope, $month, $date, $xp, $litterTotal, $deltas, $userId);
+        } finally {
+            Redis::del($lockKey);
+        }
+    }
+
+    /**
+     * Extract metrics from photo summary
+     */
+    private static function extractFromSummary(Photo $photo): array
+    {
+        $summary = $photo->summary;
+        $tags = [];
+
+        if (empty($summary['tags'])) {
+            return [
+                'litter' => 0,
+                'xp' => $photo->xp ?? 0,
+                'tags' => [],
+                'timestamp' => $photo->created_at
+            ];
+        }
+
+        // Flatten hierarchical structure into composite keys
+        foreach ($summary['tags'] as $categoryKey => $objects) {
+            if (!is_array($objects)) continue;
+
+            $categoryTotal = 0;
+
+            foreach ($objects as $objectKey => $data) {
+                if (!is_array($data)) continue;
+
+                $qty = (int)($data['quantity'] ?? 0);
+                if ($qty <= 0) continue;
+
+                $categoryTotal += $qty;
+
+                // Object count
+                $tags["o:$objectKey"] = ($tags["o:$objectKey"] ?? 0) + $qty;
+
+                // Materials
+                foreach ($data['materials'] ?? [] as $matKey => $matQty) {
+                    $tags["m:$matKey"] = ($tags["m:$matKey"] ?? 0) + (int)$matQty;
+                }
+
+                // Brands
+                foreach ($data['brands'] ?? [] as $brandKey => $brandQty) {
+                    $tags["b:$brandKey"] = ($tags["b:$brandKey"] ?? 0) + (int)$brandQty;
+                }
+
+                // Custom tags
+                foreach ($data['custom_tags'] ?? [] as $customKey => $customQty) {
+                    $tags["ct:$customKey"] = ($tags["ct:$customKey"] ?? 0) + (int)$customQty;
                 }
             }
 
-            // Update all ranking ZSETs
-            self::updateRankings($pipe, $rankingUpdates, $photo, $litterTotal);
-        });
+            // Category total
+            if ($categoryTotal > 0) {
+                $tags["c:$categoryKey"] = $categoryTotal;
+            }
+        }
 
-        // Post-pipeline operations
-        self::trimRankingZSets($rankingUpdates);
-        self::updateUserStreak($userId, $date);
+        return [
+            'litter' => $summary['totals']['total_objects'] ?? 0,
+            'xp' => $photo->xp ?? 0,
+            'tags' => $tags,
+            'timestamp' => $photo->created_at
+        ];
     }
 
     /**
-     * Process a batch of photos efficiently
+     * Update all metrics in Redis
      */
-    private static function processBatch(int $userId, Collection $photos): void
+    private static function updateAllMetrics(Photo $photo, array $metrics): void
     {
-        if ($photos->isEmpty()) {
-            return;
-        }
+        $userId = $photo->user_id;
+        $scopes = self::getScopes($photo);
+        $timestamp = $metrics['timestamp'];
 
-        // Aggregate all metrics across the batch
-        $aggregated = self::aggregateBatchMetrics($photos);
-
-        // Execute batch updates in pipeline
-        Redis::pipeline(function ($pipe) use ($userId, $aggregated) {
+        Redis::pipeline(function($pipe) use ($userId, $scopes, $metrics, $timestamp) {
             // User metrics
-            self::updateUserMetrics($pipe, $userId, $aggregated['totalXp'], $aggregated['totalLitter'], $aggregated['userDeltas']);
+            $userScope = "u:$userId";
+            $pipe->hIncrBy("$userScope:s", 'uploads', 1);
+            $pipe->hIncrBy("$userScope:s", 'xp', $metrics['xp']);
+            $pipe->hIncrBy("$userScope:s", 'litter', $metrics['litter']);
 
-            // Global metrics
-            foreach ($aggregated['globalMonthly'] as $month => $data) {
-                self::updateGlobalMetrics($pipe, $month, $data['xp'], $data['litter'], $aggregated['globalDeltas']);
+            foreach ($metrics['tags'] as $tagKey => $count) {
+                $pipe->hIncrBy("$userScope:t", $tagKey, $count);
             }
 
-            // Location metrics
-            foreach ($aggregated['locationData'] as $scope => $data) {
-                self::updateLocationMetricsBatch($pipe, $scope, $data, $aggregated['locationUsers'][$scope] ?? []);
-            }
+            // Update user bitmap for streak calculation
+            $dayIndex = self::getDayIndex($timestamp);
+            $pipe->setBit("$userScope:b", $dayIndex, 1);
 
-            // Daily time series
-            foreach ($aggregated['dailyCounts'] as $scopeDate => $count) {
-                [$scope, $date] = explode('|', $scopeDate, 2);
-                $pipe->hIncrBy("$scope:t:p", $date, $count);
-                $pipe->pExpire("$scope:t:p", self::TIME_SERIES_TTL_MS);
-            }
+            // Location and global metrics
+            foreach ($scopes as $scope) {
+                // All-time stats
+                $pipe->hIncrBy("$scope:s", 'photos', 1);
+                $pipe->hIncrBy("$scope:s", 'litter', $metrics['litter']);
+                $pipe->hIncrBy("$scope:s", 'xp', $metrics['xp']);
 
-            // Update rankings
-            self::updateBatchRankings($pipe, $aggregated['rankingUpdates']);
+                // Contributor tracking
+                $pipe->pfAdd("$scope:hll", (string)$userId);
+                $pipe->zIncrBy("$scope:contributors", 1, (string)$userId);
+
+                // Tags
+                foreach ($metrics['tags'] as $tagKey => $count) {
+                    $pipe->hIncrBy("$scope:t", $tagKey, $count);
+
+                    // Update rankings for significant dimensions
+                    [$dimension, $id] = explode(':', $tagKey, 2);
+                    if (in_array($dimension, ['o', 'b', 'c'])) {
+                        $pipe->zIncrBy("$scope:r:$dimension", $count, $id);
+                    }
+                }
+
+                // Time windows
+                self::updateTimeWindows($pipe, $scope, $timestamp, $metrics);
+            }
         });
-
-        // Post-pipeline operations
-        self::trimBatchRankingZSets($aggregated['rankingUpdates']);
-
-        // Update streak for today only
-        $today = now('UTC')->format('Y-m-d');
-        if (isset($aggregated['dates'][$today])) {
-            self::updateUserStreak($userId, $today);
-        }
     }
 
     /**
-     * Extract and validate deltas from photo
+     * Update time window aggregates
      */
-    private static function extractValidatedDeltas(Photo $photo): array
+    private static function updateTimeWindows($pipe, string $scope, $timestamp, array $metrics): void
     {
-        $deltas = [
+        $date = $timestamp->format('Ymd');
+        $week = $timestamp->format('YW');
+        $month = $timestamp->format('Ym');
+        $year = $timestamp->format('Y');
+
+        // Daily (90 day TTL)
+        $dayKey = "$scope:d:$date";
+        $pipe->hIncrBy($dayKey, 'p', 1);
+        $pipe->hIncrBy($dayKey, 'l', $metrics['litter']);
+        $pipe->hIncrBy($dayKey, 'x', $metrics['xp']);
+        $pipe->expire($dayKey, self::TTL_DAILY);
+
+        // Weekly (2 year TTL)
+        $weekKey = "$scope:w:$week";
+        $pipe->hIncrBy($weekKey, 'p', 1);
+        $pipe->hIncrBy($weekKey, 'l', $metrics['litter']);
+        $pipe->hIncrBy($weekKey, 'x', $metrics['xp']);
+        $pipe->expire($weekKey, self::TTL_WEEKLY);
+
+        // Monthly (5 year TTL)
+        $monthKey = "$scope:m:$month";
+        $pipe->hIncrBy($monthKey, 'p', 1);
+        $pipe->hIncrBy($monthKey, 'l', $metrics['litter']);
+        $pipe->hIncrBy($monthKey, 'x', $metrics['xp']);
+        $pipe->expire($monthKey, self::TTL_MONTHLY);
+
+        // Yearly (no TTL)
+        $yearKey = "$scope:y:$year";
+        $pipe->hIncrBy($yearKey, 'p', 1);
+        $pipe->hIncrBy($yearKey, 'l', $metrics['litter']);
+        $pipe->hIncrBy($yearKey, 'x', $metrics['xp']);
+    }
+
+    /**
+     * Calculate deltas between old and new tags
+     */
+    private static function calculateDeltas(array $oldTags, array $newTags): array
+    {
+        $increments = [];
+        $decrements = [];
+
+        // Find increases and new tags
+        foreach ($newTags as $key => $newCount) {
+            $oldCount = $oldTags[$key] ?? 0;
+            if ($newCount > $oldCount) {
+                $increments[$key] = $newCount - $oldCount;
+            }
+        }
+
+        // Find decreases and removed tags
+        foreach ($oldTags as $key => $oldCount) {
+            $newCount = $newTags[$key] ?? 0;
+            if ($oldCount > $newCount) {
+                $decrements[$key] = $oldCount - $newCount;
+            }
+        }
+
+        return ['increments' => $increments, 'decrements' => $decrements];
+    }
+
+    /**
+     * Apply deltas to Redis
+     */
+    private static function applyDeltas(Photo $photo, array $metrics, array $deltas, bool $isDelete = false): void
+    {
+        $userId = $photo->user_id;
+        $scopes = self::getScopes($photo);
+        $timestamp = $metrics['timestamp'];
+
+        Redis::pipeline(function($pipe) use ($userId, $scopes, $deltas, $timestamp, $isDelete, $metrics) {
+            $userScope = "u:$userId";
+
+            // Apply decrements
+            foreach ($deltas['decrements'] as $tagKey => $count) {
+                $pipe->hIncrBy("$userScope:t", $tagKey, -$count);
+
+                foreach ($scopes as $scope) {
+                    $pipe->hIncrBy("$scope:t", $tagKey, -$count);
+
+                    [$dimension, $id] = explode(':', $tagKey, 2);
+                    if (in_array($dimension, ['o', 'b', 'c'])) {
+                        $pipe->zIncrBy("$scope:r:$dimension", -$count, $id);
+                    }
+                }
+            }
+
+            // Apply increments (skip if deleting)
+            if (!$isDelete) {
+                foreach ($deltas['increments'] as $tagKey => $count) {
+                    $pipe->hIncrBy("$userScope:t", $tagKey, $count);
+
+                    foreach ($scopes as $scope) {
+                        $pipe->hIncrBy("$scope:t", $tagKey, $count);
+
+                        [$dimension, $id] = explode(':', $tagKey, 2);
+                        if (in_array($dimension, ['o', 'b', 'c'])) {
+                            $pipe->zIncrBy("$scope:r:$dimension", $count, $id);
+                        }
+                    }
+                }
+            }
+
+            // Update photo/litter/xp counts if deleting
+            if ($isDelete) {
+                $pipe->hIncrBy("$userScope:s", 'uploads', -1);
+                $pipe->hIncrBy("$userScope:s", 'xp', -$metrics['xp']);
+                $pipe->hIncrBy("$userScope:s", 'litter', -$metrics['litter']);
+
+                foreach ($scopes as $scope) {
+                    $pipe->hIncrBy("$scope:s", 'photos', -1);
+                    $pipe->hIncrBy("$scope:s", 'litter', -$metrics['litter']);
+                    $pipe->hIncrBy("$scope:s", 'xp', -$metrics['xp']);
+
+                    // Note: Can't remove from HyperLogLog or time series
+                }
+            }
+        });
+    }
+
+    /**
+     * Get location scopes for a photo
+     */
+    private static function getScopes(Photo $photo): array
+    {
+        return array_filter([
+            'g',  // Global
+            $photo->country_id ? "c:{$photo->country_id}" : null,
+            $photo->state_id ? "s:{$photo->state_id}" : null,
+            $photo->city_id ? "ci:{$photo->city_id}" : null,
+        ]);
+    }
+
+    /**
+     * Calculate day index for bitmap
+     */
+    private static function getDayIndex($timestamp): int
+    {
+        $epoch = new \DateTime('2020-01-01', new \DateTimeZone('UTC'));
+        $diff = $epoch->diff($timestamp);
+        return $diff->days;
+    }
+
+    /**
+     * Get user metrics (for achievements)
+     */
+    public static function getUserMetrics(int $userId): array
+    {
+        $userScope = "u:$userId";
+
+        try {
+            $results = Redis::pipeline(function($pipe) use ($userScope) {
+                $pipe->hGetAll("$userScope:s");
+                $pipe->hGetAll("$userScope:t");
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to get user metrics', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return self::emptyUserMetrics();
+        }
+
+        $stats = $results[0] ?? [];
+        $tags = $results[1] ?? [];
+
+        // Parse tags by dimension
+        $dimensions = [
+            'categories' => [],
+            'objects' => [],
+            'materials' => [],
+            'brands' => [],
+            'custom_tags' => []
+        ];
+
+        foreach ($tags as $key => $count) {
+            [$prefix, $id] = explode(':', $key, 2);
+            $count = (int)$count;
+
+            switch ($prefix) {
+                case 'c':
+                    $dimensions['categories'][$id] = $count;
+                    break;
+                case 'o':
+                    $dimensions['objects'][$id] = $count;
+                    break;
+                case 'm':
+                    $dimensions['materials'][$id] = $count;
+                    break;
+                case 'b':
+                    $dimensions['brands'][$id] = $count;
+                    break;
+                case 'ct':
+                    $dimensions['custom_tags'][$id] = $count;
+                    break;
+            }
+        }
+
+        return [
+            'uploads' => (int)($stats['uploads'] ?? 0),
+            'xp' => (int)($stats['xp'] ?? 0),
+            'litter' => (int)($stats['litter'] ?? 0),
+            'streak' => self::calculateStreak($userId),
+            'categories' => $dimensions['categories'],
+            'objects' => $dimensions['objects'],
+            'materials' => $dimensions['materials'],
+            'brands' => $dimensions['brands'],
+            'custom_tags' => $dimensions['custom_tags'],
+        ];
+    }
+
+    /**
+     * Calculate user streak
+     */
+    private static function calculateStreak(int $userId): int
+    {
+        $bitmapKey = "u:$userId:b";
+        $today = self::getDayIndex(now());
+        $streak = 0;
+
+        // Check backwards from today
+        for ($i = 0; $i < 365; $i++) {
+            $dayIndex = $today - $i;
+            if ($dayIndex < 0) break;
+
+            if (!Redis::getBit($bitmapKey, $dayIndex)) {
+                // Allow 1 day gap for today
+                if ($i === 0) continue;
+                break;
+            }
+            $streak++;
+        }
+
+        return $streak;
+    }
+
+    /**
+     * Empty user metrics structure
+     */
+    private static function emptyUserMetrics(): array
+    {
+        return [
+            'uploads' => 0,
+            'xp' => 0,
+            'litter' => 0,
+            'streak' => 0,
             'categories' => [],
             'objects' => [],
             'materials' => [],
             'brands' => [],
             'custom_tags' => [],
         ];
-
-        $totalItems = 0;
-
-        foreach ($photo->summary['tags'] ?? [] as $categoryKey => $objects) {
-            $categoryId = TagKeyCache::getOrCreateId('category', $categoryKey);
-
-            foreach ($objects as $objectKey => $data) {
-                // Validate and cap quantity
-                $quantity = min(self::MAX_QUANTITY_PER_ITEM, max(0, (int) ($data['quantity'] ?? 0)));
-                if ($quantity <= 0) continue;
-
-                // Check total items cap
-                $totalItems += $quantity;
-                if ($totalItems > self::MAX_ITEMS_PER_PHOTO) {
-                    Log::warning('Photo exceeded max items cap', [
-                        'photo_id' => $photo->id,
-                        'total_attempted' => $totalItems
-                    ]);
-                    break 2;
-                }
-
-                $objectId = TagKeyCache::getOrCreateId('object', $objectKey);
-
-                $deltas['categories'][$categoryId] = ($deltas['categories'][$categoryId] ?? 0) + $quantity;
-                $deltas['objects'][$objectId] = ($deltas['objects'][$objectId] ?? 0) + $quantity;
-
-                // Process sub-dimensions
-                self::processSubDimension($data['materials'] ?? [], 'material', $deltas['materials']);
-                self::processSubDimension($data['brands'] ?? [], 'brand', $deltas['brands']);
-                self::processSubDimension($data['custom_tags'] ?? [], 'customTag', $deltas['custom_tags']);
-            }
-        }
-
-        return $deltas;
-    }
-
-    /**
-     * Process sub-dimension tags with validation
-     */
-    private static function processSubDimension(array $items, string $dimension, array &$deltas): void
-    {
-        foreach ($items as $key => $quantity) {
-            $quantity = min(self::MAX_QUANTITY_PER_ITEM, max(0, (int) $quantity));
-            if ($quantity > 0) {
-                $id = TagKeyCache::getOrCreateId($dimension, $key);
-                $deltas[$id] = ($deltas[$id] ?? 0) + $quantity;
-            }
-        }
-    }
-
-    /**
-     * Update user metrics
-     */
-    private static function updateUserMetrics($pipe, int $userId, int $xp, int $litterTotal, array $deltas): void
-    {
-        $statsKey = sprintf(self::USER_STATS_KEY, $userId);
-        $userTag = "{u:$userId}";
-
-        // Update stats with denormalized litter total
-        $pipe->hIncrBy($statsKey, 'uploads', 1);
-        if ($xp > 0) {
-            $pipe->hIncrBy($statsKey, 'xp', $xp);
-        }
-        if ($litterTotal > 0) {
-            $pipe->hIncrBy($statsKey, 'litter', $litterTotal);
-        }
-
-        // Update dimension counts
-        foreach ($deltas['categories'] as $id => $count) {
-            $pipe->hIncrBy("$userTag:c", (string)$id, $count);
-        }
-        foreach ($deltas['objects'] as $id => $count) {
-            $pipe->hIncrBy("$userTag:t", (string)$id, $count);
-        }
-        foreach ($deltas['materials'] as $id => $count) {
-            $pipe->hIncrBy("$userTag:m", (string)$id, $count);
-        }
-        foreach ($deltas['brands'] as $id => $count) {
-            $pipe->hIncrBy("$userTag:brands", (string)$id, $count);
-        }
-        foreach ($deltas['custom_tags'] as $id => $count) {
-            $pipe->hIncrBy("$userTag:custom", (string)$id, $count);
-        }
-    }
-
-    /**
-     * Update global metrics
-     */
-    private static function updateGlobalMetrics($pipe, string $month, int $xp, int $litterTotal, array $deltas): void
-    {
-        // Denormalized global stats
-        $pipe->hIncrBy(self::GLOBAL_STATS, 'photos', 1);
-        if ($litterTotal > 0) {
-            $pipe->hIncrBy(self::GLOBAL_STATS, 'litter', $litterTotal);
-        }
-
-        // Global dimension counts
-        foreach ($deltas['categories'] as $id => $count) {
-            $pipe->hIncrBy(self::GLOBAL_CATEGORIES, (string)$id, $count);
-        }
-        foreach ($deltas['objects'] as $id => $count) {
-            $pipe->hIncrBy(self::GLOBAL_OBJECTS, (string)$id, $count);
-        }
-        foreach ($deltas['materials'] as $id => $count) {
-            $pipe->hIncrBy(self::GLOBAL_MATERIALS, (string)$id, $count);
-        }
-        foreach ($deltas['brands'] as $id => $count) {
-            $pipe->hIncrBy(self::GLOBAL_BRANDS, (string)$id, $count);
-        }
-
-        // Monthly aggregates
-        $monthKey = "{g}:$month:t";
-        $pipe->hIncrBy($monthKey, 'p', 1);
-        if ($xp > 0) {
-            $pipe->hIncrBy($monthKey, 'xp', $xp);
-        }
-        if ($litterTotal > 0) {
-            $pipe->hIncrBy($monthKey, 'l', $litterTotal);
-        }
-    }
-
-    /**
-     * Update location metrics
-     */
-    private static function updateLocationMetrics($pipe, string $scope, string $month, string $date, int $xp, int $litterTotal, array $deltas, int $userId): void
-    {
-        // Denormalized location stats
-        $pipe->hIncrBy("$scope:stats", 'photos', 1);
-        if ($litterTotal > 0) {
-            $pipe->hIncrBy("$scope:stats", 'litter', $litterTotal);
-        }
-
-        // Add user to contributors set
-        $pipe->sAdd("$scope:users", (string)$userId);
-
-        // Location dimension counts
-        foreach ($deltas['categories'] as $id => $count) {
-            $pipe->hIncrBy("$scope:c", (string)$id, $count);
-        }
-        foreach ($deltas['objects'] as $id => $count) {
-            $pipe->hIncrBy("$scope:t", (string)$id, $count);
-        }
-        foreach ($deltas['materials'] as $id => $count) {
-            $pipe->hIncrBy("$scope:m", (string)$id, $count);
-        }
-        foreach ($deltas['brands'] as $id => $count) {
-            $pipe->hIncrBy("$scope:brands", (string)$id, $count);
-        }
-
-        // Daily time series
-        $pipe->hIncrBy("$scope:t:p", $date, 1);
-        $pipe->pExpire("$scope:t:p", self::TIME_SERIES_TTL_MS);
-
-        // Monthly aggregates
-        $monthKey = "$scope:$month:t";
-        $pipe->hIncrBy($monthKey, 'p', 1);
-        if ($xp > 0) {
-            $pipe->hIncrBy($monthKey, 'xp', $xp);
-        }
-        if ($litterTotal > 0) {
-            $pipe->hIncrBy($monthKey, 'l', $litterTotal);
-        }
-    }
-
-    /**
-     * Update location metrics for batch
-     */
-    private static function updateLocationMetricsBatch($pipe, string $scope, array $data, array $userIds): void
-    {
-        // Update stats
-        $pipe->hIncrBy("$scope:stats", 'photos', $data['photos']);
-        $pipe->hIncrBy("$scope:stats", 'litter', $data['litter']);
-
-        // Add users in chunks
-        if (!empty($userIds)) {
-            $chunks = array_chunk(array_map('strval', array_keys($userIds)), self::CHUNK_SIZE);
-            foreach ($chunks as $chunk) {
-                $pipe->sAdd("$scope:users", ...$chunk);
-            }
-        }
-
-        // Update dimensions
-        foreach ($data['categories'] as $id => $count) {
-            $pipe->hIncrBy("$scope:c", (string)$id, $count);
-        }
-        foreach ($data['objects'] as $id => $count) {
-            $pipe->hIncrBy("$scope:t", (string)$id, $count);
-        }
-        foreach ($data['materials'] as $id => $count) {
-            $pipe->hIncrBy("$scope:m", (string)$id, $count);
-        }
-        foreach ($data['brands'] as $id => $count) {
-            $pipe->hIncrBy("$scope:brands", (string)$id, $count);
-        }
-
-        // Monthly aggregates
-        foreach ($data['monthly'] ?? [] as $month => $monthData) {
-            $monthKey = "$scope:$month:t";
-            $pipe->hIncrBy($monthKey, 'p', $monthData['p']);
-            if ($monthData['xp'] > 0) {
-                $pipe->hIncrBy($monthKey, 'xp', $monthData['xp']);
-            }
-            if ($monthData['l'] > 0) {
-                $pipe->hIncrBy($monthKey, 'l', $monthData['l']);
-            }
-        }
-    }
-
-    /**
-     * Prepare ranking updates
-     */
-    private static function prepareRankingUpdates(array $deltas, array $scopes, string $month): array
-    {
-        $updates = [];
-
-        foreach ($scopes as $scope) {
-            // Dimension rankings
-            foreach (['objects', 'categories', 'materials', 'brands'] as $dimension) {
-                if (!empty($deltas[$dimension])) {
-                    $updates["$scope:rank:$dimension"] = $deltas[$dimension];
-
-                    // Monthly rankings for objects and brands
-                    if (in_array($dimension, ['objects', 'brands'])) {
-                        $updates["$scope:rank:$dimension:m:$month"] = $deltas[$dimension];
-                    }
-                }
-            }
-        }
-
-        return $updates;
-    }
-
-    /**
-     * Update all ranking ZSETs
-     */
-    private static function updateRankings($pipe, array $rankingUpdates, Photo $photo, int $litterTotal): void
-    {
-        // Update dimension rankings
-        foreach ($rankingUpdates as $zsetKey => $items) {
-            foreach ($items as $id => $increment) {
-                $pipe->zIncrBy($zsetKey, $increment, (string)$id);
-            }
-
-            // Set TTL on monthly rankings
-            if (str_contains($zsetKey, ':m:')) {
-                $pipe->expire($zsetKey, self::MONTHLY_RANKING_TTL);
-            }
-        }
-
-        // Update location hierarchy rankings
-        if ($photo->country_id) {
-            $pipe->zIncrBy(self::GLOBAL_COUNTRY_LITTER_RANKING, $litterTotal, (string)$photo->country_id);
-            $pipe->zIncrBy(self::GLOBAL_COUNTRY_PHOTOS_RANKING, 1, (string)$photo->country_id);
-
-            if ($photo->state_id) {
-                $pipe->zIncrBy("{c:{$photo->country_id}}:rank:s:litter", $litterTotal, (string)$photo->state_id);
-                $pipe->zIncrBy("{c:{$photo->country_id}}:rank:s:photos", 1, (string)$photo->state_id);
-
-                if ($photo->city_id) {
-                    $pipe->zIncrBy("{s:{$photo->state_id}}:rank:ci:litter", $litterTotal, (string)$photo->city_id);
-                    $pipe->zIncrBy("{s:{$photo->state_id}}:rank:ci:photos", 1, (string)$photo->city_id);
-                }
-            }
-        }
-    }
-
-    /**
-     * Update batch rankings
-     */
-    private static function updateBatchRankings($pipe, array $rankingUpdates): void
-    {
-        foreach ($rankingUpdates as $zsetKey => $items) {
-            foreach ($items as $id => $increment) {
-                $pipe->zIncrBy($zsetKey, $increment, (string)$id);
-            }
-
-            // Set TTL on monthly rankings
-            if (str_contains($zsetKey, ':m:')) {
-                $pipe->expire($zsetKey, self::MONTHLY_RANKING_TTL);
-            }
-        }
-    }
-
-    /**
-     * Trim ranking ZSETs to prevent unbounded growth
-     */
-    private static function trimRankingZSets(array $rankingUpdates): void
-    {
-        foreach (array_keys($rankingUpdates) as $zsetKey) {
-            // Don't trim location hierarchy rankings (countries, states, cities)
-            if (str_contains($zsetKey, ':rank:s:') || str_contains($zsetKey, ':rank:ci:') || str_contains($zsetKey, ':rank:c:')) {
-                continue;
-            }
-
-            // Trim dimension rankings to top N
-            Redis::zRemRangeByRank($zsetKey, 0, -(self::MAX_RANKING_ITEMS + 1));
-        }
-    }
-
-    /**
-     * Trim batch ranking ZSETs
-     */
-    private static function trimBatchRankingZSets(array $rankingUpdates): void
-    {
-        $keysToTrim = [];
-
-        foreach (array_keys($rankingUpdates) as $zsetKey) {
-            // Skip location hierarchy rankings
-            if (str_contains($zsetKey, ':rank:s:') || str_contains($zsetKey, ':rank:ci:') || str_contains($zsetKey, ':rank:c:')) {
-                continue;
-            }
-            $keysToTrim[] = $zsetKey;
-        }
-
-        // Trim in a separate pipeline
-        if (!empty($keysToTrim)) {
-            Redis::pipeline(function ($pipe) use ($keysToTrim) {
-                foreach ($keysToTrim as $key) {
-                    $pipe->zRemRangeByRank($key, 0, -(self::MAX_RANKING_ITEMS + 1));
-                }
-            });
-        }
-    }
-
-    /**
-     * Update user streak (only for today)
-     */
-    private static function updateUserStreak(int $userId, string $date): void
-    {
-        $statsKey = sprintf(self::USER_STATS_KEY, $userId);
-        $bitmapKey = sprintf(self::USER_BITMAP_KEY, $userId);
-        $dayIndex = self::calculateDayIndex($date);
-
-        // Mark bit for this date
-        $result = self::executeBitfield(Redis::connection(), $bitmapKey, $dayIndex);
-
-        // Only update streak if this is today
-        $today = now('UTC')->format('Y-m-d');
-        if ($date === $today) {
-            $hadYesterday = ($result[0] ?? 0) === 1;
-            $currentStreak = (int) Redis::hGet($statsKey, 'streak') ?: 0;
-            $newStreak = $hadYesterday ? $currentStreak + 1 : 1;
-
-            if ($newStreak !== $currentStreak) {
-                Redis::hSet($statsKey, 'streak', $newStreak);
-            }
-        }
-    }
-
-    /**
-     * Execute BITFIELD command
-     */
-    private static function executeBitfield($connection, string $key, int $dayIndex): array
-    {
-        $command = [
-            'BITFIELD', $key,
-            'GET', 'u1', (string)($dayIndex - 1),  // Get yesterday
-            'SET', 'u1', (string)$dayIndex, '1'     // Set today
-        ];
-
-        // Convert to strings for compatibility
-        $command = array_map('strval', $command);
-
-        if (method_exists($connection, 'rawCommand')) {
-            return $connection->rawCommand(...$command) ?: [];
-        }
-
-        if (method_exists($connection, 'executeRaw')) {
-            return $connection->executeRaw($command) ?: [];
-        }
-
-        throw new \RuntimeException('No raw Redis command method available');
-    }
-
-    /**
-     * Calculate day index for streak bitmap
-     */
-    private static function calculateDayIndex(string $date): int
-    {
-        static $epoch;
-        $epoch ??= Carbon::createFromTimestampUTC(0);
-        return (int) $epoch->diffInDays(Carbon::parse($date, 'UTC'));
-    }
-
-    /**
-     * Get location scopes with proper hash-tags
-     */
-    private static function getLocationScopes(?int $countryId, ?int $stateId, ?int $cityId): array
-    {
-        return array_filter([
-            '{g}',
-            $countryId ? "{c:$countryId}" : null,
-            $stateId ? "{s:$stateId}" : null,
-            $cityId ? "{ci:$cityId}" : null,
-        ]);
-    }
-
-    /**
-     * Aggregate metrics across a batch of photos
-     */
-    private static function aggregateBatchMetrics(Collection $photos): array
-    {
-        $result = [
-            'totalUploads' => 0,
-            'totalXp' => 0,
-            'totalLitter' => 0,
-            'userDeltas' => [
-                'categories' => [],
-                'objects' => [],
-                'materials' => [],
-                'brands' => [],
-                'custom_tags' => [],
-            ],
-            'globalDeltas' => [
-                'categories' => [],
-                'objects' => [],
-                'materials' => [],
-                'brands' => [],
-            ],
-            'globalMonthly' => [],
-            'locationData' => [],
-            'locationUsers' => [],
-            'dailyCounts' => [],
-            'rankingUpdates' => [],
-            'dates' => [],
-        ];
-
-        foreach ($photos as $photo) {
-            $result['totalUploads']++;
-            $xp = (int) ($photo->xp ?? 0);
-            $result['totalXp'] += $xp;
-
-            $createdAt = $photo->created_at ?? now('UTC');
-            $date = $createdAt->setTimezone('UTC')->format('Y-m-d');
-            $month = $createdAt->format('Y-m');
-            $result['dates'][$date] = true;
-
-            // Extract validated deltas
-            $deltas = self::extractValidatedDeltas($photo);
-            $photoLitter = array_sum($deltas['objects']);
-            $result['totalLitter'] += $photoLitter;
-
-            // Aggregate user deltas
-            foreach ($deltas as $dimension => $items) {
-                foreach ($items as $id => $count) {
-                    $result['userDeltas'][$dimension][$id] =
-                        ($result['userDeltas'][$dimension][$id] ?? 0) + $count;
-
-                    if ($dimension !== 'custom_tags') {
-                        $result['globalDeltas'][$dimension][$id] =
-                            ($result['globalDeltas'][$dimension][$id] ?? 0) + $count;
-                    }
-                }
-            }
-
-            // Global monthly
-            if (!isset($result['globalMonthly'][$month])) {
-                $result['globalMonthly'][$month] = ['xp' => 0, 'litter' => 0];
-            }
-            $result['globalMonthly'][$month]['xp'] += $xp;
-            $result['globalMonthly'][$month]['litter'] += $photoLitter;
-
-            // Location data
-            $scopes = self::getLocationScopes($photo->country_id, $photo->state_id, $photo->city_id);
-
-            foreach ($scopes as $scope) {
-                // Daily counts
-                $result['dailyCounts']["$scope|$date"] =
-                    ($result['dailyCounts']["$scope|$date"] ?? 0) + 1;
-
-                if ($scope === '{g}') continue;
-
-                // Initialize location data
-                if (!isset($result['locationData'][$scope])) {
-                    $result['locationData'][$scope] = [
-                        'photos' => 0,
-                        'litter' => 0,
-                        'categories' => [],
-                        'objects' => [],
-                        'materials' => [],
-                        'brands' => [],
-                        'monthly' => [],
-                    ];
-                    $result['locationUsers'][$scope] = [];
-                }
-
-                // Aggregate location metrics
-                $result['locationData'][$scope]['photos']++;
-                $result['locationData'][$scope]['litter'] += $photoLitter;
-                $result['locationUsers'][$scope][$photo->user_id] = true;
-
-                // Aggregate dimensions
-                foreach ($deltas as $dimension => $items) {
-                    if ($dimension === 'custom_tags') continue;
-
-                    foreach ($items as $id => $count) {
-                        $result['locationData'][$scope][$dimension][$id] =
-                            ($result['locationData'][$scope][$dimension][$id] ?? 0) + $count;
-                    }
-                }
-
-                // Monthly aggregates
-                if (!isset($result['locationData'][$scope]['monthly'][$month])) {
-                    $result['locationData'][$scope]['monthly'][$month] = [
-                        'p' => 0,
-                        'xp' => 0,
-                        'l' => 0,
-                    ];
-                }
-                $result['locationData'][$scope]['monthly'][$month]['p']++;
-                $result['locationData'][$scope]['monthly'][$month]['xp'] += $xp;
-                $result['locationData'][$scope]['monthly'][$month]['l'] += $photoLitter;
-
-                // Ranking updates
-                foreach ($deltas as $dimension => $items) {
-                    if ($dimension === 'custom_tags') continue;
-
-                    $rankKey = "$scope:rank:$dimension";
-                    if (!isset($result['rankingUpdates'][$rankKey])) {
-                        $result['rankingUpdates'][$rankKey] = [];
-                    }
-
-                    foreach ($items as $id => $count) {
-                        $result['rankingUpdates'][$rankKey][$id] =
-                            ($result['rankingUpdates'][$rankKey][$id] ?? 0) + $count;
-                    }
-
-                    // Monthly rankings
-                    if (in_array($dimension, ['objects', 'brands'])) {
-                        $monthlyKey = "$scope:rank:$dimension:m:$month";
-                        if (!isset($result['rankingUpdates'][$monthlyKey])) {
-                            $result['rankingUpdates'][$monthlyKey] = [];
-                        }
-
-                        foreach ($items as $id => $count) {
-                            $result['rankingUpdates'][$monthlyKey][$id] =
-                                ($result['rankingUpdates'][$monthlyKey][$id] ?? 0) + $count;
-                        }
-                    }
-                }
-            }
-
-            // Location hierarchy rankings
-            if ($photo->country_id) {
-                $countryKey = self::GLOBAL_COUNTRY_LITTER_RANKING;
-                $result['rankingUpdates'][$countryKey][$photo->country_id] =
-                    ($result['rankingUpdates'][$countryKey][$photo->country_id] ?? 0) + $photoLitter;
-
-                $photoKey = self::GLOBAL_COUNTRY_PHOTOS_RANKING;
-                $result['rankingUpdates'][$photoKey][$photo->country_id] =
-                    ($result['rankingUpdates'][$photoKey][$photo->country_id] ?? 0) + 1;
-
-                if ($photo->state_id) {
-                    $stateKey = "{c:{$photo->country_id}}:rank:s:litter";
-                    $result['rankingUpdates'][$stateKey][$photo->state_id] =
-                        ($result['rankingUpdates'][$stateKey][$photo->state_id] ?? 0) + $photoLitter;
-
-                    $statePhotoKey = "{c:{$photo->country_id}}:rank:s:photos";
-                    $result['rankingUpdates'][$statePhotoKey][$photo->state_id] =
-                        ($result['rankingUpdates'][$statePhotoKey][$photo->state_id] ?? 0) + 1;
-
-                    if ($photo->city_id) {
-                        $cityKey = "{s:{$photo->state_id}}:rank:ci:litter";
-                        $result['rankingUpdates'][$cityKey][$photo->city_id] =
-                            ($result['rankingUpdates'][$cityKey][$photo->city_id] ?? 0) + $photoLitter;
-
-                        $cityPhotoKey = "{s:{$photo->state_id}}:rank:ci:photos";
-                        $result['rankingUpdates'][$cityPhotoKey][$photo->city_id] =
-                            ($result['rankingUpdates'][$cityPhotoKey][$photo->city_id] ?? 0) + 1;
-                    }
-                }
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get user counts for achievements
-     */
-    public static function getUserCounts(int $userId): array
-    {
-        $results = Redis::pipeline(function($pipe) use ($userId) {
-            $pipe->hGetAll(sprintf(self::USER_STATS_KEY, $userId));
-            $pipe->hGetAll(sprintf(self::USER_CATEGORIES_KEY, $userId));
-            $pipe->hGetAll(sprintf(self::USER_OBJECTS_KEY, $userId));
-            $pipe->hGetAll(sprintf(self::USER_MATERIALS_KEY, $userId));
-            $pipe->hGetAll(sprintf(self::USER_BRANDS_KEY, $userId));
-            $pipe->hGetAll(sprintf(self::USER_CUSTOM_KEY, $userId));
-        });
-
-        return [
-            'uploads' => (int) ($results[0]['uploads'] ?? 0),
-            'streak' => (int) ($results[0]['streak'] ?? 0),
-            'xp' => (float) ($results[0]['xp'] ?? 0),
-            'litter' => (int) ($results[0]['litter'] ?? 0),
-            'categories' => array_map('intval', $results[1] ?: []),
-            'objects' => array_map('intval', $results[2] ?: []),
-            'materials' => array_map('intval', $results[3] ?: []),
-            'brands' => array_map('intval', $results[4] ?: []),
-            'custom_tags' => array_map('intval', $results[5] ?: []),
-        ];
-    }
-
-    /**
-     * Get user counts with string keys for display
-     */
-    public static function getUserCountsWithKeys(int $userId): array
-    {
-        $counts = self::getUserCounts($userId);
-
-        $dimensionTables = [
-            'categories' => 'categories',
-            'objects' => 'litter_objects',
-            'materials' => 'materials',
-            'brands' => 'brandslist',
-            'custom_tags' => 'custom_tags_new',
-        ];
-
-        foreach ($dimensionTables as $dimension => $table) {
-            if (empty($counts[$dimension])) continue;
-
-            $ids = array_map('intval', array_keys($counts[$dimension]));
-            $keys = TagKeyCache::keysBatch($table, $ids);
-
-            $named = [];
-            foreach ($counts[$dimension] as $id => $count) {
-                $named[$keys[$id] ?? "unknown_$id"] = $count;
-            }
-            $counts[$dimension] = $named;
-        }
-
-        return $counts;
     }
 }

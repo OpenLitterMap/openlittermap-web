@@ -43,7 +43,7 @@ class PhotoTag extends Model
 
     public function brand(): BelongsTo
     {
-        return $this->belongsTo(Brand::class, 'brand_id');
+        return $this->belongsTo(BrandList::class, 'brand_id');
     }
 
     public function attachExtraTags(array $extras, string $type, int $index): void

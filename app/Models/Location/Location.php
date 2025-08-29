@@ -6,20 +6,39 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Log;
 
 abstract class Location extends Model
 {
     use HasFactory;
 
     /**
-     * Get the Redis prefix for this location type
+     * Get the Redis prefix for this location type (FIXED to match service keys)
      */
     protected function getLocationRedisPrefix(): string
     {
-        if ($this instanceof Country) return 'c';
-        if ($this instanceof State) return 's';
-        if ($this instanceof City) return 'ci';
-        return 'c';
+        if ($this instanceof Country) return "{c:{$this->id}}";
+        if ($this instanceof State) return "{s:{$this->id}}";
+        if ($this instanceof City) return "{ci:{$this->id}}";
+        return "{c:{$this->id}}";
+    }
+
+    /**
+     * Safe Redis operation wrapper
+     */
+    private function safeRedisOperation(callable $operation, $fallback = null)
+    {
+        try {
+            return $operation();
+        } catch (\Exception $e) {
+            Log::error('Redis operation failed in Location model', [
+                'location_type' => get_class($this),
+                'location_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return $fallback ?? 0;
+        }
     }
 
     /**
@@ -28,7 +47,22 @@ abstract class Location extends Model
     public function getTotalLitterRedisAttribute(): int
     {
         $prefix = $this->getLocationRedisPrefix();
-        $objects = Redis::hgetall("{$prefix}:{$this->id}:t");
+
+        // Try denormalized total first
+        $stats = $this->safeRedisOperation(
+            fn() => Redis::hget("$prefix:stats", 'litter'),
+            null
+        );
+
+        if ($stats !== null) {
+            return (int) $stats;
+        }
+
+        // Fallback to calculating from hash
+        $objects = $this->safeRedisOperation(
+            fn() => Redis::hgetall("$prefix:t"),
+            []
+        );
 
         $total = 0;
         foreach ($objects as $count) {
@@ -44,9 +78,12 @@ abstract class Location extends Model
     public function getTotalPhotosRedisAttribute(): int
     {
         $prefix = $this->getLocationRedisPrefix();
-        $stats = Redis::hget("{$prefix}:{$this->id}:stats", 'photos');
+        $stats = $this->safeRedisOperation(
+            fn() => Redis::hget("$prefix:stats", 'photos'),
+            0
+        );
 
-        return (int)($stats ?? 0);
+        return (int)$stats;
     }
 
     /**
@@ -55,7 +92,10 @@ abstract class Location extends Model
     public function getTotalContributorsRedisAttribute(): int
     {
         $prefix = $this->getLocationRedisPrefix();
-        return (int)Redis::scard("{$prefix}:{$this->id}:users");
+        return $this->safeRedisOperation(
+            fn() => Redis::scard("$prefix:users"),
+            0
+        );
     }
 
     /**
@@ -64,11 +104,13 @@ abstract class Location extends Model
     public function getLitterDataAttribute(): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $categories = Redis::hgetall("{$prefix}:{$this->id}:c");
+        $categories = $this->safeRedisOperation(
+            fn() => Redis::hgetall("$prefix:c"),
+            []
+        );
 
         $totals = [];
         foreach ($categories as $categoryId => $count) {
-            // Use keyFor instead of getKey
             $categoryName = TagKeyCache::keyFor('category', (int)$categoryId);
             if ($categoryName) {
                 $totals[$categoryName] = (int)$count;
@@ -84,11 +126,13 @@ abstract class Location extends Model
     public function getBrandsDataAttribute(): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $brands = Redis::hgetall("{$prefix}:{$this->id}:brands");
+        $brands = $this->safeRedisOperation(
+            fn() => Redis::hgetall("$prefix:brands"),
+            []
+        );
 
         $totals = [];
         foreach ($brands as $brandId => $count) {
-            // Use keyFor instead of getKey
             $brandName = TagKeyCache::keyFor('brand', (int)$brandId);
             if ($brandName) {
                 $totals[$brandName] = (int)$count;
@@ -109,7 +153,10 @@ abstract class Location extends Model
         // Check last 24 months deterministically (no KEYS command)
         for ($i = 0; $i < 24; $i++) {
             $month = now()->subMonths($i)->format('Y-m');
-            $data = Redis::hgetall("{$prefix}:{$this->id}:{$month}:t");
+            $data = $this->safeRedisOperation(
+                fn() => Redis::hgetall("$prefix:$month:t"),
+                []
+            );
             if (!empty($data) && isset($data['p'])) {
                 $ppm[$month] = (int)$data['p'];
             }
@@ -141,11 +188,13 @@ abstract class Location extends Model
     public function getObjectsDataAttribute(): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $objects = Redis::hgetall("{$prefix}:{$this->id}:t");
+        $objects = $this->safeRedisOperation(
+            fn() => Redis::hgetall("$prefix:t"),
+            []
+        );
 
         $totals = [];
         foreach ($objects as $objectId => $count) {
-            // Use keyFor instead of getKey
             $objectName = TagKeyCache::keyFor('object', (int)$objectId);
             if ($objectName) {
                 $totals[$objectName] = (int)$count;
@@ -162,11 +211,13 @@ abstract class Location extends Model
     public function getMaterialsDataAttribute(): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $materials = Redis::hgetall("{$prefix}:{$this->id}:m");
+        $materials = $this->safeRedisOperation(
+            fn() => Redis::hgetall("$prefix:m"),
+            []
+        );
 
         $totals = [];
         foreach ($materials as $materialId => $count) {
-            // Use keyFor instead of getKey
             $materialName = TagKeyCache::keyFor('material', (int)$materialId);
             if ($materialName) {
                 $totals[$materialName] = (int)$count;
@@ -183,12 +234,15 @@ abstract class Location extends Model
     public function getRecentActivityAttribute(): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $tsKey = "{$prefix}:{$this->id}:t:p";
+        $tsKey = "$prefix:t:p";
 
         $activity = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
-            $count = Redis::hget($tsKey, $date) ?: 0;
+            $count = $this->safeRedisOperation(
+                fn() => Redis::hget($tsKey, $date),
+                0
+            );
             $activity[$date] = (int)$count;
         }
 
@@ -206,7 +260,10 @@ abstract class Location extends Model
         // Sum XP from monthly aggregates
         for ($i = 0; $i < 24; $i++) {
             $month = now()->subMonths($i)->format('Y-m');
-            $data = Redis::hgetall("{$prefix}:{$this->id}:{$month}:t");
+            $data = $this->safeRedisOperation(
+                fn() => Redis::hgetall("$prefix:$month:t"),
+                []
+            );
             if (!empty($data) && isset($data['xp'])) {
                 $xp += (int)$data['xp'];
             }
@@ -221,12 +278,15 @@ abstract class Location extends Model
     public function getDailyTimeSeries(int $days = 30): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $tsKey = "{$prefix}:{$this->id}:t:p";
+        $tsKey = "$prefix:t:p";
 
         $series = [];
         for ($i = $days - 1; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
-            $count = Redis::hget($tsKey, $date) ?: 0;
+            $count = $this->safeRedisOperation(
+                fn() => Redis::hget($tsKey, $date),
+                0
+            );
             $series[$date] = (int)$count;
         }
 
@@ -239,7 +299,10 @@ abstract class Location extends Model
     public function getTopContributors(int $limit = 10): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $userIds = Redis::smembers("{$prefix}:{$this->id}:users");
+        $userIds = $this->safeRedisOperation(
+            fn() => Redis::smembers("$prefix:users"),
+            []
+        );
 
         if (empty($userIds)) {
             return [];
@@ -273,7 +336,7 @@ abstract class Location extends Model
     }
 
     /**
-     * Get percentage of global totals
+     * Get percentage of global totals (FIXED)
      */
     public function getGlobalPercentage(string $metric = 'litter'): float
     {
@@ -287,39 +350,70 @@ abstract class Location extends Model
             return 0.0;
         }
 
-        // Get global total
-        $globalTotal = match($metric) {
-            'photos' => array_sum(Redis::hgetall('{g}:stats')),
-            'contributors' => Redis::scard('{g}:users'),
-            default => array_sum(Redis::hgetall('{g}:t')),
-        };
+        // Get global total (FIXED to use correct keys and methods)
+        $globalTotal = $this->safeRedisOperation(function() use ($metric) {
+            return match($metric) {
+                'photos' => (int) Redis::hGet('{g}:stats', 'photos'),
+                'contributors' => Redis::sCard('{g}:users'),
+                default => (int) Redis::hGet('{g}:stats', 'litter'),
+            };
+        }, 0);
+
+        // Fallback for litter if stats not populated
+        if ($globalTotal === 0 && $metric === 'litter') {
+            $globalTotal = $this->calculateTotalFromHash('{g}:t');
+        }
 
         return $globalTotal > 0 ? round(($localValue / $globalTotal) * 100, 2) : 0.0;
     }
 
     /**
-     * Get top tags using ranking ZSETs for performance
+     * Calculate total from hash (migration helper)
+     */
+    private function calculateTotalFromHash(string $hashKey): int
+    {
+        $items = $this->safeRedisOperation(
+            fn() => Redis::hgetall($hashKey),
+            []
+        );
+
+        $total = 0;
+        foreach ($items as $count) {
+            $total += (int) $count;
+        }
+
+        return $total;
+    }
+
+    /**
+     * Get top tags using ranking ZSETs for performance (FIXED key pattern)
      */
     public function getTopTags(string $dimension = 'objects', int $limit = 10): array
     {
         $prefix = $this->getLocationRedisPrefix();
-        $scope = "{$prefix}:{$this->id}";
 
-        // Try to get from ranking ZSET first
-        $rankKey = "rank:$scope:$dimension";
-        $topItems = Redis::zRevRange($rankKey, 0, $limit - 1, 'WITHSCORES');
+        // Try to get from ranking ZSET first (FIXED: consistent key pattern)
+        $rankKey = "$prefix:rank:$dimension";
+        $topItems = $this->safeRedisOperation(
+            fn() => Redis::zRevRange($rankKey, 0, $limit - 1, 'WITHSCORES'),
+            []
+        );
 
         if (empty($topItems)) {
             // Fallback to hash if ZSETs not populated
             $hashKey = match($dimension) {
-                'objects' => "$scope:t",
-                'categories' => "$scope:c",
-                'materials' => "$scope:m",
-                'brands' => "$scope:brands",
-                default => "$scope:t"
+                'objects' => "$prefix:t",
+                'categories' => "$prefix:c",
+                'materials' => "$prefix:m",
+                'brands' => "$prefix:brands",
+                default => "$prefix:t"
             };
 
-            $allItems = Redis::hgetall($hashKey);
+            $allItems = $this->safeRedisOperation(
+                fn() => Redis::hgetall($hashKey),
+                []
+            );
+
             if (empty($allItems)) {
                 return [];
             }
