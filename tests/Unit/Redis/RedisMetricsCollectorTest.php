@@ -10,7 +10,7 @@ use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Redis\RedisMetricsCollector;
-use App\Services\Achievements\Tags\TagKeyCache;
+use App\Services\Redis\RedisKeys;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
@@ -19,31 +19,10 @@ class RedisMetricsCollectorTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Tag IDs storage
-    private array $tagIds = [];
-
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Clear Redis before each test
         Redis::flushall();
-
-        // Warm up the TagKeyCache and get IDs for test data
-        TagKeyCache::preloadAll();
-
-        // Pre-create the tag IDs we'll need
-        $this->tagIds = [
-            'cup' => TagKeyCache::getOrCreateId('object', 'cup'),
-            'butt' => TagKeyCache::getOrCreateId('object', 'butt'),
-            'plastic' => TagKeyCache::getOrCreateId('material', 'plastic'),
-            'glass' => TagKeyCache::getOrCreateId('material', 'glass'),
-            'starbucks' => TagKeyCache::getOrCreateId('brand', 'starbucks'),
-            'cocacola' => TagKeyCache::getOrCreateId('brand', 'cocacola'),
-            'biodegradable' => TagKeyCache::getOrCreateId('customTag', 'biodegradable'),
-            'food' => TagKeyCache::getOrCreateId('category', 'food'),
-            'drinking' => TagKeyCache::getOrCreateId('category', 'drinking'),
-        ];
     }
 
     protected function tearDown(): void
@@ -53,631 +32,431 @@ class RedisMetricsCollectorTest extends TestCase
     }
 
     /**
-     * Test basic counting functionality
+     * Test basic photo creation
      */
-    public function test_queue_processes_single_photo_correctly(): void
+    public function test_processes_photo_creation(): void
     {
         $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => 3]
-                    ]
-                ]
-            ]
-        ]);
+        $photo = Photo::factory()->for($user)->create();
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = [
+            'litter' => 5,
+            'xp' => 10,
+            'tags' => [
+                'categories' => [1 => 3],
+                'objects' => [2 => 5],
+                'materials' => [],
+                'brands' => [],
+                'custom_tags' => []
+            ]
+        ];
+
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+
+        // Check global stats
+        $this->assertEquals('1', Redis::hGet(RedisKeys::stats('{g}'), 'photos'));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::stats('{g}'), 'litter'));
+        $this->assertEquals('10', Redis::hGet(RedisKeys::stats('{g}'), 'xp'));
 
         // Check user stats
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:stats", 'uploads'));
-        $this->assertEquals('3', Redis::hGet("{u:{$user->id}}:t", (string)$this->tagIds['cup']));
-        $this->assertEquals('3', Redis::hGet("{u:{$user->id}}:c", (string)$this->tagIds['drinking']));
-
-        // Check global counts
-        $this->assertEquals('3', Redis::hGet('{g}:t', (string)$this->tagIds['cup']));
-        $this->assertEquals('3', Redis::hGet('{g}:c', (string)$this->tagIds['drinking']));
-
-        // Check photo is marked as processed
-        $this->assertNotNull($photo->fresh()->processed_at);
+        $userScope = RedisKeys::user($user->id);
+        $this->assertEquals('1', Redis::hGet(RedisKeys::stats($userScope), 'uploads'));
+        $this->assertEquals('10', Redis::hGet(RedisKeys::stats($userScope), 'xp'));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::stats($userScope), 'litter'));
     }
 
     /**
-     * Test that same photo isn't counted twice
+     * Test photo update with deltas
      */
-    public function test_prevents_double_counting_same_photo(): void
+    public function test_processes_photo_update(): void
     {
         $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => 1]
-                    ]
-                ]
-            ]
-        ]);
+        $photo = Photo::factory()->for($user)->create();
 
-        // Process same photo twice
-        RedisMetricsCollector::queue($photo);
-        RedisMetricsCollector::queue($photo);
-
-        // Should only count once
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:stats", 'uploads'));
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:t", (string)$this->tagIds['cup']));
-    }
-
-    /**
-     * Test batch processing
-     */
-    public function test_batch_processing_accumulates_correctly(): void
-    {
-        $user = User::factory()->create();
-        $photos = collect([
-            Photo::factory()->for($user)->create([
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => 2]
-                        ]
-                    ]
-                ]
-            ]),
-            Photo::factory()->for($user)->create([
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => 3],
-                            'butt' => ['quantity' => 1]
-                        ]
-                    ]
-                ]
-            ]),
-        ]);
-
-        RedisMetricsCollector::queueBatch($user->id, $photos);
-
-        // Check accumulated counts
-        $this->assertEquals('2', Redis::hGet("{u:{$user->id}}:stats", 'uploads'));
-        $this->assertEquals('5', Redis::hGet("{u:{$user->id}}:t", (string)$this->tagIds['cup'])); // 2 + 3
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:t", (string)$this->tagIds['butt']));
-    }
-
-    /**
-     * Test XP accumulation
-     */
-    public function test_xp_accumulates_correctly(): void
-    {
-        $user = User::factory()->create();
-        $photos = collect([
-            Photo::factory()->for($user)->create(['xp' => 10.5]),
-            Photo::factory()->for($user)->create(['xp' => 20.3]),
-            Photo::factory()->for($user)->create(['xp' => 15.2]),
-        ]);
-
-        foreach ($photos as $photo) {
-            RedisMetricsCollector::queue($photo);
-        }
-
-        // XP is cast to int in the implementation
-        $expectedXp = 10 + 20 + 15;  // 10.5→10, 20.3→20, 15.2→15
-        $actualXp = (int)Redis::hGet("{u:{$user->id}}:stats", 'xp');
-
-        $this->assertEquals($expectedXp, $actualXp);
-    }
-
-    /**
-     * Test materials and brands tracking
-     */
-    public function test_tracks_materials_and_brands(): void
-    {
-        $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => [
-                            'quantity' => 3,
-                            'materials' => ['plastic' => 1],
-                            'brands' => ['starbucks' => 3],
-                        ]
-                    ]
-                ]
-            ]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:m", (string)$this->tagIds['plastic']));
-        $this->assertEquals('3', Redis::hGet("{u:{$user->id}}:brands", (string)$this->tagIds['starbucks']));
-    }
-
-    /**
-     * Test custom tags tracking
-     */
-    public function test_tracks_custom_tags(): void
-    {
-        $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => [
-                            'quantity' => 1,
-                            'custom_tags' => ['biodegradable' => 1],
-                        ]
-                    ]
-                ]
-            ]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:custom", (string)$this->tagIds['biodegradable']));
-    }
-
-    /**
-     * Test streak tracking
-     */
-    public function test_streak_increments_for_consecutive_days(): void
-    {
-        $user = User::factory()->create();
-
-        // Upload yesterday
-        $yesterday = Photo::factory()->for($user)->create([
-            'created_at' => now()->subDay()
-        ]);
-        RedisMetricsCollector::queue($yesterday);
-
-        // Upload today
-        $today = Photo::factory()->for($user)->create([
-            'created_at' => now()
-        ]);
-        RedisMetricsCollector::queue($today);
-
-        $this->assertEquals('2', Redis::hGet("{u:{$user->id}}:stats", 'streak'));
-    }
-
-    /**
-     * Test streak resets after gap
-     */
-    public function test_streak_resets_after_gap(): void
-    {
-        $user = User::factory()->create();
-
-        // Upload 3 days ago
-        $oldPhoto = Photo::factory()->for($user)->create([
-            'created_at' => now()->subDays(3)
-        ]);
-        RedisMetricsCollector::queue($oldPhoto);
-
-        // Upload today (gap of 2 days)
-        $today = Photo::factory()->for($user)->create([
-            'created_at' => now()
-        ]);
-        RedisMetricsCollector::queue($today);
-
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:stats", 'streak'));
-    }
-
-    /**
-     * Test geographic scoping works
-     */
-    public function test_geographic_scoping_works(): void
-    {
-        $country = Country::factory()->create();
-        $state = State::factory()->create(['country_id' => $country->id]);
-        $city = City::factory()->create([
-            'country_id' => $country->id,
-            'state_id' => $state->id
-        ]);
-
-        $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $date = now()->format('Y-m-d');
-
-        // Check all levels are tracked
-        $this->assertEquals('1', Redis::hGet('{g}:t:p', $date));
-        $this->assertEquals('1', Redis::hGet("c:{$country->id}:t:p", $date));
-        $this->assertEquals('1', Redis::hGet("s:{$state->id}:t:p", $date));
-        $this->assertEquals('1', Redis::hGet("ci:{$city->id}:t:p", $date));
-    }
-
-    /**
-     * Test empty/invalid data handling
-     */
-    public function test_handles_empty_summary_gracefully(): void
-    {
-        $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => ['tags' => []]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:stats", 'uploads'));
-        // No tag counts should exist
-        $this->assertFalse(Redis::hExists("{u:{$user->id}}:t", (string)$this->tagIds['cup']));
-    }
-
-    /**
-     * Test zero quantity handling
-     */
-    public function test_zero_quantity_does_not_increment(): void
-    {
-        $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => 0]
-                    ]
-                ]
-            ]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        // Should track upload but not items
-        $this->assertEquals('1', Redis::hGet("{u:{$user->id}}:stats", 'uploads'));
-        $this->assertFalse(Redis::hExists("{u:{$user->id}}:t", (string)$this->tagIds['cup']));
-    }
-
-    /**
-     * Test negative quantities are ignored
-     */
-    public function test_negative_quantities_are_ignored(): void
-    {
-        $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => -5]
-                    ]
-                ]
-            ]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        // Negative quantities should be treated as 0
-        $this->assertFalse(Redis::hExists("{u:{$user->id}}:t", (string)$this->tagIds['cup']));
-    }
-
-    /**
-     * Test batch tracking returns changed dimensions
-     */
-    public function test_batch_tracking_detects_changes(): void
-    {
-        $user = User::factory()->create();
-        $photos = collect([
-            Photo::factory()->for($user)->create([
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => 1]
-                        ]
-                    ]
-                ]
-            ])
-        ]);
-
-        $result = RedisMetricsCollector::queueBatchWithTracking($user->id, $photos);
-
-        $this->assertContains('uploads', $result['changed_dimensions']);
-        $this->assertContains('objects', $result['changed_dimensions']);
-        $this->assertContains('categories', $result['changed_dimensions']);
-
-        $this->assertEquals(0, $result['previous_counts']['uploads']);
-        $this->assertEquals(1, $result['new_counts']['uploads']);
-    }
-
-    /**
-     * Test getUserCounts returns correct structure
-     */
-    public function test_get_user_counts_structure(): void
-    {
-        $user = User::factory()->create();
-
-        // Process some data first
-        $photo = Photo::factory()->for($user)->create([
-            'xp' => 25.5,
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => [
-                            'quantity' => 2,
-                            'materials' => ['plastic' => 1],
-                            'brands' => ['starbucks' => 2],
-                            'custom_tags' => ['biodegradable' => 1]
-                        ]
-                    ]
-                ]
-            ]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $counts = RedisMetricsCollector::getUserCounts($user->id);
-
-        // Check structure
-        $this->assertArrayHasKey('uploads', $counts);
-        $this->assertArrayHasKey('streak', $counts);
-        $this->assertArrayHasKey('xp', $counts);
-        $this->assertArrayHasKey('categories', $counts);
-        $this->assertArrayHasKey('objects', $counts);
-        $this->assertArrayHasKey('materials', $counts);
-        $this->assertArrayHasKey('brands', $counts);
-        $this->assertArrayHasKey('custom_tags', $counts);
-
-        // Check values
-        $this->assertEquals(1, $counts['uploads']);
-        $this->assertEquals(25.0, $counts['xp']);  // Stored as int 25, but getUserCounts returns float
-        $this->assertEquals(2, $counts['objects'][(string)$this->tagIds['cup']]);
-        $this->assertEquals(1, $counts['materials'][(string)$this->tagIds['plastic']]);
-        $this->assertEquals(2, $counts['brands'][(string)$this->tagIds['starbucks']]);
-        $this->assertEquals(1, $counts['custom_tags'][(string)$this->tagIds['biodegradable']]);
-    }
-
-    /**
-     * Test large batch doesn't timeout
-     */
-    public function test_processes_large_batch_within_reasonable_time(): void
-    {
-        $user = User::factory()->create();
-        $photos = collect();
-
-        // Create 100 photos with varied data
-        for ($i = 0; $i < 100; $i++) {
-            $photos->push(Photo::factory()->for($user)->create([
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => rand(1, 5)]
-                        ]
-                    ]
-                ]
-            ]));
-        }
-
-        $startTime = microtime(true);
-        RedisMetricsCollector::queueBatch($user->id, $photos);
-        $duration = microtime(true) - $startTime;
-
-        // Should complete in reasonable time
-        $this->assertLessThan(3.0, $duration, 'Large batch should process in under 3 seconds');
-
-        // Verify all were processed
-        $counts = RedisMetricsCollector::getUserCounts($user->id);
-        $this->assertEquals(100, $counts['uploads']);
-    }
-
-    /**
-     * Test month-based time series
-     */
-    public function test_month_time_series_tracking(): void
-    {
-        $user = User::factory()->create();
-
-        // Photos in different months
-        $currentMonth = Photo::factory()->for($user)->create([
+        // Initial create
+        $initialMetrics = [
+            'litter' => 5,
             'xp' => 10,
-            'created_at' => now()
-        ]);
-        $lastMonth = Photo::factory()->for($user)->create([
-            'xp' => 20,
-            'created_at' => now()->subMonth()
-        ]);
+            'tags' => []
+        ];
+        RedisMetricsCollector::processPhoto($photo, $initialMetrics, 'create');
 
-        RedisMetricsCollector::queue($currentMonth);
-        RedisMetricsCollector::queue($lastMonth);
+        // Update with deltas
+        $deltaMetrics = [
+            'litter' => 3,  // Added 3 more
+            'xp' => 5,      // Added 5 more XP
+            'tags' => []
+        ];
+        RedisMetricsCollector::processPhoto($photo, $deltaMetrics, 'update');
 
-        $currentKey = '{g}:' . now()->format('Y-m') . ':t';
-        $lastKey = '{g}:' . now()->subMonth()->format('Y-m') . ':t';
-
-        $this->assertEquals('1', Redis::hGet($currentKey, 'p'));
-        $this->assertEquals('10', Redis::hGet($currentKey, 'xp'));  // XP stored as int
-        $this->assertEquals('1', Redis::hGet($lastKey, 'p'));
-        $this->assertEquals('20', Redis::hGet($lastKey, 'xp'));  // XP stored as int
+        // Check updated totals
+        $this->assertEquals('8', Redis::hGet(RedisKeys::stats('{g}'), 'litter'));
+        $this->assertEquals('15', Redis::hGet(RedisKeys::stats('{g}'), 'xp'));
     }
 
-    // ============= NEW TESTS FOR LOCATION-SCOPED FUNCTIONALITY =============
-
     /**
-     * Test location-scoped stats are written
+     * Test photo deletion
      */
-    public function test_location_stats_are_written(): void
+    public function test_processes_photo_deletion(): void
     {
-        $country = Country::factory()->create();
-        $state = State::factory()->create(['country_id' => $country->id]);
-        $city = City::factory()->create([
-            'country_id' => $country->id,
-            'state_id' => $state->id
-        ]);
-
         $user = User::factory()->create();
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
-        ]);
+        $photo = Photo::factory()->for($user)->create();
 
-        RedisMetricsCollector::queue($photo);
+        // Create first
+        $metrics = [
+            'litter' => 5,
+            'xp' => 10,
+            'tags' => []
+        ];
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        // Check location stats
-        $this->assertEquals('1', Redis::hGet("c:{$country->id}:stats", 'photos'));
-        $this->assertEquals('1', Redis::hGet("s:{$state->id}:stats", 'photos'));
-        $this->assertEquals('1', Redis::hGet("ci:{$city->id}:stats", 'photos'));
+        // Then delete
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'delete');
+
+        // Check stats are back to zero
+        $this->assertEquals('0', Redis::hGet(RedisKeys::stats('{g}'), 'photos'));
+        $this->assertEquals('0', Redis::hGet(RedisKeys::stats('{g}'), 'litter'));
+        $this->assertEquals('0', Redis::hGet(RedisKeys::stats('{g}'), 'xp'));
     }
 
     /**
-     * Test location-scoped user sets
+     * Test tag counting
      */
-    public function test_location_user_sets_are_maintained(): void
+    public function test_tracks_tags_correctly(): void
     {
-        $country = Country::factory()->create();
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create();
+
+        $metrics = [
+            'litter' => 10,
+            'xp' => 20,
+            'tags' => [
+                'categories' => [1 => 5, 2 => 3],
+                'objects' => [10 => 5, 11 => 3],
+                'materials' => [20 => 2],
+                'brands' => [30 => 1],
+                'custom_tags' => [40 => 1]
+            ]
+        ];
+
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+
+        // Check global tag counts
+        $this->assertEquals('5', Redis::hGet(RedisKeys::categories('{g}'), '1'));
+        $this->assertEquals('3', Redis::hGet(RedisKeys::categories('{g}'), '2'));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::objects('{g}'), '10'));
+        $this->assertEquals('2', Redis::hGet(RedisKeys::materials('{g}'), '20'));
+        $this->assertEquals('1', Redis::hGet(RedisKeys::brands('{g}'), '30'));
+        $this->assertEquals('1', Redis::hGet(RedisKeys::customTags('{g}'), '40'));
+
+        // Check rankings
+        $this->assertEquals('5', Redis::zScore(RedisKeys::ranking('{g}', 'categories'), '1'));
+        $this->assertEquals('3', Redis::zScore(RedisKeys::ranking('{g}', 'categories'), '2'));
+    }
+
+    /**
+     * Test user metrics tracking
+     */
+    public function test_tracks_user_metrics(): void
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create();
+
+        $metrics = [
+            'litter' => 5,
+            'xp' => 15,
+            'tags' => [
+                'categories' => [1 => 2],
+                'objects' => [10 => 3],
+                'materials' => [20 => 1],
+                'brands' => [30 => 2],
+                'custom_tags' => [40 => 1]
+            ]
+        ];
+
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+
+        $userScope = RedisKeys::user($user->id);
+
+        // Check user stats
+        $this->assertEquals('1', Redis::hGet(RedisKeys::stats($userScope), 'uploads'));
+        $this->assertEquals('15', Redis::hGet(RedisKeys::stats($userScope), 'xp'));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::stats($userScope), 'litter'));
+
+        // Check user tags
+        $this->assertEquals('2', Redis::hGet("{$userScope}:tags", 'cat:1'));
+        $this->assertEquals('3', Redis::hGet("{$userScope}:tags", 'obj:10'));
+        $this->assertEquals('1', Redis::hGet("{$userScope}:tags", 'mat:20'));
+        $this->assertEquals('2', Redis::hGet("{$userScope}:tags", 'brand:30'));
+        $this->assertEquals('1', Redis::hGet("{$userScope}:tags", 'custom:40'));
+    }
+
+    /**
+     * Test contributor ranking
+     */
+    public function test_updates_contributor_ranking(): void
+    {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
 
-        // User 1 uploads
-        $photo1 = Photo::factory()->for($user1)->create([
-            'country_id' => $country->id,
-        ]);
-        RedisMetricsCollector::queue($photo1);
+        $photo1 = Photo::factory()->for($user1)->create();
+        $photo2 = Photo::factory()->for($user1)->create();
+        $photo3 = Photo::factory()->for($user2)->create();
 
-        // User 2 uploads
-        $photo2 = Photo::factory()->for($user2)->create([
-            'country_id' => $country->id,
-        ]);
-        RedisMetricsCollector::queue($photo2);
+        $metrics = ['litter' => 1, 'xp' => 1, 'tags' => []];
 
-        // Check both users are in the set
-        $this->assertEquals(2, Redis::sCard("c:{$country->id}:users"));
-        $this->assertTrue(Redis::sIsMember("c:{$country->id}:users", (string)$user1->id));
-        $this->assertTrue(Redis::sIsMember("c:{$country->id}:users", (string)$user2->id));
+        RedisMetricsCollector::processPhoto($photo1, $metrics, 'create');
+        RedisMetricsCollector::processPhoto($photo2, $metrics, 'create');
+        RedisMetricsCollector::processPhoto($photo3, $metrics, 'create');
+
+        // Check contributor ranking
+        $this->assertEquals('2', Redis::zScore(RedisKeys::contributorRanking('{g}'), (string)$user1->id));
+        $this->assertEquals('1', Redis::zScore(RedisKeys::contributorRanking('{g}'), (string)$user2->id));
     }
 
     /**
-     * Test location-scoped dimension hashes
+     * Test HyperLogLog for unique contributors
      */
-    public function test_location_dimension_hashes_are_written(): void
+    public function test_tracks_unique_contributors(): void
     {
-        $country = Country::factory()->create();
-        $user = User::factory()->create();
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
 
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => $country->id,
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => [
-                            'quantity' => 3,
-                            'materials' => ['plastic' => 2],
-                            'brands' => ['starbucks' => 1],
-                        ]
-                    ]
-                ]
-            ]
-        ]);
+        $photo1 = Photo::factory()->for($user1)->create();
+        $photo2 = Photo::factory()->for($user2)->create();
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = ['litter' => 1, 'xp' => 1, 'tags' => []];
 
-        // Check location dimensions
-        $this->assertEquals('3', Redis::hGet("c:{$country->id}:c", (string)$this->tagIds['drinking']));
-        $this->assertEquals('3', Redis::hGet("c:{$country->id}:t", (string)$this->tagIds['cup']));
-        $this->assertEquals('2', Redis::hGet("c:{$country->id}:m", (string)$this->tagIds['plastic']));
-        $this->assertEquals('1', Redis::hGet("c:{$country->id}:brands", (string)$this->tagIds['starbucks']));
+        RedisMetricsCollector::processPhoto($photo1, $metrics, 'create');
+        RedisMetricsCollector::processPhoto($photo2, $metrics, 'create');
+
+        // HLL should count 2 unique users
+        $count = Redis::pfCount(RedisKeys::hll('{g}'));
+        $this->assertEquals(2, $count);
     }
 
     /**
-     * Test location monthly aggregates
+     * Test location-scoped updates
      */
-    public function test_location_monthly_aggregates(): void
-    {
-        $country = Country::factory()->create();
-        $user = User::factory()->create();
-
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => $country->id,
-            'xp' => 15,
-            'created_at' => now()
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $month = now()->format('Y-m');
-        $monthKey = "c:{$country->id}:$month:t";
-
-        $this->assertEquals('1', Redis::hGet($monthKey, 'p'));
-        $this->assertEquals('15', Redis::hGet($monthKey, 'xp'));
-    }
-
-    /**
-     * Test batch processing with location data
-     */
-    public function test_batch_processing_with_location_data(): void
+    public function test_updates_location_scopes(): void
     {
         $country = Country::factory()->create();
         $state = State::factory()->create(['country_id' => $country->id]);
-
-        $user = User::factory()->create();
-        $photos = collect([
-            Photo::factory()->for($user)->create([
-                'country_id' => $country->id,
-                'state_id' => $state->id,
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => 2]
-                        ]
-                    ]
-                ]
-            ]),
-            Photo::factory()->for($user)->create([
-                'country_id' => $country->id,
-                'state_id' => $state->id,
-                'summary' => [
-                    'tags' => [
-                        'drinking' => [
-                            'cup' => ['quantity' => 3]
-                        ]
-                    ]
-                ]
-            ]),
+        $city = City::factory()->create([
+            'country_id' => $country->id,
+            'state_id' => $state->id
         ]);
 
-        RedisMetricsCollector::queueBatch($user->id, $photos);
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
+        ]);
 
-        // Check location stats accumulated correctly
-        $this->assertEquals('2', Redis::hGet("c:{$country->id}:stats", 'photos'));
-        $this->assertEquals('2', Redis::hGet("s:{$state->id}:stats", 'photos'));
+        $metrics = [
+            'litter' => 5,
+            'xp' => 10,
+            'tags' => [
+                'categories' => [1 => 3],
+                'objects' => [10 => 5],
+                'materials' => [],
+                'brands' => [],
+                'custom_tags' => []
+            ]
+        ];
 
-        // Check location dimensions accumulated
-        $this->assertEquals('5', Redis::hGet("c:{$country->id}:t", (string)$this->tagIds['cup']));
-        $this->assertEquals('5', Redis::hGet("s:{$state->id}:t", (string)$this->tagIds['cup']));
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        // Check user is in location sets
-        $this->assertTrue(Redis::sIsMember("c:{$country->id}:users", (string)$user->id));
-        $this->assertTrue(Redis::sIsMember("s:{$state->id}:users", (string)$user->id));
+        // Check all location scopes
+        $this->assertEquals('1', Redis::hGet(RedisKeys::stats(RedisKeys::country($country->id)), 'photos'));
+        $this->assertEquals('1', Redis::hGet(RedisKeys::stats(RedisKeys::state($state->id)), 'photos'));
+        $this->assertEquals('1', Redis::hGet(RedisKeys::stats(RedisKeys::city($city->id)), 'photos'));
+
+        // Check location tag counts
+        $this->assertEquals('5', Redis::hGet(RedisKeys::objects(RedisKeys::country($country->id)), '10'));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::objects(RedisKeys::state($state->id)), '10'));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::objects(RedisKeys::city($city->id)), '10'));
     }
 
     /**
-     * Test global scope doesn't write location-specific keys
+     * Test getUserMetrics method
      */
-    public function test_global_scope_skips_location_specific_keys(): void
+    public function test_get_user_metrics_returns_correct_structure(): void
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create();
+
+        $metrics = [
+            'litter' => 8,
+            'xp' => 25,
+            'tags' => [
+                'categories' => [1 => 2],
+                'objects' => [10 => 3],
+                'materials' => [20 => 1],
+                'brands' => [30 => 2],
+                'custom_tags' => [40 => 1]
+            ]
+        ];
+
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+
+        $result = RedisMetricsCollector::getUserMetrics($user->id);
+
+        // Check structure
+        $this->assertArrayHasKey('uploads', $result);
+        $this->assertArrayHasKey('xp', $result);
+        $this->assertArrayHasKey('litter', $result);
+        $this->assertArrayHasKey('streak', $result);
+        $this->assertArrayHasKey('categories', $result);
+        $this->assertArrayHasKey('objects', $result);
+        $this->assertArrayHasKey('materials', $result);
+        $this->assertArrayHasKey('brands', $result);
+        $this->assertArrayHasKey('custom_tags', $result);
+
+        // Check values
+        $this->assertEquals(1, $result['uploads']);
+        $this->assertEquals(25, $result['xp']);
+        $this->assertEquals(8, $result['litter']);
+        $this->assertEquals(2, $result['categories']['1']);
+        $this->assertEquals(3, $result['objects']['10']);
+        $this->assertEquals(1, $result['materials']['20']);
+        $this->assertEquals(2, $result['brands']['30']);
+        $this->assertEquals(1, $result['custom_tags']['40']);
+    }
+
+    /**
+     * Test empty user metrics
+     */
+    public function test_get_user_metrics_returns_empty_structure_for_new_user(): void
+    {
+        $user = User::factory()->create();
+        $result = RedisMetricsCollector::getUserMetrics($user->id);
+
+        $this->assertEquals(0, $result['uploads']);
+        $this->assertEquals(0, $result['xp']);
+        $this->assertEquals(0, $result['litter']);
+        $this->assertEquals(0, $result['streak']);
+        $this->assertEmpty($result['categories']);
+        $this->assertEmpty($result['objects']);
+        $this->assertEmpty($result['materials']);
+        $this->assertEmpty($result['brands']);
+        $this->assertEmpty($result['custom_tags']);
+    }
+
+    /**
+     * Test streak calculation with bitmap
+     */
+    public function test_streak_calculation_with_consecutive_days(): void
     {
         $user = User::factory()->create();
 
-        // Photo with no location (only global scope)
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => null,
-            'state_id' => null,
-            'city_id' => null,
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => 1]
-                    ]
-                ]
-            ]
-        ]);
+        // Create photos for consecutive days
+        $today = Photo::factory()->for($user)->create(['created_at' => now()]);
+        $yesterday = Photo::factory()->for($user)->create(['created_at' => now()->subDay()]);
+        $twoDaysAgo = Photo::factory()->for($user)->create(['created_at' => now()->subDays(2)]);
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = ['litter' => 1, 'xp' => 1, 'tags' => []];
 
-        // Global keys should exist
-        $this->assertEquals('1', Redis::hGet('{g}:t', (string)$this->tagIds['cup']));
+        RedisMetricsCollector::processPhoto($twoDaysAgo, $metrics, 'create');
+        RedisMetricsCollector::processPhoto($yesterday, $metrics, 'create');
+        RedisMetricsCollector::processPhoto($today, $metrics, 'create');
 
-        // But no global:stats or global:users (we skip these for {g} scope)
-        $this->assertFalse(Redis::hExists('{g}:stats', 'photos'));
-        $this->assertEquals(0, Redis::sCard('{g}:users'));
+        $result = RedisMetricsCollector::getUserMetrics($user->id);
+
+        // Should have 3-day streak
+        $this->assertEquals(3, $result['streak']);
+    }
+
+    /**
+     * Test streak breaks with gap
+     */
+    public function test_streak_breaks_with_gap(): void
+    {
+        $user = User::factory()->create();
+
+        // Create photos with a gap
+        $today = Photo::factory()->for($user)->create(['created_at' => now()]);
+        $threeDaysAgo = Photo::factory()->for($user)->create(['created_at' => now()->subDays(3)]);
+
+        $metrics = ['litter' => 1, 'xp' => 1, 'tags' => []];
+
+        RedisMetricsCollector::processPhoto($threeDaysAgo, $metrics, 'create');
+        RedisMetricsCollector::processPhoto($today, $metrics, 'create');
+
+        $result = RedisMetricsCollector::getUserMetrics($user->id);
+
+        // Streak should be 1 (only today counts due to gap)
+        $this->assertEquals(1, $result['streak']);
+    }
+
+    /**
+     * Test handling of zero values in update
+     */
+    public function test_update_skips_zero_deltas(): void
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create();
+
+        // Initial create
+        $initialMetrics = ['litter' => 5, 'xp' => 10, 'tags' => []];
+        RedisMetricsCollector::processPhoto($photo, $initialMetrics, 'create');
+
+        // Update with zero deltas (no change)
+        $deltaMetrics = ['litter' => 0, 'xp' => 0, 'tags' => []];
+        RedisMetricsCollector::processPhoto($photo, $deltaMetrics, 'update');
+
+        // Values should remain unchanged
+        $this->assertEquals('5', Redis::hGet(RedisKeys::stats('{g}'), 'litter'));
+        $this->assertEquals('10', Redis::hGet(RedisKeys::stats('{g}'), 'xp'));
+    }
+
+    /**
+     * Test error handling doesn't crash
+     */
+    public function test_handles_redis_errors_gracefully(): void
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->for($user)->create();
+
+        // Close Redis connection to simulate error
+        Redis::disconnect();
+
+        $metrics = ['litter' => 5, 'xp' => 10, 'tags' => []];
+
+        // Should not throw exception
+        $this->assertNull(
+            RedisMetricsCollector::processPhoto($photo, $metrics, 'create')
+        );
+
+        // Reconnect for cleanup
+        Redis::connection();
+    }
+
+    /**
+     * Test pipeline performance with multiple photos
+     */
+    public function test_processes_multiple_photos_efficiently(): void
+    {
+        $user = User::factory()->create();
+        $metrics = ['litter' => 1, 'xp' => 2, 'tags' => []];
+
+        $startTime = microtime(true);
+
+        // Process 100 photos
+        for ($i = 0; $i < 100; $i++) {
+            $photo = Photo::factory()->for($user)->create();
+            RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+        }
+
+        $duration = microtime(true) - $startTime;
+
+        // Should complete quickly due to pipelining
+        $this->assertLessThan(5.0, $duration);
+
+        // Verify counts
+        $this->assertEquals('100', Redis::hGet(RedisKeys::stats('{g}'), 'photos'));
+        $this->assertEquals('100', Redis::hGet(RedisKeys::stats('{g}'), 'litter'));
+        $this->assertEquals('200', Redis::hGet(RedisKeys::stats('{g}'), 'xp'));
     }
 }

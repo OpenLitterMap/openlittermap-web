@@ -4,85 +4,69 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Four-level time-series fact table.
+ * Time-series metrics fact table for OpenLitterMap v5
  *
- *  • timescale: 1 = daily, 2 = weekly (ISO-8601), 3 = monthly, 4 = yearly
- *  • location : global / country / state / city
- *
- * Primary-key columns double as the partition key, so every row lives in the
- * correct partition and can be reached with a single index seek.
- *
- * Each CHECK constraint is conditional on `timescale`, letting us store the
- * canonical “bucket start” date for weekly / monthly / yearly rows while still
- * enforcing data integrity.
+ * Invariants:
+ * - All timestamps in UTC
+ * - Weekly rows use ISO week (Monday start), year = ISO week-year
+ * - Monthly/yearly rows use calendar dates, bucket_date = first of period
+ * - All-time rows use bucket_date = '1970-01-01'
+ * - Tags count = objects + materials + brands (NOT categories to avoid double-counting)
+ * - Uploads delta: create +1, update 0, delete -1
+ * - All metrics are additive and support negative deltas
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        /** @lang SQL */
         DB::statement(<<<'SQL'
-CREATE TABLE photo_metrics (
-  /* ──────────── dimensions ──────────── */
-  timescale     TINYINT  UNSIGNED NOT NULL,                                   -- 1,2,3,4
-  location_type ENUM('global','country','state','city') NOT NULL,
-  location_id   BIGINT   UNSIGNED NOT NULL,
+CREATE TABLE metrics (
+    /* ──────────── Dimensions ──────────── */
+    timescale     TINYINT UNSIGNED NOT NULL,      -- 0=all-time, 1=daily, 2=weekly, 3=monthly, 4=yearly
+    location_type TINYINT UNSIGNED NOT NULL,      -- 0=global, 1=country, 2=state, 3=city
+    location_id   BIGINT UNSIGNED NOT NULL,       -- 0 for global, otherwise location ID
+    user_id       BIGINT UNSIGNED NOT NULL DEFAULT 0,  -- 0 for location metrics, >0 for user metrics
 
-  /* ──────────── bucket start date ───── */
-  day       DATE            NOT NULL,                                         -- calendar date
-  iso_week  TINYINT  UNSIGNED NOT NULL,                                       -- 1-53 or 0
-  month     TINYINT  UNSIGNED NOT NULL,                                       -- 1-12 or 0
-  year      SMALLINT UNSIGNED NOT NULL,                                       -- 4-digit, ISO for weekly rows
+    /* ──────────── Time Bucket ──────────── */
+    bucket_date   DATE NOT NULL,                  -- Bucket start date
+    year          SMALLINT UNSIGNED NOT NULL,     -- ISO year for weekly, calendar year otherwise
+    month         TINYINT UNSIGNED NOT NULL,      -- 0 for yearly/all-time, 1-12 otherwise
+    week          TINYINT UNSIGNED NOT NULL,      -- 0 for non-weekly, 1-53 for weekly
 
-  /* ──────────── measures ────────────── */
-  uploads  INT UNSIGNED NOT NULL DEFAULT 0,
-  tags     INT UNSIGNED NOT NULL DEFAULT 0,
-  brands   INT UNSIGNED NOT NULL DEFAULT 0,
+    /* ──────────── Metrics (signed for negative deltas) ──────────── */
+    uploads       BIGINT NOT NULL DEFAULT 0,      -- Photo count delta
+    tags          BIGINT NOT NULL DEFAULT 0,      -- Total tags (objects + materials + brands)
+    litter        BIGINT NOT NULL DEFAULT 0,      -- Total litter items (objects only)
+    brands        BIGINT NOT NULL DEFAULT 0,      -- Brand tag count
+    materials     BIGINT NOT NULL DEFAULT 0,      -- Material tag count
+    custom_tags   BIGINT NOT NULL DEFAULT 0,      -- Custom tag count
+    xp            BIGINT NOT NULL DEFAULT 0,      -- Experience points
 
-  created_at TIMESTAMP NULL,
-  updated_at TIMESTAMP NULL,
+    /* ──────────── Metadata ──────────── */
+    created_at    TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  /* ──────────── primary / secondary keys ─────────── */
-  PRIMARY KEY (timescale, location_type, location_id, year, month, iso_week, day),
-  KEY idx_daily_loc_day (timescale, location_type, location_id, day),
+    /* ──────────── Keys ──────────── */
+    PRIMARY KEY (timescale, location_type, location_id, user_id, year, month, week, bucket_date),
 
-  /* ──────────── data-quality guards ──────────────── */
+    -- User timeline queries (when user_id > 0)
+    INDEX idx_user_timeline (user_id, timescale, bucket_date),
 
-  -- 0. timescale must be one of the four enumerated values
-  CONSTRAINT chk_timescale_range CHECK (timescale IN (1,2,3,4)),
+    -- Date range scans across locations
+    INDEX idx_date_range (timescale, bucket_date, location_type),
 
-  -- 1. ISO-week number only matters for daily + weekly buckets
-  CONSTRAINT chk_iso_week CHECK (
-        (timescale IN (1,2) AND WEEK(day,3) = iso_week)
-     OR (timescale IN (3,4) AND iso_week = 0)
-  ),
+    /* ──────────── Constraints ──────────── */
+    CONSTRAINT chk_timescale CHECK (timescale BETWEEN 0 AND 4),
+    CONSTRAINT chk_location_type CHECK (location_type BETWEEN 0 AND 3),
+    -- Enforce user rows must be global scope
+    CONSTRAINT chk_user_location CHECK (user_id = 0 OR (location_type = 0 AND location_id = 0))
 
-  -- 2. Month column is zero for yearly buckets, exact otherwise
-  CONSTRAINT chk_month CHECK (
-        (timescale IN (1,2,3) AND MONTH(day) = month)
-     OR (timescale = 4       AND month = 0)
-  ),
-
-  -- 3. Year column:
-  --      • exact calendar year for daily / monthly / yearly
-  --      • ISO-week year can differ by ±1 for weekly buckets
-  CONSTRAINT chk_year CHECK (
-        (timescale = 2  AND ABS(year - YEAR(day)) <= 1)
-     OR (timescale <> 2 AND YEAR(day) = year)
-  )
-) ENGINE = InnoDB
-  /* ──────────── partition so each scale lives on its own leaf ─────────── */
-PARTITION BY LIST COLUMNS (timescale) (
-  PARTITION p_daily   VALUES IN (1),
-  PARTITION p_weekly  VALUES IN (2),
-  PARTITION p_monthly VALUES IN (3),
-  PARTITION p_yearly  VALUES IN (4)
-);
+) ENGINE=InnoDB;
 SQL);
     }
 
     public function down(): void
     {
-        DB::statement('DROP TABLE IF EXISTS photo_metrics');
+        DB::statement('DROP TABLE IF EXISTS metrics');
     }
 };

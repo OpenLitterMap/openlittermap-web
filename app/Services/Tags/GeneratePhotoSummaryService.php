@@ -2,48 +2,16 @@
 
 namespace App\Services\Tags;
 
-use App\Enums\XpScore;
 use App\Models\Photo;
 
 /**
- * Builds a JSON summary of this photo's tags + aggregates,
- * grouped first by category key, then by object key (with extra-tags nested),
- * plus flat totals for tags, objects, materials, brands, and custom tags.
- * Also updates the photo's XP and total tags/brands.
- *
- * Final summary format:
- * [
- *   'tags' => [
- *     '<categoryKey>' => [
- *       '<objectKey>' => [
- *         'quantity'    => (int),
- *         'materials'   => [ '<materialKey>' => (int), ... ],
- *         'brands'      => [ '<brandKey>'    => (int), ... ],
- *         'custom_tags' => [ '<customKey>'   => (int), ... ],
- *       ],
- *       ... // more objects per category
- *     ],
- *     ... // more categories
- *   ],
- *   'totals' => [
- *     'total_tags'    => (int),
- *     'total_objects' => (int),
- *     'by_category'   => [ '<categoryKey>' => (int), ... ],
- *     'materials'     => (int),
- *     'brands'        => (int),
- *     'custom_tags'   => (int),
- *   ],
- * ]
- *
- * Categories and objects are ordered descending by their quantities.
- *
- * @return $this
+ * Generates a structured summary of photo tags with both IDs and keys
+ * Now with corrected XP calculation using proper enum values
  */
 class GeneratePhotoSummaryService
 {
     public function run(Photo $photo): Photo
     {
-        // Eager‑load all tags and relations
         $tags = $photo->photoTags()
             ->with(['category', 'object', 'extraTags.extraTag'])
             ->get();
@@ -56,112 +24,175 @@ class GeneratePhotoSummaryService
         $materialCount = 0;
         $brandCount = 0;
         $customTagCount = 0;
-        $pickedUpCount = 0;
-        $xp = XpScore::Upload->xp();
+
+        // Track all keys for reference
+        $keyMap = [
+            'categories' => [],
+            'objects' => [],
+            'materials' => [],
+            'brands' => [],
+            'custom_tags' => [],
+        ];
+
+        // Build tag structure for XP calculation
+        // Now we'll track object keys separately for special XP calculation
+        $xpTags = [
+            'objects' => [],
+            'materials' => [],
+            'brands' => [],
+            'custom_tags' => [], // Include custom tags for XP
+        ];
+
+        $objectIdToKey = []; // Map object IDs to keys for XP calculation
 
         foreach ($tags as $pt) {
-            $categoryKey = $pt->category?->key ?? 'custom';
-            $objectKey = $pt->object?->key ?? 'unknown';
+            // Use IDs as primary keys, fallback to 0 for uncategorized
+            $categoryId = $pt->category_id ?: 0;
+            $objectId = $pt->litter_object_id ?: 0;
             $qty = $pt->quantity;
 
-            // Flat totals
+            // Store keys for reference
+            if ($categoryId > 0 && $pt->category) {
+                $keyMap['categories'][$categoryId] = $pt->category->key;
+            }
+            if ($objectId > 0 && $pt->object) {
+                $keyMap['objects'][$objectId] = $pt->object->key;
+                $objectIdToKey[$objectId] = $pt->object->key; // Track for XP calculation
+            }
+
+            // Count totals
             $totalTags += $qty;
-            if ($pt->litter_object_id) {
+            if ($objectId > 0) {
                 $totalObjects += $qty;
+                $xpTags['objects'][$objectId] = ($xpTags['objects'][$objectId] ?? 0) + $qty;
             }
 
-            // Grouping init
-            $grouped[$categoryKey][$objectKey]['quantity'] =
-                ($grouped[$categoryKey][$objectKey]['quantity'] ?? 0) + $qty;
-            foreach (['materials', 'brands', 'custom_tags'] as $typeBucket) {
-                $grouped[$categoryKey][$objectKey][$typeBucket] ??= [];
+            // Initialize structure
+            if (!isset($grouped[$categoryId])) {
+                $grouped[$categoryId] = [];
             }
-            $categoryTotals[$categoryKey] =
-                ($categoryTotals[$categoryKey] ?? 0) + $qty;
+            if (!isset($grouped[$categoryId][$objectId])) {
+                $grouped[$categoryId][$objectId] = [
+                    'quantity' => 0,
+                    'materials' => [],
+                    'brands' => [],
+                    'custom_tags' => [],
+                ];
+            }
 
-            // XP for object tags
-            $xp += $qty * XpScore::getObjectXp($objectKey);
+            // Accumulate quantities
+            $grouped[$categoryId][$objectId]['quantity'] += $qty;
+            $categoryTotals[$categoryId] = ($categoryTotals[$categoryId] ?? 0) + $qty;
 
-            // Handle extra tags
+            // Process extra tags
             foreach ($pt->extraTags as $extra) {
+                $extraId = $extra->extra_tag_id;
                 $extraQty = $extra->quantity;
                 $totalTags += $extraQty;
-                $categoryTotals[$categoryKey] += $extraQty;
+                $categoryTotals[$categoryId] += $extraQty;
 
-                // Increment type-specific counters and buckets
+                // Store key if available
+                if ($extraId && $extra->extraTag) {
+                    $tagType = $extra->tag_type;
+                    $mapKey = match($tagType) {
+                        'material' => 'materials',
+                        'brand' => 'brands',
+                        'custom_tag' => 'custom_tags',
+                        default => null,
+                    };
+
+                    if ($mapKey) {
+                        $keyMap[$mapKey][$extraId] = $extra->extraTag->key;
+                    }
+                }
+
+                // Accumulate by type
                 switch ($extra->tag_type) {
                     case 'material':
                         $materialCount += $extraQty;
-                        $bucket = 'materials';
+                        $grouped[$categoryId][$objectId]['materials'][$extraId] =
+                            ($grouped[$categoryId][$objectId]['materials'][$extraId] ?? 0) + $extraQty;
+                        $xpTags['materials'][$extraId] = ($xpTags['materials'][$extraId] ?? 0) + $extraQty;
                         break;
+
                     case 'brand':
                         $brandCount += $extraQty;
-                        $bucket = 'brands';
+                        $grouped[$categoryId][$objectId]['brands'][$extraId] =
+                            ($grouped[$categoryId][$objectId]['brands'][$extraId] ?? 0) + $extraQty;
+                        $xpTags['brands'][$extraId] = ($xpTags['brands'][$extraId] ?? 0) + $extraQty;
                         break;
-                    case 'picked_up':
-                        $pickedUpCount += $extraQty;
-                        $bucket = 'picked_up';
-                        break;
+
                     case 'custom_tag':
-                    default:
                         $customTagCount += $extraQty;
-                        $bucket = 'custom_tags';
+                        $grouped[$categoryId][$objectId]['custom_tags'][$extraId] =
+                            ($grouped[$categoryId][$objectId]['custom_tags'][$extraId] ?? 0) + $extraQty;
+                        $xpTags['custom_tags'][$extraId] = ($xpTags['custom_tags'][$extraId] ?? 0) + $extraQty;
                         break;
                 }
-
-                $tagKey = $extra->extraTag?->key;
-                $grouped[$categoryKey][$objectKey][$bucket][$tagKey] =
-                    ($grouped[$categoryKey][$objectKey][$bucket][$tagKey] ?? 0) + $extraQty;
-
-                // XP for each extra tag
-                $xp += $extraQty * XpScore::getTagXp($extra->tag_type);
             }
         }
 
-        // Sort categories and objects by quantity desc
-        foreach ($grouped as &$objects) {
-            uasort($objects, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
+        // Handle custom tags that are primary (not extra tags)
+        foreach ($tags as $pt) {
+            if ($pt->custom_tag_primary_id) {
+                $customId = $pt->custom_tag_primary_id;
+                $qty = $pt->quantity;
+
+                $customTagCount += $qty;
+                $totalTags += $qty;
+
+                // Add to XP calculation
+                $xpTags['custom_tags'][$customId] = ($xpTags['custom_tags'][$customId] ?? 0) + $qty;
+
+                // Track the key if we have the relation loaded
+                if ($pt->primaryCustomTag) {
+                    $keyMap['custom_tags'][$customId] = $pt->primaryCustomTag->key;
+                }
+            }
         }
-        unset($objects);
-        uksort($grouped, fn($a, $b) =>
-            ($categoryTotals[$b] ?? 0) <=> ($categoryTotals[$a] ?? 0)
-        );
+
+        // Sort categories and objects by quantity (descending)
+        arsort($categoryTotals);
+        $sortedGrouped = [];
+        foreach ($categoryTotals as $catId => $catTotal) {
+            if (!isset($grouped[$catId])) continue;
+
+            // Sort objects within category
+            $objects = $grouped[$catId];
+            uasort($objects, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
+            $sortedGrouped[$catId] = $objects;
+        }
 
         // Assemble totals
         $totals = [
-            'total_tags'    => $totalTags,
+            'total_tags' => $totalTags,
             'total_objects' => $totalObjects,
-            'by_category'   => $categoryTotals,
-            'materials'     => $materialCount,
-            'brands'        => $brandCount,
-            'custom_tags'   => $customTagCount,
+            'by_category' => $categoryTotals,
+            'materials' => $materialCount,
+            'brands' => $brandCount,
+            'custom_tags' => $customTagCount,
         ];
 
-        // Default summary structure
-        $defaultSummary = [
-            'tags'   => new \stdClass(),
-            'totals' => [
-                'total_tags'    => 0,
-                'total_objects' => 0,
-                'by_category'   => new \stdClass(),
-                'materials'     => 0,
-                'brands'        => 0,
-                'custom_tags'   => 0,
-            ],
+        // Build final summary
+        $summary = [
+            'tags' => $sortedGrouped,
+            'totals' => $totals,
+            'keys' => $keyMap,
         ];
 
-        // Merge computed into defaults
-        $summary = array_replace_recursive(
-            $defaultSummary,
-            ['tags' => $grouped, 'totals' => $totals]
-        );
+        // Calculate XP using fixed calculator with object key mapping
+        $xp = XpCalculator::calculateFromTags($xpTags, $objectIdToKey);
 
-        // echo "Summary: " . json_encode($summary, JSON_PRETTY_PRINT) . "\n";
+        // Add picked_up bonus if applicable
+        if (!$photo->remaining) {
+            $xp += \App\Enums\XpScore::PickedUp->xp(); // +5 XP for picked up
+        }
+
         // Persist summary and XP
         $photo->update([
-            'summary'      => $summary,
-            'xp'           => $xp,
-            'total_tags'   => $totalTags,
+            'summary' => $summary,
+            'xp' => $xp,
+            'total_tags' => $totalTags,
             'total_brands' => $brandCount,
         ]);
 

@@ -4,141 +4,151 @@ declare(strict_types=1);
 
 namespace App\Services\Metrics;
 
-use App\Enums\Timescale;
+use App\Enums\LocationType;
 use App\Models\Photo;
 use App\Services\Redis\RedisKeys;
+use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Support\Facades\{DB, Log, Redis};
 
 /**
  * Metrics system for OpenLitterMap v5
  *
- * Invariants:
- * - MySQL photo_metrics is the source of truth for all time-series
+ * - MySQL metrics table is the source of truth for all time-series
  * - Redis contains derived aggregates & rankings (rebuildable)
  * - Operations are idempotent via fingerprinting
  * - Deltas: create +1 upload, update 0 uploads, delete -1 upload
  * - Tags count = objects + materials + brands (not categories to avoid double-counting)
+ * - XP is reversible on updates/deletes
  * - All timestamps in UTC, ISO weeks use ISO year
+ * - Row locking prevents concurrent processing
  */
 final class MetricsService
 {
-    // Location type mapping for database storage
-    private const LOCATION_TYPES = [
-        'global' => 0,
-        'country' => 1,
-        'state' => 2,
-        'city' => 3,
-    ];
-
-    // Maximum items per ranking
-    private const RANKING_LIMITS = [
-        'objects' => 5000,
-        'categories' => 200,
-        'materials' => 500,
-        'brands' => 2000,
-        'contributors' => 10000,
-    ];
-
     /**
-     * Process a photo - handles create, update, or skip
+     * Process a photo with row locking to prevent concurrency issues
      */
     public function processPhoto(Photo $photo): void
     {
-        $metrics = $this->extractMetricsFromPhoto($photo);
-        $fingerprint = $this->computeFingerprint($metrics['tags']);
+        DB::transaction(function () use ($photo) {
+            // Lock the row to prevent concurrent processing
+            $photo = Photo::whereKey($photo->id)->lockForUpdate()->first();
 
-        // Skip if unchanged
-        if ($photo->processed_fp === $fingerprint) {
-            return;
-        }
+            if (!$photo) {
+                return;
+            }
 
-        // Route to appropriate handler
-        if ($photo->processed_at !== null) {
-            $this->updateExistingPhoto($photo, $metrics, $fingerprint);
-        } else {
-            $this->createNewPhoto($photo, $metrics, $fingerprint);
-        }
+            $metrics = $this->extractMetricsFromPhoto($photo);
+            $fingerprint = $this->computeFingerprint($metrics['tags']);
+
+            // FIX #1: Check both fingerprint AND XP to detect changes
+            if ($photo->processed_fp === $fingerprint &&
+                (int)$photo->processed_xp === (int)$metrics['xp']) {
+                return; // Nothing changed
+            }
+
+            // Route to appropriate handler within the transaction
+            if ($photo->processed_at !== null) {
+                $this->doUpdate($photo, $metrics, $fingerprint);
+            } else {
+                $this->doCreate($photo, $metrics, $fingerprint);
+            }
+        });
     }
 
     /**
-     * Delete a photo's metrics
+     * Delete a photo's metrics (reversing XP as well)
      */
     public function deletePhoto(Photo $photo): void
     {
-        if ($photo->processed_at === null) {
-            return;
-        }
+        DB::transaction(function () use ($photo) {
+            // Lock the row
+            $photo = Photo::whereKey($photo->id)->lockForUpdate()->first();
 
-        $oldTags = json_decode($photo->processed_tags ?? '{}', true);
+            if (!$photo || $photo->processed_at === null) {
+                return;
+            }
 
-        // Calculate negative metrics from stored tags
-        $negativeMetrics = [
-            'tags_count' => -(
-                array_sum($oldTags['objects'] ?? []) +
-                array_sum($oldTags['materials'] ?? []) +
-                array_sum($oldTags['brands'] ?? [])
-            ),
-            'brands_count' => -array_sum($oldTags['brands'] ?? []),
-            'litter' => -array_sum($oldTags['objects'] ?? []),
-        ];
+            $oldTags = json_decode($photo->processed_tags ?? '{}', true);
+            $oldXp = (int)($photo->processed_xp ?? 0);
 
-        DB::transaction(function() use ($photo, $negativeMetrics, $oldTags) {
+            // Calculate negative metrics from stored values
+            $negativeMetrics = [
+                'tags_count' => -(
+                    array_sum($oldTags['objects'] ?? []) +
+                    array_sum($oldTags['materials'] ?? []) +
+                    array_sum($oldTags['brands'] ?? [])
+                ),
+                'brands_count' => -array_sum($oldTags['brands'] ?? []),
+                'materials_count' => -array_sum($oldTags['materials'] ?? []),
+                'custom_tags_count' => -array_sum($oldTags['custom_tags'] ?? []),
+                'litter' => -array_sum($oldTags['objects'] ?? []),
+                'xp' => -$oldXp,
+            ];
+
             // Apply negative deltas with -1 upload
             $rows = $this->buildTimeSeriesRows($photo, $negativeMetrics, -1);
-            $this->upsertTimeSeriesRows($rows);
+            $this->upsertTimeSeriesRows($rows); // GREATEST prevents going negative
 
             // Clear processing data
             $photo->update([
                 'processed_at' => null,
                 'processed_fp' => null,
                 'processed_tags' => null,
+                'processed_xp' => null,
             ]);
-        });
 
-        // Update Redis with negative values
-        $this->updateRedisMetrics($photo, [
-            'tags' => $oldTags,
-            'litter' => -array_sum($oldTags['objects'] ?? []),
-        ], 'delete');
+            // FIX #3: Use unified Redis update (pass positive values, collector will negate)
+            $this->updateRedis($photo, [
+                'tags' => $oldTags,
+                'litter' => array_sum($oldTags['objects'] ?? []),
+                'xp' => $oldXp,
+            ], 'delete');
+        });
     }
 
     /**
-     * Process a new photo
+     * Create new photo within transaction
      */
-    private function createNewPhoto(Photo $photo, array $metrics, string $fingerprint): void
+    private function doCreate(Photo $photo, array $metrics, string $fingerprint): void
     {
-        DB::transaction(function() use ($photo, $metrics, $fingerprint) {
-            // Use upsert for idempotency (handles retries)
-            $rows = $this->buildTimeSeriesRows($photo, $metrics, 1);
-            $this->upsertTimeSeriesRows($rows);
+        // Use upsert for idempotency (handles retries)
+        $rows = $this->buildTimeSeriesRows($photo, $metrics, 1);
+        $this->upsertTimeSeriesRows($rows);
 
-            // Mark as processed
-            $photo->update([
-                'processed_at' => now('UTC'),
-                'processed_fp' => $fingerprint,
-                'processed_tags' => json_encode($metrics['tags'], JSON_NUMERIC_CHECK),
-            ]);
-        });
+        // Mark as processed
+        $photo->update([
+            'processed_at' => now('UTC'),
+            'processed_fp' => $fingerprint,
+            'processed_tags' => json_encode($metrics['tags'], JSON_NUMERIC_CHECK),
+            'processed_xp' => $metrics['xp'],
+        ]);
 
-        // Update Redis after commit
-        $this->updateRedisMetrics($photo, $metrics, 'create');
+        $this->updateRedis($photo, $metrics, 'create');
     }
 
     /**
-     * Update an existing photo
+     * Update existing photo within transaction
      */
-    private function updateExistingPhoto(Photo $photo, array $newMetrics, string $newFingerprint): void
+    private function doUpdate(Photo $photo, array $newMetrics, string $newFingerprint): void
     {
         $oldTags = json_decode($photo->processed_tags ?? '{}', true);
-        $tagDeltas = $this->calculateTagDeltas($oldTags, $newMetrics['tags']);
+        $oldXp = (int)($photo->processed_xp ?? 0);
 
-        // No actual changes
-        if ($this->isDeltaEmpty($tagDeltas)) {
-            $photo->update(['processed_fp' => $newFingerprint]);
+        // Calculate deltas
+        $tagDeltas = $this->calculateTagDeltas($oldTags, $newMetrics['tags']);
+        $xpDelta = $newMetrics['xp'] - $oldXp;
+
+        // Check if anything actually changed
+        if ($this->isDeltaEmpty($tagDeltas) && $xpDelta === 0) {
+            // Still update fingerprint and XP tracking even if no deltas
+            $photo->update([
+                'processed_fp' => $newFingerprint,
+                'processed_xp' => $newMetrics['xp'],
+            ]);
             return;
         }
 
-        // Calculate metric deltas (not double-counting categories)
+        // Build delta metrics
         $deltaMetrics = [
             'tags_count' => (
                 array_sum($tagDeltas['objects'] ?? []) +
@@ -146,26 +156,35 @@ final class MetricsService
                 array_sum($tagDeltas['brands'] ?? [])
             ),
             'brands_count' => array_sum($tagDeltas['brands'] ?? []),
+            'materials_count' => array_sum($tagDeltas['materials'] ?? []),
+            'custom_tags_count' => array_sum($tagDeltas['custom_tags'] ?? []),
             'litter' => array_sum($tagDeltas['objects'] ?? []),
+            'xp' => $xpDelta,
         ];
 
-        DB::transaction(function() use ($photo, $newMetrics, $newFingerprint, $deltaMetrics) {
-            // Apply deltas (0 uploads for updates)
-            $rows = $this->buildTimeSeriesRows($photo, $deltaMetrics, 0);
-            $this->upsertTimeSeriesRows($rows);
+        // Apply deltas (0 uploads for updates)
+        $rows = $this->buildTimeSeriesRows($photo, $deltaMetrics, 0);
+        $this->upsertTimeSeriesRows($rows);
 
-            // Update photo record
-            $photo->update([
-                'processed_fp' => $newFingerprint,
-                'processed_tags' => json_encode($newMetrics['tags'], JSON_NUMERIC_CHECK),
-            ]);
-        });
+        // Update photo record
+        $photo->update([
+            'processed_fp' => $newFingerprint,
+            'processed_tags' => json_encode($newMetrics['tags'], JSON_NUMERIC_CHECK),
+            'processed_xp' => $newMetrics['xp'],
+        ]);
 
-        // Update Redis with deltas
-        $this->updateRedisMetrics($photo, [
+        $this->updateRedis($photo, [
             'tags' => $tagDeltas,
             'litter' => $deltaMetrics['litter'],
+            'xp' => $xpDelta,
         ], 'update');
+    }
+
+    private function updateRedis(Photo $photo, array $payload, string $operation): void
+    {
+        DB::afterCommit(function() use ($photo, $payload, $operation) {
+            RedisMetricsCollector::processPhoto($photo, $payload, $operation);
+        });
     }
 
     /**
@@ -174,9 +193,11 @@ final class MetricsService
     private function extractMetricsFromPhoto(Photo $photo): array
     {
         $summary = $photo->summary ?? [];
-        $tags = ['categories' => [], 'objects' => [], 'materials' => [], 'brands' => []];
+        $tags = ['categories' => [], 'objects' => [], 'materials' => [], 'brands' => [], 'custom_tags' => []];
         $totalLitter = 0;
         $totalBrands = 0;
+        $totalMaterials = 0;
+        $totalCustom = 0;
 
         foreach ($summary['tags'] ?? [] as $categoryKey => $objects) {
             if (!is_array($objects)) continue;
@@ -197,19 +218,29 @@ final class MetricsService
                 // Materials
                 foreach ($data['materials'] ?? [] as $key => $count) {
                     $id = is_numeric($key) ? (int)$key : $key;
-                    $tags['materials'][$id] = ($tags['materials'][$id] ?? 0) + (int)$count;
+                    $qty = (int)$count;
+                    $tags['materials'][$id] = ($tags['materials'][$id] ?? 0) + $qty;
+                    $totalMaterials += $qty;
                 }
 
                 // Brands
                 foreach ($data['brands'] ?? [] as $key => $count) {
                     $id = is_numeric($key) ? (int)$key : $key;
-                    $brandCount = (int)$count;
-                    $tags['brands'][$id] = ($tags['brands'][$id] ?? 0) + $brandCount;
-                    $totalBrands += $brandCount;
+                    $qty = (int)$count;
+                    $tags['brands'][$id] = ($tags['brands'][$id] ?? 0) + $qty;
+                    $totalBrands += $qty;
+                }
+
+                // Custom tags
+                foreach ($data['custom_tags'] ?? [] as $key => $count) {
+                    $id = is_numeric($key) ? (int)$key : $key;
+                    $qty = (int)$count;
+                    $tags['custom_tags'][$id] = ($tags['custom_tags'][$id] ?? 0) + $qty;
+                    $totalCustom += $qty;
                 }
             }
 
-            // Category totals
+            // Category totals (not included in tags_count to avoid double-counting)
             if ($categoryTotal > 0) {
                 $categoryId = is_numeric($categoryKey) ? (int)$categoryKey : $categoryKey;
                 $tags['categories'][$categoryId] = $categoryTotal;
@@ -225,9 +256,149 @@ final class MetricsService
             'tags' => $tags,
             'tags_count' => $tagsCount,
             'brands_count' => $totalBrands,
+            'materials_count' => $totalMaterials,
+            'custom_tags_count' => $totalCustom,
             'litter' => $totalLitter,
             'xp' => (int)($photo->xp ?? 0),
         ];
+    }
+
+    /**
+     * Build time-series rows for all timescales and locations
+     */
+    private function buildTimeSeriesRows(Photo $photo, array $metrics, int $uploadsDelta): array
+    {
+        $timestamp = $photo->created_at->copy()->utc();
+        $locations = $this->getLocationHierarchy($photo);
+        $rows = [];
+
+        foreach ($locations as [$locationType, $locationId]) {
+            // All timescales: 0=all-time, 1=daily, 2=weekly, 3=monthly, 4=yearly
+            foreach ([0, 1, 2, 3, 4] as $timescale) {
+                $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta);
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Build a single time-series row
+     */
+    private function buildSingleRow(
+        int $timescale,
+        LocationType $locationType,
+        int $locationId,
+        $timestamp,
+        array $metrics,
+        int $uploadsDelta
+    ): array {
+        $base = [
+            'timescale' => $timescale,
+            'location_type' => $locationType->value,
+            'location_id' => $locationId,
+            'user_id' => 0,
+            'uploads' => $uploadsDelta,
+            'tags' => $metrics['tags_count'] ?? 0,
+            'brands' => $metrics['brands_count'] ?? 0,
+            'materials' => $metrics['materials_count'] ?? 0,
+            'custom_tags' => $metrics['custom_tags_count'] ?? 0,
+            'litter' => $metrics['litter'] ?? 0,
+            'xp' => $metrics['xp'] ?? 0,
+            'created_at' => now('UTC'),
+            'updated_at' => now('UTC'),
+        ];
+
+        switch ($timescale) {
+            case 0: // All-time
+                return $base + [
+                        'year' => 0,
+                        'month' => 0,
+                        'week' => 0,
+                        'bucket_date' => '1970-01-01',
+                    ];
+
+            case 1: // Daily
+                return $base + [
+                        'year' => $timestamp->year,
+                        'month' => $timestamp->month,
+                        'week' => (int)$timestamp->format('W'),
+                        'bucket_date' => $timestamp->toDateString(),
+                    ];
+
+            case 2: // Weekly (ISO)
+                $weekStart = $timestamp->copy()->startOfWeek();
+                return $base + [
+                        'year' => (int)$timestamp->format('o'), // ISO year
+                        'month' => $weekStart->month,
+                        'week' => (int)$timestamp->format('W'),
+                        'bucket_date' => $weekStart->toDateString(),
+                    ];
+
+            case 3: // Monthly
+                return $base + [
+                        'year' => $timestamp->year,
+                        'month' => $timestamp->month,
+                        'week' => 0,
+                        'bucket_date' => $timestamp->copy()->startOfMonth()->toDateString(),
+                    ];
+
+            case 4: // Yearly
+                return $base + [
+                        'year' => $timestamp->year,
+                        'month' => 0,
+                        'week' => 0,
+                        'bucket_date' => $timestamp->copy()->startOfYear()->toDateString(),
+                    ];
+
+            default:
+                throw new \InvalidArgumentException("Invalid timescale: $timescale");
+        }
+    }
+
+    /**
+     * Upsert time-series rows with additive updates
+     */
+    private function upsertTimeSeriesRows(array $rows): void
+    {
+        if (empty($rows)) {
+            return;
+        }
+
+        DB::table('metrics')->upsert(
+            $rows,
+            ['timescale', 'location_type', 'location_id', 'user_id', 'year', 'month', 'week', 'bucket_date'],
+            [
+                'uploads' => DB::raw('GREATEST(uploads + VALUES(uploads), 0)'),
+                'tags' => DB::raw('GREATEST(tags + VALUES(tags), 0)'),
+                'brands' => DB::raw('GREATEST(brands + VALUES(brands), 0)'),
+                'materials' => DB::raw('GREATEST(materials + VALUES(materials), 0)'),
+                'custom_tags' => DB::raw('GREATEST(custom_tags + VALUES(custom_tags), 0)'),
+                'litter' => DB::raw('GREATEST(litter + VALUES(litter), 0)'),
+                'xp' => DB::raw('GREATEST(xp + VALUES(xp), 0)'),
+                'updated_at' => DB::raw('VALUES(updated_at)'),
+            ]
+        );
+    }
+
+    /**
+     * Get location hierarchy for a photo
+     */
+    private function getLocationHierarchy(Photo $photo): array
+    {
+        $locations = [[LocationType::Global, 0]];
+
+        if ($photo->country_id) {
+            $locations[] = [LocationType::Country, $photo->country_id];
+        }
+        if ($photo->state_id) {
+            $locations[] = [LocationType::State, $photo->state_id];
+        }
+        if ($photo->city_id) {
+            $locations[] = [LocationType::City, $photo->city_id];
+        }
+
+        return $locations;
     }
 
     /**
@@ -252,7 +423,7 @@ final class MetricsService
     {
         $deltas = [];
 
-        foreach (['categories', 'objects', 'materials', 'brands'] as $dimension) {
+        foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags'] as $dimension) {
             $old = $oldTags[$dimension] ?? [];
             $new = $newTags[$dimension] ?? [];
             $allKeys = array_unique(array_merge(array_keys($old), array_keys($new)));
@@ -282,293 +453,22 @@ final class MetricsService
     }
 
     /**
-     * Build time-series rows for all timescales and locations
+     * Get Redis scopes using LocationType enum
      */
-    private function buildTimeSeriesRows(Photo $photo, array $metrics, int $uploadsDelta): array
+    private function getRedisScopes(Photo $photo): array
     {
-        $timestamp = $photo->created_at->copy()->utc();
-        $locations = $this->getLocationHierarchy($photo);
-        $rows = [];
-
-        foreach ($locations as [$type, $id]) {
-            // All-time (timescale 0)
-            $rows[] = $this->buildSingleRow(0, $type, $id, $timestamp, $metrics, $uploadsDelta);
-
-            // Daily (timescale 1)
-            $rows[] = $this->buildSingleRow(1, $type, $id, $timestamp, $metrics, $uploadsDelta);
-
-            // Weekly (timescale 2)
-            $rows[] = $this->buildSingleRow(2, $type, $id, $timestamp, $metrics, $uploadsDelta);
-
-            // Monthly (timescale 3)
-            $rows[] = $this->buildSingleRow(3, $type, $id, $timestamp, $metrics, $uploadsDelta);
-
-            // Yearly (timescale 4)
-            $rows[] = $this->buildSingleRow(4, $type, $id, $timestamp, $metrics, $uploadsDelta);
-        }
-
-        return $rows;
-    }
-
-    /**
-     * Build a single time-series row
-     */
-    private function buildSingleRow(
-        int $timescale,
-        string $locationType,
-        int $locationId,
-        $timestamp,
-        array $metrics,
-        int $uploadsDelta
-    ): array {
-        $base = [
-            'timescale' => $timescale,
-            'location_type' => self::LOCATION_TYPES[$locationType],
-            'location_id' => $locationId,
-            'uploads' => $uploadsDelta,
-            'tags' => $metrics['tags_count'] ?? 0,
-            'brands' => $metrics['brands_count'] ?? 0,
-            'litter' => $metrics['litter'] ?? 0,
-            'created_at' => now('UTC'),
-            'updated_at' => now('UTC'),
-        ];
-
-        switch ($timescale) {
-            case 0: // All-time
-                return $base + [
-                        'year' => 0,
-                        'month' => 0,
-                        'iso_week' => 0,
-                        'day' => '1970-01-01',
-                    ];
-
-            case 1: // Daily
-                return $base + [
-                        'year' => $timestamp->year,
-                        'month' => $timestamp->month,
-                        'iso_week' => (int)$timestamp->format('W'),
-                        'day' => $timestamp->toDateString(),
-                    ];
-
-            case 2: // Weekly (ISO)
-                $weekStart = $timestamp->copy()->startOfWeek();
-                return $base + [
-                        'year' => (int)$timestamp->format('o'), // ISO year
-                        'month' => $weekStart->month,
-                        'iso_week' => (int)$timestamp->format('W'),
-                        'day' => $weekStart->toDateString(),
-                    ];
-
-            case 3: // Monthly
-                return $base + [
-                        'year' => $timestamp->year,
-                        'month' => $timestamp->month,
-                        'iso_week' => 0,
-                        'day' => $timestamp->copy()->startOfMonth()->toDateString(),
-                    ];
-
-            case 4: // Yearly
-                return $base + [
-                        'year' => $timestamp->year,
-                        'month' => 0,
-                        'iso_week' => 0,
-                        'day' => $timestamp->copy()->startOfYear()->toDateString(),
-                    ];
-
-            default:
-                throw new \InvalidArgumentException("Invalid timescale: $timescale");
-        }
-    }
-
-    /**
-     * Upsert time-series rows with additive updates
-     */
-    private function upsertTimeSeriesRows(array $rows): void
-    {
-        DB::table('photo_metrics')->upsert(
-            $rows,
-            ['timescale', 'location_type', 'location_id', 'year', 'month', 'iso_week', 'day'],
-            [
-                'uploads' => DB::raw('uploads + VALUES(uploads)'),
-                'tags' => DB::raw('tags + VALUES(tags)'),
-                'brands' => DB::raw('brands + VALUES(brands)'),
-                'litter' => DB::raw('litter + VALUES(litter)'),
-                'updated_at' => DB::raw('VALUES(updated_at)'),
-            ]
-        );
-    }
-
-    /**
-     * Get location hierarchy for a photo
-     */
-    private function getLocationHierarchy(Photo $photo): array
-    {
-        $locations = [['global', 0]];
+        $scopes = [LocationType::Global->scopePrefix()];
 
         if ($photo->country_id) {
-            $locations[] = ['country', $photo->country_id];
+            $scopes[] = LocationType::Country->scopePrefix($photo->country_id);
         }
         if ($photo->state_id) {
-            $locations[] = ['state', $photo->state_id];
+            $scopes[] = LocationType::State->scopePrefix($photo->state_id);
         }
         if ($photo->city_id) {
-            $locations[] = ['city', $photo->city_id];
+            $scopes[] = LocationType::City->scopePrefix($photo->city_id);
         }
 
-        return $locations;
-    }
-
-    /**
-     * Update Redis metrics
-     */
-    private function updateRedisMetrics(Photo $photo, array $metrics, string $operation): void
-    {
-        try {
-            $scopes = RedisKeys::getPhotoScopes($photo);
-            $userId = $photo->user_id;
-
-            Redis::pipeline(function($pipe) use ($scopes, $userId, $metrics, $operation, $photo) {
-                foreach ($scopes as $scope) {
-                    // Update stats based on operation
-                    if ($operation === 'create') {
-                        $pipe->hIncrBy(RedisKeys::stats($scope), 'photos', 1);
-                        $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', $metrics['litter']);
-
-                        // HyperLogLog for unique contributors (append-only)
-                        $pipe->pfAdd(RedisKeys::hll($scope), (string)$userId);
-
-                        // Contributor ranking (can be decremented)
-                        $pipe->zIncrBy(RedisKeys::contributorRanking($scope), 1, (string)$userId);
-
-                    } elseif ($operation === 'update') {
-                        // Update stats with litter delta
-                        $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', $metrics['litter']);
-
-                    } elseif ($operation === 'delete') {
-                        $pipe->hIncrBy(RedisKeys::stats($scope), 'photos', -1);
-                        $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', $metrics['litter']); // Already negative
-
-                        // Decrement contributor ranking (HLL cannot be decremented)
-                        $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, (string)$userId);
-                    }
-
-                    // Update tags and rankings
-                    foreach (['categories', 'objects', 'materials', 'brands'] as $dimension) {
-                        $items = $metrics['tags'][$dimension] ?? [];
-                        if (empty($items)) continue;
-
-                        $hashKey = $this->getRedisHashKey($scope, $dimension);
-                        $rankKey = RedisKeys::ranking($scope, $dimension);
-
-                        foreach ($items as $id => $delta) {
-                            // For delete, values are already positive in $metrics['tags']
-                            $value = $operation === 'delete' ? -$delta : $delta;
-
-                            $pipe->hIncrBy($hashKey, (string)$id, $value);
-                            $pipe->zIncrBy($rankKey, $value, (string)$id);
-                        }
-
-                        // Track ranking for trimming
-                        $pipe->sAdd('ranking:keys', $rankKey);
-                    }
-                }
-
-                // User-specific updates
-                if ($operation === 'create') {
-                    $userScope = RedisKeys::user($userId);
-                    $pipe->hIncrBy(RedisKeys::stats($userScope), 'uploads', 1);
-                    $pipe->hIncrBy(RedisKeys::stats($userScope), 'xp', $metrics['xp']);
-                    $pipe->hIncrBy(RedisKeys::stats($userScope), 'litter', $metrics['litter']);
-
-                    // Update streak bitmap
-                    $dayIndex = $this->calculateDayIndex($photo->created_at);
-                    $pipe->setBit(RedisKeys::userBitmap($userId), $dayIndex, 1);
-
-                } elseif ($operation === 'delete') {
-                    $userScope = RedisKeys::user($userId);
-                    $pipe->hIncrBy(RedisKeys::stats($userScope), 'uploads', -1);
-                    $pipe->hIncrBy(RedisKeys::stats($userScope), 'xp', -($metrics['xp'] ?? 0));
-                    $pipe->hIncrBy(RedisKeys::stats($userScope), 'litter', $metrics['litter']); // Already negative
-                }
-            });
-
-        } catch (\Exception $e) {
-            Log::error('Redis update failed', [
-                'photo_id' => $photo->id,
-                'operation' => $operation,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Get Redis hash key for dimension
-     */
-    private function getRedisHashKey(string $scope, string $dimension): string
-    {
-        return match($dimension) {
-            'categories' => RedisKeys::categories($scope),
-            'objects' => RedisKeys::objects($scope),
-            'materials' => RedisKeys::materials($scope),
-            'brands' => RedisKeys::brands($scope),
-            default => throw new \InvalidArgumentException("Unknown dimension: $dimension"),
-        };
-    }
-
-    /**
-     * Calculate day index for bitmap (consistent epoch)
-     */
-    private function calculateDayIndex($timestamp): int
-    {
-        $epoch = new \DateTime('2020-01-01', new \DateTimeZone('UTC'));
-        $current = new \DateTime($timestamp->format('Y-m-d'), new \DateTimeZone('UTC'));
-        return $epoch->diff($current)->days;
-    }
-
-    /**
-     * Trim rankings to configured limits
-     */
-    public function trimRankings(): array
-    {
-        $stats = ['trimmed' => 0, 'keys' => 0];
-        $keys = Redis::sMembers('ranking:keys');
-
-        foreach ($keys as $key) {
-            $limit = $this->getRankingLimit($key);
-            if ($limit === 0) continue;
-
-            $size = Redis::zCard($key);
-            if ($size <= $limit) continue;
-
-            // Calculate how many to remove
-            $toRemove = $size - $limit;
-            $removed = Redis::zRemRangeByRank($key, 0, $toRemove - 1);
-
-            if ($removed > 0) {
-                $stats['trimmed'] += $removed;
-                $stats['keys']++;
-
-                Log::info('Trimmed ranking', [
-                    'key' => $key,
-                    'removed' => $removed,
-                    'new_size' => $size - $removed,
-                ]);
-            }
-        }
-
-        return $stats;
-    }
-
-    /**
-     * Get ranking limit for a key
-     */
-    private function getRankingLimit(string $key): int
-    {
-        foreach (self::RANKING_LIMITS as $type => $limit) {
-            if (str_contains($key, ":$type")) {
-                return $limit;
-            }
-        }
-        return 1000; // Default limit
+        return $scopes;
     }
 }

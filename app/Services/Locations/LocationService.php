@@ -4,6 +4,7 @@ namespace App\Services\Locations;
 
 use App\Enums\LocationType;
 use App\Services\Achievements\Tags\TagKeyCache;
+use App\Services\Redis\RedisKeys;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -11,11 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 /**
- * Core performance optimizations:
- * - O(1) reads via denormalized totals
- * - ZSET-based pagination
- * - Pipeline operations
- * - Smart caching
+ * Location service updated for v5 metrics system
+ * Now uses correct Redis keys and can optionally read from metrics table
  */
 class LocationService
 {
@@ -25,10 +23,7 @@ class LocationService
     public function getLocations(LocationType $type, array $params = []): array
     {
         $page = max(1, (int) ($params['page'] ?? 1));
-        $perPage = min(
-            config('locations.pagination.max_per_page'),
-            (int) ($params['per_page'] ?? config('locations.pagination.default_per_page'))
-        );
+        $perPage = min(100, (int) ($params['per_page'] ?? 50));
         $sortBy = $params['sort_by'] ?? 'total_litter';
         $sortDir = in_array($params['sort_dir'] ?? 'desc', ['asc', 'desc']) ? $params['sort_dir'] : 'desc';
         $parentId = isset($params['parent_id']) ? (int) $params['parent_id'] : null;
@@ -56,7 +51,7 @@ class LocationService
         // Add basic metrics
         $this->enrichLocationWithMetrics($location, $type, $totals);
 
-        // Add optional detailed data (for v1.1)
+        // Add optional detailed data
         if (in_array('breakdowns', $includes)) {
             $location->category_breakdown = $this->getCategoryBreakdown($type, $id);
             $location->object_breakdown = $this->getObjectBreakdown($type, $id);
@@ -71,18 +66,29 @@ class LocationService
      */
     public function getGlobalStats(): array
     {
-        return Cache::remember('global:stats:v1', config('locations.cache.ttl_short'), function () {
-            $stats = $this->safeRedis(fn() => Redis::hgetall('{g}:stats'), []);
-            $totalLitter = (int) ($stats['litter'] ?? 0);
-            $totalPhotos = (int) ($stats['photos'] ?? 0);
+        return Cache::remember('global:stats:v5', 300, function () {
+            // Try metrics table first for accurate totals
+            $metricsData = DB::table('metrics')
+                ->where('timescale', 0) // All-time
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('user_id', 0)
+                ->first(['uploads', 'litter', 'xp']);
 
-            // Migration fallback
-            if ($totalLitter === 0) {
-                $totalLitter = $this->calculateTotalFromHash('{g}:t');
+            if ($metricsData) {
+                $totalLitter = (int) $metricsData->litter;
+                $totalPhotos = (int) $metricsData->uploads;
+                $totalXp = (int) $metricsData->xp;
+            } else {
+                // Fallback to Redis
+                $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats('{g}')), []);
+                $totalLitter = (int) ($stats['litter'] ?? 0);
+                $totalPhotos = (int) ($stats['photos'] ?? 0);
+                $totalXp = (int) ($stats['xp'] ?? 0);
             }
 
-            // Get contributors
-            $contributors = $this->safeRedis(fn() => Redis::scard('{g}:users'), 0);
+            // Get contributors from Redis HyperLogLog
+            $contributors = $this->safeRedis(fn() => Redis::pfcount(RedisKeys::hll('{g}')), 0);
             if ($contributors === 0) {
                 $contributors = DB::table('photos')
                     ->whereNotNull('processed_at')
@@ -98,7 +104,8 @@ class LocationService
 
             return [
                 'total_litter' => $totalLitter,
-                'total_photos' => $totalPhotos ?: $this->countTotalPhotosFromDB(),
+                'total_photos' => $totalPhotos,
+                'total_xp' => $totalXp,
                 'total_contributors' => $contributors,
                 'total_countries' => $countries,
                 'level' => $level['level'],
@@ -118,11 +125,11 @@ class LocationService
     public function getTopTags(LocationType $type, int $id, string $dimension = 'objects', int $limit = 20): array
     {
         $scope = $type->scopePrefix($id);
-        $cacheKey = "tags:{$type->value}:{$id}:{$dimension}:{$limit}:v1";
+        $cacheKey = "tags:{$type->value}:{$id}:{$dimension}:{$limit}:v5";
 
-        return Cache::remember($cacheKey, config('locations.cache.ttl_medium'), function () use ($scope, $dimension, $limit) {
+        return Cache::remember($cacheKey, 600, function () use ($scope, $dimension, $limit) {
             // Try ZSET first (fast path)
-            $rankKey = "$scope:rank:$dimension";
+            $rankKey = RedisKeys::ranking($scope, $dimension);
             $topItems = $this->safeRedis(
                 fn() => $this->zrangeWithScores($rankKey, 0, $limit - 1, true),
                 []
@@ -132,14 +139,8 @@ class LocationService
                 return $this->getTopTagsFromHash($scope, $dimension, $limit);
             }
 
-            // Get totals
-            $stats = $this->safeRedis(fn() => Redis::hgetall("$scope:stats"), []);
-            $totalLitter = (int) ($stats['litter'] ?? 0);
-
-            if ($totalLitter === 0) {
-                $totalLitter = $this->calculateTotalFromHash("$scope:t");
-            }
-
+            // Get totals from metrics table or Redis
+            $totalLitter = $this->getTotalLitterForScope($type, $id);
             $dimensionTotal = $this->calculateDimensionTotal($scope, $dimension);
             $denominator = ($dimension === 'objects') ? $totalLitter : $dimensionTotal;
 
@@ -152,15 +153,15 @@ class LocationService
             $sumOfTop = 0;
             $names = $this->resolveTagNames($dimension, array_keys($topItems));
 
-            foreach ($topItems as $id => $count) {
-                if (!isset($names[$id])) continue;
+            foreach ($topItems as $tagId => $count) {
+                if (!isset($names[$tagId])) continue;
 
                 $count = (int) $count;
                 $sumOfTop += $count;
 
                 $items[] = [
-                    'id' => (int) $id,
-                    'name' => $names[$id],
+                    'id' => (int) $tagId,
+                    'name' => $names[$tagId],
                     'count' => $count,
                     'percentage' => round(($count / $denominator) * 100, 2)
                 ];
@@ -228,11 +229,6 @@ class LocationService
      */
     private function getLocationsViaDatabase(LocationType $type, ?int $parentId, string $sortBy, int $page, int $perPage, string $sortDir): array
     {
-        // Validate sort column
-        if (!in_array($sortBy, config('locations.allowed_sort_columns'))) {
-            $sortBy = 'created_at';
-        }
-
         $model = $type->modelClass();
         $query = $model::with(['creator', 'lastUploader'])
             ->where('manual_verify', true);
@@ -240,6 +236,12 @@ class LocationService
         // Apply parent filter
         if ($parentId && $parentColumn = $type->parentColumn()) {
             $query->where($parentColumn, $parentId);
+        }
+
+        // Validate sort column
+        $allowedColumns = ['created_at', 'updated_at', 'country', 'state', 'city'];
+        if (!in_array($sortBy, $allowedColumns)) {
+            $sortBy = 'created_at';
         }
 
         $query->orderBy($sortBy, $sortDir);
@@ -266,10 +268,10 @@ class LocationService
     private function getCategoryBreakdown(LocationType $type, int $id): array
     {
         $scope = $type->scopePrefix($id);
-        $cacheKey = "breakdown:category:{$type->value}:{$id}:v1";
+        $cacheKey = "breakdown:category:{$type->value}:{$id}:v5";
 
-        return Cache::remember($cacheKey, config('locations.cache.ttl_long'), function () use ($scope) {
-            return $this->getDimensionBreakdown($scope, 'categories', 'c');
+        return Cache::remember($cacheKey, 3600, function () use ($scope) {
+            return $this->getDimensionBreakdown($scope, 'categories', 20);
         });
     }
 
@@ -279,10 +281,10 @@ class LocationService
     private function getObjectBreakdown(LocationType $type, int $id): array
     {
         $scope = $type->scopePrefix($id);
-        $cacheKey = "breakdown:object:{$type->value}:{$id}:v1";
+        $cacheKey = "breakdown:object:{$type->value}:{$id}:v5";
 
-        return Cache::remember($cacheKey, config('locations.cache.ttl_long'), function () use ($scope) {
-            return $this->getDimensionBreakdown($scope, 'objects', 't', 20);
+        return Cache::remember($cacheKey, 3600, function () use ($scope) {
+            return $this->getDimensionBreakdown($scope, 'objects', 20);
         });
     }
 
@@ -292,30 +294,40 @@ class LocationService
     private function getBrandBreakdown(LocationType $type, int $id): array
     {
         $scope = $type->scopePrefix($id);
-        $cacheKey = "breakdown:brand:{$type->value}:{$id}:v1";
+        $cacheKey = "breakdown:brand:{$type->value}:{$id}:v5";
 
-        return Cache::remember($cacheKey, config('locations.cache.ttl_long'), function () use ($scope) {
-            return $this->getDimensionBreakdown($scope, 'brands', 'brands', 10);
+        return Cache::remember($cacheKey, 3600, function () use ($scope) {
+            return $this->getDimensionBreakdown($scope, 'brands', 10);
         });
     }
 
     /**
      * Generic dimension breakdown
      */
-    private function getDimensionBreakdown(string $scope, string $dimension, string $hashSuffix, int $limit = 0): array
+    private function getDimensionBreakdown(string $scope, string $dimension, int $limit = 0): array
     {
-        $hashKey = "$scope:$hashSuffix";
+        // Get the correct Redis hash key for this dimension
+        $hashKey = match($dimension) {
+            'categories' => RedisKeys::categories($scope),
+            'objects' => RedisKeys::objects($scope),
+            'materials' => RedisKeys::materials($scope),
+            'brands' => RedisKeys::brands($scope),
+            'custom_tags' => RedisKeys::customTags($scope),
+            default => RedisKeys::objects($scope)
+        };
+
         $items = $this->safeRedis(fn() => Redis::hgetall($hashKey), []);
 
         if (empty($items)) {
             return [];
         }
 
-        $stats = $this->safeRedis(fn() => Redis::hgetall("$scope:stats"), []);
+        // Get total litter for percentages
+        $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats($scope)), []);
         $totalLitter = (int) ($stats['litter'] ?? 0);
 
         if ($totalLitter === 0) {
-            $totalLitter = $this->calculateTotalFromHash("$scope:t");
+            $totalLitter = $this->calculateTotalFromHash(RedisKeys::objects($scope));
         }
 
         arsort($items);
@@ -378,26 +390,41 @@ class LocationService
     }
 
     /**
-     * Enrich single location
+     * Enrich single location with metrics
      */
     private function enrichLocationWithMetrics($location, LocationType $type, array $totals): void
     {
         $scope = $type->scopePrefix($location->id);
 
-        $stats = $this->safeRedis(fn() => Redis::hgetall("$scope:stats"), []);
-        $location->total_photos = (int) ($stats['photos'] ?? 0);
-        $location->total_litter = (int) ($stats['litter'] ?? 0);
+        // Try metrics table first
+        $metricsData = DB::table('metrics')
+            ->where('timescale', 0) // All-time
+            ->where('location_type', $type->value)
+            ->where('location_id', $location->id)
+            ->where('user_id', 0)
+            ->first(['uploads', 'litter']);
 
-        if ($location->total_litter === 0) {
-            $location->total_litter = $this->calculateTotalFromHash("$scope:t");
+        if ($metricsData) {
+            $location->total_photos = (int) $metricsData->uploads;
+            $location->total_litter = (int) $metricsData->litter;
+        } else {
+            // Fallback to Redis
+            $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats($scope)), []);
+            $location->total_photos = (int) ($stats['photos'] ?? 0);
+            $location->total_litter = (int) ($stats['litter'] ?? 0);
+
+            if ($location->total_litter === 0) {
+                $location->total_litter = $this->calculateTotalFromHash(RedisKeys::objects($scope));
+            }
         }
 
-        $location->total_contributors = $this->safeRedis(fn() => Redis::scard("$scope:users"), 0);
+        // Get contributor count from Redis
+        $location->total_contributors = $this->safeRedis(
+            fn() => Redis::zCard(RedisKeys::contributorRanking($scope)),
+            0
+        );
 
-        if ($location->total_photos === 0) {
-            $location->total_photos = $this->countPhotosForLocation($type, $location->id);
-        }
-
+        // Calculate percentages
         $location->percentage_litter = $totals['litter'] > 0
             ? round(($location->total_litter / $totals['litter']) * 100, 2)
             : 0;
@@ -405,6 +432,7 @@ class LocationService
             ? round(($location->total_photos / $totals['photos']) * 100, 2)
             : 0;
 
+        // Calculate averages
         $location->avg_litter_per_user = $location->total_contributors > 0
             ? round($location->total_litter / $location->total_contributors, 2)
             : 0;
@@ -424,17 +452,28 @@ class LocationService
             return;
         }
 
+        $locationIds = $locations->pluck('id')->all();
+
+        // Try to get metrics from database in batch
+        $metricsData = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', $type->value)
+            ->whereIn('location_id', $locationIds)
+            ->where('user_id', 0)
+            ->get(['location_id', 'uploads', 'litter'])
+            ->keyBy('location_id');
+
+        // Pipeline Redis reads for missing data
         $scopes = [];
         foreach ($locations as $location) {
             $scopes[$location->id] = $type->scopePrefix($location->id);
         }
 
-        // Pipeline Redis reads
         $bulk = $this->safeRedis(function() use ($scopes) {
             return Redis::pipeline(function($pipe) use ($scopes) {
                 foreach ($scopes as $scope) {
-                    $pipe->hGetAll("$scope:stats");
-                    $pipe->sCard("$scope:users");
+                    $pipe->hGetAll(RedisKeys::stats($scope));
+                    $pipe->zCard(RedisKeys::contributorRanking($scope));
                 }
             });
         }, array_fill(0, count($scopes) * 2, []));
@@ -442,19 +481,25 @@ class LocationService
         // Map results
         $i = 0;
         foreach ($locations as $location) {
-            $stats = $bulk[$i * 2] ?? [];
-            $contributors = $bulk[$i * 2 + 1] ?? 0;
+            // Use metrics table data if available
+            if (isset($metricsData[$location->id])) {
+                $location->total_photos = (int) $metricsData[$location->id]->uploads;
+                $location->total_litter = (int) $metricsData[$location->id]->litter;
+            } else {
+                // Fallback to Redis
+                $stats = $bulk[$i * 2] ?? [];
+                $location->total_photos = (int) ($stats['photos'] ?? 0);
+                $location->total_litter = (int) ($stats['litter'] ?? 0);
 
-            $location->total_photos = (int) ($stats['photos'] ?? 0);
-            $location->total_litter = (int) ($stats['litter'] ?? 0);
-
-            if ($location->total_litter === 0) {
-                $scope = $scopes[$location->id];
-                $location->total_litter = $this->calculateTotalFromHash("$scope:t");
+                if ($location->total_litter === 0) {
+                    $scope = $scopes[$location->id];
+                    $location->total_litter = $this->calculateTotalFromHash(RedisKeys::objects($scope));
+                }
             }
 
-            $location->total_contributors = (int) $contributors;
+            $location->total_contributors = (int) ($bulk[$i * 2 + 1] ?? 0);
 
+            // Calculate percentages
             $location->percentage_litter = $totals['litter'] > 0
                 ? round(($location->total_litter / $totals['litter']) * 100, 2)
                 : 0;
@@ -462,6 +507,7 @@ class LocationService
                 ? round(($location->total_photos / $totals['photos']) * 100, 2)
                 : 0;
 
+            // Calculate averages
             $location->avg_litter_per_user = $location->total_contributors > 0
                 ? round($location->total_litter / $location->total_contributors, 2)
                 : 0;
@@ -502,7 +548,7 @@ class LocationService
     private function getTotalsForList(LocationType $type, ?int $parentId): array
     {
         if ($parentId && $parentType = $type->parentType()) {
-            return $this->getScopeTotals($parentType->scopePrefix($parentId));
+            return $this->getScopeTotals($parentType, $parentId);
         }
 
         return $this->getGlobalTotals();
@@ -518,11 +564,11 @@ class LocationService
         }
 
         if ($type === LocationType::State && $location->country_id) {
-            return $this->getScopeTotals(LocationType::Country->scopePrefix($location->country_id));
+            return $this->getScopeTotals(LocationType::Country, $location->country_id);
         }
 
         if ($type === LocationType::City && $location->state_id) {
-            return $this->getScopeTotals(LocationType::State->scopePrefix($location->state_id));
+            return $this->getScopeTotals(LocationType::State, $location->state_id);
         }
 
         return $this->getGlobalTotals();
@@ -531,14 +577,31 @@ class LocationService
     /**
      * Get scope totals
      */
-    private function getScopeTotals(string $scope): array
+    private function getScopeTotals(LocationType $type, int $locationId): array
     {
-        $stats = $this->safeRedis(fn() => Redis::hGetAll("$scope:stats"), []);
+        // Try metrics table first
+        $metricsData = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', $type->value)
+            ->where('location_id', $locationId)
+            ->where('user_id', 0)
+            ->first(['uploads', 'litter']);
+
+        if ($metricsData) {
+            return [
+                'photos' => (int) $metricsData->uploads,
+                'litter' => (int) $metricsData->litter
+            ];
+        }
+
+        // Fallback to Redis
+        $scope = $type->scopePrefix($locationId);
+        $stats = $this->safeRedis(fn() => Redis::hGetAll(RedisKeys::stats($scope)), []);
         $photos = (int) ($stats['photos'] ?? 0);
         $litter = (int) ($stats['litter'] ?? 0);
 
         if ($litter === 0) {
-            $litter = $this->calculateTotalFromHash("$scope:t");
+            $litter = $this->calculateTotalFromHash(RedisKeys::objects($scope));
         }
 
         return ['photos' => $photos, 'litter' => $litter];
@@ -549,15 +612,60 @@ class LocationService
      */
     private function getGlobalTotals(): array
     {
-        $stats = $this->safeRedis(fn() => Redis::hgetall('{g}:stats'), []);
+        // Try metrics table first
+        $metricsData = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('user_id', 0)
+            ->first(['uploads', 'litter']);
+
+        if ($metricsData) {
+            return [
+                'photos' => (int) $metricsData->uploads,
+                'litter' => (int) $metricsData->litter
+            ];
+        }
+
+        // Fallback to Redis
+        $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats('{g}')), []);
         $photos = (int) ($stats['photos'] ?? 0);
         $litter = (int) ($stats['litter'] ?? 0);
 
         if ($litter === 0) {
-            $litter = $this->calculateTotalFromHash('{g}:t');
+            $litter = $this->calculateTotalFromHash(RedisKeys::objects('{g}'));
         }
 
         return ['photos' => $photos, 'litter' => $litter];
+    }
+
+    /**
+     * Get total litter for a scope
+     */
+    private function getTotalLitterForScope(LocationType $type, int $locationId): int
+    {
+        // Try metrics table first
+        $metricsData = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', $type->value)
+            ->where('location_id', $locationId)
+            ->where('user_id', 0)
+            ->value('litter');
+
+        if ($metricsData !== null) {
+            return (int) $metricsData;
+        }
+
+        // Fallback to Redis
+        $scope = $type->scopePrefix($locationId);
+        $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats($scope)), []);
+        $litter = (int) ($stats['litter'] ?? 0);
+
+        if ($litter === 0) {
+            $litter = $this->calculateTotalFromHash(RedisKeys::objects($scope));
+        }
+
+        return $litter;
     }
 
     /**
@@ -575,27 +683,29 @@ class LocationService
     private function calculateDimensionTotal(string $scope, string $dimension): int
     {
         $hashKey = match($dimension) {
-            'objects' => "$scope:t",
-            'categories' => "$scope:c",
-            'materials' => "$scope:m",
-            'brands' => "$scope:brands",
-            default => "$scope:t"
+            'objects' => RedisKeys::objects($scope),
+            'categories' => RedisKeys::categories($scope),
+            'materials' => RedisKeys::materials($scope),
+            'brands' => RedisKeys::brands($scope),
+            'custom_tags' => RedisKeys::customTags($scope),
+            default => RedisKeys::objects($scope)
         };
 
         return $this->calculateTotalFromHash($hashKey);
     }
 
     /**
-     * Get top tags from hash (fallback)
+     * Get top tags from hash (fallback when ZSET is empty)
      */
     private function getTopTagsFromHash(string $scope, string $dimension, int $limit): array
     {
         $hashKey = match($dimension) {
-            'objects' => "$scope:t",
-            'categories' => "$scope:c",
-            'materials' => "$scope:m",
-            'brands' => "$scope:brands",
-            default => "$scope:t"
+            'objects' => RedisKeys::objects($scope),
+            'categories' => RedisKeys::categories($scope),
+            'materials' => RedisKeys::materials($scope),
+            'brands' => RedisKeys::brands($scope),
+            'custom_tags' => RedisKeys::customTags($scope),
+            default => RedisKeys::objects($scope)
         };
 
         $allItems = $this->safeRedis(fn() => Redis::hgetall($hashKey), []);
@@ -606,11 +716,11 @@ class LocationService
         arsort($allItems);
         $topItems = array_slice($allItems, 0, $limit, true);
 
-        $stats = $this->safeRedis(fn() => Redis::hgetall("$scope:stats"), []);
+        $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats($scope)), []);
         $totalLitter = (int) ($stats['litter'] ?? 0);
 
         if ($totalLitter === 0) {
-            $totalLitter = $this->calculateTotalFromHash("$scope:t");
+            $totalLitter = $this->calculateTotalFromHash(RedisKeys::objects($scope));
         }
 
         $dimensionTotal = array_sum(array_map('intval', $allItems));
@@ -658,7 +768,7 @@ class LocationService
      */
     private function getTopGlobalDimension(string $dimension, int $limit): array
     {
-        $rankKey = "{g}:rank:$dimension";
+        $rankKey = RedisKeys::ranking('{g}', $dimension);
         $topItems = $this->safeRedis(
             fn() => $this->zrangeWithScores($rankKey, 0, $limit - 1, true),
             []
@@ -666,10 +776,10 @@ class LocationService
 
         if (empty($topItems)) {
             $hashKey = match($dimension) {
-                'categories' => '{g}:c',
-                'brands' => '{g}:brands',
-                'materials' => '{g}:m',
-                default => '{g}:t'
+                'categories' => RedisKeys::categories('{g}'),
+                'brands' => RedisKeys::brands('{g}'),
+                'materials' => RedisKeys::materials('{g}'),
+                default => RedisKeys::objects('{g}')
             };
 
             $items = $this->safeRedis(fn() => Redis::hgetall($hashKey), []);
@@ -711,6 +821,7 @@ class LocationService
             'categories' => 'category',
             'materials' => 'material',
             'brands' => 'brand',
+            'custom_tags' => 'custom_tag',
         ];
 
         $tagDimension = $dimensionMap[$dimension] ?? null;
@@ -733,9 +844,21 @@ class LocationService
      */
     private function calculateGlobalLevel(int $totalLitter): array
     {
-        $levels = config('locations.levels');
-        $currentLevel = 0;
+        // Simple level calculation based on litter count
+        $levels = [
+            1 => ['min' => 0, 'max' => 1000],
+            2 => ['min' => 1000, 'max' => 5000],
+            3 => ['min' => 5000, 'max' => 10000],
+            4 => ['min' => 10000, 'max' => 25000],
+            5 => ['min' => 25000, 'max' => 50000],
+            6 => ['min' => 50000, 'max' => 100000],
+            7 => ['min' => 100000, 'max' => 250000],
+            8 => ['min' => 250000, 'max' => 500000],
+            9 => ['min' => 500000, 'max' => 1000000],
+            10 => ['min' => 1000000, 'max' => PHP_INT_MAX],
+        ];
 
+        $currentLevel = 1;
         foreach ($levels as $level => $range) {
             if ($totalLitter >= $range['min'] && $totalLitter < $range['max']) {
                 $currentLevel = $level;
@@ -755,7 +878,7 @@ class LocationService
     }
 
     /**
-     * Get last upload date (single)
+     * Get last upload date for a location
      */
     private function getLastUploadDate(LocationType $type, int $locationId)
     {
@@ -768,27 +891,6 @@ class LocationService
             ->first(['created_at']);
 
         return $lastPhoto ? $lastPhoto->created_at : null;
-    }
-
-    /**
-     * Count photos for location
-     */
-    private function countPhotosForLocation(LocationType $type, int $locationId): int
-    {
-        return DB::table('photos')
-            ->where($type->dbColumn(), $locationId)
-            ->whereNotNull('processed_at')
-            ->count();
-    }
-
-    /**
-     * Count total photos from DB
-     */
-    private function countTotalPhotosFromDB(): int
-    {
-        return DB::table('photos')
-            ->whereNotNull('processed_at')
-            ->count();
     }
 
     /**

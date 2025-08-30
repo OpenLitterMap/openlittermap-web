@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Redis;
 
+use App\Models\Litter\Tags\BrandList;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Redis\RedisMetricsCollector;
-use App\Services\Achievements\Tags\TagKeyCache;
+use App\Services\Redis\RedisKeys;
+use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
@@ -19,32 +21,89 @@ class RedisMetricsCollectorLocationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private array $tagIds = [];
-
     protected function setUp(): void
     {
         parent::setUp();
         Redis::flushall();
-        TagKeyCache::preloadAll();
-        RedisMetricsCollector::preloadLuaScript();
 
-        // Pre-create tag IDs
-        $this->tagIds = [
-            'cup' => TagKeyCache::getOrCreateId('object', 'cup'),
-            'bottle' => TagKeyCache::getOrCreateId('object', 'bottle'),
-            'plastic' => TagKeyCache::getOrCreateId('material', 'plastic'),
-            'glass' => TagKeyCache::getOrCreateId('material', 'glass'),
-            'starbucks' => TagKeyCache::getOrCreateId('brand', 'starbucks'),
-            'cocacola' => TagKeyCache::getOrCreateId('brand', 'cocacola'),
-            'food' => TagKeyCache::getOrCreateId('category', 'food'),
-            'drinking' => TagKeyCache::getOrCreateId('category', 'drinking'),
-        ];
+        // Seed brands for tests that need them
+        $this->seed(GenerateBrandsSeeder::class);
     }
 
     protected function tearDown(): void
     {
         Redis::flushall();
         parent::tearDown();
+    }
+
+    /**
+     * Helper to extract metrics from photo summary
+     */
+    private function getMetricsFromPhoto(Photo $photo): array
+    {
+        $summary = $photo->summary ?? ['tags' => []];
+        $tags = $summary['tags'] ?? [];
+
+        // Calculate litter count from tags
+        $litter = 0;
+        $categories = [];
+        $objects = [];
+        $materials = [];
+        $brands = [];
+        $custom_tags = [];
+
+        foreach ($tags as $categoryName => $categoryObjects) {
+            // Use simple numeric IDs for testing
+            $categoryId = crc32($categoryName) % 1000;
+
+            foreach ($categoryObjects as $objectName => $objectData) {
+                $objectId = crc32($objectName) % 1000;
+
+                if (is_array($objectData)) {
+                    $quantity = $objectData['quantity'] ?? 0;
+                    $litter += $quantity;
+
+                    $categories[$categoryId] = ($categories[$categoryId] ?? 0) + $quantity;
+                    $objects[$objectId] = ($objects[$objectId] ?? 0) + $quantity;
+
+                    // Handle materials
+                    if (isset($objectData['materials'])) {
+                        foreach ($objectData['materials'] as $materialName => $matCount) {
+                            $materialId = crc32($materialName) % 1000;
+                            $materials[$materialId] = ($materials[$materialId] ?? 0) + $matCount;
+                        }
+                    }
+
+                    // Handle brands
+                    if (isset($objectData['brands'])) {
+                        foreach ($objectData['brands'] as $brandName => $brandCount) {
+                            // Use actual brand IDs from database
+                            $brand = BrandList::where('key', $brandName)->first();
+                            if ($brand) {
+                                $brands[$brand->id] = ($brands[$brand->id] ?? 0) + $brandCount;
+                            }
+                        }
+                    }
+                } else {
+                    // Simple quantity value
+                    $litter += $objectData;
+                    $categories[$categoryId] = ($categories[$categoryId] ?? 0) + $objectData;
+                    $objects[$objectId] = ($objects[$objectId] ?? 0) + $objectData;
+                }
+            }
+        }
+
+        return [
+            'litter' => $litter,
+            'xp' => $photo->xp ?? ($litter * 2), // Simple XP calculation for testing
+            'tags' => [
+                'categories' => $categories,
+                'objects' => $objects,
+                'materials' => $materials,
+                'brands' => $brands,
+                'custom_tags' => $custom_tags
+            ]
+        ];
     }
 
     /**
@@ -67,39 +126,19 @@ class RedisMetricsCollectorLocationTest extends TestCase
             ]
         ]);
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = $this->getMetricsFromPhoto($photo);
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
         // Check that stats.litter equals sum of objects
-        $stats = Redis::hgetall("c:{$country->id}:stats");
+        $stats = Redis::hGetAll(RedisKeys::stats(RedisKeys::country($country->id)));
         $this->assertEquals('1', $stats['photos']);
         $this->assertEquals('5', $stats['litter']); // 3 cups + 2 bottles
     }
 
     /**
-     * Test that last_ts timestamp is tracked
+     * Test that ranking is created for locations
      */
-    public function test_location_stats_tracks_last_timestamp(): void
-    {
-        $country = Country::factory()->create();
-        $user = User::factory()->create();
-
-        $timestamp = now()->subDays(3);
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => $country->id,
-            'created_at' => $timestamp
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $stats = Redis::hgetall("c:{$country->id}:stats");
-        $this->assertArrayHasKey('last_ts', $stats);
-        $this->assertEquals($timestamp->getTimestamp(), (int)$stats['last_ts']);
-    }
-
-    /**
-     * Test that ranking ZSETs are created for locations
-     */
-    public function test_location_ranking_zsets_are_created(): void
+    public function test_location_ranking_created(): void
     {
         $country = Country::factory()->create();
         $user = User::factory()->create();
@@ -139,29 +178,54 @@ class RedisMetricsCollectorLocationTest extends TestCase
         ];
 
         foreach ($photos as $photo) {
-            RedisMetricsCollector::queue($photo);
+            $metrics = $this->getMetricsFromPhoto($photo);
+            RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
         }
 
-        // Check ZSET rankings exist and are ordered correctly
-        $topObjects = Redis::zRevRange("rank:c:{$country->id}:objects", 0, -1, 'WITHSCORES');
+        // Use consistent IDs for testing
+        $cupId = crc32('cup') % 1000;
+        $bottleId = crc32('bottle') % 1000;
+
+        // Check rankings exist and are ordered correctly
+        $topObjects = Redis::zRevRange(
+            RedisKeys::ranking(RedisKeys::country($country->id), 'objects'),
+            0,
+            -1,
+            'WITHSCORES'
+        );
 
         $this->assertNotEmpty($topObjects);
-        $this->assertEquals('7', $topObjects[(string)$this->tagIds['cup']]); // 5 + 2 = 7
-        $this->assertEquals('3', $topObjects[(string)$this->tagIds['bottle']]);
 
-        // Check that cup is ranked higher (first in the list)
+        // In Redis ZSET with WITHSCORES, the format is [member => score]
+        // So the keys are the object IDs and values are the counts
+
+        // Check that we have 2 objects
+        $this->assertCount(2, $topObjects);
+
+        // Find the actual cup and bottle scores
+        $cupScore = $topObjects[(string)$cupId] ?? null;
+        $bottleScore = $topObjects[(string)$bottleId] ?? null;
+
+        // Verify the scores
+        $this->assertEquals('7', $cupScore, 'Cup should have score of 7');
+        $this->assertEquals('3', $bottleScore, 'Bottle should have score of 3');
+
+        // Verify cup is ranked higher (should be first since we used zRevRange)
         $rankings = array_keys($topObjects);
-        $this->assertEquals((string)$this->tagIds['cup'], $rankings[0]);
-        $this->assertEquals((string)$this->tagIds['bottle'], $rankings[1]);
+        $this->assertEquals((string)$cupId, $rankings[0], 'Cup should be ranked first');
     }
 
     /**
-     * Test ranking ZSETs for brands
+     * Test ranking for brands
      */
-    public function test_brand_ranking_zsets(): void
+    public function test_brand_ranking(): void
     {
         $country = Country::factory()->create();
         $user = User::factory()->create();
+
+        // Create brands first if they don't exist
+        $starbucksId = BrandList::firstOrCreate(['key' => 'starbucks'])->id;
+        $cocacolaId = BrandList::firstOrCreate(['key' => 'coke'])->id;
 
         $photo = Photo::factory()->for($user)->create([
             'country_id' => $country->id,
@@ -172,7 +236,7 @@ class RedisMetricsCollectorLocationTest extends TestCase
                             'quantity' => 1,
                             'brands' => [
                                 'starbucks' => 3,
-                                'cocacola' => 1
+                                'coke' => 1
                             ]
                         ]
                     ]
@@ -180,23 +244,43 @@ class RedisMetricsCollectorLocationTest extends TestCase
             ]
         ]);
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = $this->getMetricsFromPhoto($photo);
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        $topBrands = Redis::zRevRange("rank:c:{$country->id}:brands", 0, -1, 'WITHSCORES');
+        $topBrands = Redis::zRevRange(
+            RedisKeys::ranking(RedisKeys::country($country->id), 'brands'),
+            0,
+            -1,
+            'WITHSCORES'
+        );
 
-        $this->assertEquals('3', $topBrands[(string)$this->tagIds['starbucks']]);
-        $this->assertEquals('1', $topBrands[(string)$this->tagIds['cocacola']]);
+        // Check we have the expected brands with correct counts
+        $this->assertNotEmpty($topBrands);
+        $this->assertCount(2, $topBrands);
+
+        // In Redis ZSET with WITHSCORES, format is [member => score]
+        // Find the actual brand scores
+        $starbucksScore = $topBrands[(string)$starbucksId] ?? null;
+        $cocacolaScore = $topBrands[(string)$cocacolaId] ?? null;
+
+        // Verify the scores
+        $this->assertEquals('3', $starbucksScore, 'Starbucks should have score of 3');
+        $this->assertEquals('1', $cocacolaScore, 'Coca-Cola should have score of 1');
+
+        // Verify starbucks is ranked higher
+        $rankings = array_keys($topBrands);
+        $this->assertEquals((string)$starbucksId, $rankings[0], 'Starbucks should be ranked first');
     }
 
     /**
      * Test batch processing updates litter counts correctly
      */
-    public function test_batch_processing_updates_litter_counts(): void
+    public function test_multiple_photos_accumulate_litter_counts(): void
     {
         $country = Country::factory()->create();
         $user = User::factory()->create();
 
-        $photos = collect([
+        $photos = [
             Photo::factory()->for($user)->create([
                 'country_id' => $country->id,
                 'summary' => [
@@ -212,24 +296,27 @@ class RedisMetricsCollectorLocationTest extends TestCase
                 'summary' => [
                     'tags' => [
                         'food' => [
-                            'bottle' => ['quantity' => 3]
+                            'wrapper' => ['quantity' => 3]
                         ]
                     ]
                 ]
             ])
-        ]);
+        ];
 
-        RedisMetricsCollector::queueBatch($user->id, $photos);
+        foreach ($photos as $photo) {
+            $metrics = $this->getMetricsFromPhoto($photo);
+            RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+        }
 
-        $stats = Redis::hgetall("c:{$country->id}:stats");
+        $stats = Redis::hGetAll(RedisKeys::stats(RedisKeys::country($country->id)));
         $this->assertEquals('2', $stats['photos']);
         $this->assertEquals('5', $stats['litter']); // 2 + 3
     }
 
     /**
-     * Test that global scope doesn't create ranking ZSETs
+     * Test that global scope works differently
      */
-    public function test_global_scope_skips_ranking_zsets(): void
+    public function test_global_scope_still_tracks_objects(): void
     {
         $user = User::factory()->create();
 
@@ -245,13 +332,17 @@ class RedisMetricsCollectorLocationTest extends TestCase
             ]
         ]);
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = $this->getMetricsFromPhoto($photo);
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        // Global rankings should not exist (we skip them to save memory)
-        $this->assertEquals(0, Redis::zCard("rank:{g}:objects"));
+        $cupId = crc32('cup') % 1000;
 
-        // But global hash should still be updated
-        $this->assertEquals('5', Redis::hGet('{g}:t', (string)$this->tagIds['cup']));
+        // Global objects hash should be updated
+        $this->assertEquals('5', Redis::hGet(RedisKeys::objects('{g}'), (string)$cupId));
+
+        // Global rankings should also exist
+        $score = Redis::zScore(RedisKeys::ranking('{g}', 'objects'), (string)$cupId);
+        $this->assertEquals('5', $score);
     }
 
     /**
@@ -280,50 +371,28 @@ class RedisMetricsCollectorLocationTest extends TestCase
             ]
         ]);
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = $this->getMetricsFromPhoto($photo);
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
         // Check all levels have litter count
-        $countryStats = Redis::hgetall("c:{$country->id}:stats");
-        $stateStats = Redis::hgetall("s:{$state->id}:stats");
-        $cityStats = Redis::hgetall("ci:{$city->id}:stats");
+        $countryStats = Redis::hGetAll(RedisKeys::stats(RedisKeys::country($country->id)));
+        $stateStats = Redis::hGetAll(RedisKeys::stats(RedisKeys::state($state->id)));
+        $cityStats = Redis::hGetAll(RedisKeys::stats(RedisKeys::city($city->id)));
 
         $this->assertEquals('10', $countryStats['litter']);
         $this->assertEquals('10', $stateStats['litter']);
         $this->assertEquals('10', $cityStats['litter']);
 
+        $cupId = crc32('cup') % 1000;
+
         // Check rankings exist at all levels
-        $this->assertGreaterThan(0, Redis::zCard("rank:c:{$country->id}:objects"));
-        $this->assertGreaterThan(0, Redis::zCard("rank:s:{$state->id}:objects"));
-        $this->assertGreaterThan(0, Redis::zCard("rank:ci:{$city->id}:objects"));
-    }
+        $countryRank = Redis::zScore(RedisKeys::ranking(RedisKeys::country($country->id), 'objects'), (string)$cupId);
+        $stateRank = Redis::zScore(RedisKeys::ranking(RedisKeys::state($state->id), 'objects'), (string)$cupId);
+        $cityRank = Redis::zScore(RedisKeys::ranking(RedisKeys::city($city->id), 'objects'), (string)$cupId);
 
-    /**
-     * Test monthly aggregates include litter
-     */
-    public function test_monthly_aggregates_track_litter(): void
-    {
-        $country = Country::factory()->create();
-        $user = User::factory()->create();
-
-        $photo = Photo::factory()->for($user)->create([
-            'country_id' => $country->id,
-            'summary' => [
-                'tags' => [
-                    'drinking' => [
-                        'cup' => ['quantity' => 7]
-                    ]
-                ]
-            ]
-        ]);
-
-        RedisMetricsCollector::queue($photo);
-
-        $month = now()->format('Y-m');
-        $monthData = Redis::hgetall("c:{$country->id}:{$month}:t");
-
-        $this->assertEquals('1', $monthData['p']); // 1 photo
-        // Note: Currently we don't track litter in monthly aggregates,
-        // but we could add it if needed
+        $this->assertEquals('10', $countryRank);
+        $this->assertEquals('10', $stateRank);
+        $this->assertEquals('10', $cityRank);
     }
 
     /**
@@ -339,10 +408,85 @@ class RedisMetricsCollectorLocationTest extends TestCase
             'summary' => ['tags' => []]
         ]);
 
-        RedisMetricsCollector::queue($photo);
+        $metrics = $this->getMetricsFromPhoto($photo);
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        $stats = Redis::hgetall("c:{$country->id}:stats");
+        $stats = Redis::hGetAll(RedisKeys::stats(RedisKeys::country($country->id)));
         $this->assertEquals('1', $stats['photos']);
         $this->assertEquals('0', $stats['litter'] ?? '0');
+    }
+
+    /**
+     * Test updating photo with delta metrics
+     */
+    public function test_update_operation_applies_deltas(): void
+    {
+        $country = Country::factory()->create();
+        $user = User::factory()->create();
+
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => $country->id,
+            'summary' => [
+                'tags' => [
+                    'drinking' => [
+                        'cup' => ['quantity' => 3]
+                    ]
+                ]
+            ]
+        ]);
+
+        // Initial create
+        $initialMetrics = $this->getMetricsFromPhoto($photo);
+        RedisMetricsCollector::processPhoto($photo, $initialMetrics, 'create');
+
+        // Update with delta (added 2 more cups)
+        $deltaMetrics = [
+            'litter' => 2,
+            'xp' => 4,
+            'tags' => [
+                'categories' => [crc32('drinking') % 1000 => 2],
+                'objects' => [crc32('cup') % 1000 => 2],
+                'materials' => [],
+                'brands' => [],
+                'custom_tags' => []
+            ]
+        ];
+        RedisMetricsCollector::processPhoto($photo, $deltaMetrics, 'update');
+
+        $stats = Redis::hGetAll(RedisKeys::stats(RedisKeys::country($country->id)));
+        $this->assertEquals('1', $stats['photos']); // Still 1 photo
+        $this->assertEquals('5', $stats['litter']); // 3 + 2 = 5
+    }
+
+    /**
+     * Test delete operation
+     */
+    public function test_delete_operation_decrements_stats(): void
+    {
+        $country = Country::factory()->create();
+        $user = User::factory()->create();
+
+        $photo = Photo::factory()->for($user)->create([
+            'country_id' => $country->id,
+            'summary' => [
+                'tags' => [
+                    'drinking' => [
+                        'cup' => ['quantity' => 5]
+                    ]
+                ]
+            ]
+        ]);
+
+        $metrics = $this->getMetricsFromPhoto($photo);
+
+        // Create
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
+
+        // Then delete
+        RedisMetricsCollector::processPhoto($photo, $metrics, 'delete');
+
+        $stats = Redis::hGetAll(RedisKeys::stats(RedisKeys::country($country->id)));
+        $this->assertEquals('0', $stats['photos']);
+        $this->assertEquals('0', $stats['litter']);
     }
 }

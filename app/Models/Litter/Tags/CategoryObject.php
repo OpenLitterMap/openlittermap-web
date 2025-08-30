@@ -2,6 +2,7 @@
 
 namespace App\Models\Litter\Tags;
 
+use App\Traits\ManagesTaggables;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 class CategoryObject extends Pivot
 {
+    use ManagesTaggables;
+
     protected $primaryKey = 'id';
 
     public $incrementing = true;
@@ -17,19 +20,25 @@ class CategoryObject extends Pivot
 
     protected $guarded = [];
 
+    /**
+     * Get the category that this pivot belongs to
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
 
     /**
-     * Get the litter object that this pivot belongs to.
+     * Get the litter object that this pivot belongs to
      */
     public function litterObject(): BelongsTo
     {
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
     }
 
+    /**
+     * Materials that can be attached to this category-object combination
+     */
     public function materials(): MorphToMany
     {
         return $this->morphToMany(
@@ -41,6 +50,23 @@ class CategoryObject extends Pivot
         )->withPivot('quantity')->withTimestamps();
     }
 
+    /**
+     * States that can be attached to this category-object combination
+     */
+    public function states(): MorphToMany
+    {
+        return $this->morphToMany(
+            LitterState::class,
+            'taggable',
+            'taggables',
+            'category_litter_object_id',
+            'taggable_id'
+        )->withPivot('quantity')->withTimestamps();
+    }
+
+    /**
+     * Brands that can be attached to this category-object combination
+     */
     public function brands(): MorphToMany
     {
         return $this->morphToMany(
@@ -52,6 +78,9 @@ class CategoryObject extends Pivot
         )->withPivot('quantity')->withTimestamps();
     }
 
+    /**
+     * Custom tags that can be attached to this category-object combination
+     */
     public function customTags(): MorphToMany
     {
         return $this->morphToMany(
@@ -63,6 +92,12 @@ class CategoryObject extends Pivot
         )->withPivot('quantity')->withTimestamps();
     }
 
+    /**
+     * Generic method to attach any taggable type
+     *
+     * @param array $taggables
+     * @param string $class
+     */
     public function attachTaggables(array $taggables, string $class): void
     {
         if (empty($taggables)) {

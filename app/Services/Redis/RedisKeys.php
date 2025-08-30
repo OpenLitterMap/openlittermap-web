@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Redis;
 
+use App\Models\Photo;
+
+/**
+ * Redis key management with cluster-safe hash tags
+ * All keys use {scope} notation for Redis Cluster slot allocation
+ */
 final class RedisKeys
 {
     public static function global(): string
@@ -42,25 +48,25 @@ final class RedisKeys
         return "$scope:users";
     }
 
-    public static function contributorHyperLogLog(string $scope): string
+    public static function hll(string $scope): string
     {
-        return "$scope:hll:users";
+        return "$scope:hll";
     }
 
-    // Dimension hashes
+    // Dimension hashes - fixed collision issue
     public static function categories(string $scope): string
     {
-        return "$scope:c";
+        return "$scope:cat";
     }
 
     public static function objects(string $scope): string
     {
-        return "$scope:t";
+        return "$scope:obj";  // Changed from :t to avoid collision with :t:p
     }
 
     public static function materials(string $scope): string
     {
-        return "$scope:m";
+        return "$scope:mat";
     }
 
     public static function brands(string $scope): string
@@ -73,10 +79,10 @@ final class RedisKeys
         return "$scope:custom";
     }
 
-    // Time series
+    // Legacy time series (if still needed for backwards compatibility)
     public static function dailyPhotos(string $scope): string
     {
-        return "$scope:t:p";
+        return "$scope:daily";  // Changed from :t:p to avoid collision
     }
 
     public static function monthlyAggregates(string $scope, string $yearMonth): string
@@ -103,7 +109,7 @@ final class RedisKeys
     // User-specific
     public static function userBitmap(int $userId): string
     {
-        return self::user($userId) . ':up';
+        return self::user($userId) . ':bitmap';
     }
 
     // Location hierarchy rankings
@@ -125,5 +131,18 @@ final class RedisKeys
     public static function stateCityRanking(int $stateId, string $metric): string
     {
         return self::state($stateId) . ":rank:ci:$metric";
+    }
+
+    /**
+     * Get all location scopes for a photo
+     */
+    public static function getPhotoScopes(Photo $photo): array
+    {
+        return array_filter([
+            self::global(),
+            $photo->country_id ? self::country($photo->country_id) : null,
+            $photo->state_id ? self::state($photo->state_id) : null,
+            $photo->city_id ? self::city($photo->city_id) : null,
+        ]);
     }
 }

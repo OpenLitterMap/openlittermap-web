@@ -13,8 +13,6 @@ use App\Http\Resources\TagsResource;
 use App\Enums\LocationType;
 
 /**
- * Lean LocationController v1
- *
  * Shipping only essential endpoints:
  * - index (list with pagination)
  * - show (single location)
