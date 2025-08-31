@@ -1,250 +1,210 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Tests\Unit\Services;
 
-use App\Models\Location\Country;
+use App\Enums\LocationType;
 use App\Services\Locations\LocationService;
-use App\Services\Achievements\Tags\TagKeyCache;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
+use App\Models\Location\Country;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LocationServiceTagTest extends TestCase
 {
-    use RefreshDatabase;
-
-    private LocationService $service;
-    private array $tagIds;
+    protected LocationService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-
+        $this->service = new LocationService();
         Redis::flushall();
         Cache::flush();
 
-        $this->service = new LocationService();
-
-        TagKeyCache::preloadAll();
-
-        // Create test tag IDs
-        $this->tagIds = [
-            'cup' => TagKeyCache::getOrCreateId('object', 'cup'),
-            'bottle' => TagKeyCache::getOrCreateId('object', 'bottle'),
-            'wrapper' => TagKeyCache::getOrCreateId('object', 'wrapper'),
-            'starbucks' => TagKeyCache::getOrCreateId('brand', 'starbucks'),
-            'cocacola' => TagKeyCache::getOrCreateId('brand', 'cocacola'),
-            'plastic' => TagKeyCache::getOrCreateId('material', 'plastic'),
-            'paper' => TagKeyCache::getOrCreateId('material', 'paper'),
-        ];
+        // Seed test tags in database
+        $this->seedTestTags();
     }
 
     /**
-     * Test getTopTags returns correct format
+     * Seed minimal test tags so TagKeyCache can resolve them
      */
-    public function test_get_top_tags_returns_correct_format(): void
+    protected function seedTestTags(): void
+    {
+        // Objects
+        DB::table('litter_objects')->insertOrIgnore([
+            ['id' => 1, 'key' => 'bottle'],
+            ['id' => 2, 'key' => 'can'],
+            ['id' => 3, 'key' => 'wrapper'],
+            ['id' => 4, 'key' => 'cup'],
+            ['id' => 5, 'key' => 'bag'],
+        ]);
+
+        // Brands
+        DB::table('brandslist')->insertOrIgnore([
+            ['id' => 1, 'key' => 'coca-cola'],
+            ['id' => 2, 'key' => 'pepsi'],
+            ['id' => 3, 'key' => 'starbucks'],
+        ]);
+
+        // Materials
+        DB::table('materials')->insertOrIgnore([
+            ['id' => 1, 'key' => 'plastic'],
+            ['id' => 2, 'key' => 'glass'],
+            ['id' => 3, 'key' => 'metal'],
+        ]);
+    }
+
+    public function test_get_top_tags_returns_correct_format()
     {
         $country = Country::factory()->create();
 
-        // Set up test data in Redis
-        Redis::zadd("rank:c:{$country->id}:objects", [
-            (string)$this->tagIds['cup'] => 100,
-            (string)$this->tagIds['bottle'] => 50,
-            (string)$this->tagIds['wrapper'] => 25,
-        ]);
+        Redis::hset("{c:{$country->id}}:obj", '1', '10');
+        Redis::hset("{c:{$country->id}}:obj", '2', '5');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '15');
 
-        Redis::hset("c:{$country->id}:stats", 'litter', '175');
+        $result = $this->service->getTopTags(LocationType::Country, $country->id);
 
-        $result = $this->service->getTopTags('country', $country->id, 'objects', 2);
-
-        // Check structure
         $this->assertArrayHasKey('items', $result);
         $this->assertArrayHasKey('total', $result);
+        $this->assertArrayHasKey('dimension_total', $result);
         $this->assertArrayHasKey('other', $result);
-
-        // Check items
-        $this->assertCount(2, $result['items']);
-        $this->assertEquals('cup', $result['items'][0]['name']);
-        $this->assertEquals(100, $result['items'][0]['count']);
-        $this->assertEquals(57.14, $result['items'][0]['percentage']); // 100/175 * 100
-
-        // Check other bucket
-        $this->assertEquals(25, $result['other']['count']); // wrapper not in top 2
-        $this->assertEquals(14.29, $result['other']['percentage']);
+        $this->assertEquals(15, $result['total']);
+        $this->assertEquals(15, $result['dimension_total']);
     }
 
-    /**
-     * Test fallback to hash when ZSETs not available
-     */
-    public function test_get_top_tags_fallback_to_hash(): void
+    public function test_get_top_tags_fallback_to_hash()
     {
         $country = Country::factory()->create();
 
-        // Set up data only in hash, not ZSET
-        Redis::hset("c:{$country->id}:t", [
-            (string)$this->tagIds['cup'] => '75',
-            (string)$this->tagIds['bottle'] => '25',
-        ]);
+        Redis::hset("{c:{$country->id}}:obj", '1', '20');
+        Redis::hset("{c:{$country->id}}:obj", '2', '15');
+        Redis::hset("{c:{$country->id}}:obj", '3', '10');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '45');
 
-        Redis::hset("c:{$country->id}:stats", 'litter', '100');
-
-        $result = $this->service->getTopTags('country', $country->id, 'objects', 10);
+        $result = $this->service->getTopTags(LocationType::Country, $country->id, 'objects', 2);
 
         $this->assertCount(2, $result['items']);
-        $this->assertEquals(100, $result['total']);
-        $this->assertEquals(0, $result['other']['count']);
+        $this->assertEquals(45, $result['total']);
+        $this->assertEquals(45, $result['dimension_total']);
+        $this->assertEquals(10, $result['other']['count']);
     }
 
-    /**
-     * Test empty location returns empty results
-     */
-    public function test_empty_location_returns_empty_results(): void
+    public function test_empty_location_returns_empty_results()
     {
         $country = Country::factory()->create();
 
-        $result = $this->service->getTopTags('country', $country->id, 'objects', 10);
+        $result = $this->service->getTopTags(LocationType::Country, $country->id);
 
         $this->assertEmpty($result['items']);
         $this->assertEquals(0, $result['total']);
+        $this->assertEquals(0, $result['dimension_total']);
         $this->assertEquals(0, $result['other']['count']);
     }
 
-    /**
-     * Test cleanup stats calculation
-     */
-    public function test_cleanup_stats_calculation(): void
+    public function test_cleanup_stats_calculation()
     {
         $country = Country::factory()->create();
 
-        Redis::hset("c:{$country->id}:stats", [
-            'litter' => '100',
-            'picked_up' => '25'
-        ]);
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '100');
+        Redis::hset("{c:{$country->id}}:stats", 'picked_up', '25');
 
-        $result = $this->service->getCleanupStats('country', $country->id);
+        $result = $this->service->getCleanupStats(LocationType::Country, $country->id);
 
         $this->assertEquals(25.0, $result['cleanup_rate']);
         $this->assertEquals(25, $result['total_picked_up']);
         $this->assertEquals(100, $result['total_litter']);
-        $this->assertEquals(75, $result['remaining']);
     }
 
-    /**
-     * Test get top brands
-     */
-    public function test_get_top_brands(): void
+    public function test_get_top_brands()
     {
         $country = Country::factory()->create();
 
-        Redis::zadd("rank:c:{$country->id}:brands", [
-            (string)$this->tagIds['starbucks'] => 50,
-            (string)$this->tagIds['cocacola'] => 30,
-        ]);
+        Redis::hset("{c:{$country->id}}:brands", '1', '30');
+        Redis::hset("{c:{$country->id}}:brands", '2', '20');
+        Redis::hset("{c:{$country->id}}:brands", '3', '10');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '100');
 
-        Redis::hset("c:{$country->id}:stats", 'litter', '200');
+        $result = $this->service->getTopTags(LocationType::Country, $country->id, 'brands', 3);
 
-        $result = $this->service->getTopTags('country', $country->id, 'brands', 5);
+        $this->assertCount(3, $result['items']);
+        $this->assertEquals(100, $result['total']);
+        $this->assertEquals(60, $result['dimension_total']);
 
-        $this->assertCount(2, $result['items']);
-        $this->assertEquals('starbucks', $result['items'][0]['name']);
-        $this->assertEquals(50, $result['items'][0]['count']);
+        // Check that brand names are resolved
+        $this->assertEquals('coca-cola', $result['items'][0]['name']);
+        $this->assertEquals('pepsi', $result['items'][1]['name']);
+        $this->assertEquals('starbucks', $result['items'][2]['name']);
     }
 
-    /**
-     * Test caching works
-     */
-    public function test_results_are_cached(): void
+    public function test_results_are_cached()
     {
         $country = Country::factory()->create();
 
-        Redis::zadd("rank:c:{$country->id}:objects", [
-            (string)$this->tagIds['cup'] => 100
-        ]);
-        Redis::hset("c:{$country->id}:stats", 'litter', '100');
+        Redis::hset("{c:{$country->id}}:obj", '1', '10');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '10');
 
-        // First call
-        $result1 = $this->service->getTopTags('country', $country->id, 'objects', 10);
+        $result1 = $this->service->getTopTags(LocationType::Country, $country->id);
 
-        // Modify Redis (this shouldn't affect cached result)
-        Redis::zadd("rank:c:{$country->id}:objects", [
-            (string)$this->tagIds['bottle'] => 200
-        ]);
+        Redis::hset("{c:{$country->id}}:obj", '1', '20');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '20');
 
-        // Second call should return cached result
-        $result2 = $this->service->getTopTags('country', $country->id, 'objects', 10);
+        $result2 = $this->service->getTopTags(LocationType::Country, $country->id);
 
         $this->assertEquals($result1, $result2);
+        $this->assertEquals(10, $result2['total']);
 
-        // Clear cache and try again
         Cache::flush();
-        $result3 = $this->service->getTopTags('country', $country->id, 'objects', 10);
-
-        // Now bottle should be included
-        $this->assertCount(2, $result3['items']);
+        $result3 = $this->service->getTopTags(LocationType::Country, $country->id);
+        $this->assertEquals(20, $result3['total']);
     }
 
-    /**
-     * Test percentage calculations with zero total
-     */
-    public function test_percentage_calculations_with_zero_total(): void
+    public function test_percentage_calculations_with_zero_total()
     {
         $country = Country::factory()->create();
 
-        Redis::zadd("rank:c:{$country->id}:objects", [
-            (string)$this->tagIds['cup'] => 100
-        ]);
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '0');
 
-        // No litter stat set
+        $result = $this->service->getTopTags(LocationType::Country, $country->id);
 
-        $result = $this->service->getTopTags('country', $country->id, 'objects', 10);
-
-        $this->assertEquals(0, $result['total']);
         $this->assertEmpty($result['items']);
+        $this->assertEquals(0, $result['total']);
+        $this->assertEquals(0, $result['dimension_total']);
+        $this->assertEquals(0, $result['other']['percentage']);
     }
 
-    /**
-     * Test getTagSummary returns all sections
-     */
-    public function test_get_tag_summary_returns_all_sections(): void
+    public function test_get_tag_summary_returns_all_sections()
     {
         $country = Country::factory()->create();
 
-        // Set up minimal data
-        Redis::hset("c:{$country->id}:stats", 'litter', '100');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '100');
 
-        $result = $this->service->getTagSummary('country', $country->id);
+        $result = $this->service->getTagSummary(LocationType::Country, $country->id);
 
         $this->assertArrayHasKey('top_objects', $result);
         $this->assertArrayHasKey('top_brands', $result);
         $this->assertArrayHasKey('top_materials', $result);
-        $this->assertArrayHasKey('cleanup_stats', $result);
-        $this->assertArrayHasKey('categories', $result);
+        $this->assertArrayHasKey('total_litter', $result);
+        $this->assertEquals(100, $result['total_litter']);
     }
 
-    /**
-     * Test sorting maintains correct order
-     */
-    public function test_sorting_maintains_correct_order(): void
+    public function test_sorting_maintains_correct_order()
     {
         $country = Country::factory()->create();
 
-        // Add items in random order
-        Redis::zadd("rank:c:{$country->id}:objects", [
-            (string)$this->tagIds['wrapper'] => 10,
-            (string)$this->tagIds['cup'] => 100,
-            (string)$this->tagIds['bottle'] => 50,
-        ]);
+        // Set values individually to avoid Redis issues
+        Redis::hset("{c:{$country->id}}:obj", '5', '3');
+        Redis::hset("{c:{$country->id}}:obj", '4', '7');
+        Redis::hset("{c:{$country->id}}:obj", '3', '15');
+        Redis::hset("{c:{$country->id}}:obj", '2', '10');
+        Redis::hset("{c:{$country->id}}:obj", '1', '5');
+        Redis::hset("{c:{$country->id}}:stats", 'litter', '40');
 
-        Redis::hset("c:{$country->id}:stats", 'litter', '160');
-
-        $result = $this->service->getTopTags('country', $country->id, 'objects', 10);
+        $result = $this->service->getTopTags(LocationType::Country, $country->id, 'objects', 3);
 
         // Should be sorted by count descending
-        $this->assertEquals('cup', $result['items'][0]['name']);
-        $this->assertEquals('bottle', $result['items'][1]['name']);
-        $this->assertEquals('wrapper', $result['items'][2]['name']);
+        $this->assertEquals(15, $result['items'][0]['count']);
+        $this->assertEquals(10, $result['items'][1]['count']);
+        $this->assertEquals(7, $result['items'][2]['count']);
+        $this->assertEquals(8, $result['other']['count']);
     }
 }

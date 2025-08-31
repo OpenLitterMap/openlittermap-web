@@ -2,90 +2,59 @@
 
 namespace App\Services\Points\Aggregators;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CategoryAggregator
 {
     /**
-     * Aggregate category breakdown (objects only, no brands/materials)
+     * Aggregate category breakdown (includes base quantities + materials)
      */
-    public function aggregate(string $whereSql, array $bindings): array
+    public function aggregate(Collection $photoIds): array
     {
-        $results = DB::select("
-            SELECT
-                c.key,
-                SUM(pt.quantity) as count
-            FROM photos p
-            JOIN photo_tags pt ON p.id = pt.photo_id
-            JOIN categories c ON pt.category_id = c.id
-            WHERE {$whereSql}
-                AND pt.litter_object_id IS NOT NULL
-            GROUP BY c.id, c.key
-            ORDER BY count DESC
-        ", $bindings);
+        if ($photoIds->isEmpty()) {
+            return [];
+        }
 
-        return array_map(fn($row) => [
-            'key' => $row->key,
-            'name' => $this->formatName($row->key),
-            'count' => (int)$row->count,
-            'color' => $this->getCategoryColor($row->key),
-        ], $results);
-    }
+        // Get base quantities per category
+        $baseQuantities = DB::table('photo_tags')
+            ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
+            ->whereIn('photo_tags.photo_id', $photoIds)
+            ->groupBy('categories.id', 'categories.key')
+            ->selectRaw('
+                categories.id,
+                categories.key,
+                SUM(photo_tags.quantity) as base_qty
+            ')
+            ->get()
+            ->keyBy('id');
 
-    /**
-     * Aggregate from temporary table
-     */
-    public function aggregateFromTable(string $table): array
-    {
-        $results = DB::select("
-            SELECT
-                c.key,
-                SUM(pt.quantity) as count
-            FROM {$table} p
-            JOIN photo_tags pt ON p.id = pt.photo_id
-            JOIN categories c ON pt.category_id = c.id
-            WHERE pt.litter_object_id IS NOT NULL
-            GROUP BY c.id, c.key
-            ORDER BY count DESC
-        ");
+        // Get material quantities per category
+        $materialQuantities = DB::table('photo_tags')
+            ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
+            ->join('photo_tag_extra_tags', function($join) {
+                $join->on('photo_tags.id', '=', 'photo_tag_extra_tags.photo_tag_id')
+                    ->where('photo_tag_extra_tags.tag_type', '=', 'material');
+            })
+            ->whereIn('photo_tags.photo_id', $photoIds)
+            ->groupBy('categories.id')
+            ->selectRaw('
+                categories.id,
+                SUM(photo_tag_extra_tags.quantity) as material_qty
+            ')
+            ->pluck('material_qty', 'id');
 
-        return array_map(fn($row) => [
-            'key' => $row->key,
-            'name' => $this->formatName($row->key),
-            'count' => (int)$row->count,
-            'color' => $this->getCategoryColor($row->key),
-        ], $results);
-    }
+        // Combine base + materials
+        $results = $baseQuantities->map(function($category) use ($materialQuantities) {
+            $baseQty = (int)$category->base_qty;
+            $materialQty = (int)($materialQuantities[$category->id] ?? 0);
 
-    /**
-     * Format category name
-     */
-    private function formatName(string $key): string
-    {
-        return ucfirst(str_replace('_', ' ', $key));
-    }
+            return (object)[
+                'key' => $category->key,
+                'qty' => $baseQty + $materialQty,
+            ];
+        });
 
-    /**
-     * Get category color for visualization
-     */
-    private function getCategoryColor(string $key): string
-    {
-        $colors = [
-            'smoking' => '#ff6b6b',
-            'food' => '#4ecdc4',
-            'alcohol' => '#45b7d1',
-            'coffee' => '#96ceb4',
-            'soft_drinks' => '#ffeaa7',
-            'drugs' => '#fd79a8',
-            'sanitary' => '#dfe6e9',
-            'coastal' => '#00b894',
-            'dumping' => '#636e72',
-            'industrial' => '#2d3436',
-            'art' => '#e17055',
-            'dogshit' => '#8b6f47',
-            'other' => '#74b9ff',
-        ];
-
-        return $colors[$key] ?? '#95a5a6';
+        return $results->sortByDesc('qty')->values()->toArray();
     }
 }

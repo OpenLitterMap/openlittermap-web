@@ -2,88 +2,119 @@
 
 namespace App\Services\Points\Builders;
 
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
+
 class QueryBuilder
 {
     /**
-     * Build optimized WHERE clause with bindings
+     * Build query with all filters applied
      */
-    public function buildWhere(array $params): array
+    public function build(array $params): Builder
     {
-        $conditions = ['verified >= 2'];
-        $bindings = [];
+        $query = DB::table('photos')->where('verified', '>=', 2);
 
-        // Date filters
-        if (!empty($params['year'])) {
-            $conditions[] = 'YEAR(datetime) = ?';
-            $bindings[] = $params['year'];
-        } elseif (!empty($params['from']) && !empty($params['to'])) {
-            $conditions[] = 'DATE(datetime) BETWEEN ? AND ?';
-            $bindings[] = $params['from'];
-            $bindings[] = $params['to'];
-        }
+        $this->applyDateFilters($query, $params);
+        $this->applyUserFilter($query, $params);
+        $this->applyLocationFilters($query, $params);
+        $this->applySpatialFilter($query, $params);
+        $this->applyTagFilters($query, $params);
 
-        // User filter
-        if (!empty($params['username'])) {
-            $conditions[] = 'user_id IN (SELECT id FROM users WHERE username = ?)';
-            $bindings[] = $params['username'];
-        }
-
-        // Geographic filters
-        foreach (['country_id', 'state_id', 'city_id'] as $field) {
-            if (!empty($params[$field])) {
-                $conditions[] = "{$field} = ?";
-                $bindings[] = $params[$field];
-            }
-        }
-
-        // Bounding box
-        if (!empty($params['bbox'])) {
-            $this->addBboxCondition($params['bbox'], $conditions, $bindings);
-        }
-
-        // Category filters
-        if (!empty($params['categories'])) {
-            $placeholders = str_repeat('?,', count($params['categories']) - 1) . '?';
-            $conditions[] = "id IN (
-                SELECT DISTINCT photo_id
-                FROM photo_tags pt
-                JOIN categories c ON pt.category_id = c.id
-                WHERE c.key IN ({$placeholders})
-            )";
-            $bindings = array_merge($bindings, $params['categories']);
-        }
-
-        // Object filters
-        if (!empty($params['litter_objects'])) {
-            $placeholders = str_repeat('?,', count($params['litter_objects']) - 1) . '?';
-            $conditions[] = "id IN (
-                SELECT DISTINCT photo_id
-                FROM photo_tags pt
-                JOIN litter_objects lo ON pt.litter_object_id = lo.id
-                WHERE lo.key IN ({$placeholders})
-            )";
-            $bindings = array_merge($bindings, $params['litter_objects']);
-        }
-
-        return [implode(' AND ', $conditions), $bindings];
+        return $query;
     }
 
     /**
-     * Add bounding box condition
+     * Apply date filters
      */
-    private function addBboxCondition($bbox, array &$conditions, array &$bindings): void
+    private function applyDateFilters($query, array $params): void
     {
-        if (is_array($bbox)) {
-            if (isset($bbox['left'], $bbox['bottom'], $bbox['right'], $bbox['top'])) {
-                $conditions[] = 'lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?';
-                array_push($bindings, $bbox['bottom'], $bbox['top'], $bbox['left'], $bbox['right']);
+        if (!empty($params['year'])) {
+            $query->whereYear('datetime', $params['year']);
+        } elseif (!empty($params['from']) && !empty($params['to'])) {
+            $query->whereBetween('datetime', [$params['from'], $params['to']]);
+        }
+    }
+
+    /**
+     * Apply user filter with visibility check
+     */
+    private function applyUserFilter($query, array $params): void
+    {
+        if (!empty($params['username'])) {
+            $query->whereExists(function($q) use ($params) {
+                $q->select(DB::raw(1))
+                    ->from('users')
+                    ->whereColumn('users.id', 'photos.user_id')
+                    ->where('username', $params['username'])
+                    ->where('show_username_maps', true);
+            });
+        }
+    }
+
+    /**
+     * Apply location filters
+     */
+    private function applyLocationFilters($query, array $params): void
+    {
+        foreach (['country_id', 'state_id', 'city_id'] as $field) {
+            if (!empty($params[$field])) {
+                $query->where($field, $params[$field]);
             }
-        } elseif (is_string($bbox)) {
-            $parts = explode(',', $bbox);
-            if (count($parts) === 4) {
-                $conditions[] = 'lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?';
-                array_push($bindings, $parts[1], $parts[3], $parts[0], $parts[2]);
+        }
+    }
+
+    /**
+     * Apply spatial bounding box filter
+     */
+    private function applySpatialFilter($query, array $params): void
+    {
+        if (!empty($params['bbox'])) {
+            $bbox = $params['bbox'];
+            if (is_array($bbox) && isset($bbox['left'], $bbox['bottom'], $bbox['right'], $bbox['top'])) {
+                $query->whereBetween('lat', [$bbox['bottom'], $bbox['top']])
+                    ->whereBetween('lon', [$bbox['left'], $bbox['right']]);
             }
+        }
+    }
+
+    /**
+     * Apply tag filters (categories and objects)
+     */
+    private function applyTagFilters($query, array $params): void
+    {
+        // Category filter
+        if (!empty($params['categories'])) {
+            $query->whereExists(function($q) use ($params) {
+                $q->select(DB::raw(1))
+                    ->from('photo_tags')
+                    ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
+                    ->whereColumn('photo_tags.photo_id', 'photos.id')
+                    ->whereIn('categories.key', $params['categories']);
+            });
+        }
+
+        // Litter object filter
+        if (!empty($params['litter_objects'])) {
+            $query->whereExists(function($q) use ($params) {
+                $q->select(DB::raw(1))
+                    ->from('photo_tags')
+                    ->join('litter_objects', 'photo_tags.litter_object_id', '=', 'litter_objects.id')
+                    ->whereColumn('photo_tags.photo_id', 'photos.id')
+                    ->whereIn('litter_objects.key', $params['litter_objects']);
+            });
+        }
+
+        // When both category and object filters are present, they must be in the same tag
+        if (!empty($params['categories']) && !empty($params['litter_objects'])) {
+            $query->whereExists(function($q) use ($params) {
+                $q->select(DB::raw(1))
+                    ->from('photo_tags')
+                    ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
+                    ->join('litter_objects', 'photo_tags.litter_object_id', '=', 'litter_objects.id')
+                    ->whereColumn('photo_tags.photo_id', 'photos.id')
+                    ->whereIn('categories.key', $params['categories'])
+                    ->whereIn('litter_objects.key', $params['litter_objects']);
+            });
         }
     }
 }

@@ -26,8 +26,8 @@ class AchievementEngine
         }
 
         try {
-            $counts      = RedisMetricsCollector::getUserCounts($userId);
-            $already     = $this->repository->getUnlockedAchievementIds($userId);
+            $counts = RedisMetricsCollector::getUserMetrics($userId);
+            $already = $this->repository->getUnlockedAchievementIds($userId);
             $definitions = $this->repository->getAchievementDefinitions();
 
             /* ---------------------------------------------------------

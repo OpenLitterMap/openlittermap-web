@@ -2,7 +2,8 @@
 
 namespace App\Services\Points\Aggregators;
 
-use Carbon\CarbonImmutable;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TimeSeriesAggregator
@@ -10,116 +11,61 @@ class TimeSeriesAggregator
     /**
      * Aggregate time series data
      */
-    public function aggregate(string $whereSql, array $bindings, array $params): array
+    public function aggregate(Collection $photoIds, array $params): array
     {
-        $groupBy = $this->getTimeGroupBy($params);
-
-        $results = DB::select("
-            SELECT
-                {$groupBy} as bucket,
-                COUNT(*) as photos,
-                SUM(total_litter) as objects
-            FROM photos
-            WHERE {$whereSql}
-            GROUP BY bucket
-            ORDER BY bucket
-        ", $bindings);
-
-        $histogram = array_map(fn($row) => [
-            'bucket' => $row->bucket,
-            'photos' => (int)$row->photos,
-            'objects' => (int)$row->objects,
-        ], $results);
-
-        return $this->calculateMetrics($histogram, $params);
-    }
-
-    /**
-     * Aggregate from temporary table
-     */
-    public function aggregateFromTable(string $table, array $params): array
-    {
-        $groupBy = $this->getTimeGroupBy($params);
-
-        $results = DB::select("
-            SELECT
-                {$groupBy} as bucket,
-                COUNT(*) as photos,
-                SUM(total_litter) as objects
-            FROM {$table}
-            GROUP BY bucket
-            ORDER BY bucket
-        ");
-
-        $histogram = array_map(fn($row) => [
-            'bucket' => $row->bucket,
-            'photos' => (int)$row->photos,
-            'objects' => (int)$row->objects,
-        ], $results);
-
-        return $this->calculateMetrics($histogram, $params);
-    }
-
-    /**
-     * Get SQL GROUP BY clause based on zoom level
-     */
-    private function getTimeGroupBy(array $params): string
-    {
-        $zoom = $params['zoom'] ?? 15;
-
-        return match(true) {
-            $zoom >= 19 => "DATE_FORMAT(datetime, '%Y-%m-%d %H:00:00')",
-            $zoom >= 17 => 'DATE(datetime)',
-            $zoom >= 15 => 'YEARWEEK(datetime, 1)',
-            default => "DATE_FORMAT(datetime, '%Y-%m-01')",
-        };
-    }
-
-    /**
-     * Calculate time series metrics
-     */
-    private function calculateMetrics(array $histogram, array $params): array
-    {
-        if (empty($histogram)) {
-            return [
-                'date_range' => ['from' => null, 'to' => null, 'days' => 0],
-                'histogram' => [],
-                'litter_per_minute' => 0,
-                'avg_per_day' => 0,
-                'peak_day' => null,
-            ];
+        if ($photoIds->isEmpty()) {
+            return [];
         }
 
-        // Extract date range
-        $first = reset($histogram);
-        $last = end($histogram);
-        $from = CarbonImmutable::parse($first['bucket']);
-        $to = CarbonImmutable::parse($last['bucket']);
-        $days = $from->diffInDays($to) + 1;
+        $groupBy = $this->determineGroupBy($params);
 
-        // Calculate metrics
-        $totalObjects = array_sum(array_column($histogram, 'objects'));
-        $peakDay = array_reduce($histogram, fn($max, $day) =>
-        (!$max || $day['objects'] > $max['objects']) ? $day : $max
-        );
+        $results = DB::table('photos')
+            ->whereIn('id', $photoIds)
+            ->selectRaw("
+                {$groupBy} as bucket,
+                COUNT(*) as photos,
+                COALESCE(SUM(total_litter), 0) as objects
+            ")
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->get();
 
-        // Litter per minute (assuming 8 active hours per day)
-        $activeMinutes = $days * 8 * 60;
-        $litterPerMinute = $activeMinutes > 0 ? round($totalObjects / $activeMinutes, 2) : 0;
+        return $results->map(function($row) {
+            return (object)[
+                'bucket' => $row->bucket,
+                'photos' => (int)$row->photos,
+                'objects' => (int)$row->objects,
+            ];
+        })->toArray();
+    }
 
-        return [
-            'date_range' => [
-                'from' => $from->format('Y-m-d'),
-                'to' => $to->format('Y-m-d'),
-                'days' => $days,
-            ],
-            'histogram' => $histogram,
-            'litter_per_minute' => $litterPerMinute,
-            'avg_per_day' => $days > 0 ? round($totalObjects / $days, 1) : 0,
-            'peak_day' => $peakDay ? [
-                'date' => $peakDay['bucket'],
-                'count' => $peakDay['objects'],
-            ] : null,
-        ];
+    /**
+     * Determine appropriate time grouping based on date range
+     */
+    private function determineGroupBy(array $params): string
+    {
+        // If date range is provided, determine grouping based on range size
+        if (!empty($params['from']) && !empty($params['to'])) {
+            $from = Carbon::parse($params['from']);
+            $to = Carbon::parse($params['to']);
+            $days = $from->diffInDays($to);
+
+            if ($days <= 7) {
+                // Daily for week or less
+                return 'DATE(datetime)';
+            } elseif ($days <= 90) {
+                // Still daily for up to 3 months
+                return 'DATE(datetime)';
+            } elseif ($days <= 365) {
+                // Weekly for up to a year
+                return "DATE_FORMAT(datetime, '%Y-%u')";
+            } else {
+                // Monthly for larger ranges
+                return "DATE_FORMAT(datetime, '%Y-%m-01')";
+            }
+        }
+
+        // Default to monthly
+        return "DATE_FORMAT(datetime, '%Y-%m-01')";
     }
 }

@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\{DB, Log};
 class MigrationScript extends Command
 {
     protected $signature = 'olm:v5
-                            {--batch=500 : Number of photos to process per chunk}
-                            {--user= : Process only this user ID}';
+        {--batch=500 : Number of photos to process per chunk}
+        {--user= : Process only this user ID}';
 
     protected $description = 'Upgrade OpenLitterMap data to v5';
 

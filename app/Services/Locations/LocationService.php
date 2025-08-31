@@ -958,4 +958,43 @@ class LocationService
             'other' => ['count' => 0, 'percentage' => 0]
         ];
     }
+
+    /**
+     * Get cleanup statistics for a location
+     */
+    public function getCleanupStats(LocationType $type, int $id): array
+    {
+        $scope = $type->scopePrefix($id);
+        $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats($scope)), []);
+
+        $totalLitter = (int) ($stats['litter'] ?? 0);
+        $totalPickedUp = (int) ($stats['picked_up'] ?? 0);
+
+        $cleanupRate = $totalLitter > 0
+            ? round(($totalPickedUp / $totalLitter) * 100, 2)
+            : 0.0;
+
+        return [
+            'total_litter' => $totalLitter,
+            'total_picked_up' => $totalPickedUp,
+            'cleanup_rate' => $cleanupRate,
+        ];
+    }
+
+    /**
+     * Get tag summary for a location
+     */
+    public function getTagSummary(LocationType $type, int $id): array
+    {
+        $scope = $type->scopePrefix($id);
+        $stats = $this->safeRedis(fn() => Redis::hgetall(RedisKeys::stats($scope)), []);
+        $totalLitter = (int) ($stats['litter'] ?? 0);
+
+        return [
+            'total_litter' => $totalLitter,
+            'top_objects' => $this->getTopTags($type, $id, 'objects', 10)['items'] ?? [],
+            'top_brands' => $this->getTopTags($type, $id, 'brands', 10)['items'] ?? [],
+            'top_materials' => $this->getTopTags($type, $id, 'materials', 10)['items'] ?? [],
+        ];
+    }
 }
