@@ -10,6 +10,7 @@ use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Services\Achievements\Tags\TagKeyCache;
 use App\Services\Redis\RedisMetricsCollector;
 use App\Services\Redis\RedisKeys;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
@@ -25,19 +26,24 @@ class RedisMetricsCollectorLocationTest extends TestCase
     {
         parent::setUp();
         Redis::flushall();
+        TagKeyCache::forgetAll();
 
         // Seed brands for tests that need them
         $this->seed(GenerateBrandsSeeder::class);
+
+        // Preload tag cache
+        TagKeyCache::preloadAll();
     }
 
     protected function tearDown(): void
     {
         Redis::flushall();
+        TagKeyCache::forgetAll();
         parent::tearDown();
     }
 
     /**
-     * Helper to extract metrics from photo summary
+     * Helper to extract metrics from photo summary using TagKeyCache
      */
     private function getMetricsFromPhoto(Photo $photo): array
     {
@@ -53,11 +59,11 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $custom_tags = [];
 
         foreach ($tags as $categoryName => $categoryObjects) {
-            // Use simple numeric IDs for testing
-            $categoryId = crc32($categoryName) % 1000;
+            // Use TagKeyCache to get real IDs
+            $categoryId = (string)TagKeyCache::getOrCreateId('category', $categoryName);
 
             foreach ($categoryObjects as $objectName => $objectData) {
-                $objectId = crc32($objectName) % 1000;
+                $objectId = (string)TagKeyCache::getOrCreateId('object', $objectName);
 
                 if (is_array($objectData)) {
                     $quantity = $objectData['quantity'] ?? 0;
@@ -69,7 +75,7 @@ class RedisMetricsCollectorLocationTest extends TestCase
                     // Handle materials
                     if (isset($objectData['materials'])) {
                         foreach ($objectData['materials'] as $materialName => $matCount) {
-                            $materialId = crc32($materialName) % 1000;
+                            $materialId = (string)TagKeyCache::getOrCreateId('material', $materialName);
                             $materials[$materialId] = ($materials[$materialId] ?? 0) + $matCount;
                         }
                     }
@@ -77,11 +83,8 @@ class RedisMetricsCollectorLocationTest extends TestCase
                     // Handle brands
                     if (isset($objectData['brands'])) {
                         foreach ($objectData['brands'] as $brandName => $brandCount) {
-                            // Use actual brand IDs from database
-                            $brand = BrandList::where('key', $brandName)->first();
-                            if ($brand) {
-                                $brands[$brand->id] = ($brands[$brand->id] ?? 0) + $brandCount;
-                            }
+                            $brandId = (string)TagKeyCache::getOrCreateId('brand', $brandName);
+                            $brands[$brandId] = ($brands[$brandId] ?? 0) + $brandCount;
                         }
                     }
                 } else {
@@ -143,6 +146,11 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $country = Country::factory()->create();
         $user = User::factory()->create();
 
+        // Pre-create the tags to ensure consistent IDs
+        $cupId = (string)TagKeyCache::getOrCreateId('object', 'cup');
+        $bottleId = (string)TagKeyCache::getOrCreateId('object', 'bottle');
+        $drinkingId = (string)TagKeyCache::getOrCreateId('category', 'drinking');
+
         // Create multiple photos with different objects
         $photos = [
             Photo::factory()->for($user)->create([
@@ -177,14 +185,38 @@ class RedisMetricsCollectorLocationTest extends TestCase
             ])
         ];
 
-        foreach ($photos as $photo) {
-            $metrics = $this->getMetricsFromPhoto($photo);
+        // Process each photo manually with correct metrics structure
+        foreach ($photos as $index => $photo) {
+            $tags = $photo->summary['tags'];
+            $metrics = [
+                'litter' => 0,
+                'xp' => 1,
+                'tags' => [
+                    'categories' => [],
+                    'objects' => [],
+                    'materials' => [],
+                    'brands' => [],
+                    'custom_tags' => []
+                ]
+            ];
+
+            // Build metrics with the pre-created IDs
+            foreach ($tags as $catKey => $objects) {
+                foreach ($objects as $objKey => $data) {
+                    $quantity = $data['quantity'] ?? 0;
+                    $metrics['litter'] += $quantity;
+                    $metrics['tags']['categories'][$drinkingId] = ($metrics['tags']['categories'][$drinkingId] ?? 0) + $quantity;
+
+                    if ($objKey === 'cup') {
+                        $metrics['tags']['objects'][$cupId] = ($metrics['tags']['objects'][$cupId] ?? 0) + $quantity;
+                    } elseif ($objKey === 'bottle') {
+                        $metrics['tags']['objects'][$bottleId] = ($metrics['tags']['objects'][$bottleId] ?? 0) + $quantity;
+                    }
+                }
+            }
+
             RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
         }
-
-        // Use consistent IDs for testing
-        $cupId = crc32('cup') % 1000;
-        $bottleId = crc32('bottle') % 1000;
 
         // Check rankings exist and are ordered correctly
         $topObjects = Redis::zRevRange(
@@ -194,17 +226,12 @@ class RedisMetricsCollectorLocationTest extends TestCase
             'WITHSCORES'
         );
 
-        $this->assertNotEmpty($topObjects);
-
-        // In Redis ZSET with WITHSCORES, the format is [member => score]
-        // So the keys are the object IDs and values are the counts
-
-        // Check that we have 2 objects
+        $this->assertNotEmpty($topObjects, 'Rankings should not be empty');
         $this->assertCount(2, $topObjects);
 
         // Find the actual cup and bottle scores
-        $cupScore = $topObjects[(string)$cupId] ?? null;
-        $bottleScore = $topObjects[(string)$bottleId] ?? null;
+        $cupScore = $topObjects[$cupId] ?? null;
+        $bottleScore = $topObjects[$bottleId] ?? null;
 
         // Verify the scores
         $this->assertEquals('7', $cupScore, 'Cup should have score of 7');
@@ -212,7 +239,7 @@ class RedisMetricsCollectorLocationTest extends TestCase
 
         // Verify cup is ranked higher (should be first since we used zRevRange)
         $rankings = array_keys($topObjects);
-        $this->assertEquals((string)$cupId, $rankings[0], 'Cup should be ranked first');
+        $this->assertEquals($cupId, $rankings[0], 'Cup should be ranked first');
     }
 
     /**
@@ -223,9 +250,11 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $country = Country::factory()->create();
         $user = User::factory()->create();
 
-        // Create brands first if they don't exist
-        $starbucksId = BrandList::firstOrCreate(['key' => 'starbucks'])->id;
-        $cocacolaId = BrandList::firstOrCreate(['key' => 'coke'])->id;
+        // Pre-create the tags to ensure consistent IDs
+        $starbucksId = (string)TagKeyCache::getOrCreateId('brand', 'starbucks');
+        $cokeId = (string)TagKeyCache::getOrCreateId('brand', 'coke');
+        $cupId = (string)TagKeyCache::getOrCreateId('object', 'cup');
+        $drinkingId = (string)TagKeyCache::getOrCreateId('category', 'drinking');
 
         $photo = Photo::factory()->for($user)->create([
             'country_id' => $country->id,
@@ -244,7 +273,22 @@ class RedisMetricsCollectorLocationTest extends TestCase
             ]
         ]);
 
-        $metrics = $this->getMetricsFromPhoto($photo);
+        // Create metrics with pre-created IDs
+        $metrics = [
+            'litter' => 1,
+            'xp' => 1,
+            'tags' => [
+                'categories' => [$drinkingId => 1],
+                'objects' => [$cupId => 1],
+                'materials' => [],
+                'brands' => [
+                    $starbucksId => 3,
+                    $cokeId => 1
+                ],
+                'custom_tags' => []
+            ]
+        ];
+
         RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
         $topBrands = Redis::zRevRange(
@@ -258,18 +302,17 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $this->assertNotEmpty($topBrands);
         $this->assertCount(2, $topBrands);
 
-        // In Redis ZSET with WITHSCORES, format is [member => score]
         // Find the actual brand scores
-        $starbucksScore = $topBrands[(string)$starbucksId] ?? null;
-        $cocacolaScore = $topBrands[(string)$cocacolaId] ?? null;
+        $starbucksScore = $topBrands[$starbucksId] ?? null;
+        $cokeScore = $topBrands[$cokeId] ?? null;
 
         // Verify the scores
         $this->assertEquals('3', $starbucksScore, 'Starbucks should have score of 3');
-        $this->assertEquals('1', $cocacolaScore, 'Coca-Cola should have score of 1');
+        $this->assertEquals('1', $cokeScore, 'Coke should have score of 1');
 
         // Verify starbucks is ranked higher
         $rankings = array_keys($topBrands);
-        $this->assertEquals((string)$starbucksId, $rankings[0], 'Starbucks should be ranked first');
+        $this->assertEquals($starbucksId, $rankings[0], 'Starbucks should be ranked first');
     }
 
     /**
@@ -335,13 +378,13 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $metrics = $this->getMetricsFromPhoto($photo);
         RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        $cupId = crc32('cup') % 1000;
+        $cupId = (string)TagKeyCache::getOrCreateId('object', 'cup');
 
         // Global objects hash should be updated
-        $this->assertEquals('5', Redis::hGet(RedisKeys::objects('{g}'), (string)$cupId));
+        $this->assertEquals('5', Redis::hGet(RedisKeys::objects('{g}'), $cupId));
 
         // Global rankings should also exist
-        $score = Redis::zScore(RedisKeys::ranking('{g}', 'objects'), (string)$cupId);
+        $score = Redis::zScore(RedisKeys::ranking('{g}', 'objects'), $cupId);
         $this->assertEquals('5', $score);
     }
 
@@ -383,12 +426,12 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $this->assertEquals('10', $stateStats['litter']);
         $this->assertEquals('10', $cityStats['litter']);
 
-        $cupId = crc32('cup') % 1000;
+        $cupId = (string)TagKeyCache::getOrCreateId('object', 'cup');
 
         // Check rankings exist at all levels
-        $countryRank = Redis::zScore(RedisKeys::ranking(RedisKeys::country($country->id), 'objects'), (string)$cupId);
-        $stateRank = Redis::zScore(RedisKeys::ranking(RedisKeys::state($state->id), 'objects'), (string)$cupId);
-        $cityRank = Redis::zScore(RedisKeys::ranking(RedisKeys::city($city->id), 'objects'), (string)$cupId);
+        $countryRank = Redis::zScore(RedisKeys::ranking(RedisKeys::country($country->id), 'objects'), $cupId);
+        $stateRank = Redis::zScore(RedisKeys::ranking(RedisKeys::state($state->id), 'objects'), $cupId);
+        $cityRank = Redis::zScore(RedisKeys::ranking(RedisKeys::city($city->id), 'objects'), $cupId);
 
         $this->assertEquals('10', $countryRank);
         $this->assertEquals('10', $stateRank);
@@ -439,13 +482,17 @@ class RedisMetricsCollectorLocationTest extends TestCase
         $initialMetrics = $this->getMetricsFromPhoto($photo);
         RedisMetricsCollector::processPhoto($photo, $initialMetrics, 'create');
 
+        // Get real IDs for delta
+        $drinkingId = (string)TagKeyCache::getOrCreateId('category', 'drinking');
+        $cupId = (string)TagKeyCache::getOrCreateId('object', 'cup');
+
         // Update with delta (added 2 more cups)
         $deltaMetrics = [
             'litter' => 2,
             'xp' => 4,
             'tags' => [
-                'categories' => [crc32('drinking') % 1000 => 2],
-                'objects' => [crc32('cup') % 1000 => 2],
+                'categories' => [$drinkingId => 2],
+                'objects' => [$cupId => 2],
                 'materials' => [],
                 'brands' => [],
                 'custom_tags' => []

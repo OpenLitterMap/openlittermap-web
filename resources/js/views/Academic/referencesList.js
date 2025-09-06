@@ -560,4 +560,16 @@ export const referencesList = [
         link: 'https://www.researchgate.net/profile/Anjali-G-3/publication/392654486_Identification_of_construction_and_demolition_waste_Leveraging_deep_learning_and_open-source_imagery_for_advanced_monitoring_in_developing_economies/links/684bf578131a7f2849f149eb/Identification-of-construction-and-demolition-waste-Leveraging-deep-learning-and-open-source-imagery-for-advanced-monitoring-in-developing-economies.pdf',
         author: 'HaitherAli et al',
     },
+    {
+        date: '2025/08/12',
+        title: 'Microplastics and plant health: a comprehensive review of sources, distribution, toxicity, and remediation',
+        link: 'https://www.nature.com/articles/s44454-025-00007-z',
+        author: 'Chaudhary et al',
+    },
+    {
+        date: '2025/09/02',
+        title: 'Vision-Based Plastic Identification: A Comprehensive Survey on the Deep Learning Methods',
+        link: 'https://books.google.ie/books?hl=en&lr=lang_en&id=jEqCEQAAQBAJ&oi=fnd&pg=PA11&dq=openlittermap&ots=fvEefSh2g1&sig=730tV1UJEZtdw8HuS-zBRaDRWok&redir_esc=y#v=onepage&q=openlittermap&f=false',
+        author: 'Shareena & Padmavathi',
+    },
 ];
