@@ -86,7 +86,7 @@ class GeneratePhotoSummaryService
 
             // Process extra tags
             foreach ($pt->extraTags as $extra) {
-                $extraId = $extra->extra_tag_id;
+                $extraId = $extra->tag_type_id;
                 $extraQty = $extra->quantity;
                 $totalTags += $extraQty;
                 $categoryTotals[$categoryId] += $extraQty;
