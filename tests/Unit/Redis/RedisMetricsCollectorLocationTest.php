@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Redis;
 
-use App\Models\Litter\Tags\BrandList;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -219,27 +218,19 @@ class RedisMetricsCollectorLocationTest extends TestCase
         }
 
         // Check rankings exist and are ordered correctly
-        $topObjects = Redis::zRevRange(
-            RedisKeys::ranking(RedisKeys::country($country->id), 'objects'),
-            0,
-            -1,
-            'WITHSCORES'
-        );
+        $rankKey = RedisKeys::ranking(RedisKeys::country($country->id), 'objects');
 
-        $this->assertNotEmpty($topObjects, 'Rankings should not be empty');
-        $this->assertCount(2, $topObjects);
+        // Check scores directly
+        $cupScore = Redis::zScore($rankKey, $cupId);
+        $bottleScore = Redis::zScore($rankKey, $bottleId);
 
-        // Find the actual cup and bottle scores
-        $cupScore = $topObjects[$cupId] ?? null;
-        $bottleScore = $topObjects[$bottleId] ?? null;
+        $this->assertEquals('7', (string)$cupScore, 'Cup should have score of 7');
+        $this->assertEquals('3', (string)$bottleScore, 'Bottle should have score of 3');
 
-        // Verify the scores
-        $this->assertEquals('7', $cupScore, 'Cup should have score of 7');
-        $this->assertEquals('3', $bottleScore, 'Bottle should have score of 3');
-
-        // Verify cup is ranked higher (should be first since we used zRevRange)
-        $rankings = array_keys($topObjects);
+        // Check ranking order separately
+        $rankings = Redis::zRevRange($rankKey, 0, -1);
         $this->assertEquals($cupId, $rankings[0], 'Cup should be ranked first');
+        $this->assertEquals($bottleId, $rankings[1], 'Bottle should be ranked second');
     }
 
     /**
@@ -291,28 +282,19 @@ class RedisMetricsCollectorLocationTest extends TestCase
 
         RedisMetricsCollector::processPhoto($photo, $metrics, 'create');
 
-        $topBrands = Redis::zRevRange(
-            RedisKeys::ranking(RedisKeys::country($country->id), 'brands'),
-            0,
-            -1,
-            'WITHSCORES'
-        );
+        $rankKey = RedisKeys::ranking(RedisKeys::country($country->id), 'brands');
 
-        // Check we have the expected brands with correct counts
-        $this->assertNotEmpty($topBrands);
-        $this->assertCount(2, $topBrands);
+        // Check scores directly
+        $starbucksScore = Redis::zScore($rankKey, $starbucksId);
+        $cokeScore = Redis::zScore($rankKey, $cokeId);
 
-        // Find the actual brand scores
-        $starbucksScore = $topBrands[$starbucksId] ?? null;
-        $cokeScore = $topBrands[$cokeId] ?? null;
+        $this->assertEquals('3', (string)$starbucksScore, 'Starbucks should have score of 3');
+        $this->assertEquals('1', (string)$cokeScore, 'Coke should have score of 1');
 
-        // Verify the scores
-        $this->assertEquals('3', $starbucksScore, 'Starbucks should have score of 3');
-        $this->assertEquals('1', $cokeScore, 'Coke should have score of 1');
-
-        // Verify starbucks is ranked higher
-        $rankings = array_keys($topBrands);
+        // Check ranking order separately
+        $rankings = Redis::zRevRange($rankKey, 0, -1);
         $this->assertEquals($starbucksId, $rankings[0], 'Starbucks should be ranked first');
+        $this->assertEquals($cokeId, $rankings[1], 'Coke should be ranked second');
     }
 
     /**

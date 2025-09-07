@@ -43,38 +43,37 @@ class PointsStatsTest extends TestCase
     }
 
     /** @test */
+    /** @test */
     public function it_returns_correct_counts_for_basic_aggregation()
     {
         // Arrange
-        $user1 = User::factory()->create(['show_username_maps' => true]);
-        $user2 = User::factory()->create(['show_username_maps' => true]);
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
         $team = Team::factory()->create();
+        $user2->teams()->attach($team);
 
-        // Create photos with different states
-        $photo1 = $this->createPhotoWithLocation($user1, 0.0, 51.5, [
-            'remaining' => false,
-            'total_litter' => 5,
-            'total_tags' => 5
+        // Create photos with tags
+        $photo1 = $this->createPhotoWithTags($user1, 0.0, 51.5, 'smoking', 'butts', 5, [
+            'remaining' => false
         ]);
 
-        $photo2 = $this->createPhotoWithLocation($user1, 0.1, 51.5, [
-            'remaining' => true,
-            'total_litter' => 3,
-            'total_tags' => 3
+        $photo2 = $this->createPhotoWithTags($user2, 0.1, 51.5, 'food', 'wrapper', 3, [
+            'remaining' => false,
+            'team_id' => $team->id
         ]);
 
-        $photo3 = $this->createPhotoWithLocation($user2, 0.0, 51.5, [
-            'remaining' => false,
-            'team_id' => $team->id,
-            'total_litter' => 2,
-            'total_tags' => 2
+        $photo3 = $this->createPhotoWithTags($user2, 0.05, 51.5, 'alcohol', 'beer_bottle', 2, [
+            'remaining' => true
         ]);
 
         // Act
-        $stats = $this->service->getStats([
-            'bbox' => $this->testBbox,
-            'zoom' => 16
-        ]);
+        $response = $this->getJson('/api/points/stats?' . http_build_query([
+                'zoom' => 16,
+                'bbox' => $this->testBbox
+            ]));
+
+        $response->assertOk();
+        $stats = $response->json()['data'];
 
         // Assert
         $this->assertEquals(3, $stats['counts']['photos']);
@@ -452,9 +451,24 @@ class PointsStatsTest extends TestCase
         $this->assertEquals(1000, $stats['counts']['photos']);
     }
 
-    /**
-     * Helper method to create a photo with location
-     */
+    private function createPhotoWithTags($user, $lon, $lat, $categoryKey, $objectKey, $quantity, $attributes = [])
+    {
+        $photo = $this->createPhotoWithLocation($user, $lon, $lat, $attributes);
+
+        // Get or create category and object
+        $category = Category::firstOrCreate(['key' => $categoryKey]);
+        $object = LitterObject::firstOrCreate(['key' => $objectKey]);
+
+        PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $object->id,
+            'quantity' => $quantity
+        ]);
+
+        return $photo;
+    }
+
     private function createPhotoWithLocation($user, $lon, $lat, $attributes = [])
     {
         return Photo::factory()->create(array_merge([
