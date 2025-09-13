@@ -2,6 +2,7 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\XpScore;
 use App\Models\Photo;
 
 /**
@@ -160,6 +161,20 @@ class GeneratePhotoSummaryService
             // Sort objects within category
             $objects = $grouped[$catId];
             uasort($objects, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
+
+            // Clean up empty arrays before adding to sorted group
+            foreach ($objects as $objId => &$objData) {
+                if (empty($objData['materials'])) {
+                    unset($objData['materials']);
+                }
+                if (empty($objData['brands'])) {
+                    unset($objData['brands']);
+                }
+                if (empty($objData['custom_tags'])) {
+                    unset($objData['custom_tags']);
+                }
+            }
+
             $sortedGrouped[$catId] = $objects;
         }
 
@@ -173,6 +188,13 @@ class GeneratePhotoSummaryService
             'custom_tags' => $customTagCount,
         ];
 
+        // Clean up empty arrays in keyMap
+        foreach ($keyMap as $type => &$map) {
+            if (empty($map)) {
+                unset($keyMap[$type]);
+            }
+        }
+
         // Build final summary
         $summary = [
             'tags' => $sortedGrouped,
@@ -185,7 +207,7 @@ class GeneratePhotoSummaryService
 
         // Add picked_up bonus if applicable
         if (!$photo->remaining) {
-            $xp += \App\Enums\XpScore::PickedUp->xp(); // +5 XP for picked up
+            $xp += XpScore::PickedUp->xp(); // +5 XP for picked up
         }
 
         // Persist summary and XP

@@ -9,6 +9,7 @@ use App\Http\Controllers\Location\TagController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
+use App\Http\Controllers\User\Photos\UserPhotosController;
 use App\Models\Littercoin;
 
 use Illuminate\Http\Request;
@@ -163,9 +164,7 @@ Route::prefix('/teams')->group(function () {
     Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth:api');
 });
 
-
 Route::middleware('auth:sanctum')->group(function () {
-
     // Get data for the Global Leaderboard - deprecated
 //    Route::get('/global/leaderboard', GetUsersForGlobalLeaderboardController::class);
 //    Route::get('/global/leaderboard/location', GetUsersForLocationLeaderboardController::class);
@@ -178,4 +177,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/redis-data/performance}', [RedisDataController::class, 'performance']);
     Route::get('/redis-data/key-analysis', [RedisDataController::class, 'keyAnalysis']);
 
+    Route::get('/user/photos', [UserPhotosController::class, 'index']);
+    Route::get('/user/photos/{id}', [UserPhotosController::class, 'show']);
 });

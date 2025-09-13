@@ -19,8 +19,10 @@ import Redis from '../views/Admin/Redis.vue';
 import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
 import World from '../views/Locations/World.vue';
+import Uploads from '../views/User/Uploads/Uploads.vue';
 
 const routes = [
+    // Public routes
     {
         path: '/about',
         name: 'About',
@@ -84,6 +86,14 @@ const routes = [
         path: '/upload',
         name: 'Upload',
         component: Upload,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/uploads',
+        name: 'Uploads',
+        component: Uploads,
         meta: {
             middleware: [auth],
         },

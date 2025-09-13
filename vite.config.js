@@ -14,6 +14,7 @@ export default defineConfig({
         alias: {
             '@': '/resources/js',
             '@css': '/resources/css',
+            '@stores': '/resources/js/stores',
         },
     },
     assetsInclude: ['**/*.JPG', '**/*.jpg', '**/*.jpeg', '**/*.png', '**/*.gif', '**/*.svg'],

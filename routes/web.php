@@ -140,8 +140,8 @@ Route::get('bulk-tag', HomeController::class);
 // The users profile
 Route::get('profile', HomeController::class);
 
-// The users upload
-Route::get('my-uploads', HomeController::class);
+// The users uploads
+Route::get('uploads', HomeController::class);
 
 // Get unverified paginated photos for tagging
 // Route::get('photos', 'PhotosController@unverified');

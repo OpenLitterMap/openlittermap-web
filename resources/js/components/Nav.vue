@@ -76,6 +76,10 @@
                             >Achievements</router-link
                         >
 
+                        <router-link to="/uploads" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >My Uploads</router-link
+                        >
+
                         <router-link to="/profile" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >Profile</router-link
                         >

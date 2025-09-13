@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\{DB, Log};
 
 class MigrationScript extends Command
 {
-    // Todo - deprecate remaining and introduced picked_up (nullable)
-
     protected $signature = 'olm:v5
         {--batch=500 : Number of photos to process per chunk}
         {--user= : Process only this user ID}';

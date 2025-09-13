@@ -56,29 +56,25 @@ class ClassifyTagsService
     public function classify(string $tag): array
     {
         // Check if it's a deprecated tag
-        $deprecatedTag = $this->normalizeDeprecatedTag($tag);
+        $deprecatedMapping = self::normalizeDeprecatedTag($tag);
 
-        if ($deprecatedTag !== null) {
-            // e.g. $deprecatedTag might look like:
-            // [
-            //   'object' => 'packaging',
-            //   'materials' => ['paper', 'cardboard'],
-            //   'brands' => [],
-            //   ...
-            // ]
-
-            // Replace $key with the new key
-            $objectKey = $deprecatedTag['object'] ?? $tag;
+        if ($deprecatedMapping !== null) {
+            $objectKey = $deprecatedMapping['object'] ?? $tag;
 
             // Run normal classification on the new key
             $result = $this->classifyNewKey($objectKey);
 
-            // Do we need this?
-            if (!empty($deprecatedTag['materials'])) {
-                $result['materials'] = $deprecatedTag['materials'];
+            if (!empty($deprecatedMapping['materials'])) {
+                $result['materials'] = $deprecatedMapping['materials'];
             }
-            if (!empty($deprecatedTag['brands'])) {
-                $result['brands'] = $deprecatedTag['brands'];
+            if (!empty($deprecatedMapping['brands'])) {
+                $result['brands'] = $deprecatedMapping['brands'];
+            }
+            if (!empty($deprecatedMapping['states'])) {
+                $result['states'] = $deprecatedMapping['states'];
+            }
+            if (!empty($deprecatedMapping['sizes'])) {
+                $result['sizes'] = $deprecatedMapping['sizes'];
             }
 
             return $result;
@@ -133,96 +129,44 @@ class ClassifyTagsService
         return ['type' => 'object', 'id' => $created->id, 'key' => $key];
     }
 
+    // We only need to map the keys that have changed.
     public static function normalizeDeprecatedTag(string $key): ?array
     {
         return match ($key) {
-            default => null,
-            // Alcohol
+            // Only map keys that have CHANGED from old to new
+            // If the key exists in TagsConfig with the same name, don't map it
+
+            // Alcohol - most stay the same except:
             'beerBottle' => ['object' => 'beer_bottle', 'materials' => ['glass']],
             'beerCan' => ['object' => 'beer_can', 'materials' => ['aluminium']],
             'spiritBottle' => ['object' => 'spirits_bottle', 'materials' => ['glass']],
             'wineBottle' => ['object' => 'wine_bottle', 'materials' => ['glass']],
-            'brokenGlass' => ['object' => 'brokenGlass', 'materials' => ['glass']],
-            'bottleTops' => ['object' => 'bottleTop', 'materials' => ['metal']],
             'paperCardAlcoholPackaging' => ['object' => 'packaging', 'materials' => ['cardboard', 'paper']],
             'plasticAlcoholPackaging' => ['object' => 'packaging', 'materials' => ['plastic']],
             'pint' => ['object' => 'pint_glass', 'materials' => ['glass']],
-            'six_pack_rings' => ['object' => 'sixPackRings', 'materials' => ['plastic']],
             'alcohol_plastic_cups' => ['object' => 'cup', 'materials' => ['plastic']],
             'alcoholOther' => ['object' => 'other'],
-
-            // Automobile
-            'tyres' => ['object' => 'tyres', 'materials' => ['rubber']],
-
-            // Coastal
-            'degraded_plasticbottle' => ['object' => 'bottle', 'materials' => ['plastic'], 'states' => ['degraded']],
-            'degraded_plasticbag' => ['object' => 'bag', 'materials' => ['plastic'], 'states' => ['degraded']],
-            'coastal_other' => ['object' => 'other'],
 
             // Coffee
             'coffeeCups' => ['object' => 'cup', 'materials' => ['paper']],
             'coffeeLids' => ['object' => 'lid', 'materials' => ['plastic']],
             'coffeeOther' => ['object' => 'other'],
 
-            // Dumping
-
             // Food
             'sweetWrappers' => ['object' => 'wrapper', 'materials' => ['plastic']],
             'paperFoodPackaging' => ['object' => 'packaging', 'materials' => ['paper']],
             'plasticFoodPackaging' => ['object' => 'packaging', 'materials' => ['plastic']],
             'plasticCutlery' => ['object' => 'cutlery', 'materials' => ['plastic']],
-            'crisp_small' => ['object' => 'crisps', 'materials' => ['foil'], 'sizes' => ['small', 'medium']],
-            'crisp_large' => ['object' => 'crisps', 'materials' => ['foil'], 'sizes' => ['large']],
             'styrofoam_plate' => ['object' => 'plate', 'materials' => ['styrofoam']],
             'sauce_packet' => ['object' => 'packet', 'materials' => ['plastic']],
-            'glass_jar' => ['object' => 'jar', 'materials' => ['glass']],
             'glass_jar_lid' => ['object' => 'lid', 'materials' => ['glass']],
-            'pizza_box' => ['object' => 'pizza_box', 'materials' => ['cardboard']],
             'aluminium_foil' => ['object' => 'tinfoil', 'materials' => ['aluminium']],
             'chewing_gum' => ['object' => 'gum', 'materials' => ['rubber']],
-            'foodOther' => ['object' => 'other', 'materials' => []],
-
-            // Industrial
-            'industrial_plastic' => ['object' => 'plastic', 'materials' => ['plastic']],
-            'bricks' => ['object' => 'bricks', 'materials' => ['clay']],
-            'industrial_other' => ['object' => 'other'],
-
-            // Other
-            'bags_litter' => ['object' => 'bagsLitter'],
-            'balloons' => ['object' => 'balloons'],
-            'cable_tie' => ['object' => 'cableTie', 'materials' => ['plastic']],
-            'clothing' => ['object' => 'clothing'],
-            'election_posters' => ['object' => 'posters', 'materials' => ['plastic']],
-            'forsale_posters' => ['object' => 'posters', 'materials' => ['plastic']],
-            'life_buoy' => ['object' => 'life_buoy', 'materials' => ['plastic']],
-            'magazine' => ['object' => 'magazine', 'materials' => ['paper', 'plastic']], // moved to new stationery category
-            'metal' => ['object' => 'metal', 'materials' => ['metal']],
-            'overflowing_bins' => ['object' => 'overflowingBins'],
-            'paper' => ['object' => 'paper', 'materials' => ['paper']],
-            'plastic_bags' => ['object' => 'plasticBags', 'materials' => ['plastic']],
-            'random_litter' => ['object' => 'randomLitter'],
-            'traffic_cone' => ['object' => 'trafficCone', 'materials' => ['plastic']],
-            'plastic' => ['object' => 'plastic', 'materials' => ['plastic']],
-            'umbrella' => ['object' => 'umbrella', 'materials' => ['plastic', 'metal', 'cloth']],
-            'washing_up' => ['object' => 'washingUp'],
-            'other' => ['object' => 'other'],
-
-            // Pets
-            'dogshit_in_bag' => ['object' => 'dogshit_in_bag', 'materials' => ['plastic']],
-
-            // Sanitary
-            'menstral' => ['object' => 'menstrual', 'materials' => ['plastic']],
-            'deodorant' => ['object' => 'deodorant_can', 'materials' => ['aluminium']],
-            'ear_swabs' => ['object' => 'earSwabs', 'materials' => ['plastic', 'cotton']],
-            'tooth_brush' => ['object' => 'toothbrush', 'materials' => ['plastic', 'nylon', 'bamboo', 'wood']],
-            'hand_sanitiser' => ['object' => 'sanitiser', 'materials' => ['plastic']],
-            'wetwipes' => ['object' => 'wipes', 'materials' => ['fabric', 'plastic', 'biodegradable']],
-            'sanitaryOther' => ['object' => 'other'],
+            'foodOther' => ['object' => 'other'],
 
             // Smoking
             'butts' => ['object' => 'butts', 'materials' => ['plastic', 'paper']],
             'cigaretteBox' => ['object' => 'cigarette_box', 'materials' => ['cardboard']],
-            'lighters' => ['object' => 'lighters', 'materials' => ['plastic', 'metal']],
             'skins' => ['object' => 'rollingPapers', 'materials' => ['paper']],
             'smoking_plastic' => ['object' => 'packaging', 'materials' => ['plastic']],
             'filterbox' => ['object' => 'filters', 'materials' => ['cardboard']],
@@ -237,7 +181,6 @@ class ClassifyTagsService
             'bottleLabel' => ['object' => 'label', 'materials' => ['plastic']],
             'tinCan' => ['object' => 'soda_can', 'materials' => ['aluminium']],
             'sportsDrink' => ['object' => 'sports_bottle', 'materials' => ['plastic']],
-            'straws' => ['object' => 'straw', 'materials' => ['plastic']],
             'plastic_cups' => ['object' => 'cup', 'materials' => ['plastic']],
             'plastic_cup_tops' => ['object' => 'lid', 'materials' => ['plastic']],
             'milk_bottle' => ['object' => 'milk_bottle', 'materials' => ['plastic']],
@@ -255,8 +198,58 @@ class ClassifyTagsService
             'broken_glass' => ['object' => 'brokenGlass', 'materials' => ['glass']],
             'softDrinkOther' => ['object' => 'other'],
 
-            // New Stationery category
-            'stationary' => [ 'object' => 'other', 'category' => 'stationery' ],
+            // Sanitary
+            'menstral' => ['object' => 'menstrual', 'materials' => ['plastic']],
+            'deodorant' => ['object' => 'deodorant_can', 'materials' => ['aluminium']],
+            'ear_swabs' => ['object' => 'earSwabs', 'materials' => ['plastic', 'cotton']],
+            'tooth_brush' => ['object' => 'toothbrush', 'materials' => ['plastic']],
+            'tooth_pick' => ['object' => 'toothpick', 'materials' => ['wood']],
+            'hand_sanitiser' => ['object' => 'sanitiser', 'materials' => ['plastic']],
+            'sanitaryOther' => ['object' => 'other'],
+
+            // Coastal
+            'degraded_plasticbottle' => ['object' => 'bottle', 'materials' => ['plastic'], 'states' => ['degraded']],
+            'degraded_plasticbag' => ['object' => 'bag', 'materials' => ['plastic'], 'states' => ['degraded']],
+            'degraded_straws' => ['object' => 'straws', 'materials' => ['plastic'], 'states' => ['degraded']],
+            'degraded_lighters' => ['object' => 'lighters', 'materials' => ['plastic'], 'states' => ['degraded']],
+            'rope_small' => ['object' => 'rope', 'materials' => ['rope', 'plastic'], 'sizes' => ['small']],
+            'rope_medium' => ['object' => 'rope', 'materials' => ['rope', 'plastic'], 'sizes' => ['medium']],
+            'rope_large' => ['object' => 'rope', 'materials' => ['rope', 'plastic'], 'sizes' => ['large']],
+            'fishing_gear_nets' => ['object' => 'fishing_nets', 'materials' => ['rope', 'plastic']],
+            'ghost_nets' => ['object' => 'fishing_nets', 'materials' => ['rope', 'plastic']],
+            'styro_small' => ['object' => 'styrofoam', 'materials' => ['styrofoam'], 'sizes' => ['small']],
+            'styro_medium' => ['object' => 'styrofoam', 'materials' => ['styrofoam'], 'sizes' => ['medium']],
+            'styro_large' => ['object' => 'styrofoam', 'materials' => ['styrofoam'], 'sizes' => ['large']],
+            'coastal_other' => ['object' => 'other'],
+
+            // Industrial
+            'industrial_plastic' => ['object' => 'plastic', 'materials' => ['plastic']],
+            'industrial_other' => ['object' => 'other'],
+
+            // Other
+            'bags_litter' => ['object' => 'bagsLitter'],
+            'overflowing_bins' => ['object' => 'overflowingBins'],
+            'plastic_bags' => ['object' => 'plasticBags'],
+            'random_litter' => ['object' => 'randomLitter'],
+            'traffic_cone' => ['object' => 'trafficCone'],
+            'election_posters' => ['object' => 'posters'],
+            'forsale_posters' => ['object' => 'posters'],
+            'cable_tie' => ['object' => 'cableTie'],
+            'washing_up' => ['object' => 'washingUp'],
+            'stationary' => ['object' => 'other', 'category' => 'stationery'],
+
+            // Dogshit/Pets (category rename)
+            'poo' => ['object' => 'dogshit', 'category' => 'pets'],
+            'poo_in_bag' => ['object' => 'dogshit_in_bag', 'category' => 'pets'],
+            'pooinbag' => ['object' => 'dogshit_in_bag', 'category' => 'pets'],
+
+            // Dumping (structural change)
+            'small' => ['object' => 'dumping', 'sizes' => ['small']],
+            'medium' => ['object' => 'dumping', 'sizes' => ['medium']],
+            'large' => ['object' => 'dumping', 'sizes' => ['large']],
+
+            // Return null for everything else - use key as-is
+            default => null,
         };
     }
 

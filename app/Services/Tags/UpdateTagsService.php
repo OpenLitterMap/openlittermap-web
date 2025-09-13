@@ -46,7 +46,7 @@ class UpdateTagsService
         $photo->update(['migrated_at' => now()]);
     }
 
-    protected function getTags(Photo $photo): array
+    public function getTags(Photo $photo): array
     {
         $tags           = $photo->tags() ?? [];
         $originalTags   = $this->mergeSingleObjectAndBrand($photo->id, $tags);
@@ -55,7 +55,7 @@ class UpdateTagsService
         return [$originalTags, $customTagsOld];
     }
 
-    protected function parseTags(array $originalTags, EloquentCollection $customTagsOld): array
+    public function parseTags(array $originalTags, EloquentCollection $customTagsOld): array
     {
         $groups             = [];
         $globalBrands       = [];
@@ -127,10 +127,12 @@ class UpdateTagsService
             }
         }
 
-        // 2) Distribute global brands into each group
-        if (! empty($globalBrands)) {
-            foreach ($groups as &$group) {
-                $group['brands'] = array_merge($group['brands'], $globalBrands);
+        // 2) Only attach global brands to groups that have brands
+        if (!empty($globalBrands)) {
+            foreach ($groups as $key => &$group) {
+                if (!empty($group['objects'])) {
+                    $group['brands'] = array_merge($group['brands'], $globalBrands);
+                }
             }
             unset($group);
         }
@@ -194,6 +196,7 @@ class UpdateTagsService
         }
     }
 
+
     private function createFromCategoryGroup(Photo $photo, array $group): void
     {
         $brandLinks = $this->classifyTags->resolveBrandObjectLinks($photo->id, $group);
@@ -206,6 +209,7 @@ class UpdateTagsService
                 'picked_up'        => ! $photo->remaining,
             ]);
 
+            // Handle brands
             $matchedBrands = collect($brandLinks)
                 ->filter(fn($pair) => $pair['object']['id'] === $object['id'])
                 ->pluck('brand')
@@ -215,17 +219,26 @@ class UpdateTagsService
 
             $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
 
-            if (! empty($object['materials'] ?? [])) {
-
+            // Handle materials from deprecated tag mappings
+            if (!empty($object['materials'])) {
                 $materialCache = $this->classifyTags->materialMap();
+                $materialsToAttach = [];
 
-                $matchedMaterials = array_filter($object['materials'], fn($k) => isset($materialCache[$k]));
-                $matchedMaterials = array_map(fn($k) => [
-                    'id'       => $materialCache[$k],
-                    'key'      => $k,
-                    'quantity' => $object['quantity']
-                ], $matchedMaterials);
-                $photoTag->attachExtraTags($matchedMaterials, 'material', $index);
+                foreach ($object['materials'] as $materialKey) {
+                    if (isset($materialCache[$materialKey])) {
+                        $materialsToAttach[] = [
+                            'id'       => $materialCache[$materialKey],
+                            'key'      => $materialKey,
+                            'quantity' => $object['quantity'] // Each material gets the object's quantity
+                        ];
+                    } else {
+                        Log::warning("Material '{$materialKey}' not found in cache for object '{$object['key']}'");
+                    }
+                }
+
+                if (!empty($materialsToAttach)) {
+                    $photoTag->attachExtraTags($materialsToAttach, 'material', $index);
+                }
             }
         }
     }
