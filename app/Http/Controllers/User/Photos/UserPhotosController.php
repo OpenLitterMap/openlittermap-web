@@ -12,7 +12,7 @@ class UserPhotosController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $perPage = $request->get('per_page', 20);
+        $perPage = $request->get('per_page', 10);
 
         $photos = Photo::where('user_id', $user->id)
             ->with([
@@ -44,7 +44,7 @@ class UserPhotosController extends Controller
                 'created_at' => $photo->created_at,
 
                 // Old tags structure
-                'old_tags' => $photo->tags(), // $this->getOldTags($photo),
+                'old_tags' => $photo->tags(),
 
                 // New tags structure
                 'new_tags' => $this->getNewTags($photo),
@@ -73,41 +73,6 @@ class UserPhotosController extends Controller
                 'email' => $user->email,
             ]
         ]);
-    }
-
-    private function getOldTags($photo): array
-    {
-        $oldTags = [];
-
-        $categories = [
-            'smoking', 'food', 'coffee', 'alcohol', 'softdrinks',
-            'sanitary', 'coastal', 'dumping', 'industrial', 'brands',
-            'dogshit', 'art', 'material', 'other'
-        ];
-
-        foreach ($categories as $category) {
-            if ($photo->$category) {
-                $categoryData = $photo->$category->toArray();
-                // Remove metadata fields
-                unset($categoryData['id'], $categoryData['created_at'], $categoryData['updated_at']);
-
-                // Filter out null/zero values
-                $filtered = array_filter($categoryData, function($value) {
-                    return !is_null($value) && $value !== 0;
-                });
-
-                if (!empty($filtered)) {
-                    $oldTags[$category] = $filtered;
-                }
-            }
-        }
-
-        // Add custom tags
-        if ($photo->customTags && $photo->customTags->count() > 0) {
-            $oldTags['custom_tags'] = $photo->customTags->pluck('tag')->toArray();
-        }
-
-        return $oldTags;
     }
 
     private function getNewTags($photo): array

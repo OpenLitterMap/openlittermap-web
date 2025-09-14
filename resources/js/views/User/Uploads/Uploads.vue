@@ -1,51 +1,69 @@
 <template>
     <div class="uploads-container">
-        <!-- Header with stats -->
+        <!-- Header with stats in same row -->
         <div class="header-section">
-            <h1>My Uploads</h1>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-label">Total Photos</span>
-                    <span class="stat-value">{{ totalPhotos }}</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Migrated</span>
-                    <span class="stat-value">{{ migratedCount }}</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Migration Progress</span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" :style="{ width: migrationProgress + '%' }"></div>
+            <div class="header-content">
+                <h1>My Uploads</h1>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Photos</span>
+                        <span class="stat-value">{{ totalPhotos }}</span>
                     </div>
-                    <span class="stat-value">{{ migrationProgress }}%</span>
+                    <div class="stat-item">
+                        <span class="stat-label">Migrated</span>
+                        <span class="stat-value">{{ migratedCount }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Progress</span>
+                        <div class="progress-wrapper">
+                            <div class="progress-bar">
+                                <div class="progress-fill" :style="{ width: migrationProgress + '%' }"></div>
+                            </div>
+                            <span class="progress-text">{{ migrationProgress }}%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Filters Bar -->
-        <div class="filters-bar">
-            <select v-model="filters.migrationStatus" @change="applyFilters">
-                <option value="all">All Photos</option>
-                <option value="migrated">Migrated Only</option>
-                <option value="unmigrated">Not Migrated</option>
-            </select>
+        <div class="filters">
+            <div class="filter-item">
+                <label for="filterTag">Tag</label>
+                <input id="filterTag" name="filterTag" class="input" v-model="filters.tag" placeholder="Enter a tag" />
+            </div>
 
-            <select v-model="filters.complexity" @change="applyFilters">
-                <option value="all">Any Complexity</option>
-                <option value="simple">Simple (1-5 tags)</option>
-                <option value="moderate">Moderate (6-15 tags)</option>
-                <option value="complex">Complex (15+ tags)</option>
-            </select>
+            <div class="filter-item">
+                <label for="filterCustomTag">Custom Tag</label>
+                <input
+                    id="filterCustomTag"
+                    name="filterCustomTag"
+                    class="input"
+                    v-model="filters.customTag"
+                    placeholder="Enter a custom tag"
+                />
+            </div>
 
-            <input
-                type="text"
-                v-model="filters.search"
-                @input="debounceSearch"
-                placeholder="Search tags..."
-                class="search-input"
-            />
+            <div class="filter-item">
+                <label for="uploadedFrom">Uploaded From</label>
+                <input id="uploadedFrom" name="uploadedFrom" class="input" type="date" v-model="filters.dateFrom" />
+            </div>
 
-            <button @click="clearFilters" class="btn-secondary">Clear Filters</button>
+            <div class="filter-item">
+                <label for="uploadedTo">Uploaded To</label>
+                <input id="uploadedTo" name="uploadedTo" class="input" type="date" v-model="filters.dateTo" />
+            </div>
+
+            <div class="filter-item">
+                <label for="amount">Amount</label>
+                <select id="amount" class="input" v-model="filters.perPage">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+
+            <button class="button is-primary" @click="applyFilters">Apply Filters</button>
         </div>
 
         <!-- Photos Grid -->
@@ -70,37 +88,30 @@
                         <span class="photo-date">{{ formatDate(photo.datetime) }}</span>
                     </div>
 
-                    <!-- Complexity Meter -->
-                    <div class="complexity-meter">
-                        <div class="complexity-score">
-                            <span class="score-label">Complexity:</span>
-                            <span class="score-value">{{ getComplexityScore(photo) }}</span>
+                    <!-- Tags Summary -->
+                    <div class="tags-summary">
+                        <div class="tags-stats">
+                            <div class="stat-row">
+                                <span class="label">Total tags:</span>
+                                <span class="value">{{ photo.total_tags || 0 }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="label">Objects:</span>
+                                <span class="value">{{ getObjectCount(photo) }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="label">Materials:</span>
+                                <span class="value">{{ getMaterialCount(photo) }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="label">Brands:</span>
+                                <span class="value">{{ getBrandCount(photo) }}</span>
+                            </div>
                         </div>
-                        <div class="complexity-badges">
-                            <span v-if="getCounts(photo, 'objects') > 0" class="badge objects">
-                                Objects({{ getCounts(photo, 'objects') }})
-                            </span>
-                            <span v-if="getCounts(photo, 'materials') > 0" class="badge materials">
-                                Materials({{ getCounts(photo, 'materials') }})
-                            </span>
-                            <span v-if="getCounts(photo, 'brands') > 0" class="badge brands">
-                                Brands({{ getCounts(photo, 'brands') }})
-                            </span>
-                            <span v-if="getCounts(photo, 'custom') > 0" class="badge custom">
-                                Custom({{ getCounts(photo, 'custom') }})
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Tag Counts Comparison -->
-                    <div class="tag-comparison">
-                        <div class="old-counts">
-                            <span class="count-label">Old (v4):</span>
-                            <span class="count-value">{{ getOldTagCount(photo) }} items</span>
-                        </div>
-                        <div class="new-counts">
-                            <span class="count-label">New (v5):</span>
-                            <span class="count-value">{{ photo.total_tags || 0 }} items</span>
+                        <div class="tags-list">
+                            <div v-for="obj in getObjectsList(photo)" :key="obj" class="tag-item">
+                                {{ obj }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -109,15 +120,41 @@
 
         <!-- Pagination -->
         <div v-if="pagination.last_page > 1" class="pagination">
-            <button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1">
-                Previous
+            <button @click="changePage(1)" :disabled="pagination.current_page === 1" class="page-btn">First</button>
+
+            <button
+                @click="changePage(pagination.current_page - 1)"
+                :disabled="pagination.current_page === 1"
+                class="page-btn"
+            >
+                Prev
             </button>
-            <span>Page {{ pagination.current_page }} of {{ pagination.last_page }}</span>
+
+            <template v-for="page in paginationRange" :key="page">
+                <span v-if="page === '...'" class="page-ellipsis">...</span>
+                <button
+                    v-else
+                    @click="changePage(page)"
+                    :class="['page-btn', { active: page === pagination.current_page }]"
+                >
+                    {{ page }}
+                </button>
+            </template>
+
             <button
                 @click="changePage(pagination.current_page + 1)"
                 :disabled="pagination.current_page === pagination.last_page"
+                class="page-btn"
             >
                 Next
+            </button>
+
+            <button
+                @click="changePage(pagination.last_page)"
+                :disabled="pagination.current_page === pagination.last_page"
+                class="page-btn"
+            >
+                Last
             </button>
         </div>
 
@@ -136,11 +173,12 @@ const store = usePhotosStore();
 // State
 const selectedPhoto = ref(null);
 const filters = ref({
-    migrationStatus: 'all',
-    complexity: 'all',
-    search: '',
+    tag: '',
+    customTag: '',
+    dateFrom: '',
+    dateTo: '',
+    perPage: '25',
 });
-const searchTimeout = ref(null);
 
 // Computed
 const photos = computed(() => store.migrationData.photos || []);
@@ -154,82 +192,88 @@ const migrationProgress = computed(() => {
     return Math.round((migratedCount.value / totalPhotos.value) * 100);
 });
 
-// Methods
-const getCounts = (photo, type) => {
-    if (!photo.new_tags) return 0;
+const paginationRange = computed(() => {
+    const current = pagination.value.current_page;
+    const last = pagination.value.last_page;
+    const range = [];
 
+    if (last <= 7) {
+        for (let i = 1; i <= last; i++) {
+            range.push(i);
+        }
+    } else {
+        // Always show first 3 pages
+        range.push(1, 2, 3);
+
+        // Add ellipsis if needed
+        if (current > 5) {
+            range.push('...');
+        }
+
+        // Add current page and neighbors if in middle
+        if (current > 4 && current < last - 3) {
+            range.push(current - 1, current, current + 1);
+        }
+
+        // Add ellipsis if needed
+        if (current < last - 4) {
+            range.push('...');
+        }
+
+        // Always show last 3 pages
+        range.push(last - 2, last - 1, last);
+    }
+
+    // Remove duplicates and sort
+    return [...new Set(range.filter((p) => p === '...' || (p >= 1 && p <= last)))];
+});
+
+// Methods
+const getObjectCount = (photo) => {
+    if (!photo.new_tags) return 0;
+    return photo.new_tags.filter((tag) => tag.object).length;
+};
+
+const getMaterialCount = (photo) => {
+    if (!photo.new_tags) return 0;
     let count = 0;
     photo.new_tags.forEach((tag) => {
-        if (type === 'objects' && tag.object) count++;
-
         if (tag.extra_tags) {
-            tag.extra_tags.forEach((extra) => {
-                if (extra.type === 'material' && type === 'materials') {
-                    count += extra.quantity || 1;
-                }
-                if (extra.type === 'brand' && type === 'brands') {
-                    count += extra.quantity || 1;
-                }
-                if (extra.type === 'custom_tag' && type === 'custom') {
-                    count += extra.quantity || 1;
-                }
-            });
+            count += tag.extra_tags.filter((e) => e.type === 'material').length;
         }
-
-        if (type === 'custom' && tag.primary_custom_tag) count++;
     });
-
     return count;
 };
 
-const getComplexityScore = (photo) => {
+const getBrandCount = (photo) => {
     if (!photo.new_tags) return 0;
-
-    let score = 0;
-    score += getCounts(photo, 'objects');
-    score += getCounts(photo, 'brands');
-    score += getCounts(photo, 'materials');
-    score += getCounts(photo, 'custom') * 0.5;
-    score += photo.summary?.totals?.picked_up > 0 ? 0.5 : 0;
-
-    return Math.round(score * 10) / 10;
-};
-
-const getOldTagCount = (photo) => {
-    if (!photo.old_tags) return 0;
-
     let count = 0;
-    Object.values(photo.old_tags).forEach((category) => {
-        if (Array.isArray(category)) {
-            count += category.length;
-        } else if (typeof category === 'object') {
-            Object.values(category).forEach((qty) => {
-                count += parseInt(qty) || 0;
-            });
+    photo.new_tags.forEach((tag) => {
+        if (tag.extra_tags) {
+            count += tag.extra_tags.filter((e) => e.type === 'brand').length;
         }
     });
-
     return count;
 };
 
-// Actions
+const getObjectsList = (photo) => {
+    if (!photo.new_tags) return [];
+    const objects = [];
+    photo.new_tags.forEach((tag) => {
+        if (tag.object && tag.object.key) {
+            objects.push(tag.object.key);
+        }
+    });
+    return objects.slice(0, 5); // Show max 5 objects
+};
+
 const applyFilters = () => {
-    store.setMigrationFilter('status', filters.value.migrationStatus);
-    store.setMigrationFilter('complexity', filters.value.complexity);
-    loadPhotos(1);
-};
-
-const debounceSearch = () => {
-    clearTimeout(searchTimeout.value);
-    searchTimeout.value = setTimeout(() => {
-        store.setMigrationFilter('search', filters.value.search);
-        loadPhotos(1);
-    }, 500);
-};
-
-const clearFilters = () => {
-    filters.value = { migrationStatus: 'all', complexity: 'all', search: '' };
-    store.clearMigrationFilters();
+    // Apply filters to store
+    store.setMigrationFilter('tag', filters.value.tag);
+    store.setMigrationFilter('customTag', filters.value.customTag);
+    store.setMigrationFilter('dateFrom', filters.value.dateFrom);
+    store.setMigrationFilter('dateTo', filters.value.dateTo);
+    store.migrationData.pagination.per_page = parseInt(filters.value.perPage);
     loadPhotos(1);
 };
 
@@ -259,47 +303,63 @@ onMounted(() => {
 
 <style scoped>
 .uploads-container {
-    padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding: 3em;
+    width: 100%;
+    background-color: #3b3b3b;
 }
 
-.header-section h1 {
-    font-size: 28px;
-    margin-bottom: 20px;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
+.header-section {
     margin-bottom: 24px;
 }
 
-.stat-card {
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background: white;
-    padding: 16px;
+    padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.header-content h1 {
+    font-size: 28px;
+    margin: 0;
+}
+
+.header-stats {
+    display: flex;
+    gap: 32px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .stat-label {
-    display: block;
     font-size: 12px;
     color: #666;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .stat-value {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
 }
 
+.progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .progress-bar {
+    width: 100px;
     height: 8px;
     background: #f0f0f0;
     border-radius: 4px;
-    margin: 8px 0;
 }
 
 .progress-fill {
@@ -309,37 +369,56 @@ onMounted(() => {
     transition: width 0.3s;
 }
 
-.filters-bar {
+.progress-text {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.filters {
     display: flex;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 16px;
     margin-bottom: 24px;
     padding: 16px;
     background: white;
     border-radius: 8px;
+    align-items: flex-end;
 }
 
-.filters-bar select,
-.search-input {
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-item label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.input {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 14px;
 }
 
-.search-input {
-    flex: 1;
-    max-width: 300px;
-}
-
-.btn-secondary {
+.button {
     padding: 8px 16px;
-    background: #f0f0f0;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 14px;
 }
 
-.btn-secondary:hover {
-    background: #e0e0e0;
+.button.is-primary {
+    background: #3498db;
+    color: white;
+}
+
+.button.is-primary:hover {
+    background: #2980b9;
 }
 
 .photos-grid {
@@ -410,110 +489,94 @@ onMounted(() => {
     font-size: 14px;
 }
 
-.complexity-meter {
-    margin-bottom: 12px;
+.tags-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
     padding: 8px;
     background: #f8f8f8;
     border-radius: 4px;
 }
 
-.complexity-score {
+.tags-stats {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.score-label {
+.stat-row {
+    display: flex;
+    justify-content: space-between;
     font-size: 12px;
+}
+
+.stat-row .label {
     color: #666;
 }
 
-.score-value {
+.stat-row .value {
     font-weight: bold;
     color: #333;
 }
 
-.complexity-badges {
+.tags-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.badge {
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.badge.objects {
-    background: #e3f2fd;
-    color: #1976d2;
-}
-
-.badge.materials {
-    background: #e8f5e9;
-    color: #4caf50;
-}
-
-.badge.brands {
-    background: #f3e5f5;
-    color: #9c27b0;
-}
-
-.badge.custom {
-    background: #fff3e0;
-    color: #ff9800;
-}
-
-.tag-comparison {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    padding: 8px;
-    background: #fafafa;
-    border-radius: 4px;
-}
-
-.old-counts,
-.new-counts {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.count-label {
+    flex-direction: column;
+    gap: 2px;
     font-size: 12px;
-    color: #666;
+    color: #555;
 }
 
-.count-value {
-    font-weight: bold;
-    color: #333;
+.tag-item {
+    padding: 2px 4px;
+    background: white;
+    border-radius: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .pagination {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     margin: 24px 0;
 }
 
-.pagination button {
-    padding: 8px 16px;
-    background: white;
-    border: 1px solid #ddd;
+.page-btn {
+    padding: 8px 12px;
+    background: #1e2128;
+    border: 1px solid #2a2f3a;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 14px;
+    min-width: 40px;
+    color: #eaecef;
+    transition:
+        background-color 0.2s,
+        border-color 0.2s;
 }
 
-.pagination button:hover:not(:disabled) {
-    background: #f8f8f8;
+.page-btn:hover:not(:disabled) {
+    background: #252a33;
+    border-color: #3a4152;
 }
 
-.pagination button:disabled {
-    opacity: 0.5;
+.page-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.page-btn:disabled {
+    opacity: 0.3;
     cursor: not-allowed;
+    color: #5a6472;
+}
+
+.page-ellipsis {
+    padding: 0 8px;
+    color: #5a6472;
 }
 </style>
