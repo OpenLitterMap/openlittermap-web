@@ -8,14 +8,12 @@
             </div>
 
             <div v-else>
-                <AddTagsHeader :paginatedPhotos="paginatedPhotos" :newTags="newTags" @clearTags="resetAllInputs" />
-
                 <VerticalXpBar :newTags="newTags" />
 
                 <div class="flex ml-[7em] w-full md:pr-[3em]">
                     <!-- Image Container -->
                     <div class="flex flex-col items-center w-2/5">
-                        <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" />
+                        <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" style="max-height: 25em" />
 
                         <div class="w-full">
                             <!-- Needs a key to re-render -->
@@ -69,9 +67,14 @@
                     </div>
 
                     <!-- Right container-->
-                    <div class="w-2/3 pl-12 2xl:w-1/2">
-                        <!-- class="2xl:px-8"-->
-                        <div>
+                    <div class="w-2/3 2xl:w-1/2">
+                        <AddTagsHeader
+                            :paginatedPhotos="paginatedPhotos"
+                            :newTags="newTags"
+                            @clearTags="resetAllInputs"
+                        />
+
+                        <div class="pl-12">
                             <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li
                                     v-for="tag in newTags"

@@ -10,9 +10,9 @@
                 <p>Upload Progress: {{ uploadProgress.toFixed() }}%</p>
             </div>
 
-            <p v-if="team" class="text-center">
-                {{ $t('common.team') }}: <strong>{{ team }}</strong>
-            </p>
+            <!--            <p v-if="team" class="text-center">-->
+            <!--                {{ $t('common.team') }}: <strong>{{ team }}</strong>-->
+            <!--            </p>-->
 
             <!-- After uploading-->
             <transition name="fade">

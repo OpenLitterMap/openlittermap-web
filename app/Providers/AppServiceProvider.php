@@ -8,7 +8,6 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Observers\PhotoObserver;
-use App\Repositories\PhotoMetricsRepo;
 use App\Services\Clustering\ClusteringService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
@@ -23,7 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(PhotoMetricsRepo::class);
         $this->app->singleton(ClusteringService::class);
     }
 

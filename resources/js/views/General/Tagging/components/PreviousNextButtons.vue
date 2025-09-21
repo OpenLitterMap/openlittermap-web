@@ -1,8 +1,9 @@
 <template>
     <div>
-        <p class="text-center">{{ currentPhotoPage }} / {{ remainingPhotos }} untagged photos</p>
+        <p class="text-center">{{ remainingPhotos }} untagged</p>
+        <p class="text-center">x tagged</p>
 
-        <div class="flex justify-center gap-6 mt-2">
+        <div v-if="remainingPhotos > 1" class="flex justify-center gap-6 mt-2">
             <span
                 class="flex items-center group"
                 :class="{

@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Achievements\AchievementsController;
+use App\Http\Controllers\API\GetUntaggedUploadController;
+use App\Http\Controllers\API\Tags\GetTagsController;
+use App\Http\Controllers\API\Tags\PhotoTagsController;
 use App\Http\Controllers\ApiPhotosController;
 use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
@@ -10,16 +13,11 @@ use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
 use App\Http\Controllers\User\Photos\UserPhotosController;
+use App\Http\Controllers\User\Photos\UsersUploadsController;
 use App\Models\Littercoin;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\API\Tags\GetTagsController;
-use App\Http\Controllers\API\Tags\PhotoTagsController;
-use App\Http\Controllers\API\GetUntaggedUploadController;
-use App\Http\Controllers\Photos\GetUsersUntaggedPhotosController;
 
 Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
@@ -34,21 +32,20 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     // old version
     Route::get('/photos/web/index', 'API\GetUntaggedUploadController');
 
-    // new version
+    // not new version
     Route::get('/photos/get-untagged-uploads', GetUntaggedUploadController::class);
 
     Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
 
     Route::post('/add-tags-to-uploaded-image', 'API\AddTagsToUploadedImageController');
-
-    // Route::get('/uploads/history', 'API\GetMyPaginatedUploadsController');
 });
 
 
 Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
-     Route::get('/user/photos/untagged', [GetUsersUntaggedPhotosController::class, 'index']);
+    Route::get('/user/photos', [UsersUploadsController::class, 'index']);
+    Route::get('/user/photos/stats', [UsersUploadsController::class, 'stats']);
 
-     Route::post('/tags', [PhotoTagsController::class, 'store']);
+    Route::post('/tags', [PhotoTagsController::class, 'store']);
 });
 
 Route::get('/locations/global', [LocationController::class, 'global']);

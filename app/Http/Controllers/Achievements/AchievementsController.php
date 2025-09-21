@@ -34,7 +34,8 @@ class AchievementsController extends Controller
 
         // Get cached data
         $unlockedIds = $this->repository->getUnlockedAchievementIds($userId);
-        $counts = RedisMetricsCollector::getUserCounts($userId);
+        // $counts = RedisMetricsCollector::getUserCounts($userId);
+        $counts = 0;
 
         // Build hierarchical response
         $response = [

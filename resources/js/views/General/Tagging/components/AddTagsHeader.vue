@@ -3,7 +3,7 @@
         <div>
             <p class="text-center">Photo #{{ photo?.id ? photo.id : '' }}</p>
 
-            <p class="mt-2">Taken at: {{ getDate() }}</p>
+            <p class="mt-2 text-center">Taken at: <br />{{ getDate() }}</p>
         </div>
 
         <div class="flex justify-center items-center min-w-[15em]">
@@ -21,7 +21,7 @@
             <p class="font-bold mt-2">{{ photo?.team?.name ? photo?.team?.name : 'None' }}</p>
         </div>
 
-        <div class="flex w-[8em]">
+        <div class="flex flex-col justify-center">
             <button
                 class="p-1 rounded bg-green-500 w-[6em]"
                 :disabled="!newTags.length"

@@ -71,40 +71,8 @@ class ResetV5Migration extends Command
         /* 3️⃣  Clear all Redis metrics and rankings                          */
         /* ------------------------------------------------------------------ */
         $this->info('Clearing Redis metrics...');
-
-        // Get all user IDs that might have Redis data
-        $userIds = DB::table('users')->pluck('id');
-
-        $patterns = [];
-        foreach ($userIds as $userId) {
-            $patterns[] = "user:{$userId}:*";
-            $patterns[] = "metrics:user:{$userId}:*";
-            $patterns[] = "streaks:user:{$userId}:*";
-        }
-
-        // Add global patterns
-        $patterns = array_merge($patterns, [
-            'global:*',
-            'country:*:*',
-            'state:*:*',
-            'city:*:*',
-            'leaderboard:*',
-            'rankings:*',
-            'metrics:*',
-            'streaks:*'
-        ]);
-
-        // Delete matching keys
-        $totalDeleted = 0;
-        foreach ($patterns as $pattern) {
-            $keys = Redis::keys($pattern);
-            if (!empty($keys)) {
-                $deleted = Redis::del($keys);
-                $totalDeleted += $deleted;
-            }
-        }
-
-        $this->line("✓ Deleted {$totalDeleted} Redis keys");
+        Redis::flushdb();
+        $this->info('Redis db flushed!');
 
         /* ------------------------------------------------------------------ */
         /* 4️⃣  Clear Laravel caches used by migration                        */
@@ -127,6 +95,7 @@ class ResetV5Migration extends Command
         }
 
         // Clear any cached user metrics
+        $userIds = DB::table('users')->pluck('id');
         $cacheKeys = [];
         foreach ($userIds as $userId) {
             $cacheKeys[] = "achievements:unlocked:{$userId}";
@@ -151,7 +120,6 @@ class ResetV5Migration extends Command
                 ['Photo tags', '✓ Truncated'],
                 ['Metrics table', '✓ Truncated'],
                 ['User achievements', '✓ Truncated'],
-                ['Redis metrics', "✓ Deleted {$totalDeleted} keys"],
                 ['Cache', '✓ Cleared'],
             ]
         );

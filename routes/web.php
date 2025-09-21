@@ -147,7 +147,7 @@ Route::get('uploads', HomeController::class);
 // Route::get('photos', 'PhotosController@unverified');
 
 // Get the users photos to display links
-Route::get('photos/get-my-photos', 'User\Photos\GetMyPhotosController');
+// Route::get('photos/get-my-photos', 'User\Photos\GetMyPhotosController');
 
 Route::post('/profile/upload-profile-photo', 'UsersController@uploadProfilePhoto');
 
