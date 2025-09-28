@@ -25,17 +25,23 @@ class HomeController extends Controller
 
             // Replace the latLon in the URL with the original photo coordinates
             if ($latLon) {
-                $requestedLat = request('lat');
-                $requestedLon = request('lon');
-                $correctLat = $latLon->lat;
-                $correctLon = $latLon->lon;
+                $requestedLat = (float) request('lat');
+                $requestedLon = (float) request('lon');
+                $correctLat = (float) $latLon->lat;
+                $correctLon = (float) $latLon->lon;
 
-                if ($requestedLat != $correctLat || $requestedLon != $correctLon) {
+                // Use a small tolerance for float comparison (6 decimal places precision)
+                $tolerance = 0.000001;
+
+                $latDiffers = abs($requestedLat - $correctLat) > $tolerance;
+                $lonDiffers = abs($requestedLon - $correctLon) > $tolerance;
+
+                if ($latDiffers || $lonDiffers) {
                     // Build the corrected query string
                     $query = [
                         'lat'   => $correctLat,
                         'lon'   => $correctLon,
-                        'zoom'  => request('zoom'),   // keep zoom if you want
+                        'zoom'  => request('zoom'),
                         'photo' => request('photo'),
                     ];
 

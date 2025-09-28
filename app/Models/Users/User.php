@@ -138,10 +138,12 @@ class User extends Authenticatable
         'littercoin_progress',
         'total_littercoin',
         'next_level',
-        'xp_redis'
+        'xp_redis',
+        'social_links',
     ];
 
     /**
+     * @deprecated
      * Get total categories attribute
      *
      * @return array
@@ -173,6 +175,7 @@ class User extends Authenticatable
     }
 
     /**
+     * @deprecated
      * Wrapper around default setting for items_remaining,
      * for better readability
      */
@@ -182,6 +185,7 @@ class User extends Authenticatable
     }
 
     /**
+     * @deprecated
      * Get total tags attribute
      *
      * @return int total number of tags
@@ -206,6 +210,7 @@ class User extends Authenticatable
     }
 
     /**
+     * @deprecated
      * Get xp_redis attribute
      *
      * This will get the users Total Global XP.
@@ -218,6 +223,7 @@ class User extends Authenticatable
     }
 
     /**
+     * @deprecated
      * Get this Users XP from the Global Leaderboard of All Users
      */
     public function getTodaysXpAttribute ()
@@ -229,6 +235,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year:$month:$day", $this->id);
     }
 
+    // @deprecated
     public function getYesterdaysXpAttribute ()
     {
         $year = now()->subDays(1)->year;
@@ -238,6 +245,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year:$month:$day", $this->id);
     }
 
+    // @deprecated
     public function getThisMonthsXpAttribute ()
     {
         $year = now()->year;
@@ -246,6 +254,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year:$month", $this->id);
     }
 
+    // @deprecated
     public function getLastMonthsXpAttribute ()
     {
         $year = now()->subMonths(1)->year;
@@ -254,6 +263,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year:$month", $this->id);
     }
 
+    // @deprecated
     public function getThisYearsXpAttribute ()
     {
         $year = now()->year;
@@ -261,6 +271,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
     }
 
+    // @deprecated
     public function getLastYearsXpAttribute ()
     {
         $year = now()->year;
@@ -268,6 +279,7 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
     }
 
+    // @deprecated
     public function getNextLevelAttribute (): ?Level
     {
         return Level::find($this->level + 1);

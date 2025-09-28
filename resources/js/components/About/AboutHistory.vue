@@ -16,14 +16,14 @@ const timeline = [
     {
         year: '2011',
         title: 'Undergraduate Dissertation',
-        description: '2H2 undergraduate dissertation on walkability and mapping anti-social behaviour',
+        description: 'Undergraduate dissertation on walkability and mapping anti-social behaviour',
         icon: '📚',
         color: 'from-indigo-500 to-purple-500',
     },
     {
         year: '2012',
         title: 'Inspired by tropics',
-        description: 'Worked as a divemaster in Koh Tao where I was inspired to facilitate citizen science',
+        description: 'Worked as a divemaster in Koh Tao where I was inspired to develop citizen science',
         icon: '🌴',
         color: 'from-green-500 to-emerald-500',
     },
@@ -31,14 +31,15 @@ const timeline = [
         year: '2013',
         title: 'Masters in GIS. Introduced to OpenStreetMap',
         description:
-            'Inspired by OpenStreetMap and its vibrant research community, the idea for OpenLitterMap was born as its real-time data collection layer.',
+            'Introduced to OpenStreetMap and inspired its active community, the idea for OpenLitterMap was born as its real-time data collection layer.',
         icon: '🌍',
         color: 'from-emerald-500 to-teal-500',
     },
     {
         year: '2015',
         title: 'Finished 2nd MSc in Coastal & Marine Environments',
-        description: '1H1 OpenLitterMap dissertation',
+        description:
+            'Did a second masters to review the literature on plastic pollution and citizen science ending with a 1st class honours dissertation',
         icon: '🎓',
         color: 'from-purple-500 to-pink-500',
     },
@@ -46,21 +47,23 @@ const timeline = [
         year: '2016',
         title: 'Started teaching myself how to code',
         description:
-            'After watching many video tutorials I wrote stacks of code with pen & paper and started building OpenLitterMap',
+            'After watching many video tutorials I wrote stacks of code with pen & paper and started building OpenLitterMap from scratch',
         icon: '💻',
         color: 'from-pink-500 to-red-500',
     },
     {
         year: '2017',
         title: '15th April 2017 - Launched OpenLitterMap.com',
-        description: 'OpenLitterMap goes live to the world and starts collecting data globally immediately',
+        description:
+            'After months of study and development, OpenLitterMap.com goes live to the world and starts accepting uploads globally',
         icon: '🚀',
         color: 'from-red-500 to-orange-500',
     },
     {
         year: '2018',
         title: 'Started working as dev',
-        description: 'Full-time dedication to the platform',
+        description:
+            'Founder gets 1st job as a software engineer where he begins to develop his skills, continues to develop OLM evenings and weekends',
         icon: '👨‍💻',
         color: 'from-orange-500 to-amber-500',
     },
@@ -109,7 +112,8 @@ const timeline = [
     {
         year: '2025',
         title: 'AI transformation',
-        description: 'Revolutionizing litter detection with AI',
+        description:
+            'A major AI-powered transformation of OLM begins. Years of hand-coded work begins to be refactored and improved with AI.',
         icon: '🤖',
         color: 'from-violet-500 to-purple-500',
     },
@@ -170,7 +174,7 @@ onMounted(() => {
                     <span
                         class="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent"
                     >
-                        {{ t('16+ Years') }}
+                        {{ t('17+ Years') }}
                     </span>
                     <br />
                     <span class="text-white/90 text-4xl sm:text-5xl lg:text-6xl">

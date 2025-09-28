@@ -1,126 +1,61 @@
 import { CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MIN_ZOOM } from './constants.js';
 import L from 'leaflet';
 
-export const urlHelper = {
+/**
+ * URL State Manager - Single source of truth for URL operations
+ * Handles all URL parameter management with consistent push/replace strategies
+ */
+class URLStateManager {
+    constructor() {
+        // Define parameter categories
+        this.mapParams = ['lat', 'lon', 'zoom'];
+        this.viewParams = ['photo', 'page', 'open', 'load'];
+        this.filterParams = ['year', 'fromDate', 'toDate', 'username'];
+        this.allParams = [...this.mapParams, ...this.viewParams, ...this.filterParams];
+    }
+
     /**
-     * Goes to the location and zoom given in the URL
+     * Get photo ID from URL (handles both 'photo' and 'photoId' for backwards compatibility)
      */
-    flyToLocationFromURL(mapInstance) {
-        let urlParams = new URLSearchParams(window.location.search);
-        let latitude = parseFloat(urlParams.get('lat') || 0);
-        let longitude = parseFloat(urlParams.get('lon') || 0);
-        let zoom = parseFloat(urlParams.get('zoom') || MIN_ZOOM);
-        let photoId = parseInt(urlParams.get('photo'));
-        let load = urlParams.get('load') === 'true';
+    getPhotoIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const photoId = urlParams.get('photo') || urlParams.get('photoId');
+        return photoId ? parseInt(photoId) : null;
+    }
 
-        // Validate lat, lon, and zoom level
-        latitude = latitude < -85 || latitude > 85 ? 0 : latitude;
-        longitude = longitude < -180 || longitude > 180 ? 0 : longitude;
-        zoom = zoom < 2 || zoom > MAX_ZOOM ? MIN_ZOOM : zoom;
+    /**
+     * Normalize photo parameter in URL (converts photoId to photo)
+     */
+    normalizePhotoParam() {
+        const url = new URL(window.location.href);
+        const photoId = url.searchParams.get('photoId');
 
-        if (latitude === 0 && longitude === 0 && zoom === 2) return;
-
-        // If load=true, set view instantly without animation
-        if (load) {
-            this.setViewInstantly({ latitude, longitude, zoom, photoId }, mapInstance);
-        } else {
-            this.flyToLocation({ latitude, longitude, zoom, photoId }, mapInstance);
+        if (photoId) {
+            url.searchParams.delete('photoId');
+            url.searchParams.set('photo', photoId);
+            this.commitURL(url, true); // Use replace for normalization
+            return parseInt(photoId);
         }
-    },
+
+        const photo = url.searchParams.get('photo');
+        return photo ? parseInt(photo) : null;
+    }
 
     /**
-     * Set view instantly without animation
+     * Update map location in URL (always replace for continuous updates)
      */
-    setViewInstantly(location, mapInstance) {
-        const latLng = L.latLng(location.latitude, location.longitude);
-        const zoom =
-            location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
-                ? CLUSTER_ZOOM_THRESHOLD
-                : location.zoom;
-
-        // Calculate the offset in pixels to position the point 10% from the bottom
-        const mapSize = mapInstance.getSize();
-        const originalPoint = mapInstance.project(latLng, zoom);
-        const offsetY = mapSize.y * 0.225;
-        const shiftedPoint = originalPoint.subtract([0, offsetY]);
-        const targetLatLng = mapInstance.unproject(shiftedPoint, zoom);
-
-        // Set view instantly without animation
-        mapInstance.setView(targetLatLng, zoom, {
-            animate: false,
-        });
-    },
-
-    /**
-     * Fly to the location with offset
-     */
-    flyToLocation(location, mapInstance) {
-        const latLng = L.latLng(location.latitude, location.longitude);
-        const zoom =
-            location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
-                ? CLUSTER_ZOOM_THRESHOLD
-                : location.zoom;
-
-        // Calculate the offset in pixels
-        const mapSize = mapInstance.getSize();
-        const originalPoint = mapInstance.project(latLng, zoom);
-        const offsetY = mapSize.y * 0.225;
-        const shiftedPoint = originalPoint.subtract([0, offsetY]);
-        const targetLatLng = mapInstance.unproject(shiftedPoint, zoom);
-
-        mapInstance.flyTo(targetLatLng, zoom, {
-            animate: true,
-            duration: location.duration ?? 5,
-        });
-    },
-
-    /**
-     * Update URL with current map location and zoom
-     */
-    updateLocationInURL(mapInstance) {
-        const location = mapInstance.getCenter();
+    updateMapLocation(lat, lon, zoom) {
         const url = new URL(window.location.href);
-        url.searchParams.set('lat', location.lat);
-        url.searchParams.set('lon', location.lng);
-        url.searchParams.set('zoom', mapInstance.getZoom());
-        window.history.replaceState(null, '', url);
-    },
+        url.searchParams.set('lat', lat.toFixed(6));
+        url.searchParams.set('lon', lon.toFixed(6));
+        url.searchParams.set('zoom', zoom.toFixed(2));
+        this.commitURL(url, true); // Always replace for map movement
+    }
 
     /**
-     * Update URL with photo ID and fly to location
+     * Update drawer state in URL
      */
-    updateUrlPhotoIdAndFlyToLocation({ latitude, longitude, photoId, mapInstance }) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('photo', photoId);
-        window.history.pushState(null, '', url);
-
-        const zoom = 17;
-
-        // Check if we're viewing points and moving within 2km
-        const currentMapZoom = Math.round(mapInstance.getZoom());
-        const flyDistanceInMeters = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
-
-        if (currentMapZoom >= CLUSTER_ZOOM_THRESHOLD && flyDistanceInMeters <= 2000) {
-            this.flyToLocation({ latitude, longitude, zoom, photoId, duration: 1 }, mapInstance);
-        } else {
-            this.flyToLocation({ latitude, longitude, zoom, photoId }, mapInstance);
-        }
-    },
-
-    /**
-     * Remove photo ID from URL
-     */
-    removePhotoFromURL() {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('photo');
-        window.history.pushState(null, '', url);
-    },
-
-    /**
-     * Update drawer open/close state in URL
-     * Always adds load=true when drawer is opened
-     */
-    updateDrawerStateInURL(isOpen) {
+    updateDrawerState(isOpen, isUserAction = true) {
         const url = new URL(window.location.href);
 
         if (isOpen) {
@@ -134,8 +69,73 @@ export const urlHelper = {
             }
         }
 
-        window.history.pushState(null, '', url);
-    },
+        // Use push for user actions, replace for programmatic
+        this.commitURL(url, !isUserAction);
+    }
+
+    /**
+     * Update photo ID in URL
+     */
+    updatePhotoId(photoId, isUserAction = true) {
+        const url = new URL(window.location.href);
+
+        if (photoId) {
+            url.searchParams.set('photo', photoId);
+        } else {
+            url.searchParams.delete('photo');
+            url.searchParams.delete('photoId');
+        }
+
+        this.commitURL(url, !isUserAction);
+    }
+
+    /**
+     * Update page number in URL
+     */
+    updatePage(page, isUserAction = true) {
+        const url = new URL(window.location.href);
+
+        if (page > 1) {
+            url.searchParams.set('page', page.toString());
+        } else {
+            url.searchParams.delete('page');
+        }
+
+        // Use push for user navigation, replace for auto-resets
+        this.commitURL(url, !isUserAction);
+    }
+
+    /**
+     * Get current filters from URL
+     */
+    getFiltersFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            year: parseInt(params.get('year')) || null,
+            fromDate: params.get('fromDate') || null,
+            toDate: params.get('toDate') || null,
+            username: params.get('username') || null,
+            page: parseInt(params.get('page')) || 1,
+        };
+    }
+
+    /**
+     * Clear specific parameter groups
+     */
+    clearParamGroup(group) {
+        const url = new URL(window.location.href);
+        const params =
+            group === 'map'
+                ? this.mapParams
+                : group === 'view'
+                  ? this.viewParams
+                  : group === 'filter'
+                    ? this.filterParams
+                    : this.allParams;
+
+        params.forEach((param) => url.searchParams.delete(param));
+        this.commitURL(url, true);
+    }
 
     /**
      * Check if drawer should be open from URL
@@ -143,22 +143,137 @@ export const urlHelper = {
     shouldDrawerBeOpen() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('open') === 'true';
-    },
+    }
 
     /**
-     * Set load=true in URL (used when drawer first appears)
-     */
-    setLoadInURL() {
-        const url = new URL(window.location.href);
-        url.searchParams.set('load', 'true');
-        window.history.pushState(null, '', url);
-    },
-
-    /**
-     * Check if load=true is in URL
+     * Check if instant load is enabled
      */
     hasLoadParam() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('load') === 'true';
+    }
+
+    /**
+     * Get location parameters from URL
+     */
+    getLocationFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            lat: parseFloat(params.get('lat')) || 0,
+            lon: parseFloat(params.get('lon')) || 0,
+            zoom: parseFloat(params.get('zoom')) || MIN_ZOOM,
+            photo: this.getPhotoIdFromURL(),
+            load: params.get('load') === 'true',
+        };
+    }
+
+    /**
+     * Commit URL changes with proper history management
+     */
+    commitURL(url, useReplace = true) {
+        const method = useReplace ? 'replaceState' : 'pushState';
+        window.history[method](null, '', url.toString());
+    }
+}
+
+// Create singleton instance
+const urlStateManager = new URLStateManager();
+
+// Export legacy interface for backwards compatibility
+export const urlHelper = {
+    // Photo management
+    getPhotoIdFromURL: () => urlStateManager.getPhotoIdFromURL(),
+    normalizePhotoParam: () => urlStateManager.normalizePhotoParam(),
+    removePhotoFromURL: () => urlStateManager.updatePhotoId(null, false),
+
+    // Location management
+    updateLocationInURL: (mapInstance) => {
+        const center = mapInstance.getCenter();
+        urlStateManager.updateMapLocation(center.lat, center.lng, mapInstance.getZoom());
     },
+
+    // Fly to location functionality
+    flyToLocationFromURL: (mapInstance) => {
+        const location = urlStateManager.getLocationFromURL();
+
+        // Validate coordinates
+        const latitude = location.lat < -85 || location.lat > 85 ? 0 : location.lat;
+        const longitude = location.lon < -180 || location.lon > 180 ? 0 : location.lon;
+        const zoom = location.zoom < MIN_ZOOM || location.zoom > MAX_ZOOM ? MIN_ZOOM : location.zoom;
+
+        if (latitude === 0 && longitude === 0 && zoom === MIN_ZOOM) return;
+
+        if (location.load) {
+            urlHelper.setViewInstantly({ latitude, longitude, zoom, photoId: location.photo }, mapInstance);
+        } else {
+            urlHelper.flyToLocation({ latitude, longitude, zoom, photoId: location.photo }, mapInstance);
+        }
+    },
+
+    setViewInstantly: (location, mapInstance) => {
+        const latLng = L.latLng(location.latitude, location.longitude);
+        const zoom =
+            location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
+                ? CLUSTER_ZOOM_THRESHOLD
+                : location.zoom;
+
+        // Calculate offset for better photo viewing
+        const mapSize = mapInstance.getSize();
+        const originalPoint = mapInstance.project(latLng, zoom);
+        const offsetY = mapSize.y * 0.225;
+        const shiftedPoint = originalPoint.subtract([0, offsetY]);
+        const targetLatLng = mapInstance.unproject(shiftedPoint, zoom);
+
+        mapInstance.setView(targetLatLng, zoom, { animate: false });
+    },
+
+    flyToLocation: (location, mapInstance) => {
+        const latLng = L.latLng(location.latitude, location.longitude);
+        const zoom =
+            location.photoId && Math.round(location.zoom) < CLUSTER_ZOOM_THRESHOLD
+                ? CLUSTER_ZOOM_THRESHOLD
+                : location.zoom;
+
+        const mapSize = mapInstance.getSize();
+        const originalPoint = mapInstance.project(latLng, zoom);
+        const offsetY = mapSize.y * 0.225;
+        const shiftedPoint = originalPoint.subtract([0, offsetY]);
+        const targetLatLng = mapInstance.unproject(shiftedPoint, zoom);
+
+        mapInstance.flyTo(targetLatLng, zoom, {
+            animate: true,
+            duration: location.duration ?? 5,
+        });
+    },
+
+    updateUrlPhotoIdAndFlyToLocation: ({ latitude, longitude, photoId, mapInstance }) => {
+        urlStateManager.updatePhotoId(photoId, true); // User clicked photo
+
+        const zoom = 17;
+        const currentZoom = Math.round(mapInstance.getZoom());
+        const distance = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
+
+        // Short animation for nearby points
+        const duration = currentZoom >= CLUSTER_ZOOM_THRESHOLD && distance <= 2000 ? 1 : 5;
+
+        urlHelper.flyToLocation({ latitude, longitude, zoom, photoId, duration }, mapInstance);
+    },
+
+    // Drawer state
+    updateDrawerStateInURL: (isOpen, isUserAction = true) => {
+        urlStateManager.updateDrawerState(isOpen, isUserAction);
+    },
+
+    shouldDrawerBeOpen: () => urlStateManager.shouldDrawerBeOpen(),
+    setLoadInURL: () => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('load', 'true');
+        urlStateManager.commitURL(url, true);
+    },
+    hasLoadParam: () => urlStateManager.hasLoadParam(),
+
+    // Export the manager for advanced use
+    stateManager: urlStateManager,
 };
+
+export default urlHelper;

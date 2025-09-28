@@ -1,0 +1,257 @@
+/* Leaflet Popup Styles */
+
+.leaflet-pane .leaflet-shadow-pane {
+    display: none;
+}
+
+/* Remove padding from popup wrapper */
+.leaflet-popup-content-wrapper {
+    padding: 0 !important;
+    border-radius: 6px;
+}
+
+/* Remove margin from popup content and add border radius */
+.leaflet-popup-content {
+    margin: 0 !important;
+    overflow-y: auto;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.leaflet-popup-content div:last-of-type {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-popup-content div:first-of-type {
+    margin-top: 0 !important;
+}
+
+/* Image should take full width with border radius on top corners */
+.leaflet-litter-img {
+    width: 100%;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+/* Container for content below image */
+.leaflet-litter-img-container {
+    position: relative;
+    padding: 1.2em;
+}
+
+.leaflet-litter-img-container div {
+    color: black !important;
+    font-size: 12px;
+    word-break: break-word;
+    max-width: 220px;
+    margin: 10px 0;
+}
+
+/* Override generic div margin for specific elements */
+.leaflet-litter-img-container .popup-tags,
+.leaflet-litter-img-container .popup-pickup-status,
+.leaflet-litter-img-container .popup-date,
+.leaflet-litter-img-container .popup-user {
+    margin: 4px 0;
+}
+
+/* Flex header container gets its own margin */
+.leaflet-litter-img-container > div[style*="display: flex"] {
+    margin: 0 0 8px 0;
+}
+
+/* Remove margins from elements inside flex container */
+.leaflet-litter-img-container > div[style*="display: flex"] .popup-tags,
+.leaflet-litter-img-container > div[style*="display: flex"] .popup-pickup-status {
+    margin: 0;
+}
+
+.leaflet-litter-img-container .team {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.leaflet-litter-img-container .link {
+    position: absolute;
+    bottom: 10px;
+    right: 16px;
+    font-size: 1.2rem;
+}
+
+.leaflet-litter-img-container .social-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    transform: translateY(5px);
+    margin: 8px 0;
+    text-align: center;
+    justify-content: flex-start;
+}
+
+.leaflet-litter-img-container .social-container a {
+    width: 1.5rem;
+    font-size: 1.2rem;
+    margin-top: 0.25rem;
+    color: #3273dc;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.leaflet-litter-img-container .link:hover,
+.leaflet-litter-img-container .social-container a:hover {
+    transform: scale(1.1);
+}
+
+/* Flex container for tags and picked up status */
+.leaflet-litter-img-container .popup-flex-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    gap: 1rem;
+}
+
+/* Popup tags */
+.popup-tags {
+    font-weight: 500;
+    flex: 1;
+    min-width: 0; /* Allow shrinking */
+}
+
+/* Popup pickup status */
+.popup-pickup-status {
+    font-weight: 500;
+    color: #f14668;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+/* Popup date */
+.popup-date {
+    font-size: 12px;
+    color: #666;
+    margin: 6px 0;
+}
+
+/* Popup user */
+.popup-user {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 6px 0;
+    line-height: 1.3;
+}
+
+/* Popup share link */
+.popup-share {
+    color: #3273dc;
+    transition: color 0.2s ease;
+}
+
+.popup-share:hover {
+    color: #1577c6;
+}
+
+/* Cleanup popup styles */
+.leaflet-cleanup-container {
+    padding: 1.2em;
+}
+
+.cleanup-name {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 0.5em;
+}
+
+.cleanup-attendance,
+.cleanup-description,
+.cleanup-time,
+.cleanup-time-diff {
+    font-size: 14px;
+    margin-bottom: 0.5em;
+}
+
+.cleanup-action-link {
+    color: #3273dc;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.cleanup-action-link:hover {
+    color: #1577c6;
+}
+
+/* Updated by admin styles */
+.updated-by-admin {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    margin-top: 0.5em;
+    line-height: 1.4;
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+    .leaflet-litter-img-container div {
+        font-size: 14px;
+        max-width: 300px;
+        margin: 10px 0;
+    }
+
+    /* Override margins for specific elements on tablet+ */
+    .leaflet-litter-img-container .popup-tags,
+    .leaflet-litter-img-container .popup-pickup-status,
+    .leaflet-litter-img-container .popup-date,
+    .leaflet-litter-img-container .popup-user {
+        margin: 8px 0;
+    }
+
+    /* Flex header container on tablet+ */
+    .leaflet-litter-img-container > div[style*="display: flex"] {
+        margin: 0 0 10px 0;
+    }
+
+    /* Remove margins from elements inside flex container on tablet+ */
+    .leaflet-litter-img-container > div[style*="display: flex"] .popup-tags,
+    .leaflet-litter-img-container > div[style*="display: flex"] .popup-pickup-status {
+        margin: 0;
+    }
+
+    .leaflet-litter-img-container .team {
+        max-width: 280px;
+    }
+
+    .popup-pickup-status {
+        font-size: 12px;
+    }
+
+    .popup-date {
+        font-size: 13px;
+    }
+
+    .popup-user {
+        font-size: 14px;
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+    .leaflet-litter-img-container {
+        padding: 1em;
+    }
+
+    .popup-pickup-status {
+        font-size: 10px;
+    }
+
+    .leaflet-litter-img-container .popup-flex-header {
+        gap: 0.5rem;
+    }
+}

@@ -110,7 +110,7 @@ onMounted(async () => {
         </div>
 
         <!-- Filters Row -->
-        <div class="flex items-end gap-3 px-6 py-4 flex-wrap">
+        <div class="flex items-end gap-3 px-6 py-4 flex-wrap justify-center">
             <!-- Three-state Toggle for Tagged/Untagged/All -->
             <div class="flex flex-col gap-1">
                 <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">Photo Status</label>

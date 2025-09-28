@@ -31,21 +31,21 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useLoading } from 'vue-loading-overlay';
 import { useI18n } from 'vue-i18n';
 import 'leaflet/dist/leaflet.css';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 // Constants
-import { CLUSTER_ZOOM_THRESHOLD, MAX_ZOOM, MIN_ZOOM } from './helpers/constants.js';
+import { CLUSTER_ZOOM_THRESHOLD, MIN_ZOOM } from './helpers/constants.js';
 
 // Helpers
 import { urlHelper } from './helpers/urlHelper.js';
 import { mapLifecycleHelper } from './helpers/mapLifecycleHelper.js';
 import { mapEventHelper } from './helpers/mapEventHelper.js';
 import { paginationHelper } from './helpers/paginationHelper.js';
-import { initializeGlify, highlightPointsByCategory, highlightPointsByObject } from './helpers/glifyHelpers.js';
+import { highlightPointsByCategory, highlightPointsByObject, initializeGlify } from './helpers/glifyHelpers.js';
 
 // Stores
 import { useClustersStore } from '../../stores/maps/clusters/index.js';
@@ -100,11 +100,31 @@ const showPaginationControls = computed(() =>
     })
 );
 
+// Helper function to normalize photo parameter in URL
+const normalizePhotoParam = () => {
+    const url = new URL(window.location.href);
+    const photoId = url.searchParams.get('photoId');
+
+    if (photoId) {
+        // Convert photoId to photo for consistency
+        url.searchParams.delete('photoId');
+        url.searchParams.set('photo', photoId);
+        window.history.replaceState(null, '', url);
+        return parseInt(photoId);
+    }
+
+    const photo = url.searchParams.get('photo');
+    return photo ? parseInt(photo) : null;
+};
+
 // Initialize map on mount
 onMounted(async () => {
     const loader = $loading.show({ container: null });
 
     try {
+        // Normalize photo parameter first
+        const photoId = normalizePhotoParam();
+
         const initialData = await mapLifecycleHelper.initializeMap({
             clustersStore,
             $loading,
@@ -143,13 +163,25 @@ onMounted(async () => {
             isDrawerOpen.value = false;
             userHasInteractedWithDrawer.value = true;
         }
-        // If no param, leave userHasInteractedWithDrawer as false for auto-open logic
+
+        // Fly to location if specified in URL
+        urlHelper.flyToLocationFromURL(mapInstance.value);
+
+        // If there's a photoId and we should load data, trigger map update
+        if (photoId && hasLoad) {
+            // Wait a bit for the map to be ready after flying to location
+            setTimeout(async () => {
+                await performMapUpdate();
+
+                // If we're in points view and stats should be loaded, load them
+                if (currentZoom.value >= CLUSTER_ZOOM_THRESHOLD) {
+                    await loadPointsStats();
+                }
+            }, 500);
+        }
     } finally {
         loader.hide();
     }
-
-    // Fly to location if specified in URL
-    urlHelper.flyToLocationFromURL(mapInstance.value);
 });
 
 // Cleanup on unmount
@@ -179,7 +211,6 @@ watch(currentZoom, (newZoom, oldZoom) => {
     if (!userHasInteractedWithDrawer.value) {
         if (newZoom >= CLUSTER_ZOOM_THRESHOLD && oldZoom < CLUSTER_ZOOM_THRESHOLD) {
             // Entering points view - will open drawer after data loads
-            // Don't open immediately, wait for stats to load
             urlHelper.setLoadInURL();
         } else if (newZoom < CLUSTER_ZOOM_THRESHOLD && oldZoom >= CLUSTER_ZOOM_THRESHOLD) {
             // Leaving points view - close drawer
@@ -354,12 +385,11 @@ const loadPageData = async () => {
 
 // Load points statistics
 const loadPointsStats = async () => {
-    const stats = await paginationHelper.loadPointsStats({
+    pointsStats.value = await paginationHelper.loadPointsStats({
         mapInstance: mapInstance.value,
         currentZoom: currentZoom.value,
         currentStatsRequest,
     });
-    pointsStats.value = stats;
 };
 
 // Handle fly to location from LiveEvents

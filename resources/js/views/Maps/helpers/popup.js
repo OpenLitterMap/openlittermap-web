@@ -1,101 +1,211 @@
 import moment from 'moment';
 import L from 'leaflet';
 
-export const popupHelper = {
-    popupOptions: {
-        minWidth: window.innerWidth >= 768 ? 350 : 200, // allow smaller widths on mobile
-        maxWidth: 600,
-        maxHeight: window.innerWidth >= 768 ? 800 : 500, // prevent tall popups on mobile
-        closeButton: true,
+/**
+ * HTML Sanitization utility to prevent XSS attacks
+ */
+const htmlSanitizer = {
+    /**
+     * Escape HTML special characters to prevent XSS
+     */
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
     },
 
     /**
-     * Returns the HTML that displays the Photo popups
-     * Refactored to use the new summary data structure
+     * Sanitize URL for safe href usage
+     */
+    sanitizeUrl(url) {
+        if (!url) return '';
+
+        try {
+            const parsed = new URL(url);
+            // Only allow http(s) protocols for external links
+            if (!['http:', 'https:'].includes(parsed.protocol)) {
+                return '';
+            }
+            return url;
+        } catch {
+            // If URL parsing fails, check for relative URLs
+            if (url.startsWith('/')) {
+                return url;
+            }
+            return '';
+        }
+    },
+};
+
+export const popupHelper = {
+    popupOptions: {
+        minWidth: window.innerWidth >= 768 ? 350 : 200,
+        maxWidth: 600,
+        maxHeight: window.innerWidth >= 768 ? 800 : 500,
+        closeButton: true,
+        className: 'custom-popup',
+    },
+
+    /**
+     * Returns the HTML that displays the Photo popups with XSS protection
      */
     getContent: (properties, url = null, t) => {
-        const user = popupHelper.formatUserName(properties.name, properties.username, t);
-        const isTrustedUser = properties.filename !== '/assets/images/waiting.png';
-        const tags = popupHelper.parseSummaryTags(properties.summary, isTrustedUser, t);
-        const takenDateString = popupHelper.formatPhotoTakenTime(properties.datetime, t);
-        const teamFormatted = popupHelper.formatTeam(properties.team, t);
-        const pickedUpFormatted = popupHelper.formatPickedUp(properties.picked_up, t);
-        const isLitterArt = popupHelper.checkIfLitterArt(properties.summary);
-        const hasSocialLinks = properties.social && Object.keys(properties.social).length;
-        const admin = properties.admin ? popupHelper.getAdminName(properties.admin) : null;
-        const removedTags = properties.admin?.removedTags
-            ? popupHelper.getRemovedTags(properties.admin.removedTags, t)
+        // Provide fallback for translation function
+        const translate = t || ((key) => key);
+
+        // Sanitize all user-provided content
+        const safeProps = {
+            filename: htmlSanitizer.sanitizeUrl(properties.filename) || '/assets/images/waiting.png',
+            name: htmlSanitizer.escapeHtml(properties.name),
+            username: htmlSanitizer.escapeHtml(properties.username),
+            team: htmlSanitizer.escapeHtml(properties.team),
+            datetime: htmlSanitizer.escapeHtml(properties.datetime),
+            picked_up: properties.picked_up,
+            summary: properties.summary,
+            social: {
+                personal: htmlSanitizer.sanitizeUrl(properties.social?.personal),
+                twitter: htmlSanitizer.sanitizeUrl(properties.social?.twitter),
+                facebook: htmlSanitizer.sanitizeUrl(properties.social?.facebook),
+                instagram: htmlSanitizer.sanitizeUrl(properties.social?.instagram),
+                linkedin: htmlSanitizer.sanitizeUrl(properties.social?.linkedin),
+                reddit: htmlSanitizer.sanitizeUrl(properties.social?.reddit),
+            },
+            admin: properties.admin
+                ? {
+                      name: htmlSanitizer.escapeHtml(properties.admin.name),
+                      username: htmlSanitizer.escapeHtml(properties.admin.username),
+                      created_at: properties.admin.created_at,
+                      removedTags: properties.admin.removedTags,
+                  }
+                : null,
+        };
+
+        const isTrustedUser = safeProps.filename !== '/assets/images/waiting.png';
+        const tags = popupHelper.parseSummaryTags(safeProps.summary, isTrustedUser, translate);
+        const takenDateString = popupHelper.formatPhotoTakenTime(safeProps.datetime, translate);
+        const userFormatted = popupHelper.formatUser(safeProps.name, safeProps.username, safeProps.team, translate);
+        const isLitterArt = popupHelper.checkIfLitterArt(safeProps.summary);
+        const hasTags = tags && tags !== translate('Awaiting verification');
+        const pickedUpStatus = popupHelper.formatPickedUpStatus(safeProps.picked_up, hasTags, translate);
+        const hasSocialLinks = Object.values(safeProps.social).some((link) => link);
+        const adminInfo = safeProps.admin ? popupHelper.getAdminInfo(safeProps.admin, translate) : null;
+        const removedTags = safeProps.admin?.removedTags
+            ? popupHelper.getRemovedTags(safeProps.admin.removedTags, translate)
             : '';
+
+        // Build social links HTML
+        const socialLinksHtml = hasSocialLinks ? popupHelper.buildSocialLinks(safeProps.social) : '';
 
         return `
             <img
-                src="${properties.filename}"
+                src="${safeProps.filename}"
                 class="leaflet-litter-img"
                 onclick="document.querySelector('.leaflet-popup-close-button').click();"
-                alt="Litter photo"
+                alt="${translate('Photo')}"
+                loading="lazy"
+                onerror="this.src='/assets/images/error.png'"
                 ${isTrustedUser ? '' : 'style="padding: 16px;"'}
             />
             <div class="leaflet-litter-img-container">
-                ${tags ? '<div>' + tags + '</div>' : ''}
-                ${!isLitterArt ? '<div>' + pickedUpFormatted + '</div>' : ''}
-                <div>${takenDateString}</div>
-                ${user ? '<div>' + user + '</div>' : ''}
-                ${teamFormatted ? '<div class="team">' + teamFormatted + '</div>' : ''}
-                ${hasSocialLinks ? '<div class="social-container">' : ''}
-                    ${properties.social?.personal ? '<a target="_blank" href="' + properties.social.personal + '"><i class="fa fa-link"></i></a>' : ''}
-                    ${properties.social?.twitter ? '<a target="_blank" href="' + properties.social.twitter + '"><i class="fa fa-twitter"></i></a>' : ''}
-                    ${properties.social?.facebook ? '<a target="_blank" href="' + properties.social.facebook + '"><i class="fa fa-facebook"></i></a>' : ''}
-                    ${properties.social?.instagram ? '<a target="_blank" href="' + properties.social.instagram + '"><i class="fa fa-instagram"></i></a>' : ''}
-                    ${properties.social?.linkedin ? '<a target="_blank" href="' + properties.social.linkedin + '"><i class="fa fa-linkedin"></i></a>' : ''}
-                    ${properties.social?.reddit ? '<a target="_blank" href="' + properties.social.reddit + '"><i class="fa fa-reddit"></i></a>' : ''}
-                ${hasSocialLinks ? '</div>' : ''}
-                ${url ? '<a class="link" target="_blank" href="' + url + '"><i class="fa fa-share-alt"></i></a>' : ''}
-                ${admin ? '<p class="updated-by-admin">' + admin + '</p>' : ''}
-                ${removedTags ? '<p class="updated-by-admin">' + removedTags + '</p>' : ''}
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    ${tags ? `<div class="popup-tags" style="margin-right: auto;">${tags}</div>` : '<div style="margin-right: auto;"></div>'}
+                    ${pickedUpStatus && !isLitterArt ? `<div class="popup-pickup-status">${pickedUpStatus}</div>` : ''}
+                </div>
+                <div class="popup-date">${takenDateString}</div>
+                ${userFormatted ? `<div class="popup-user">${userFormatted}</div>` : ''}
+                ${socialLinksHtml}
+                ${url ? `<a class="link popup-share" target="_blank" rel="noopener" href="${htmlSanitizer.sanitizeUrl(url)}"><i class="fa fa-share-alt" aria-label="${translate('Share')}"></i></a>` : ''}
+                ${adminInfo ? `<p class="updated-by-admin">${adminInfo}</p>` : ''}
+                ${removedTags ? `<p class="updated-by-admin">${removedTags}</p>` : ''}
             </div>`;
     },
 
     /**
-     * Parse tags from the new summary data structure
+     * Build social links HTML with proper sanitization
      */
-    parseSummaryTags: (summary, isTrustedUser, t) => {
+    buildSocialLinks(social) {
+        const links = [];
+        const iconMap = {
+            personal: 'fa-link',
+            twitter: 'fa-twitter',
+            facebook: 'fa-facebook',
+            instagram: 'fa-instagram',
+            linkedin: 'fa-linkedin',
+            reddit: 'fa-reddit',
+        };
+
+        Object.entries(social).forEach(([platform, url]) => {
+            if (url) {
+                const ariaLabel = `Visit ${platform} profile`;
+                links.push(
+                    `<a target="_blank" rel="noopener" href="${url}" aria-label="${ariaLabel}">` +
+                        `<i class="fa ${iconMap[platform]}" aria-hidden="true"></i>` +
+                        `</a>`
+                );
+            }
+        });
+
+        return links.length > 0 ? `<div class="social-container">\n${links.join('\n')}\n</div>` : '';
+    },
+
+    /**
+     * Parse tags from the summary data structure with XSS protection
+     */
+    parseSummaryTags: (summary, isTrustedUser, translate) => {
         if (!summary?.tags) {
-            return isTrustedUser ? t('litter.not-tagged-yet') : t('litter.not-verified');
+            return isTrustedUser ? translate('Not tagged yet') : translate('Awaiting verification');
         }
 
-        let tags = '';
+        const tagLines = [];
 
         // Iterate through categories
         Object.entries(summary.tags).forEach(([category, objects]) => {
+            // Sanitize category name
+            const safeCategory = htmlSanitizer.escapeHtml(category);
+
             // Iterate through objects in each category
             Object.entries(objects).forEach(([objectKey, data]) => {
+                const safeObjectKey = htmlSanitizer.escapeHtml(objectKey);
+                const quantity = parseInt(data.quantity) || 0;
+
                 // Add main item with quantity
-                tags += `${t(`litter.${category}.${objectKey}`)}: ${data.quantity}<br>`;
+                tagLines.push(`${safeCategory} - ${safeObjectKey}: ${quantity}`);
 
                 // Add materials if present
-                if (data.materials && Object.keys(data.materials).length > 0) {
+                if (data.materials && typeof data.materials === 'object') {
                     Object.entries(data.materials).forEach(([material, count]) => {
-                        tags += `  ${t(`materials.${material}`)}: ${count}<br>`;
+                        const safeMaterial = htmlSanitizer.escapeHtml(material);
+                        const safeCount = parseInt(count) || 0;
+                        tagLines.push(`  ${safeMaterial}: ${safeCount}`);
                     });
                 }
 
                 // Add brands if present
-                if (data.brands && Object.keys(data.brands).length > 0) {
+                if (data.brands && typeof data.brands === 'object') {
                     Object.entries(data.brands).forEach(([brand, count]) => {
-                        tags += `  ${t(`brands.${brand}`) || brand}: ${count}<br>`;
+                        const safeBrand = htmlSanitizer.escapeHtml(brand);
+                        const safeCount = parseInt(count) || 0;
+                        tagLines.push(`  ${safeBrand}: ${safeCount}`);
                     });
                 }
 
                 // Add custom tags if present
-                if (data.custom_tags && data.custom_tags.length > 0) {
+                if (Array.isArray(data.custom_tags)) {
                     data.custom_tags.forEach((customTag) => {
-                        tags += `  ${customTag}<br>`;
+                        const safeTag = htmlSanitizer.escapeHtml(customTag);
+                        tagLines.push(`  ${safeTag}`);
                     });
                 }
             });
         });
 
-        return tags || (isTrustedUser ? t('litter.not-tagged-yet') : t('litter.not-verified'));
+        return tagLines.length > 0
+            ? tagLines.join('<br>')
+            : isTrustedUser
+              ? translate('Not tagged yet')
+              : translate('Awaiting verification');
     },
 
     /**
@@ -104,177 +214,136 @@ export const popupHelper = {
     checkIfLitterArt: (summary) => {
         if (!summary?.tags) return false;
 
-        // Check if any category contains art items
         return Object.keys(summary.tags).some(
-            (category) => category === 'art' || Object.keys(summary.tags[category]).some((item) => item.includes('art'))
+            (category) =>
+                category === 'art' ||
+                (typeof summary.tags[category] === 'object' &&
+                    Object.keys(summary.tags[category]).some((item) => String(item).toLowerCase().includes('art')))
         );
     },
 
     /**
-     * Formats the user name for usage in Photo popups
+     * Format user with team information
      */
-    formatUserName: (name, username, t) => {
-        return name || username
-            ? `${t('locations.cityVueMap.by')} ${name ? name : ''} ${username ? '@' + username : ''}`
-            : '';
+    formatUser: (name, username, team, translate) => {
+        if (!name && !username) return '';
+
+        const parts = [translate('By')];
+
+        if (name) parts.push(name);
+        if (username) parts.push(`@${username}`);
+        if (team) parts.push(`@ ${team}`);
+
+        return parts.join(' ');
     },
 
     /**
-     * Formats the picked up text for usage in Photo popups
+     * Format picked up status - show only if not null and has tags
      */
-    formatPickedUp: (pickedUp, t) => {
-        return pickedUp ? `${t('litter.presence.picked-up')}` : `${t('litter.presence.still-there')}`;
+    formatPickedUpStatus: (pickedUp, hasTags, translate) => {
+        // Hide if null or if not tagged
+        if (pickedUp === null || pickedUp === undefined || !hasTags) {
+            return '';
+        }
+
+        return `${translate('Picked up')}: ${pickedUp ? translate('True') : translate('False')}`;
     },
 
     /**
-     * Formats the team name for usage in Photo popups
+     * Format photo taken time
      */
-    formatTeam: (teamName, t) => {
-        return teamName ? `${t('common.team')} ${teamName}` : '';
+    formatPhotoTakenTime: (takenOn, translate) => {
+        if (!takenOn) return '';
+
+        try {
+            const date = moment(takenOn);
+            if (!date.isValid()) return '';
+
+            return `${translate('Taken on')}: ${date.format('LLL')}`;
+        } catch {
+            return '';
+        }
     },
 
     /**
-     * Formats the photo taken time for usage in Photo popups
+     * Get admin info with XSS protection
      */
-    formatPhotoTakenTime: (takenOn, t) => {
-        return t('locations.cityVueMap.taken-on') + ' ' + moment(takenOn).format('LLL');
-    },
-
-    /**
-     * Get admin name and update info
-     */
-    getAdminName: (admin) => {
-        let str = 'These tags were updated by ';
+    getAdminInfo: (admin, translate) => {
+        const parts = [translate('These tags were updated by')];
 
         if (admin.name || admin.username) {
-            if (admin.name) str += admin.name;
-            if (admin.username) str += ' @' + admin.username;
+            if (admin.name) parts.push(admin.name);
+            if (admin.username) parts.push(`@${admin.username}`);
         } else {
-            str += 'an admin';
+            parts.push(translate('an admin'));
         }
 
-        // at date
-        str += '<br> at ' + moment(admin.created_at).format('LLL');
-
-        return str;
-    },
-
-    /**
-     * Get the removed custom + pre-defined Tags for the litter popup
-     */
-    getRemovedTags: (removedTags, t) => {
-        let str = 'Removed Tags: ';
-
-        if (removedTags.customTags) {
-            removedTags.customTags.forEach((customTag) => {
-                str += customTag + ' ';
-            });
-
-            str += '<br>';
-        }
-
-        if (removedTags.tags) {
-            Object.keys(removedTags.tags).forEach((category) => {
-                Object.entries(removedTags.tags[category]).forEach((entry) => {
-                    str += t(`litter.${category}.${entry[0]}`) + `(${entry[1]})`;
-                });
-
-                str += '<br>';
-            });
-        }
-
-        return str;
-    },
-
-    /**
-     * Scrolls the popup to its bottom if the image is very tall
-     * Needed to reduce the flicker when the map renders the popups
-     */
-    scrollPopupToBottom: (event) => {
-        let popup = event.popup?.getElement()?.querySelector('.leaflet-popup-content');
-
-        if (popup) popup.scrollTop = popup.scrollHeight;
-    },
-
-    /**
-     * Returns the HTML that displays on each Cleanup popup
-     */
-    getCleanupContent: (properties, userId = null) => {
-        let userCleanupInfo = ``;
-
-        if (userId === null) {
-            userCleanupInfo = `Log in to join the cleanup`;
-        } else {
-            if (properties.users.find((user) => user.user_id === userId)) {
-                userCleanupInfo = '<p>You have joined the cleanup</p>';
-
-                if (userId === properties.user_id) {
-                    userCleanupInfo += '<p>You cannot leave the cleanup you created</p>';
-                } else {
-                    userCleanupInfo += `<a
-                            onclick="window.olm_map.$store.dispatch('LEAVE_CLEANUP', {
-                                link: '${properties.invite_link}'
-                            })"
-                        >Click here to leave</a>`;
+        if (admin.created_at) {
+            try {
+                const date = moment(admin.created_at);
+                if (date.isValid()) {
+                    parts.push(`<br>${translate('at')} ${date.format('LLL')}`);
                 }
-            } else {
-                userCleanupInfo = `<a
-                    onclick="window.olm_map.$store.dispatch('JOIN_CLEANUP', {
-                        link: '${properties.invite_link}'
-                    })"
-                >Click here to join</a>`;
+            } catch {
+                // Ignore invalid dates
             }
         }
 
-        return `
-            <div class="leaflet-cleanup-container">
-                <p>${properties.name}</p>
-                <p>Attending: ${properties.users.length} ${properties.users.length === 1 ? 'person' : 'people'}</p>
-                <p>${properties.description}</p>
-                <p>When? ${properties.startsAt}</p>
-                <p>${properties.timeDiff}</p>
-                ${userCleanupInfo}
-            </div>
-        `;
+        return parts.join(' ');
     },
 
     /**
-     * Build the HTML to include in the popup content for merchants
+     * Get removed tags info with XSS protection
      */
-    getMerchantContent: (properties) => {
-        let photos = '';
+    getRemovedTags: (removedTags, translate) => {
+        const lines = [translate('Removed Tags') + ':'];
 
-        if (properties.photos.length > 0) {
-            properties.photos.forEach((photo) => {
-                photos += `<div class="swiper-slide"><img style="height: 404px;" src="${photo.filepath}" alt="photo"></div>`;
+        if (Array.isArray(removedTags.customTags)) {
+            const safeTags = removedTags.customTags.map((tag) => htmlSanitizer.escapeHtml(tag)).join(' ');
+            if (safeTags) lines.push(safeTags);
+        }
+
+        if (removedTags.tags && typeof removedTags.tags === 'object') {
+            Object.entries(removedTags.tags).forEach(([category, items]) => {
+                const safeCategory = htmlSanitizer.escapeHtml(category);
+
+                if (typeof items === 'object') {
+                    const itemStrings = Object.entries(items).map(([key, value]) => {
+                        const safeKey = htmlSanitizer.escapeHtml(key);
+                        const safeValue = parseInt(value) || 0;
+                        return `${safeCategory} - ${safeKey}(${safeValue})`;
+                    });
+
+                    if (itemStrings.length > 0) {
+                        lines.push(itemStrings.join(', '));
+                    }
+                }
             });
         }
 
-        let websiteLink = properties.website
-            ? `<a href="${properties.website}" target="_blank">${properties.website}</a>`
-            : '';
+        return lines.length > 1 ? lines.join('<br>') : '';
+    },
 
-        return `
-            <div class="leaflet-cleanup-container">
-                <div class="swiper-container">
-                    <div class="swiper-wrapper">
-                        ${photos}
-                    </div>
-                    <div class="swiper-button-prev" id="prevButton"></div>
-                    <div class="swiper-button-next" id="nextButton"></div>
-                </div>
-                <p>Name: ${properties.name}</p>
-                <p>About this merchant: ${properties.about ? properties.about : ''}</p>
-                <p>Website: ${websiteLink}</p>
-            </div>
-        `;
+    /**
+     * Scroll popup to bottom for tall images
+     */
+    scrollPopupToBottom: (event) => {
+        const popup = event.popup?.getElement()?.querySelector('.leaflet-popup-content');
+        if (popup) {
+            requestAnimationFrame(() => {
+                popup.scrollTop = popup.scrollHeight;
+            });
+        }
     },
 
     /**
      * Render a Leaflet popup for a specific feature
      */
     renderLeafletPopup: (feature, latlng, t, mapInstance) => {
-        const content = popupHelper.getContent(feature.properties, null, t);
+        // Provide translation fallback
+        const translate = t || ((key) => key);
+
+        const content = popupHelper.getContent(feature.properties, null, translate);
 
         const popup = L.popup(popupHelper.popupOptions).setLatLng(latlng).setContent(content).openOn(mapInstance);
 
@@ -285,29 +354,106 @@ export const popupHelper = {
     },
 
     /**
-     * Legacy method to parse old tag format - kept for backwards compatibility
-     * @deprecated Use parseSummaryTags instead
+     * Get cleanup popup content with XSS protection
      */
-    parseTags: (tagsString, customTags, isTrustedUser, t) => {
-        if (!tagsString && !customTags) {
-            return isTrustedUser ? t('litter.not-tagged-yet') : t('litter.not-verified');
+    getCleanupContent: (properties, userId = null, translate = (key) => key) => {
+        const safeName = htmlSanitizer.escapeHtml(properties.name);
+        const safeDescription = htmlSanitizer.escapeHtml(properties.description);
+        const safeStartsAt = htmlSanitizer.escapeHtml(properties.startsAt);
+        const safeTimeDiff = htmlSanitizer.escapeHtml(properties.timeDiff);
+        const userCount = parseInt(properties.users?.length) || 0;
+        const inviteLink = htmlSanitizer.escapeHtml(properties.invite_link);
+
+        let userCleanupInfo = '';
+
+        if (userId === null) {
+            userCleanupInfo = translate('Log in to join the cleanup');
+        } else {
+            const userInCleanup = properties.users?.some((user) => user.user_id === userId);
+
+            if (userInCleanup) {
+                userCleanupInfo = `<p>${translate('You have joined the cleanup')}</p>`;
+
+                if (userId === properties.user_id) {
+                    userCleanupInfo += `<p>${translate('You cannot leave the cleanup you created')}</p>`;
+                } else {
+                    userCleanupInfo += `<a
+                        onclick="window.olm_map.$store.dispatch('LEAVE_CLEANUP', {
+                            link: '${inviteLink}'
+                        })"
+                        class="cleanup-action-link"
+                    >${translate('Click here to leave')}</a>`;
+                }
+            } else {
+                userCleanupInfo = `<a
+                    onclick="window.olm_map.$store.dispatch('JOIN_CLEANUP', {
+                        link: '${inviteLink}'
+                    })"
+                    class="cleanup-action-link"
+                >${translate('Click here to join')}</a>`;
+            }
         }
 
-        let tags = '';
-        let a = tagsString ? tagsString.split(',') : [];
+        const personText = userCount === 1 ? translate('person') : translate('people');
 
-        a.pop();
+        return `
+            <div class="leaflet-cleanup-container">
+                <p class="cleanup-name">${safeName}</p>
+                <p class="cleanup-attendance">${translate('Attending')}: ${userCount} ${personText}</p>
+                <p class="cleanup-description">${safeDescription}</p>
+                <p class="cleanup-time">${translate('When')}: ${safeStartsAt}</p>
+                <p class="cleanup-time-diff">${safeTimeDiff}</p>
+                ${userCleanupInfo}
+            </div>
+        `;
+    },
 
-        a.forEach((i) => {
-            let b = i.split(' ');
+    /**
+     * Get merchant popup content with XSS protection
+     */
+    getMerchantContent: (properties, translate = (key) => key) => {
+        const safeName = htmlSanitizer.escapeHtml(properties.name);
+        const safeAbout = htmlSanitizer.escapeHtml(properties.about);
+        const safeWebsite = htmlSanitizer.sanitizeUrl(properties.website);
 
-            if (b[0] === 'art.item') {
-                tags += t('litter.' + b[0]) + '<br>';
-            } else {
-                tags += t('litter.' + b[0]) + ': ' + b[1] + '<br>';
-            }
-        });
+        let photos = '';
+        if (Array.isArray(properties.photos)) {
+            photos = properties.photos
+                .map((photo) => {
+                    const safePath = htmlSanitizer.sanitizeUrl(photo.filepath);
+                    if (safePath) {
+                        return `<div class="swiper-slide">
+                        <img style="height: 404px;" src="${safePath}" alt="${translate('Merchant photo')}" loading="lazy">
+                    </div>`;
+                    }
+                    return '';
+                })
+                .join('');
+        }
 
-        return tags;
+        const websiteLink = safeWebsite
+            ? `<a href="${safeWebsite}" target="_blank" rel="noopener">${safeWebsite}</a>`
+            : '';
+
+        return `
+            <div class="leaflet-cleanup-container">
+                ${
+                    photos
+                        ? `
+                    <div class="swiper-container">
+                        <div class="swiper-wrapper">${photos}</div>
+                        <div class="swiper-button-prev" id="prevButton"></div>
+                        <div class="swiper-button-next" id="nextButton"></div>
+                    </div>
+                `
+                        : ''
+                }
+                <p>${translate('Name')}: ${safeName}</p>
+                ${safeAbout ? `<p>${translate('About this merchant')}: ${safeAbout}</p>` : ''}
+                ${websiteLink ? `<p>${translate('Website')}: ${websiteLink}</p>` : ''}
+            </div>
+        `;
     },
 };
+
+export default popupHelper;

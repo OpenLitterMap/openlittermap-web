@@ -1,61 +1,77 @@
 <template>
-    <div class="tagged-view">
+    <div class="flex flex-col gap-5">
         <!-- Summary Stats -->
-        <div class="stats-summary">
-            <div class="stat">
-                <span class="stat-label">Total Objects</span>
-                <span class="stat-value">{{ stats.totalObjects }}</span>
+        <div
+            class="grid grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 p-4 bg-gray-100 rounded-lg"
+        >
+            <div class="text-center">
+                <span class="block text-xs text-gray-600 mb-1">Total Objects</span>
+                <span class="block text-2xl font-bold text-gray-800">{{ stats.totalObjects }}</span>
             </div>
-            <div class="stat">
-                <span class="stat-label">Total Tags</span>
-                <span class="stat-value">{{ stats.totalTags }}</span>
+            <div class="text-center">
+                <span class="block text-xs text-gray-600 mb-1">Total Tags</span>
+                <span class="block text-2xl font-bold text-gray-800">{{ stats.totalTags }}</span>
             </div>
-            <div class="stat" v-if="stats.totalMaterials > 0">
-                <span class="stat-label">Total Materials</span>
-                <span class="stat-value">{{ stats.totalMaterials }}</span>
+            <div v-if="stats.totalMaterials > 0" class="text-center">
+                <span class="block text-xs text-gray-600 mb-1">Total Materials</span>
+                <span class="block text-2xl font-bold text-gray-800">{{ stats.totalMaterials }}</span>
             </div>
-            <div class="stat" v-if="stats.totalBrands > 0">
-                <span class="stat-label">Total Brands</span>
-                <span class="stat-value">{{ stats.totalBrands }}</span>
+            <div v-if="stats.totalBrands > 0" class="text-center">
+                <span class="block text-xs text-gray-600 mb-1">Total Brands</span>
+                <span class="block text-2xl font-bold text-gray-800">{{ stats.totalBrands }}</span>
             </div>
-            <div class="stat" v-if="photo.xp">
-                <span class="stat-label">XP Earned</span>
-                <span class="stat-value">{{ photo.xp }}</span>
+            <div v-if="photo.xp" class="text-center">
+                <span class="block text-xs text-gray-600 mb-1">XP Earned</span>
+                <span class="block text-2xl font-bold text-gray-800">{{ photo.xp }}</span>
             </div>
         </div>
 
         <!-- Categories -->
-        <div class="categories-grid">
-            <div v-for="category in categorizedData" :key="category.name" class="category-card">
-                <h3 class="category-title">{{ formatCategoryName(category.name) }}</h3>
+        <div class="flex flex-col gap-4">
+            <div v-for="category in categorizedData" :key="category.name" class="bg-gray-100 rounded-lg p-4">
+                <h3 class="m-0 mb-3 text-base text-gray-800 font-semibold">{{ formatCategoryName(category.name) }}</h3>
 
-                <div v-for="item in category.items" :key="item.id" class="object-item">
-                    <div class="object-header">
-                        <span class="object-name">{{ item.object?.key || 'unknown' }}</span>
-                        <span class="object-qty">×{{ item.quantity }}</span>
-                        <span v-if="item.picked_up" class="picked-up-badge">✓ Picked up</span>
+                <div v-for="item in category.items" :key="item.id" class="bg-white rounded-md p-3 mb-2 last:mb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-semibold text-gray-800 capitalize">{{ item.object?.key || 'unknown' }}</span>
+                        <span class="text-sm text-gray-600">×{{ item.quantity }}</span>
+                        <span v-if="item.picked_up" class="bg-green-500 text-white px-1.5 py-0.5 rounded text-xs"
+                            >✓ Picked up</span
+                        >
                     </div>
 
                     <!-- Materials -->
-                    <div v-if="item.materials.length > 0" class="sub-items">
-                        <span class="sub-label">Materials:</span>
-                        <span v-for="mat in item.materials" :key="mat.tag?.id" class="tag-chip material">
+                    <div v-if="item.materials.length > 0" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span class="text-xs text-gray-600 mr-1">Materials:</span>
+                        <span
+                            v-for="mat in item.materials"
+                            :key="mat.tag?.id"
+                            class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-600"
+                        >
                             {{ mat.tag?.key || 'unknown' }} ({{ mat.quantity }})
                         </span>
                     </div>
 
                     <!-- Brands -->
-                    <div v-if="item.brands.length > 0" class="sub-items">
-                        <span class="sub-label">Brands:</span>
-                        <span v-for="brand in item.brands" :key="brand.tag?.id" class="tag-chip brand">
+                    <div v-if="item.brands.length > 0" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span class="text-xs text-gray-600 mr-1">Brands:</span>
+                        <span
+                            v-for="brand in item.brands"
+                            :key="brand.tag?.id"
+                            class="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-600"
+                        >
                             {{ brand.tag?.key || 'unknown' }} ({{ brand.quantity }})
                         </span>
                     </div>
 
                     <!-- Custom Tags -->
-                    <div v-if="item.customTags.length > 0" class="sub-items">
-                        <span class="sub-label">Tags:</span>
-                        <span v-for="custom in item.customTags" :key="custom.tag?.id" class="tag-chip custom">
+                    <div v-if="item.customTags.length > 0" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span class="text-xs text-gray-600 mr-1">Tags:</span>
+                        <span
+                            v-for="custom in item.customTags"
+                            :key="custom.tag?.id"
+                            class="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-600"
+                        >
                             {{ custom.tag?.key || 'unknown' }} ({{ custom.quantity }})
                         </span>
                     </div>
@@ -164,136 +180,3 @@ const formatCategoryName = (name) => {
     return name.charAt(0).toUpperCase() + name.slice(1).replace(/_/g, ' ');
 };
 </script>
-
-<style scoped>
-.tagged-view {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.stats-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-    padding: 16px;
-    background: #f8f8f8;
-    border-radius: 8px;
-}
-
-.stat {
-    text-align: center;
-}
-
-.stat-label {
-    display: block;
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 4px;
-}
-
-.stat-value {
-    display: block;
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-}
-
-.categories-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.category-card {
-    background: #f8f8f8;
-    border-radius: 8px;
-    padding: 16px;
-}
-
-.category-title {
-    margin: 0 0 12px 0;
-    font-size: 16px;
-    color: #333;
-    font-weight: 600;
-}
-
-.object-item {
-    background: white;
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 8px;
-}
-
-.object-item:last-child {
-    margin-bottom: 0;
-}
-
-.object-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.object-name {
-    font-weight: 600;
-    color: #333;
-    text-transform: capitalize;
-}
-
-.object-qty {
-    color: #666;
-    font-size: 14px;
-}
-
-.picked-up-badge {
-    background: #4caf50;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 11px;
-}
-
-.sub-items {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
-    flex-wrap: wrap;
-}
-
-.sub-label {
-    font-size: 12px;
-    color: #666;
-    margin-right: 4px;
-}
-
-.tag-chip {
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.tag-chip.material {
-    background: #e8f5e9;
-    color: #4caf50;
-}
-
-.tag-chip.brand {
-    background: #f3e5f5;
-    color: #9c27b0;
-}
-
-.tag-chip.custom {
-    background: #fff3e0;
-    color: #ff9800;
-}
-
-@media (max-width: 768px) {
-    .stats-summary {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-</style>

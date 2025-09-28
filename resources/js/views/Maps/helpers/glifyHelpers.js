@@ -1,294 +1,347 @@
 import glify from 'leaflet.glify';
 import { popupHelper } from './popup.js';
 import { Category } from './Category.js';
-
-// Store reference to current glify points instance
-let currentGlifyInstance = null;
-let currentPointsData = null;
-let currentMapInstance = null;
-let currentTranslationFn = null;
+import { urlHelper } from './urlHelper.js';
 
 /**
- * Add glify points to the map
- * @param {Object} pointsGeojson - GeoJSON feature collection
- * @param {L.Map} mapInstance - Leaflet map instance
- * @param {Function} t - Translation function
- * @returns {Object|null} - Glify points layer or null
+ * Glify Points Manager
+ * Manages WebGL-based point rendering with proper cleanup and memory management
  */
-export function addGlifyPoints(pointsGeojson, mapInstance, t) {
-    // Check if we have features
-    if (!pointsGeojson.features || pointsGeojson.features.length === 0) {
-        return null;
+class GlifyPointsManager {
+    constructor() {
+        this.currentInstance = null;
+        this.currentData = null;
+        this.currentMap = null;
+        this.translationFn = null;
+        this.featureIndex = new Map();
+        this.isInitialized = false;
     }
 
-    // Store the points data and map instance for later use
-    currentPointsData = pointsGeojson;
-    currentMapInstance = mapInstance;
-    currentTranslationFn = t;
+    /**
+     * Initialize glify with proper settings
+     */
+    initialize() {
+        if (!this.isInitialized) {
+            glify.longitudeFirst();
+            this.isInitialized = true;
+        }
+    }
 
-    // Build array for glify with index mapping
-    const data = [];
-    const featuresByIndex = [];
+    /**
+     * Clean up WebGL resources properly
+     */
+    cleanupWebGL(canvas) {
+        if (!canvas) return;
 
-    pointsGeojson.features.forEach((feature, idx) => {
-        data.push([feature.geometry.coordinates[0], feature.geometry.coordinates[1]]);
-        featuresByIndex[idx] = feature; // Store by index for reliable lookup
-    });
+        try {
+            const gl = canvas.getContext('webgl') || canvas.getContext('webgl2');
+            if (gl) {
+                // Clear all WebGL state
+                gl.clearColor(0, 0, 0, 0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Create glify points
-    currentGlifyInstance = glify.points({
-        map: mapInstance,
-        data: data,
-        size: 10,
-        color: { r: 0.054, g: 0.819, b: 0.27, a: 1 },
-        click: (e, point, xy) => {
-            // glify provides the index in the click event
-            const idx = data.findIndex((d) => d[0] === point[0] && d[1] === point[1]);
-            const feature = featuresByIndex[idx];
+                // Lose context to force cleanup
+                const loseContext = gl.getExtension('WEBGL_lose_context');
+                if (loseContext) {
+                    loseContext.loseContext();
+                }
+            }
+        } catch (error) {
+            console.warn('WebGL cleanup error:', error);
+        }
+    }
+
+    /**
+     * Remove current instance with full cleanup
+     */
+    removeCurrentInstance() {
+        if (!this.currentInstance) return;
+
+        try {
+            // Get canvas before removal for cleanup
+            const canvas = this.currentInstance.canvas;
+
+            // Remove from map
+            if (typeof this.currentInstance.remove === 'function') {
+                this.currentInstance.remove();
+            }
+
+            // Clean WebGL context
+            if (canvas) {
+                this.cleanupWebGL(canvas);
+
+                // Remove from DOM
+                if (canvas.parentNode) {
+                    canvas.parentNode.removeChild(canvas);
+                }
+            }
+        } catch (error) {
+            console.error('Error removing glify instance:', error);
+        } finally {
+            this.currentInstance = null;
+        }
+    }
+
+    /**
+     * Create click handler with proper feature lookup
+     */
+    createClickHandler(features, map, t) {
+        return (e, point, xy) => {
+            // Find feature by coordinates
+            const feature = features.find(
+                (f) => f.geometry.coordinates[0] === point[0] && f.geometry.coordinates[1] === point[1]
+            );
 
             if (!feature) {
                 console.warn('Could not find feature for clicked point');
                 return;
             }
 
-            // Set the photoId in the url when opening a photo
-            const url = new URL(window.location.href);
-            url.searchParams.set('photo', feature.properties.id);
-            window.history.replaceState(null, '', url); // Use replaceState for cleaner history
+            // Update URL with photo ID
+            urlHelper.stateManager.updatePhotoId(feature.properties.id, false);
 
-            return popupHelper.renderLeafletPopup(feature, e.latlng, t, mapInstance);
-        },
-    });
-
-    return currentGlifyInstance;
-}
-
-/**
- * Highlight points by category or object
- * @param {string|null} category - Category key to highlight, or null to reset
- * @param {L.Map} mapInstance - Leaflet map instance
- * @param {string|null} objectKey - Optional specific object key to highlight
- */
-export function highlightPointsByCategory(category, mapInstance, objectKey = null) {
-    if (!currentPointsData) return;
-
-    // Use the stored map instance if the passed one is null
-    const map = mapInstance || currentMapInstance;
-    if (!map) return;
-
-    // Remove current glify points if they exist
-    if (currentGlifyInstance) {
-        removeGlifyPoints(currentGlifyInstance, map);
-        currentGlifyInstance = null;
+            // Render popup
+            return popupHelper.renderLeafletPopup(feature, e.latlng, t, map);
+        };
     }
 
-    if (!category && !objectKey) {
-        // No category or object highlighted - show all points with default green
-        const data = currentPointsData.features.map((feature) => {
-            return [feature.geometry.coordinates[0], feature.geometry.coordinates[1]];
+    /**
+     * Add points with optimized rendering
+     */
+    addPoints(pointsGeojson, mapInstance, t) {
+        // Initialize if needed
+        this.initialize();
+
+        // Validate input
+        if (!pointsGeojson?.features?.length) {
+            return null;
+        }
+
+        // Clean up existing instance
+        this.removeCurrentInstance();
+
+        // Store references
+        this.currentData = pointsGeojson;
+        this.currentMap = mapInstance;
+        this.translationFn = t;
+
+        // Build data arrays
+        const coords = [];
+        const features = [];
+
+        pointsGeojson.features.forEach((feature) => {
+            coords.push([feature.geometry.coordinates[0], feature.geometry.coordinates[1]]);
+            features.push(feature);
         });
 
-        currentGlifyInstance = glify.points({
-            map: map,
-            data: data,
-            size: 10,
-            color: { r: 0.054, g: 0.819, b: 0.27, a: 1 }, // Default green
-            click: (e, point, xy) => {
-                // Find the matching feature
-                const feature = currentPointsData.features.find((f) => {
-                    return f.geometry.coordinates[0] === point[0] && f.geometry.coordinates[1] === point[1];
-                });
+        // Create new glify instance
+        try {
+            this.currentInstance = glify.points({
+                map: mapInstance,
+                data: coords,
+                size: 10,
+                color: { r: 0.054, g: 0.819, b: 0.27, a: 1 },
+                click: this.createClickHandler(features, mapInstance, t),
+                // Performance optimizations
+                pane: 'overlayPane',
+                opacity: 1,
+                className: 'glify-points-layer',
+            });
 
-                if (!feature) {
-                    return;
-                }
+            return this.currentInstance;
+        } catch (error) {
+            console.error('Error creating glify points:', error);
+            this.currentInstance = null;
+            return null;
+        }
+    }
 
-                // Set the photoId in the url when opening a photo
-                const url = new URL(window.location.href);
-                url.searchParams.set('photo', feature.properties.id);
-                window.history.pushState(null, '', url);
+    /**
+     * Highlight points by category with proper color mapping
+     */
+    highlightByCategory(category, objectKey = null) {
+        if (!this.currentData || !this.currentMap) return null;
 
-                return popupHelper.renderLeafletPopup(feature, e.latlng, currentTranslationFn, map);
-            },
-        });
-    } else {
-        // Filter data based on category and/or object
-        const filteredData = [];
+        // Remove current instance
+        this.removeCurrentInstance();
+
+        // No filter - show all with default color
+        if (!category && !objectKey) {
+            return this.addPoints(this.currentData, this.currentMap, this.translationFn);
+        }
+
+        // Filter features
+        const filteredCoords = [];
         const filteredFeatures = [];
 
-        currentPointsData.features.forEach((feature) => {
+        this.currentData.features.forEach((feature) => {
             let shouldInclude = false;
 
             if (objectKey) {
-                // Check for specific object within the category
-                shouldInclude = checkPointHasObject(feature, category, objectKey);
+                shouldInclude = this.hasObject(feature, category, objectKey);
             } else if (category) {
-                // Check for category only
-                shouldInclude = checkPointCategory(feature, category);
+                shouldInclude = this.hasCategory(feature, category);
             }
 
             if (shouldInclude) {
-                filteredData.push([feature.geometry.coordinates[0], feature.geometry.coordinates[1]]);
+                filteredCoords.push([feature.geometry.coordinates[0], feature.geometry.coordinates[1]]);
                 filteredFeatures.push(feature);
             }
         });
 
-        console.log(`Filter - Category: "${category}", Object: "${objectKey}" - ${filteredData.length} points found`);
+        // Only render if there are matching points
+        if (filteredCoords.length === 0) {
+            console.log(`No points found for filter - Category: "${category}", Object: "${objectKey}"`);
+            return null;
+        }
 
-        // Only create glify points if there are matching features
-        if (filteredData.length > 0) {
-            // Get the category color using the Category class
-            const categoryColor = Category.getRGB(category);
+        // Get category color
+        const color = Category.getRGB(category);
 
-            currentGlifyInstance = glify.points({
-                map: map,
-                data: filteredData,
+        try {
+            this.currentInstance = glify.points({
+                map: this.currentMap,
+                data: filteredCoords,
                 size: 12, // Slightly larger for highlighted points
-                color: categoryColor, // Use category-specific color
-                click: (e, point, xy) => {
-                    // Find the matching feature from filtered features
-                    const feature = filteredFeatures.find((f) => {
-                        return f.geometry.coordinates[0] === point[0] && f.geometry.coordinates[1] === point[1];
-                    });
-
-                    if (!feature) {
-                        return;
-                    }
-
-                    // Set the photoId in the url when opening a photo
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('photo', feature.properties.id);
-                    window.history.pushState(null, '', url);
-
-                    return popupHelper.renderLeafletPopup(feature, e.latlng, currentTranslationFn, map);
-                },
+                color: color,
+                click: this.createClickHandler(filteredFeatures, this.currentMap, this.translationFn),
+                pane: 'overlayPane',
+                opacity: 1,
+                className: 'glify-points-highlighted',
             });
+
+            console.log(`Rendered ${filteredCoords.length} highlighted points`);
+            return this.currentInstance;
+        } catch (error) {
+            console.error('Error creating highlighted points:', error);
+            return null;
         }
     }
 
-    return currentGlifyInstance;
-}
+    /**
+     * Check if feature has specific object
+     */
+    hasObject(feature, category, objectKey) {
+        if (!feature.properties?.summary?.tags) return false;
 
-/**
- * Check if a point has a specific object within a category
- * @param {Object} feature - GeoJSON feature
- * @param {string} category - Category key
- * @param {string} objectKey - Object key
- * @returns {boolean} - Whether the point has the specific object
- */
-function checkPointHasObject(feature, category, objectKey) {
-    if (!feature.properties || !category || !objectKey) return false;
+        const tags = feature.properties.summary.tags;
 
-    const props = feature.properties;
-
-    console.log(`Checking point ${props.id} for category: "${category}", object: "${objectKey}"`);
-
-    // Check if summary.tags exists and has the category
-    if (props.summary && props.summary.tags) {
-        console.log('Available categories in this point:', Object.keys(props.summary.tags));
-
-        if (props.summary.tags[category]) {
-            const categoryData = props.summary.tags[category];
-            console.log(`Objects in ${category}:`, Object.keys(categoryData));
-
-            // Check if the specific object exists in this category
-            if (categoryData[objectKey]) {
-                // Check if it has a quantity > 0
-                const quantity = categoryData[objectKey].quantity || 0;
-                const hasObject = quantity > 0;
-                if (hasObject) {
-                    console.log(`✓ Point ${props.id} has ${category}.${objectKey}: quantity ${quantity}`);
-                }
-                return hasObject;
-            } else {
-                console.log(`✗ Object "${objectKey}" not found in category "${category}"`);
-            }
-        } else {
-            console.log(`✗ Category "${category}" not found in this point`);
-        }
-    }
-
-    return false;
-}
-
-/**
- * Check if a point belongs to a specific category
- * @param {Object} feature - GeoJSON feature
- * @param {string} category - Category key
- * @returns {boolean} - Whether the point belongs to the category
- */
-function checkPointCategory(feature, category) {
-    if (!feature.properties || !category) return false;
-
-    const props = feature.properties;
-
-    // Check if summary.tags exists and has the category
-    if (props.summary && props.summary.tags && props.summary.tags[category]) {
-        // Category exists in tags - check if it has any objects
-        const categoryData = props.summary.tags[category];
-        const hasData = Object.keys(categoryData).length > 0;
-
-        if (hasData) {
-            console.log(`Point ${props.id} matches category ${category}`);
+        if (tags[category] && tags[category][objectKey]) {
+            const quantity = tags[category][objectKey].quantity || 0;
+            return quantity > 0;
         }
 
-        return hasData;
+        return false;
     }
 
-    return false;
+    /**
+     * Check if feature has category
+     */
+    hasCategory(feature, category) {
+        if (!feature.properties?.summary?.tags) return false;
+
+        const tags = feature.properties.summary.tags;
+
+        if (tags[category]) {
+            // Check if category has any objects
+            return Object.keys(tags[category]).length > 0;
+        }
+
+        return false;
+    }
+
+    /**
+     * Clear all references
+     */
+    clearAll() {
+        this.removeCurrentInstance();
+        this.currentData = null;
+        this.currentMap = null;
+        this.translationFn = null;
+        this.featureIndex.clear();
+    }
+
+    /**
+     * Get memory usage estimate
+     */
+    getMemoryEstimate() {
+        if (!this.currentData) return 0;
+
+        // Rough estimate: 100 bytes per feature + overhead
+        return (this.currentData.features.length * 100) / 1024 / 1024; // MB
+    }
+
+    /**
+     * Check WebGL availability
+     */
+    static checkWebGLSupport() {
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('webgl2');
+            return !!gl;
+        } catch (e) {
+            return false;
+        }
+    }
 }
 
-/**
- * Highlight points by specific object
- * @param {Object|null} objectData - Object containing category and objectKey, or null to reset
- * @param {L.Map} mapInstance - Leaflet map instance
- */
+// Create singleton instance
+const glifyManager = new GlifyPointsManager();
+
+// Export legacy interface for compatibility
+export function addGlifyPoints(pointsGeojson, mapInstance, t) {
+    return glifyManager.addPoints(pointsGeojson, mapInstance, t);
+}
+
+export function highlightPointsByCategory(category, mapInstance, objectKey = null) {
+    return glifyManager.highlightByCategory(category, objectKey);
+}
+
 export function highlightPointsByObject(objectData, mapInstance) {
     if (!objectData) {
-        // Reset to show all points
-        return highlightPointsByCategory(null, mapInstance, null);
+        return glifyManager.highlightByCategory(null, null);
     }
-
-    // Use the highlight function with both category and object
-    return highlightPointsByCategory(objectData.category, mapInstance, objectData.objectKey);
+    return glifyManager.highlightByCategory(objectData.category, objectData.objectKey);
 }
 
-/**
- * Remove glify points from the map
- * @param {Object} points - Glify points layer
- * @param {L.Map} mapInstance - Leaflet map instance
- */
 export function removeGlifyPoints(points, mapInstance) {
-    if (!points || !mapInstance) return;
-
-    try {
-        if (typeof points.remove === 'function') {
-            points.remove();
+    // If called with specific instance, try to remove it
+    if (points && points !== glifyManager.currentInstance) {
+        try {
+            if (typeof points.remove === 'function') {
+                points.remove();
+            }
+        } catch (error) {
+            console.error('Error removing glify points:', error);
         }
-
-        // Additional cleanup - remove canvas if it exists
-        const canvas = mapInstance.getContainer().querySelector('canvas.glify-canvas');
-        if (canvas) {
-            canvas.remove();
-        }
-    } catch (error) {
-        console.error('Error removing glify points:', error);
     }
+
+    // Always clear the manager's instance
+    glifyManager.removeCurrentInstance();
 }
 
-/**
- * Clear stored references
- */
 export function clearGlifyReferences() {
-    currentGlifyInstance = null;
-    currentPointsData = null;
-    currentMapInstance = null;
-    currentTranslationFn = null;
+    glifyManager.clearAll();
 }
 
-/**
- * Initialize glify to use longitude-first order
- */
 export function initializeGlify() {
-    glify.longitudeFirst();
+    glifyManager.initialize();
 }
+
+// Export manager for advanced usage
+export { glifyManager };
+
+// Check WebGL support on module load
+if (!GlifyPointsManager.checkWebGLSupport()) {
+    console.warn('WebGL not supported. Glify points may not render correctly.');
+}
+
+export default {
+    addGlifyPoints,
+    highlightPointsByCategory,
+    highlightPointsByObject,
+    removeGlifyPoints,
+    clearGlifyReferences,
+    initializeGlify,
+    glifyManager,
+};

@@ -18,3 +18,4 @@ import './views/Maps/helpers/SmoothWheelZoom.js';
 import '@css/leaflet/MarkerCluster.css';
 import '@css/leaflet/MarkerCluster.Default.css';
 import 'leaflet/dist/leaflet.css';
+import '@css/leaflet/popup.css';

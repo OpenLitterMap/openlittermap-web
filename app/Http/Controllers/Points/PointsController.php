@@ -124,7 +124,7 @@ class PointsController extends Controller
                 // Removed 'summary' to reduce payload size
             ])
             ->with([
-                'user:id,name,username,show_username_maps,show_name_maps',
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'team:id,name'
             ])
             // Guardrail for legacy data
@@ -316,25 +316,32 @@ class PointsController extends Controller
             : $photos;
 
         return $items->map(function ($photo) {
+            $properties = [
+                'id' => $photo->id,
+                'datetime' => $photo->datetime,
+                'verified' => $photo->verified,
+                'picked_up' => $photo->remaining !== null ? !$photo->remaining : null,
+                'total_litter' => $photo->total_litter,
+                'filename' => $this->getFilename($photo),
+                'username' => $photo->user && $photo->user->show_username_maps
+                    ? $photo->user->username : null,
+                'name' => $photo->user && $photo->user->show_name_maps
+                    ? $photo->user->name : null,
+                'team' => $photo->team ? $photo->team->name : null,
+            ];
+
+            // Add social links if user exists
+            if ($photo->user) {
+                $properties['social'] = $photo->user->social_links;
+            }
+
             return [
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
                     'coordinates' => [(float)$photo->lon, (float)$photo->lat]
                 ],
-                'properties' => [
-                    'id' => $photo->id,
-                    'datetime' => $photo->datetime,
-                    'verified' => $photo->verified,
-                    'picked_up' => $photo->remaining !== null ? !$photo->remaining : false,
-                    'total_litter' => $photo->total_litter,
-                    'filename' => $this->getFilename($photo),
-                    'username' => $photo->user && $photo->user->show_username_maps
-                        ? $photo->user->username : null,
-                    'name' => $photo->user && $photo->user->show_name_maps
-                        ? $photo->user->name : null,
-                    'team' => $photo->team ? $photo->team->name : null
-                ]
+                'properties' => $properties
             ];
         });
     }

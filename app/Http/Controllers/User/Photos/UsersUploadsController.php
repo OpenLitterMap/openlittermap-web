@@ -17,7 +17,7 @@ class UsersUploadsController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = Auth::user();
-        $perPage = $request->integer('per_page', 25);
+        $perPage = 8;
 
         $query = Photo::where('user_id', $user->id)
             ->where('filename', '!=', '/assets/verified.jpg');

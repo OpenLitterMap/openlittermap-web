@@ -1,10 +1,77 @@
 import { CLUSTER_ZOOM_THRESHOLD } from './constants.js';
 import { addGlifyPoints, removeGlifyPoints, clearGlifyReferences } from './glifyHelpers.js';
 import { popupHelper } from './popup.js';
+import { urlHelper } from './urlHelper.js';
+
+/**
+ * Request deduplication and management
+ */
+class RequestManager {
+    constructor() {
+        this.activeRequests = new Map();
+        this.requestHashes = new Map();
+    }
+
+    /**
+     * Generate a hash for request deduplication
+     */
+    generateRequestHash(params) {
+        const { zoom, bbox, year, fromDate, toDate, username, page } = params;
+        return JSON.stringify({
+            z: Math.round(zoom),
+            b: [
+                Math.round(bbox.left * 1000),
+                Math.round(bbox.bottom * 1000),
+                Math.round(bbox.right * 1000),
+                Math.round(bbox.top * 1000),
+            ],
+            y: year,
+            f: fromDate,
+            t: toDate,
+            u: username,
+            p: page,
+        });
+    }
+
+    /**
+     * Check if we should skip this request (duplicate in flight)
+     */
+    shouldSkipRequest(hash) {
+        return this.activeRequests.has(hash);
+    }
+
+    /**
+     * Register a new request
+     */
+    registerRequest(hash, controller) {
+        this.activeRequests.set(hash, controller);
+    }
+
+    /**
+     * Clear a completed request
+     */
+    clearRequest(hash) {
+        this.activeRequests.delete(hash);
+    }
+
+    /**
+     * Abort all active requests
+     */
+    abortAll() {
+        this.activeRequests.forEach((controller) => {
+            if (controller && typeof controller.abort === 'function') {
+                controller.abort();
+            }
+        });
+        this.activeRequests.clear();
+    }
+}
+
+const requestManager = new RequestManager();
 
 export const pointsHelper = {
     /**
-     * Handle points view (zoom >= CLUSTER_ZOOM_THRESHOLD)
+     * Handle points view with proper abort signal support
      */
     async handlePointsView({
         mapInstance,
@@ -21,15 +88,39 @@ export const pointsHelper = {
         page = 1,
         abortSignal = null,
     }) {
-        // Clear cluster layer if we were in cluster mode
+        // Clear cluster layer if transitioning from cluster mode
         if (prevZoom < CLUSTER_ZOOM_THRESHOLD) {
             clusters.clearLayers();
         }
 
-        const layers = [];
+        // Generate request hash for deduplication
+        const requestHash = requestManager.generateRequestHash({
+            zoom,
+            bbox,
+            year,
+            fromDate,
+            toDate,
+            username,
+            page,
+        });
+
+        // Check if this exact request is already in flight
+        if (requestManager.shouldSkipRequest(requestHash)) {
+            console.log('Skipping duplicate request');
+            return null;
+        }
+
+        // Create abort controller if not provided
+        const controller = abortSignal ? { signal: abortSignal } : new AbortController();
+        const signal = controller.signal || controller;
+
+        // Register this request
+        requestManager.registerRequest(requestHash, controller);
 
         try {
-            // Use pointsStore for points data with proper pagination
+            const layers = [];
+
+            // Add abort signal support to store request
             const response = await pointsStore.GET_POINTS({
                 zoom,
                 bbox,
@@ -39,37 +130,54 @@ export const pointsHelper = {
                 toDate,
                 username,
                 page,
+                signal, // Pass abort signal to store
             });
 
-            // Add the new points using pointsStore data
+            // Check if request was aborted
+            if (signal.aborted) {
+                return null;
+            }
+
+            // Add the new points
             const points = addGlifyPoints(pointsStore.pointsGeojson, mapInstance, t);
 
-            // If there is a photo id in the url, open it
-            const urlParams = new URLSearchParams(window.location.search);
-            const photoId = parseInt(urlParams.get('photo'));
+            // Check for photo in URL using centralized helper
+            const photoId = urlHelper.getPhotoIdFromURL();
 
             if (photoId && pointsStore.pointsGeojson?.features?.length) {
                 const feature = pointsStore.pointsGeojson.features.find((f) => f.properties?.id === photoId);
 
                 if (feature) {
-                    popupHelper.renderLeafletPopup(
-                        feature,
-                        [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-                        t,
-                        mapInstance
-                    );
+                    // Use requestAnimationFrame instead of setTimeout for better performance
+                    requestAnimationFrame(() => {
+                        if (!signal.aborted) {
+                            popupHelper.renderLeafletPopup(
+                                feature,
+                                [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
+                                t,
+                                mapInstance
+                            );
+                        }
+                    });
                 }
             }
 
             return points;
         } catch (error) {
-            console.log('get points error', error);
-            return null;
+            if (error.name === 'AbortError') {
+                console.log('Points request aborted');
+                return null;
+            }
+            console.error('Error loading points:', error);
+            throw error;
+        } finally {
+            // Clear request from tracking
+            requestManager.clearRequest(requestHash);
         }
     },
 
     /**
-     * Load points data for pagination
+     * Load points data for pagination with abort support
      */
     async loadPointsData({
         mapInstance,
@@ -83,9 +191,29 @@ export const pointsHelper = {
         page = 1,
         abortSignal = null,
     }) {
-        const layers = [];
+        const requestHash = requestManager.generateRequestHash({
+            zoom,
+            bbox,
+            year,
+            fromDate,
+            toDate,
+            username,
+            page,
+        });
+
+        if (requestManager.shouldSkipRequest(requestHash)) {
+            console.log('Skipping duplicate pagination request');
+            return null;
+        }
+
+        const controller = abortSignal ? { signal: abortSignal } : new AbortController();
+        const signal = controller.signal || controller;
+
+        requestManager.registerRequest(requestHash, controller);
 
         try {
+            const layers = [];
+
             await pointsStore.GET_POINTS({
                 zoom,
                 bbox,
@@ -95,33 +223,62 @@ export const pointsHelper = {
                 toDate,
                 username,
                 page,
+                signal,
             });
 
-            // Add the new points
-            const points = addGlifyPoints(pointsStore.pointsGeojson, mapInstance);
+            if (signal.aborted) {
+                return null;
+            }
+
+            // Add the new points with translation fallback
+            const points = addGlifyPoints(pointsStore.pointsGeojson, mapInstance, null);
+
+            // Check if we should open a popup after loading points
+            const photoId = urlHelper.getPhotoIdFromURL();
+
+            if (photoId && pointsStore.pointsGeojson?.features?.length) {
+                const feature = pointsStore.pointsGeojson.features.find((f) => f.properties?.id === photoId);
+
+                if (feature) {
+                    requestAnimationFrame(() => {
+                        if (!signal.aborted) {
+                            popupHelper.renderLeafletPopup(
+                                feature,
+                                [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
+                                null, // Translation might not be available
+                                mapInstance
+                            );
+                        }
+                    });
+                }
+            }
 
             return points;
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error('Load points data error:', error);
+            if (error.name === 'AbortError') {
+                return null;
             }
+            console.error('Load points data error:', error);
             throw error;
+        } finally {
+            requestManager.clearRequest(requestHash);
         }
     },
 
     /**
-     * Clear points from map
+     * Clear points from map with proper cleanup
      */
     clearPoints(points, mapInstance) {
         if (points) {
+            // Ensure proper WebGL cleanup
             removeGlifyPoints(points, mapInstance);
-            clearGlifyReferences(); // Clear stored references
+            clearGlifyReferences();
         }
         return null;
     },
 
     /**
-     * Load statistics for points in current view
+     * Load statistics for points in current view with abort support
      */
     async loadPointsStats({
         mapInstance,
@@ -139,6 +296,27 @@ export const pointsHelper = {
             right: bounds.getEast(),
             top: bounds.getNorth(),
         };
+
+        // Generate hash for stats request
+        const requestHash = requestManager.generateRequestHash({
+            zoom,
+            bbox,
+            year,
+            fromDate,
+            toDate,
+            username,
+            page: 0, // Stats don't have pages
+        });
+
+        if (requestManager.shouldSkipRequest(requestHash)) {
+            console.log('Skipping duplicate stats request');
+            return null;
+        }
+
+        const controller = abortSignal ? { signal: abortSignal } : new AbortController();
+        const signal = controller.signal || controller;
+
+        requestManager.registerRequest(requestHash, controller);
 
         // Build stats request parameters
         const params = new URLSearchParams({
@@ -162,8 +340,12 @@ export const pointsHelper = {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
                 },
-                signal: abortSignal,
+                signal,
             });
+
+            if (signal.aborted) {
+                return null;
+            }
 
             if (response.ok) {
                 const data = await response.json();
@@ -173,10 +355,13 @@ export const pointsHelper = {
                 return null;
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error('Error loading points stats:', error);
+            if (error.name === 'AbortError') {
+                return null;
             }
+            console.error('Error loading points stats:', error);
             return null;
+        } finally {
+            requestManager.clearRequest(requestHash);
         }
     },
 
@@ -195,19 +380,20 @@ export const pointsHelper = {
     },
 
     /**
-     * Get pagination data from store
+     * Get pagination data from store with multiple fallback locations
      */
     getPaginationData(pointsStore) {
-        // Check for pagination in multiple possible locations
+        // Primary location
         if (pointsStore.pointsPagination) {
             return pointsStore.pointsPagination;
         }
 
+        // Secondary location
         if (pointsStore.pagination) {
             return pointsStore.pagination;
         }
 
-        // Check in the geojson meta
+        // Check in geojson meta
         if (pointsStore.pointsGeojson?.meta) {
             return {
                 current_page: pointsStore.pointsGeojson.meta.current_page || 1,
@@ -231,17 +417,42 @@ export const pointsHelper = {
     },
 
     /**
-     * Get filters from URL
+     * Get filters from URL using centralized helper
      */
     getFiltersFromURL() {
-        const searchParams = new URLSearchParams(window.location.search);
-        return {
-            year: parseInt(searchParams.get('year')) || null,
-            fromDate: searchParams.get('fromDate') || null,
-            toDate: searchParams.get('toDate') || null,
-            username: searchParams.get('username') || null,
-            page: parseInt(searchParams.get('page')) || 1,
-        };
+        return urlHelper.stateManager.getFiltersFromURL();
+    },
+
+    /**
+     * Check if pagination should be reset based on movement/filter changes
+     */
+    shouldResetPagination(prevState, currentState) {
+        if (!prevState || !currentState) return false;
+
+        // Reset if filters changed
+        if (JSON.stringify(prevState.filters) !== JSON.stringify(currentState.filters)) {
+            return true;
+        }
+
+        // Reset if moved more than 50% of viewport
+        if (prevState.bbox && currentState.bbox) {
+            const viewportWidth = Math.abs(prevState.bbox.right - prevState.bbox.left);
+            const viewportHeight = Math.abs(prevState.bbox.top - prevState.bbox.bottom);
+
+            const deltaX = Math.abs(currentState.bbox.left - prevState.bbox.left);
+            const deltaY = Math.abs(currentState.bbox.bottom - prevState.bbox.bottom);
+
+            if (deltaX > viewportWidth * 0.5 || deltaY > viewportHeight * 0.5) {
+                return true;
+            }
+        }
+
+        // Reset if zoom changed significantly (more than 1 level)
+        if (Math.abs((prevState.zoom || 0) - (currentState.zoom || 0)) > 1) {
+            return true;
+        }
+
+        return false;
     },
 
     /**
@@ -257,4 +468,13 @@ export const pointsHelper = {
     getPopupContent(properties, url, t) {
         return popupHelper.getContent(properties, url, t);
     },
+
+    /**
+     * Cleanup all active requests
+     */
+    cleanup() {
+        requestManager.abortAll();
+    },
 };
+
+export default pointsHelper;
