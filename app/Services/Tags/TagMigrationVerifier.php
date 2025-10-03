@@ -185,6 +185,7 @@ class TagMigrationVerifier
                 }
             }
 
+            // Brands are already distributed to groups by parseTags()
             foreach ($group['brands'] as $brand) {
                 $summary['brands'] += (int)($brand['quantity'] ?? 0);
             }
@@ -194,14 +195,7 @@ class TagMigrationVerifier
             }
         }
 
-        // Add global brands (distributed to all groups)
-        $globalBrandCount = array_sum(array_column($expected['globalBrands'] ?? [], 'quantity'));
-        $groupCount = max(1, count($expected['groups']));
-        if ($globalBrandCount > 0 && $groupCount > 0) {
-            $summary['brands'] += $globalBrandCount;
-        }
-
-        // Sum quantities
+        // Custom tags
         $summary['custom_tags'] = array_sum(
             array_map(fn($c) => (int)($c['quantity'] ?? 1), $expected['topLevelCustomTags'] ?? [])
         );

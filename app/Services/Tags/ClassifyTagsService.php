@@ -357,17 +357,14 @@ class ClassifyTagsService
 
     public function resolveBrandObjectLinks(int $photoId, array $group): array
     {
-        $objects = collect($group['objects']);   // [['id'=>7,'key'=>'beer_bottle'], …]
-        $brands  = collect($group['brands']);    // [['id'=>9,'key'=>'heineken'],   …]
+        $objects = collect($group['objects']);
+        $brands  = collect($group['brands']);
 
-        // Bail out quickly if nothing to match
         if ($objects->isEmpty() || $brands->isEmpty()) {
             return [];
         }
 
-        // ───────────────────────────────────────────────
-        // CASE 1 : exactly 1 object + 1 brand
-        // ───────────────────────────────────────────────
+        // CASE 1: exactly 1 object + 1 brand
         if ($objects->count() === 1 && $brands->count() === 1) {
             return [
                 $this->createPivotIfMissing(
@@ -378,34 +375,27 @@ class ClassifyTagsService
             ];
         }
 
-        // ───────────────────────────────────────────────
-        // CASE 2 : many objects + many brands
-        // ───────────────────────────────────────────────
-        // 1) Load all pivots for *these* objects in *this* category at once
+        // CASE 2: many objects + many brands
         $catObjIds = CategoryObject::where('category_id', $group['category_id'])
             ->whereIn('litter_object_id', $objects->pluck('id'))
-            ->pluck('id', 'litter_object_id');                      // [objectId => catObjId]
+            ->pluck('id', 'litter_object_id');
 
         $existing = DB::table('taggables')
             ->whereIn('category_litter_object_id', $catObjIds->values())
             ->where('taggable_type', BrandList::class)
             ->whereIn('taggable_id', $brands->pluck('id'))
-            ->get(['category_litter_object_id', 'taggable_id'])     // rows we already have
+            ->get(['category_litter_object_id', 'taggable_id'])
             ->groupBy('category_litter_object_id');
 
         $matched = [];
 
-        // 2) iterate once through objects; for each, see if *its* catObj has one of the brands
-        foreach ($objects as $object)
-        {
+        // First: match via pivots
+        foreach ($objects as $object) {
             $catObjId = $catObjIds[$object['id']] ?? null;
-
             if (!$catObjId) {
                 continue;
             }
-
             $brandIdsForObj = $existing[$catObjId] ?? collect();
-
             foreach ($brandIdsForObj as $row) {
                 $brand = $brands->firstWhere('id', $row->taggable_id);
                 if ($brand) {
@@ -414,18 +404,34 @@ class ClassifyTagsService
             }
         }
 
-        // 3) log every (object,brand) pair that did NOT have a pivot
-        $matchedHashes = collect($matched)->map(
-            fn ($p) => $p['object']['id'].'-'.$p['brand']['id']
-        )->all();
+        // Second: match remaining brands by quantity
+        $matchedBrandIds = collect($matched)->pluck('brand.id')->unique()->all();
+        $unmatchedBrands = $brands->filter(fn($b) => !in_array($b['id'], $matchedBrandIds));
 
-        foreach ($objects as $o) {
-            foreach ($brands as $b) {
-                $hash = $o['id'].'-'.$b['id'];
-                if (!in_array($hash, $matchedHashes, true)) {
-                    Log::warning(
-                        "No pivot for photo #{$photoId}: object='{$o['key']}', brand='{$b['key']}'"
-                    );
+        if ($unmatchedBrands->isNotEmpty()) {
+            foreach ($unmatchedBrands as $brand) {
+                // Find object with matching quantity
+                $matchingObject = $objects->firstWhere('quantity', $brand['quantity']);
+
+                if ($matchingObject) {
+                    $matched[] = ['object' => $matchingObject, 'brand' => $brand];
+
+                    Log::info("Matched brand by quantity", [
+                        'photo_id' => $photoId,
+                        'object' => $matchingObject['key'],
+                        'brand' => $brand['key'],
+                        'quantity' => $brand['quantity']
+                    ]);
+                } else {
+                    Log::warning("No pivot or quantity match", [
+                        'photo_id' => $photoId,
+                        'brand' => $brand['key'],
+                        'brand_qty' => $brand['quantity'],
+                        'available_objects' => $objects->map(fn($o) => [
+                            'key' => $o['key'],
+                            'qty' => $o['quantity']
+                        ])->all()
+                    ]);
                 }
             }
         }

@@ -196,10 +196,11 @@ class UpdateTagsService
         }
     }
 
-
     private function createFromCategoryGroup(Photo $photo, array $group): void
     {
         $brandLinks = $this->classifyTags->resolveBrandObjectLinks($photo->id, $group);
+
+        $attachedBrandIds = [];
 
         foreach ($group['objects'] as $index => $object) {
             $photoTag = $photo->createTag([
@@ -209,7 +210,7 @@ class UpdateTagsService
                 'picked_up'        => ! $photo->remaining,
             ]);
 
-            // Handle brands
+            // Attach brands that have pivot matches for this specific object
             $matchedBrands = collect($brandLinks)
                 ->filter(fn($pair) => $pair['object']['id'] === $object['id'])
                 ->pluck('brand')
@@ -217,7 +218,13 @@ class UpdateTagsService
                 ->values()
                 ->all();
 
-            $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
+            if (!empty($matchedBrands)) {
+                $photoTag->attachExtraTags($matchedBrands, 'brand', $index);
+
+                foreach ($matchedBrands as $brand) {
+                    $attachedBrandIds[] = $brand['id'];
+                }
+            }
 
             // Handle materials from deprecated tag mappings
             if (!empty($object['materials'])) {
@@ -229,7 +236,7 @@ class UpdateTagsService
                         $materialsToAttach[] = [
                             'id'       => $materialCache[$materialKey],
                             'key'      => $materialKey,
-                            'quantity' => $object['quantity'] // Each material gets the object's quantity
+                            'quantity' => $object['quantity']
                         ];
                     } else {
                         Log::warning("Material '{$materialKey}' not found in cache for object '{$object['key']}'");
@@ -238,6 +245,30 @@ class UpdateTagsService
 
                 if (!empty($materialsToAttach)) {
                     $photoTag->attachExtraTags($materialsToAttach, 'material', $index);
+                }
+            }
+        }
+
+        // Handle brands that weren't matched via pivots
+        if (!empty($group['brands'])) {
+            $unmatchedBrands = collect($group['brands'])
+                ->filter(fn($brand) => !in_array($brand['id'], $attachedBrandIds, true))
+                ->values()
+                ->all();
+
+            if (!empty($unmatchedBrands)) {
+                // Attach to first object as fallback
+                $firstObjectId = $group['objects'][0]['id'] ?? null;
+                if ($firstObjectId) {
+                    $firstTag = $photo->photoTags()
+                        ->where('category_id', $group['category_id'])
+                        ->where('litter_object_id', $firstObjectId)
+                        ->latest()
+                        ->first();
+
+                    if ($firstTag) {
+                        $firstTag->attachExtraTags($unmatchedBrands, 'brand', 0);
+                    }
                 }
             }
         }
@@ -291,17 +322,10 @@ class UpdateTagsService
 
             if ($other && count($tags[$other]) === 1)
             {
-                $objectKey   = array_key_first($tags[$other]);
-                $brandKey    = array_key_first($tags['brands']);
+//                $objectKey   = array_key_first($tags[$other]);
+//                $brandKey    = array_key_first($tags['brands']);
 
-//                Log::info(
-//                    'Merge object and brand',
-//                    [
-//                        'photo_id' => $photoId,
-//                        'object'   => $objectKey,
-//                        'brand'    => $brandKey,
-//                    ]
-//                );
+                // Merge object & brand into single entry
                 $tags[$other] = array_merge($tags[$other], $tags['brands']);
                 unset($tags['brands']);
             }

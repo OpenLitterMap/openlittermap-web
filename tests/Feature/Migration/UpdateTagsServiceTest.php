@@ -279,6 +279,7 @@ class UpdateTagsServiceTest extends TestCase
     }
 
     /** @test */
+    /** @test */
     public function multiple_objects_and_brands_reuse_only_existing_pivots(): void
     {
         $alcohol  = Alcohol::create(['beerBottle' => 1]);
@@ -309,7 +310,7 @@ class UpdateTagsServiceTest extends TestCase
 
         $this->service->updateTags($photo);
 
-        // beerBottle should have ONE brand extra (heineken)
+        // beerBottle should have ONE brand extra (heineken - the only one with a pivot)
         $beerTag = $photo->photoTags()
             ->where('litter_object_id', $beerBottleId)
             ->first();
@@ -317,16 +318,27 @@ class UpdateTagsServiceTest extends TestCase
         $this->assertEquals(
             1,
             $beerTag->extraTags()->where('tag_type', 'brand')->count(),
-            'Historical beerBottle ⇄ heineken pivot should be reused.'
+            'Only heineken has a historical pivot with beerBottle'
         );
 
-        $cigaretteBoxId = LitterObject::where('key', 'cigarette_box')->value('id');
+        // Verify it's specifically heineken
+        $attachedBrandId = $beerTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->first()
+            ->tag_type_id;
+        $this->assertEquals($heinekenId, $attachedBrandId);
 
+        // cigaretteBox should have NO brands (marlboro has no pivot)
+        $cigaretteBoxId = LitterObject::where('key', 'cigarette_box')->value('id');
         $cigTag = $photo->photoTags()
             ->where('litter_object_id', $cigaretteBoxId)
             ->first();
 
-        $this->assertEquals(0, $cigTag->extraTags()->where('tag_type', 'brand')->count());
+        $this->assertEquals(
+            0,
+            $cigTag->extraTags()->where('tag_type', 'brand')->count(),
+            'marlboro has no historical pivot with cigaretteBox, so it should be dropped'
+        );
     }
 
     /** @test */
