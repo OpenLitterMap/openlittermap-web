@@ -8,6 +8,9 @@ use App\Models\Teams\Team;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @deprecated
+ */
 class GenerateTeamClusters extends Command
 {
     /**

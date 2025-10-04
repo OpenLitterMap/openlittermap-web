@@ -376,6 +376,11 @@ class ClassifyTagsService
         }
 
         // CASE 2: many objects + many brands
+        $matched = [];
+        $matchedBrandIds = [];
+        $matchedObjectIds = [];
+
+        // FIRST: Match brands to objects using pivots
         $catObjIds = CategoryObject::where('category_id', $group['category_id'])
             ->whereIn('litter_object_id', $objects->pluck('id'))
             ->pluck('id', 'litter_object_id');
@@ -387,53 +392,71 @@ class ClassifyTagsService
             ->get(['category_litter_object_id', 'taggable_id'])
             ->groupBy('category_litter_object_id');
 
-        $matched = [];
-
-        // First: match via pivots
-        foreach ($objects as $object) {
-            $catObjId = $catObjIds[$object['id']] ?? null;
-            if (!$catObjId) {
+        // For each brand, find which object(s) it has pivots to
+        foreach ($brands as $brand) {
+            if (in_array($brand['id'], $matchedBrandIds)) {
                 continue;
             }
-            $brandIdsForObj = $existing[$catObjId] ?? collect();
-            foreach ($brandIdsForObj as $row) {
-                $brand = $brands->firstWhere('id', $row->taggable_id);
-                if ($brand) {
-                    $matched[] = ['object' => $object, 'brand' => $brand];
+
+            // Find objects that have a pivot to this brand
+            $matchingObjects = [];
+            foreach ($objects as $object) {
+                if (in_array($object['id'], $matchedObjectIds)) {
+                    continue;
+                }
+
+                $catObjId = $catObjIds[$object['id']] ?? null;
+                if (!$catObjId) {
+                    continue;
+                }
+
+                $brandIdsForObj = $existing[$catObjId] ?? collect();
+                $hasPivot = $brandIdsForObj->contains(fn($row) => $row->taggable_id === $brand['id']);
+
+                if ($hasPivot) {
+                    $matchingObjects[] = $object;
+                }
+            }
+
+            // If this brand has exactly one pivot match, use it
+            if (count($matchingObjects) === 1) {
+                $matched[] = ['object' => $matchingObjects[0], 'brand' => $brand];
+                $matchedBrandIds[] = $brand['id'];
+                $matchedObjectIds[] = $matchingObjects[0]['id'];
+            }
+            // If multiple pivots exist, try quantity matching as tiebreaker
+            elseif (count($matchingObjects) > 1) {
+                $quantityMatch = collect($matchingObjects)->firstWhere('quantity', $brand['quantity']);
+                if ($quantityMatch) {
+                    $matched[] = ['object' => $quantityMatch, 'brand' => $brand];
+                    $matchedBrandIds[] = $brand['id'];
+                    $matchedObjectIds[] = $quantityMatch['id'];
                 }
             }
         }
 
-        // Second: match remaining brands by quantity
-        $matchedBrandIds = collect($matched)->pluck('brand.id')->unique()->all();
+        // SECOND: For remaining brands without pivots, try quantity matching
         $unmatchedBrands = $brands->filter(fn($b) => !in_array($b['id'], $matchedBrandIds));
+        $unmatchedObjects = $objects->filter(fn($o) => !in_array($o['id'], $matchedObjectIds));
 
-        if ($unmatchedBrands->isNotEmpty()) {
-            foreach ($unmatchedBrands as $brand) {
-                // Find object with matching quantity
-                $matchingObject = $objects->firstWhere('quantity', $brand['quantity']);
+        foreach ($unmatchedBrands as $brand) {
+            $matchingObjects = $unmatchedObjects->filter(fn($o) => $o['quantity'] === $brand['quantity']);
 
-                if ($matchingObject) {
-                    $matched[] = ['object' => $matchingObject, 'brand' => $brand];
-
-                    Log::info("Matched brand by quantity", [
-                        'photo_id' => $photoId,
-                        'object' => $matchingObject['key'],
-                        'brand' => $brand['key'],
-                        'quantity' => $brand['quantity']
-                    ]);
-                } else {
-                    Log::warning("No pivot or quantity match", [
-                        'photo_id' => $photoId,
-                        'brand' => $brand['key'],
-                        'brand_qty' => $brand['quantity'],
-                        'available_objects' => $objects->map(fn($o) => [
-                            'key' => $o['key'],
-                            'qty' => $o['quantity']
-                        ])->all()
-                    ]);
-                }
+            if ($matchingObjects->count() === 1) {
+                $matchingObject = $matchingObjects->first();
+                $matched[] = ['object' => $matchingObject, 'brand' => $brand];
+                $matchedBrandIds[] = $brand['id'];
+                $matchedObjectIds[] = $matchingObject['id'];
             }
+        }
+
+        // Log any unmatched brands
+        $finalUnmatched = $brands->filter(fn($b) => !in_array($b['id'], $matchedBrandIds));
+        if ($finalUnmatched->isNotEmpty()) {
+            Log::warning("Unmatched brands", [
+                'photo_id' => $photoId,
+                'brands' => $finalUnmatched->map(fn($b) => ['key' => $b['key'], 'quantity' => $b['quantity']])->all()
+            ]);
         }
 
         return $matched;

@@ -129,12 +129,36 @@ class UpdateTagsService
 
         // 2) Only attach global brands to groups that have brands
         if (!empty($globalBrands)) {
-            foreach ($groups as $key => &$group) {
-                if (!empty($group['objects'])) {
-                    $group['brands'] = array_merge($group['brands'], $globalBrands);
+            foreach ($globalBrands as $brand) {
+                $matched = false;
+
+                // Try to find a unique quantity match across all groups
+                foreach ($groups as $key => &$group) {
+                    if (empty($group['objects'])) {
+                        continue;
+                    }
+
+                    $matchingObjects = array_filter($group['objects'], fn($obj) => $obj['quantity'] === $brand['quantity']);
+
+                    if (count($matchingObjects) === 1) {
+                        // Found unique match - add brand only to this group
+                        $group['brands'][] = $brand;
+                        $matched = true;
+                        break;
+                    }
+                }
+                unset($group);
+
+                // If no unique match, add to all groups with objects (fallback to old behavior)
+                if (!$matched) {
+                    foreach ($groups as $key => &$group) {
+                        if (!empty($group['objects'])) {
+                            $group['brands'][] = $brand;
+                        }
+                    }
+                    unset($group);
                 }
             }
-            unset($group);
         }
 
         // 3) Legacy customTags
