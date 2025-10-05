@@ -1,47 +1,72 @@
 <template>
-    <div class="overview-tab">
-        <!-- Section A: Metadata -->
-        <section class="stats-section">
-            <h3>📊 Overview</h3>
-            <div class="stats-grid">
-                <div class="stat-card primary">
-                    <div class="stat-value">
-                        {{ helper.formatNumber(statsData.metadata?.total_photos) }}
+    <div class="w-full text-white">
+        <!-- Section A: Overview Stats -->
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">📊 Overview</h3>
+
+            <!-- 2x2 Grid -->
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <!-- Total Photos -->
+                <div
+                    class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 text-center shadow-lg hover:-translate-y-0.5 transition-transform"
+                >
+                    <div class="text-2xl font-bold">
+                        {{ formatNumber(counts.photos) }}
                     </div>
-                    <div class="stat-label">Total Photos</div>
+                    <div class="text-xs opacity-90">Total Photos</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ helper.formatNumber(processedData.totalObjects) }}</div>
-                    <div class="stat-label">Total Objects</div>
+
+                <!-- Total Objects -->
+                <div
+                    class="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center border border-white/20 hover:bg-white/15 hover:-translate-y-0.5 transition-all"
+                >
+                    <div class="text-2xl font-bold">
+                        {{ formatNumber(counts.total_objects) }}
+                    </div>
+                    <div class="text-xs opacity-90">Total Objects</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ helper.formatNumber(processedData.totalBrands) }}</div>
-                    <div class="stat-label">Total Brands</div>
+
+                <!-- Total Brands -->
+                <div
+                    class="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center border border-white/20 hover:bg-white/15 hover:-translate-y-0.5 transition-all"
+                >
+                    <div class="text-2xl font-bold">
+                        {{ formatNumber(brandsCount) }}
+                    </div>
+                    <div class="text-xs opacity-90">Total Brands</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ helper.formatNumber(statsData.metadata?.total_users) }}</div>
-                    <div class="stat-label">Total Users</div>
+
+                <!-- Total Users -->
+                <div
+                    class="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center border border-white/20 hover:bg-white/15 hover:-translate-y-0.5 transition-all"
+                >
+                    <div class="text-2xl font-bold">
+                        {{ formatNumber(counts.users) }}
+                    </div>
+                    <div class="text-xs opacity-90">Total Users</div>
                 </div>
             </div>
 
             <!-- Pickup Stats -->
-            <div class="pickup-stats">
-                <div class="pickup-header">
+            <div class="mt-4">
+                <div class="flex justify-between items-center mb-2 text-sm">
                     <span>Pickup Status</span>
-                    <span class="pickup-percentage">
-                        {{ helper.formatPercentage(statsData.metadata?.picked_up, processedData.totalItems) }}
-                        collected
+                    <span class="font-semibold text-green-400">
+                        {{ formatPercentage(counts.picked_up, totalPhotos) }} collected
                     </span>
                 </div>
-                <div class="pickup-bar">
-                    <div class="picked-up" :style="`width: ${processedData.pickedUpPercentage}%`">
-                        <span v-if="processedData.pickedUpPercentage > 15">
-                            {{ helper.formatNumber(statsData.metadata?.picked_up) }} picked up
+                <div class="flex h-8 rounded-full overflow-hidden bg-white/10">
+                    <div
+                        class="bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-xs font-medium transition-all duration-500"
+                        :style="`width: ${pickedUpPercentage}%`"
+                    >
+                        <span v-if="pickedUpPercentage > 15" class="px-2">
+                            {{ formatNumber(counts.picked_up) }} picked up
                         </span>
                     </div>
-                    <div class="not-picked-up">
-                        <span v-if="processedData.notPickedUpPercentage > 15">
-                            {{ helper.formatNumber(statsData.metadata?.not_picked_up) }} remaining
+                    <div class="flex-1 flex items-center justify-center text-xs text-white/70">
+                        <span v-if="notPickedUpPercentage > 15" class="px-2">
+                            {{ formatNumber(counts.not_picked_up) }} remaining
                         </span>
                     </div>
                 </div>
@@ -49,80 +74,73 @@
         </section>
 
         <!-- Section B: Time Series -->
-        <section class="stats-section">
-            <h3>📈 Time Series</h3>
-            <div class="date-range">
-                <span class="date-text">
-                    📅
-                    {{
-                        helper.formatDateRange(
-                            statsData.time_series?.date_range?.from,
-                            statsData.time_series?.date_range?.to
-                        )
-                    }}
-                </span>
-                <span class="metric-badge" v-if="statsData.time_series?.metrics?.items_per_minute">
-                    {{ statsData.time_series.metrics.items_per_minute }} items/min
-                </span>
+        <section class="mb-6">
+            <h3 class="text-lg font-semibold mb-4">📈 Time Series</h3>
+
+            <div
+                class="flex justify-between items-center mb-4 p-2 px-3 bg-white/10 backdrop-blur-sm rounded-lg text-sm"
+            >
+                <span>📅 {{ dateRangeText }}</span>
             </div>
 
-            <!-- Simple time series visualization -->
-            <div v-if="processedData.timeSeriesData?.length > 0" class="chart-container">
-                <div class="simple-chart">
+            <!-- Time Series Chart -->
+            <div v-if="hasTimeData" class="my-5">
+                <div class="flex items-end h-32 gap-0.5 mb-2">
                     <div
-                        v-for="(item, idx) in processedData.normalizedHistogram"
+                        v-for="(item, idx) in normalizedHistogram"
                         :key="idx"
-                        class="chart-bar"
+                        class="flex-1 bg-gradient-to-t from-green-500 to-green-400 rounded-t hover:opacity-80 transition-opacity cursor-pointer min-w-[2px]"
                         :style="`height: ${item.height}%`"
-                        :title="`${helper.formatDate(item.bucket)}: ${helper.formatNumber(item.photos)} photos, ${helper.formatNumber(item.objects)} objects`"
+                        :title="`${formatDate(item.bucket)}: ${formatNumber(item.photos)} photos, ${formatNumber(item.objects)} objects`"
                     ></div>
                 </div>
-                <div class="chart-labels">
-                    <span>{{ processedData.firstDate }}</span>
-                    <span>{{ processedData.lastDate }}</span>
+                <div class="flex justify-between text-xs text-white/70">
+                    <span>{{ firstDate }}</span>
+                    <span>{{ lastDate }}</span>
                 </div>
             </div>
 
-            <div class="time-metrics">
-                <div class="metric-item">
-                    <span class="metric-label">Daily Average:</span>
-                    <span class="metric-value">{{
-                        helper.formatNumber(statsData.time_series?.metrics?.avg_per_day)
-                    }}</span>
+            <!-- Time Metrics -->
+            <div class="space-y-2 mt-4">
+                <div class="flex justify-between items-center p-2 px-3 bg-white/10 backdrop-blur-sm rounded-md text-sm">
+                    <span class="text-white/70">Daily Average:</span>
+                    <span class="font-semibold">{{ dailyAverage }}</span>
                 </div>
-                <div class="metric-item" v-if="statsData.time_series?.metrics?.peak_day">
-                    <span class="metric-label">Peak Day:</span>
-                    <span class="metric-value">
-                        {{ helper.formatNumber(statsData.time_series.metrics.peak_day.count) }} on
-                        {{ helper.formatDate(statsData.time_series.metrics.peak_day.date) }}
-                    </span>
+                <div
+                    v-if="peakValue > 0"
+                    class="flex justify-between items-center p-2 px-3 bg-white/10 backdrop-blur-sm rounded-md text-sm"
+                >
+                    <span class="text-white/70">Peak:</span>
+                    <span class="font-semibold">{{ formatNumber(peakValue) }} photos</span>
                 </div>
             </div>
         </section>
 
         <!-- Section C: Categories -->
-        <section class="stats-section">
-            <h3>🏷️ Categories</h3>
-            <div class="category-list">
+        <section>
+            <h3 class="text-lg font-semibold mb-4">🏷️ Categories</h3>
+
+            <div class="space-y-3">
                 <div
-                    v-for="cat in processedData.categoriesWithPercentages"
+                    v-for="cat in categories"
                     :key="cat.key"
-                    :class="['category-item', { highlighted: highlightedCategory === cat.key }]"
+                    class="p-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg transition-all cursor-pointer hover:bg-white/15 hover:translate-x-1"
+                    :class="{ 'bg-white/15 translate-x-1': highlightedCategory === cat.key }"
                     @mouseenter="handleCategoryHover(cat.key)"
                     @mouseleave="handleCategoryHover(null)"
                 >
-                    <div class="category-header">
-                        <span class="category-name">{{ cat.name }}</span>
-                        <div class="category-stats">
-                            <span class="category-count">{{ helper.formatNumber(cat.count) }}</span>
-                            <span class="category-percentage">{{ cat.formattedPercentage }}</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-sm">{{ cat.name }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-sm">{{ formatNumber(cat.count) }}</span>
+                            <span class="text-xs text-white/70">{{ cat.percentage }}</span>
                         </div>
                     </div>
-                    <div class="category-bar-container">
+                    <div class="h-1 bg-white/10 rounded-full overflow-hidden">
                         <div
-                            class="category-bar"
+                            class="h-full transition-all duration-500 ease-out"
                             :style="{
-                                width: `${cat.percentage}%`,
+                                width: `${cat.width}%`,
                                 backgroundColor: cat.color,
                             }"
                         />
@@ -134,13 +152,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import MapDrawerHelper from '../../helpers/mapDrawerHelper.js';
 
-// Initialize helper
-const helper = MapDrawerHelper;
-
-// Props
 const props = defineProps({
     statsData: {
         type: Object,
@@ -152,273 +166,110 @@ const props = defineProps({
     },
 });
 
-// Emits
 const emit = defineEmits(['highlight-category']);
 
-// State
 const highlightedCategory = ref(null);
 
-// Methods
+// Helper functions
+const formatNumber = (num) => MapDrawerHelper.formatNumber(num);
+const formatPercentage = (value, total) => MapDrawerHelper.formatPercentage(value, total);
+const formatDate = (date) => MapDrawerHelper.formatDate(date);
+
+// FIXED: Data is directly on statsData, not statsData.data
+const counts = computed(() => props.statsData?.counts || {});
+
+const totalPhotos = computed(() => counts.value.photos || 0);
+
+const brandsCount = computed(() => {
+    const brands = props.statsData?.brands || [];
+    return brands.reduce((sum, brand) => sum + (brand.qty || 0), 0);
+});
+
+const pickedUpPercentage = computed(() => {
+    const total = totalPhotos.value;
+    if (!total || total === 0) return 0;
+    return ((counts.value.picked_up || 0) / total) * 100;
+});
+
+const notPickedUpPercentage = computed(() => {
+    return 100 - pickedUpPercentage.value;
+});
+
+const dateRangeText = computed(() => {
+    // Meta might be on statsData.meta or on a separate meta prop
+    const meta = props.statsData?.meta || {};
+    if (meta.from && meta.to) {
+        return MapDrawerHelper.formatDateRange(meta.from, meta.to);
+    }
+    if (meta.year) {
+        return `Year ${meta.year}`;
+    }
+    return 'All time';
+});
+
+// Time series data
+const timeHistogram = computed(() => props.statsData?.time_histogram || []);
+
+const hasTimeData = computed(() => timeHistogram.value.length > 0);
+
+const normalizedHistogram = computed(() => {
+    const data = timeHistogram.value;
+    if (!data || data.length === 0) return [];
+
+    const maxValue = Math.max(...data.map((h) => h.photos || 0));
+    if (maxValue === 0) return data.map((item) => ({ ...item, height: 0 }));
+
+    return data.map((item) => ({
+        ...item,
+        height: ((item.photos || 0) / maxValue) * 100,
+    }));
+});
+
+const firstDate = computed(() => {
+    if (!hasTimeData.value) return '';
+    return formatDate(timeHistogram.value[0].bucket);
+});
+
+const lastDate = computed(() => {
+    if (!hasTimeData.value) return '';
+    return formatDate(timeHistogram.value[timeHistogram.value.length - 1].bucket);
+});
+
+const dailyAverage = computed(() => {
+    if (!hasTimeData.value) return '0';
+    const total = timeHistogram.value.reduce((sum, item) => sum + (item.photos || 0), 0);
+    const average = total / timeHistogram.value.length;
+    return formatNumber(Math.round(average * 10) / 10);
+});
+
+const peakValue = computed(() => {
+    if (!hasTimeData.value) return 0;
+    return Math.max(...timeHistogram.value.map((h) => h.photos || 0));
+});
+
+// Categories
+const categories = computed(() => {
+    const cats = props.statsData?.by_category || [];
+    const totalCount = cats.reduce((sum, cat) => sum + (cat.qty || 0), 0);
+
+    return cats.map((cat) => {
+        const count = cat.qty || 0;
+        const width = totalCount > 0 ? (count / totalCount) * 100 : 0;
+        const percentage = width < 0.1 ? '<0.1%' : `${width.toFixed(1)}%`;
+
+        return {
+            key: cat.key,
+            name: MapDrawerHelper.formatFilterKey(cat.key),
+            count,
+            width,
+            percentage,
+            color: MapDrawerHelper.getCategoryColor(cat.key),
+        };
+    });
+});
+
 const handleCategoryHover = (category) => {
     highlightedCategory.value = category;
-    // Emit the category key for highlighting, or null to reset
     emit('highlight-category', category);
 };
 </script>
-
-<style scoped>
-.overview-tab {
-    width: 100%;
-    color: white; /* Default text color */
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.2s ease;
-    color: white;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.stat-card.primary {
-    background: linear-gradient(135deg, #14d145 0%, #12b83d 100%);
-    color: white;
-    border: none;
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.stat-label {
-    font-size: 12px;
-    opacity: 0.9;
-}
-
-/* Pickup Stats */
-.pickup-stats {
-    margin-top: 16px;
-}
-
-.pickup-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: white;
-}
-
-.pickup-percentage {
-    font-weight: 600;
-    color: #4ade80;
-}
-
-.pickup-bar {
-    display: flex;
-    height: 32px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.picked-up {
-    background: linear-gradient(90deg, #14d145, #12b83d);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 12px;
-    font-weight: 500;
-    transition: width 0.5s ease;
-}
-
-.not-picked-up {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
-}
-
-/* Time Series */
-.date-range {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-}
-
-.date-text {
-    font-size: 14px;
-    color: white;
-}
-
-.metric-badge {
-    background: #14d145;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.chart-container {
-    margin: 20px 0;
-}
-
-.simple-chart {
-    display: flex;
-    align-items: flex-end;
-    height: 120px;
-    gap: 2px;
-    margin-bottom: 8px;
-}
-
-.chart-bar {
-    flex: 1;
-    background: linear-gradient(to top, #14d145, #1ed150);
-    border-radius: 2px 2px 0 0;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.chart-bar:hover {
-    opacity: 0.8;
-}
-
-.chart-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.trend-indicator {
-    font-weight: 600;
-}
-
-.trend-indicator.increasing {
-    color: #4ade80;
-}
-
-.trend-indicator.decreasing {
-    color: #f87171;
-}
-
-.trend-indicator.stable {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.time-metrics {
-    display: grid;
-    gap: 8px;
-    margin-top: 16px;
-}
-
-.metric-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-.metric-label {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.metric-value {
-    font-weight: 600;
-    color: white;
-}
-
-/* Categories */
-.category-list {
-    display: grid;
-    gap: 12px;
-}
-
-.category-item {
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.category-item:hover,
-.category-item.highlighted {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateX(4px);
-}
-
-.category-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.category-name {
-    font-weight: 600;
-    font-size: 14px;
-    color: white;
-}
-
-.category-stats {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.category-count {
-    font-weight: 600;
-    font-size: 14px;
-    color: white;
-}
-
-.category-percentage {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.category-bar-container {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.category-bar {
-    height: 100%;
-    transition: width 0.5s ease;
-}
-</style>

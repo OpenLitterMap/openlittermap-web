@@ -21,7 +21,7 @@ return new class extends Migration
         if (!$this->indexExists('photos', 'idx_photos_fast_cluster')) {
             DB::statement('
                 CREATE INDEX idx_photos_fast_cluster
-                ON photos(verified, tile_key, cell_x, cell_y)
+                ON photos(verified, tile_key, cell_x, cell_y, lat, lon)
             ');
         }
 

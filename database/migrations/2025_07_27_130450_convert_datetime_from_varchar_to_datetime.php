@@ -67,16 +67,16 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Drop new composite index
-        $this->dropIndexIfExists('photos', 'photos_datetime_id_idx');
-
-        // Convert back to VARCHAR
-        DB::statement("ALTER TABLE `photos` MODIFY COLUMN `datetime` VARCHAR(255) NOT NULL");
-
-        // Recreate old single-column index
-        DB::statement("CREATE INDEX `photos_datetime_index` ON `photos` (`datetime`)");
-
-        $this->comment('Datetime column reverted to VARCHAR(255).');
+//        // Drop new composite index
+//        $this->dropIndexIfExists('photos', 'photos_datetime_id_idx');
+//
+//        // Convert back to VARCHAR
+//        DB::statement("ALTER TABLE `photos` MODIFY COLUMN `datetime` VARCHAR(255) NOT NULL");
+//
+//        // Recreate old single-column index
+//        DB::statement("CREATE INDEX `photos_datetime_index` ON `photos` (`datetime`)");
+//
+//        $this->comment('Datetime column reverted to VARCHAR(255).');
     }
 
     /**

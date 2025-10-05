@@ -28,8 +28,8 @@ class TagMigrationVerifier
         // NOTE: These methods need to be public in UpdateTagsService
         [$originalTags, $customTagsOld] = $this->updateTagsService->getTags($photo);
 
-        // Parse expected tags without writing
-        $expected = $this->updateTagsService->parseTags($originalTags, $customTagsOld);
+        // Parse expected tags without writing (now includes photo ID for logging)
+        $expected = $this->updateTagsService->parseTags($originalTags, $customTagsOld, $photo->id);
 
         // Get actual migrated data
         $actual = $this->getActualMigratedData($photo);
@@ -195,6 +195,14 @@ class TagMigrationVerifier
             }
         }
 
+        // IMPORTANT: If no objects but we have global brands, count them
+        // This handles brands-only photos
+        if ($summary['objects'] === 0 && !empty($expected['globalBrands'])) {
+            foreach ($expected['globalBrands'] as $brand) {
+                $summary['brands'] += (int)($brand['quantity'] ?? 0);
+            }
+        }
+
         // Custom tags
         $summary['custom_tags'] = array_sum(
             array_map(fn($c) => (int)($c['quantity'] ?? 1), $expected['topLevelCustomTags'] ?? [])
@@ -311,7 +319,7 @@ class TagMigrationVerifier
         foreach ($photos as $photo) {
             // NOTE: Requires getTags() and parseTags() to be public
             [$legacy, $customs] = $this->updateTagsService->getTags($photo);
-            $parsed = $this->updateTagsService->parseTags($legacy, $customs);
+            $parsed = $this->updateTagsService->parseTags($legacy, $customs, $photo->id);
 
             foreach ($parsed['groups'] as $group) {
                 foreach ($group['objects'] as $obj) {

@@ -32,10 +32,10 @@ return new class extends Migration
             ) STORED
         ");
 
-        // Recreate the covering index
+        // Recreate the covering index WITH lat/lon
         DB::statement('
             CREATE INDEX idx_photos_fast_cluster
-            ON photos(verified, tile_key, cell_x, cell_y)
+            ON photos(verified, tile_key, cell_x, cell_y, lat, lon)
         ');
     }
 
@@ -65,10 +65,10 @@ return new class extends Migration
             ) STORED
         ");
 
-        // Restore the covering index
+        // Restore the covering index WITH lat/lon
         DB::statement('
             CREATE INDEX idx_photos_fast_cluster
-            ON photos(verified, tile_key, cell_x, cell_y)
+            ON photos(verified, tile_key, cell_x, cell_y, lat, lon)
         ');
     }
 

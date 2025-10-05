@@ -4,6 +4,7 @@ namespace App\Services\Points\Aggregators;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CategoryAggregator
 {
@@ -17,9 +18,11 @@ class CategoryAggregator
         }
 
         // Get base quantities per category
+        // FIXED: Added whereNotNull for explicit NULL handling
         $baseQuantities = DB::table('photo_tags')
             ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
             ->whereIn('photo_tags.photo_id', $photoIds)
+            ->whereNotNull('photo_tags.category_id') // Explicit NULL check
             ->groupBy('categories.id', 'categories.key')
             ->selectRaw('
                 categories.id,
@@ -29,6 +32,11 @@ class CategoryAggregator
             ->get()
             ->keyBy('id');
 
+        if ($baseQuantities->isEmpty()) {
+            Log::debug("CategoryAggregator: No categories found for " . $photoIds->count() . " photos");
+            return [];
+        }
+
         // Get material quantities per category
         $materialQuantities = DB::table('photo_tags')
             ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
@@ -37,6 +45,7 @@ class CategoryAggregator
                     ->where('photo_tag_extra_tags.tag_type', '=', 'material');
             })
             ->whereIn('photo_tags.photo_id', $photoIds)
+            ->whereNotNull('photo_tags.category_id') // Explicit NULL check
             ->groupBy('categories.id')
             ->selectRaw('
                 categories.id,

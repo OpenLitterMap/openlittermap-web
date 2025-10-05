@@ -82,6 +82,12 @@ class ProcessDirtyTiles extends Command
             $this->info("Remaining dirty tiles: $remaining");
         }
 
+        $ttl = config('clustering.dirty_tile_ttl', 24);
+        DB::table('dirty_tiles')
+            ->where('attempts', '>=', 3)
+            ->where('changed_at', '<', now()->subHours($ttl))
+            ->delete();
+
         return $failed > 0 ? 1 : 0;
     }
 }

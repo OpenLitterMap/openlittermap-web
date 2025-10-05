@@ -2,22 +2,31 @@
 
 namespace Tests\Unit\Migration;
 
+use App\Models\Litter\Categories\Alcohol;
+use App\Models\Litter\Categories\Brand;
+use App\Models\Litter\Categories\Coffee;
+use App\Models\Litter\Categories\Food;
+use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
-use App\Services\Tags\ClassifyTagsService;
+use App\Models\Photo;
+use App\Models\Users\User;
+use App\Services\Tags\UpdateTagsService;
 use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class BrandObjectMatchingTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected ClassifyTagsService $service;
+    protected UpdateTagsService $service;
+    protected User $user;
 
     protected function setUp(): void
     {
@@ -28,496 +37,271 @@ class BrandObjectMatchingTest extends TestCase
             GenerateBrandsSeeder::class
         ]);
 
-        $this->service = app(ClassifyTagsService::class);
-    }
+        // Create brand_object pivot table
+        if (!Schema::hasTable('brand_object')) {
+            Schema::create('brand_object', function ($table) {
+                $table->unsignedBigInteger('brand_id');
+                $table->unsignedBigInteger('litter_object_id');
+                $table->timestamps();
 
-    /** @test */
-    public function it_matches_brand_to_object_via_pivot_when_unique()
-    {
-        // Setup: coke has pivot to soda_can only
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $waterBottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-
-        // Create pivot for soda_can ⇄ coke
-        $catObj = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sodaCanId,
-        ]);
-
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $waterBottleId, 'key' => 'water_bottle', 'quantity' => 1],
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 1],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        $this->assertCount(1, $result);
-        $this->assertEquals('soda_can', $result[0]['object']['key']);
-        $this->assertEquals('coke', $result[0]['brand']['key']);
-    }
-
-    /** @test */
-    public function it_matches_multiple_brands_to_correct_objects_via_pivots()
-    {
-        // Setup: lucozade → sports_bottle, coke → soda_can
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $sportsBottleId = LitterObject::where('key', 'sports_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-        $lucozadeId = BrandList::where('key', 'lucozade')->value('id');
-
-        // Pivot 1: soda_can ⇄ coke
-        $catObj1 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sodaCanId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj1->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        // Pivot 2: sports_bottle ⇄ lucozade
-        $catObj2 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sportsBottleId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj2->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $lucozadeId,
-            'quantity' => 1,
-        ]);
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 1],
-                ['id' => $sportsBottleId, 'key' => 'sports_bottle', 'quantity' => 1],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-                ['id' => $lucozadeId, 'key' => 'lucozade', 'quantity' => 1],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        $this->assertCount(2, $result);
-
-        $cokeMatch = collect($result)->firstWhere('brand.key', 'coke');
-        $this->assertEquals('soda_can', $cokeMatch['object']['key']);
-
-        $lucozadeMatch = collect($result)->firstWhere('brand.key', 'lucozade');
-        $this->assertEquals('sports_bottle', $lucozadeMatch['object']['key']);
-    }
-
-    /** @test */
-    public function it_uses_quantity_matching_when_no_pivot_exists_and_quantity_is_unique()
-    {
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $waterBottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-
-        // No pivots created
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $waterBottleId, 'key' => 'water_bottle', 'quantity' => 1],
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 3],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 3],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        $this->assertCount(1, $result);
-        $this->assertEquals('soda_can', $result[0]['object']['key']);
-        $this->assertEquals(3, $result[0]['object']['quantity']);
-    }
-
-    /** @test */
-    public function it_uses_quantity_as_tiebreaker_when_brand_has_multiple_pivots()
-    {
-        // Setup: coke has pivots to BOTH soda_can and water_bottle
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $waterBottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-
-        // Pivot 1: soda_can ⇄ coke
-        $catObj1 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sodaCanId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj1->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        // Pivot 2: water_bottle ⇄ coke
-        $catObj2 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $waterBottleId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj2->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $waterBottleId, 'key' => 'water_bottle', 'quantity' => 1],
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 3],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 3],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        $this->assertCount(1, $result);
-        $this->assertEquals('soda_can', $result[0]['object']['key']);
-        $this->assertEquals(3, $result[0]['brand']['quantity']);
-    }
-
-    /** @test */
-    public function it_does_not_match_same_brand_to_multiple_objects()
-    {
-        // Ensure that once a brand is matched, it's not matched again
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $waterBottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-
-        // Create pivots for both objects
-        $catObj1 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sodaCanId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj1->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        $catObj2 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $waterBottleId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj2->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $waterBottleId, 'key' => 'water_bottle', 'quantity' => 1],
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 1],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        // Should only match to ONE object, not both
-        $this->assertCount(1, $result);
-    }
-
-    /** @test */
-    public function it_handles_three_brands_with_mixed_pivot_and_quantity_matching()
-    {
-        // coke has pivot to soda_can
-        // pepsi has NO pivot but quantity matches fizzy_bottle
-        // sprite has pivot to water_bottle BUT quantity doesn't match
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $fizzyBottleId = LitterObject::where('key', 'fizzy_bottle')->value('id');
-        $waterBottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-        $pepsiId = BrandList::where('key', 'pepsi')->value('id');
-        $spriteId = BrandList::where('key', 'sprite')->value('id');
-
-        // Pivot: soda_can ⇄ coke
-        $catObj1 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sodaCanId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj1->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        // Pivot: water_bottle ⇄ sprite
-        $catObj2 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $waterBottleId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj2->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $spriteId,
-            'quantity' => 1,
-        ]);
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 1],
-                ['id' => $fizzyBottleId, 'key' => 'fizzy_bottle', 'quantity' => 5],
-                ['id' => $waterBottleId, 'key' => 'water_bottle', 'quantity' => 2],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-                ['id' => $pepsiId, 'key' => 'pepsi', 'quantity' => 5],
-                ['id' => $spriteId, 'key' => 'sprite', 'quantity' => 2],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        $this->assertCount(3, $result);
-
-        // coke matched via pivot
-        $cokeMatch = collect($result)->firstWhere('brand.key', 'coke');
-        $this->assertEquals('soda_can', $cokeMatch['object']['key']);
-
-        // pepsi matched via quantity (no pivot exists)
-        $pepsiMatch = collect($result)->firstWhere('brand.key', 'pepsi');
-        $this->assertEquals('fizzy_bottle', $pepsiMatch['object']['key']);
-
-        // sprite matched via pivot (has pivot to water_bottle)
-        $spriteMatch = collect($result)->firstWhere('brand.key', 'sprite');
-        $this->assertEquals('water_bottle', $spriteMatch['object']['key']);
-    }
-
-    /** @test */
-    public function it_handles_cross_category_scenario_from_real_photo()
-    {
-        // Real scenario: coffee lid + fizzy bottle + soda can, with only 1 coke brand
-        // Coke should NOT match to coffee lid even though quantities align
-        $coffeeId = Category::where('key', 'coffee')->value('id');
-        $softdrinksId = Category::where('key', 'softdrinks')->value('id');
-        $lidId = LitterObject::where('key', 'lid')->value('id');
-        $fizzyBottleId = LitterObject::where('key', 'fizzy_bottle')->value('id');
-        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-
-        // Pivots exist for all three (coke makes bottles, cans, and lids)
-        foreach ([$lidId, $fizzyBottleId, $sodaCanId] as $objectId) {
-            $catId = ($objectId === $lidId) ? $coffeeId : $softdrinksId;
-            $catObj = CategoryObject::firstOrCreate([
-                'category_id' => $catId,
-                'litter_object_id' => $objectId,
-            ]);
-            DB::table('taggables')->insert([
-                'category_litter_object_id' => $catObj->id,
-                'taggable_type' => BrandList::class,
-                'taggable_id' => $cokeId,
-                'quantity' => 1,
-            ]);
+                $table->index(['brand_id', 'litter_object_id']);
+            });
         }
 
-        // Only testing softdrinks group (coffee group processed separately)
-        $group = [
-            'category_id' => $softdrinksId,
-            'objects' => [
-                ['id' => $fizzyBottleId, 'key' => 'fizzy_bottle', 'quantity' => 1],
-                ['id' => $sodaCanId, 'key' => 'soda_can', 'quantity' => 1],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-            ],
-        ];
+        $this->service = app(UpdateTagsService::class);
+        $this->user = User::factory()->create();
+    }
 
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
+    protected function tearDown(): void
+    {
+        Schema::dropIfExists('brand_object');
+        parent::tearDown();
+    }
 
-        // Should match to exactly one object, not both
-        $this->assertCount(1, $result);
-        $this->assertContains($result[0]['object']['key'], ['fizzy_bottle', 'soda_can']);
+    /**
+     * Map new v5 keys to old v4 keys (reverse of deprecation map)
+     * v5 uses snake_case, v4 uses camelCase
+     */
+    protected function toV4Key(string $v5Key): string
+    {
+        return match($v5Key) {
+            // Softdrinks
+            'soda_can' => 'tinCan',
+            'water_bottle' => 'waterBottle',
+            'fizzy_bottle' => 'fizzyDrinkBottle',
+            'sports_bottle' => 'sportsDrink',
+            'cup' => 'plastic_cups',
+
+            // Alcohol
+            'beer_bottle' => 'beerBottle',
+            'beer_can' => 'beerCan',
+            'spirits_bottle' => 'spiritBottle',
+            'wine_bottle' => 'wineBottle',
+            'packaging' => 'paperCardAlcoholPackaging',
+
+            // Coffee
+            'cup' => 'coffeeCups',
+            'lid' => 'coffeeLids',
+
+            // Food
+            'wrapper' => 'sweetWrappers',
+            'packaging' => 'paperFoodPackaging',
+
+            // Brands
+            'coke' => 'coke',
+            'budweiser' => 'budweiser',
+            'mcdonalds' => 'mcdonalds',
+            'heineken' => 'heineken',
+
+            // Fallback: try camelCase conversion
+            default => lcfirst(str_replace('_', '', ucwords($v5Key, '_')))
+        };
+    }
+
+    /**
+     * Create photo with v4 tags using actual v4 column names
+     */
+    protected function createPhotoWithTags(array $tags): Photo
+    {
+        $photo = Photo::factory()->create(['user_id' => $this->user->id]);
+
+        foreach ($tags as $category => $items) {
+            // Convert v5 keys to v4 keys
+            $v4Items = [];
+            foreach ($items as $key => $value) {
+                $v4Key = $this->toV4Key($key);
+                $v4Items[$v4Key] = $value;
+            }
+
+            switch ($category) {
+                case 'food':
+                    $record = Food::create($v4Items);
+                    $photo->food_id = $record->id;
+                    break;
+
+                case 'coffee':
+                    $record = Coffee::create($v4Items);
+                    $photo->coffee_id = $record->id;
+                    break;
+
+                case 'alcohol':
+                    $record = Alcohol::create($v4Items);
+                    $photo->alcohol_id = $record->id;
+                    break;
+
+                case 'softdrinks':
+                    $record = SoftDrinks::create($v4Items);
+                    $photo->softdrinks_id = $record->id;
+                    break;
+
+                case 'brands':
+                    $record = Brand::create($v4Items);
+                    $photo->brands_id = $record->id;
+                    break;
+            }
+        }
+
+        $photo->save();
+        return $photo->refresh();
     }
 
     /** @test */
-    public function it_prioritizes_pivot_over_quantity_when_both_exist()
+    public function rule_1_single_object_single_brand_direct_match()
     {
-        // heineken has pivot to beer_bottle (qty 1)
-        // BUT photo has beer_can with qty 1 (quantity match)
-        // Should use pivot, not quantity
-        $categoryId = Category::where('key', 'alcohol')->value('id');
+        $cokeId = BrandList::where('key', 'coke')->value('id');
+        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
+
+        DB::table('brand_object')->insert([
+            'brand_id' => $cokeId,
+            'litter_object_id' => $sodaCanId,
+        ]);
+
+        $photo = $this->createPhotoWithTags([
+            'softdrinks' => ['soda_can' => 1],  // Will convert to tinCan
+            'brands' => ['coke' => 1],
+        ]);
+
+        Log::shouldReceive('info')->withAnyArgs();
+
+        $this->service->updateTags($photo);
+
+        $photoTag = $photo->photoTags()->where('litter_object_id', $sodaCanId)->first();
+        $this->assertNotNull($photoTag, "PhotoTag for soda_can should exist");
+        $this->assertEquals(1, $photoTag->quantity);
+
+        $brandTag = $photoTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $cokeId)
+            ->first();
+
+        $this->assertNotNull($brandTag, "Brand (coke) should be attached to soda_can");
+    }
+
+    /** @test */
+    public function rule_2_pivot_lookup_matches_brand_across_multiple_categories()
+    {
+        $cokeId = BrandList::where('key', 'coke')->value('id');
+        $mcdonaldsId = BrandList::where('key', 'mcdonalds')->value('id');
+        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
+        $wrapperId = LitterObject::where('key', 'wrapper')->value('id');
+        $cupId = LitterObject::where('key', 'cup')->value('id');
+
+        DB::table('brand_object')->insert([
+            ['brand_id' => $cokeId, 'litter_object_id' => $sodaCanId],
+            ['brand_id' => $mcdonaldsId, 'litter_object_id' => $wrapperId],
+        ]);
+
+        $photo = $this->createPhotoWithTags([
+            'softdrinks' => ['soda_can' => 1],
+            'food' => ['wrapper' => 1],
+            'coffee' => ['cup' => 1],
+            'brands' => ['coke' => 1, 'mcdonalds' => 1],
+        ]);
+
+        Log::shouldReceive('info')->withAnyArgs();
+
+        $this->service->updateTags($photo);
+
+        // Coke → soda_can
+        $sodaCanTag = $photo->photoTags()->where('litter_object_id', $sodaCanId)->first();
+        $cokeBrand = $sodaCanTag->extraTags()->where('tag_type', 'brand')->where('tag_type_id', $cokeId)->first();
+        $this->assertNotNull($cokeBrand, "Coke should be attached to soda_can");
+
+        // Mcdonalds → wrapper
+        $wrapperTag = $photo->photoTags()->where('litter_object_id', $wrapperId)->first();
+        $mcdonaldsBrand = $wrapperTag->extraTags()->where('tag_type', 'brand')->where('tag_type_id', $mcdonaldsId)->first();
+        $this->assertNotNull($mcdonaldsBrand, "Mcdonalds should be attached to wrapper");
+
+        // Cup has no brand
+        $cupTag = $photo->photoTags()->where('litter_object_id', $cupId)->first();
+        $cupBrands = $cupTag->extraTags()->where('tag_type', 'brand')->get();
+        $this->assertCount(0, $cupBrands, "Cup should have NO brand");
+    }
+
+    /** @test */
+    public function rule_3_unique_quantity_match_when_no_pivot()
+    {
+        $budweiserId = BrandList::where('key', 'budweiser')->value('id');
+        $cupId = LitterObject::where('key', 'cup')->value('id');
+        $beerBottleId = LitterObject::where('key', 'beer_bottle')->value('id');
+
+        // NO pivots
+
+        $photo = $this->createPhotoWithTags([
+            'coffee' => ['cup' => 1],
+            'alcohol' => ['beer_bottle' => 3],
+            'brands' => ['budweiser' => 3],
+        ]);
+
+        Log::shouldReceive('info')->withAnyArgs();
+
+        $this->service->updateTags($photo);
+
+        // Budweiser → beer_bottle (qty 3 matches)
+        $beerBottleTag = $photo->photoTags()->where('litter_object_id', $beerBottleId)->first();
+        $budweiserBrand = $beerBottleTag->extraTags()->where('tag_type', 'brand')->where('tag_type_id', $budweiserId)->first();
+        $this->assertNotNull($budweiserBrand, "Budweiser should match beer_bottle via quantity");
+
+        // Cup has no brand
+        $cupTag = $photo->photoTags()->where('litter_object_id', $cupId)->first();
+        $cupBrands = $cupTag->extraTags()->where('tag_type', 'brand')->get();
+        $this->assertCount(0, $cupBrands, "Cup should have NO brand");
+    }
+
+    /** @test */
+    public function rule_4_no_attachment_when_quantity_ambiguous()
+    {
+        $cokeId = BrandList::where('key', 'coke')->value('id');
+
+        $photo = $this->createPhotoWithTags([
+            'softdrinks' => ['soda_can' => 1, 'water_bottle' => 1],
+            'brands' => ['coke' => 1],
+        ]);
+
+        Log::shouldReceive('info')->withAnyArgs();
+        Log::shouldReceive('warning')->withAnyArgs();
+
+        $this->service->updateTags($photo);
+
+        // Brand should NOT be attached
+        $brandAttachments = DB::table('photo_tag_extra_tags')
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $cokeId)
+            ->get();
+
+        $this->assertCount(0, $brandAttachments, "Ambiguous quantity - coke should NOT be attached");
+    }
+
+    /** @test */
+    public function pivot_takes_priority_over_quantity_matching()
+    {
+        $heinekenId = BrandList::where('key', 'heineken')->value('id');
         $beerCanId = LitterObject::where('key', 'beer_can')->value('id');
         $beerBottleId = LitterObject::where('key', 'beer_bottle')->value('id');
-        $heinekenId = BrandList::where('key', 'heineken')->value('id');
 
-        // Pivot: beer_bottle ⇄ heineken
-        $catObj = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
+        // Pivot: heineken → beer_bottle
+        DB::table('brand_object')->insert([
+            'brand_id' => $heinekenId,
             'litter_object_id' => $beerBottleId,
         ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $heinekenId,
-            'quantity' => 1,
+
+        $photo = $this->createPhotoWithTags([
+            'alcohol' => ['beer_can' => 1, 'beer_bottle' => 5],
+            'brands' => ['heineken' => 1],
         ]);
 
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $beerCanId, 'key' => 'beer_can', 'quantity' => 1],
-                ['id' => $beerBottleId, 'key' => 'beer_bottle', 'quantity' => 2],
-            ],
-            'brands' => [
-                ['id' => $heinekenId, 'key' => 'heineken', 'quantity' => 1],
-            ],
-        ];
+        Log::shouldReceive('info')->withAnyArgs();
 
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
+        $this->service->updateTags($photo);
 
-        $this->assertCount(1, $result);
-        // Should match to beer_bottle (pivot) not beer_can (quantity)
-        $this->assertEquals('beer_bottle', $result[0]['object']['key']);
-    }
+        // Should use pivot (beer_bottle), not quantity (beer_can)
+        $beerBottleTag = $photo->photoTags()->where('litter_object_id', $beerBottleId)->first();
+        $heinekenBrand = $beerBottleTag->extraTags()->where('tag_type', 'brand')->where('tag_type_id', $heinekenId)->first();
+        $this->assertNotNull($heinekenBrand, "Heineken should match beer_bottle via pivot");
 
-    /** @test */
-    public function it_handles_multiple_brands_same_quantity_different_pivots()
-    {
-        // 3 brands all with qty 1, 3 objects all with qty 1
-        // Each brand has pivot to different object
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $canId = LitterObject::where('key', 'soda_can')->value('id');
-        $bottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $sportsId = LitterObject::where('key', 'sports_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-        $pepsiId = BrandList::where('key', 'pepsi')->value('id');
-        $spriteId = BrandList::where('key', 'sprite')->value('id');
-
-        // Pivot: can ⇄ coke
-        $catObj1 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $canId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj1->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $cokeId,
-            'quantity' => 1,
-        ]);
-
-        // Pivot: bottle ⇄ pepsi
-        $catObj2 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $bottleId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj2->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $pepsiId,
-            'quantity' => 1,
-        ]);
-
-        // Pivot: sports ⇄ sprite
-        $catObj3 = CategoryObject::firstOrCreate([
-            'category_id' => $categoryId,
-            'litter_object_id' => $sportsId,
-        ]);
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catObj3->id,
-            'taggable_type' => BrandList::class,
-            'taggable_id' => $spriteId,
-            'quantity' => 1,
-        ]);
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $canId, 'key' => 'soda_can', 'quantity' => 1],
-                ['id' => $bottleId, 'key' => 'water_bottle', 'quantity' => 1],
-                ['id' => $sportsId, 'key' => 'sports_bottle', 'quantity' => 1],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-                ['id' => $pepsiId, 'key' => 'pepsi', 'quantity' => 1],
-                ['id' => $spriteId, 'key' => 'sprite', 'quantity' => 1],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        $this->assertCount(3, $result);
-
-        $cokeMatch = collect($result)->firstWhere('brand.key', 'coke');
-        $this->assertEquals('soda_can', $cokeMatch['object']['key']);
-
-        $pepsiMatch = collect($result)->firstWhere('brand.key', 'pepsi');
-        $this->assertEquals('water_bottle', $pepsiMatch['object']['key']);
-
-        $spriteMatch = collect($result)->firstWhere('brand.key', 'sprite');
-        $this->assertEquals('sports_bottle', $spriteMatch['object']['key']);
-    }
-
-    /** @test */
-    public function it_leaves_brands_unmatched_when_no_pivot_and_quantity_ambiguous()
-    {
-        // 2 brands qty 1, 3 objects qty 1, no pivots
-        // Cannot determine which brand goes to which object
-        $categoryId = Category::where('key', 'softdrinks')->value('id');
-        $can1Id = LitterObject::where('key', 'soda_can')->value('id');
-        $can2Id = LitterObject::where('key', 'energy_can')->value('id');
-        $bottleId = LitterObject::where('key', 'water_bottle')->value('id');
-        $cokeId = BrandList::where('key', 'coke')->value('id');
-        $pepsiId = BrandList::where('key', 'pepsi')->value('id');
-
-        // No pivots created
-
-        $group = [
-            'category_id' => $categoryId,
-            'objects' => [
-                ['id' => $can1Id, 'key' => 'soda_can', 'quantity' => 1],
-                ['id' => $can2Id, 'key' => 'energy_can', 'quantity' => 1],
-                ['id' => $bottleId, 'key' => 'water_bottle', 'quantity' => 1],
-            ],
-            'brands' => [
-                ['id' => $cokeId, 'key' => 'coke', 'quantity' => 1],
-                ['id' => $pepsiId, 'key' => 'pepsi', 'quantity' => 1],
-            ],
-        ];
-
-        $result = $this->service->resolveBrandObjectLinks(999, $group);
-
-        // Should not match anything - quantity is ambiguous and no pivots
-        $this->assertCount(0, $result);
+        // Beer can has no brand
+        $beerCanTag = $photo->photoTags()->where('litter_object_id', $beerCanId)->first();
+        $beerCanBrands = $beerCanTag->extraTags()->where('tag_type', 'brand')->get();
+        $this->assertCount(0, $beerCanBrands, "Beer can should have NO brand");
     }
 }

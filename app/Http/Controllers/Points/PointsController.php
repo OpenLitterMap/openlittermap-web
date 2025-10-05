@@ -120,14 +120,13 @@ class PointsController extends Controller
                 'photos.lon',
                 'photos.datetime',
                 'photos.remaining',
-                'photos.total_litter'
-                // Removed 'summary' to reduce payload size
+                'photos.total_litter',
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'team:id,name'
             ])
-            // Guardrail for legacy data
+            ->where('filename', '!=', '/assets/verified.jpg')
             ->whereNotNull('lat')
             ->whereNotNull('lon');
 

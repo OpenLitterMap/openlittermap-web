@@ -8,7 +8,6 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\BrandList;
 use App\Models\Users\User;
 use App\Models\Teams\Team;
 use App\Services\Points\PointsStatsService;

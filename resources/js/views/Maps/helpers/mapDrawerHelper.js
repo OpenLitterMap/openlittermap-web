@@ -1,10 +1,14 @@
-// helpers/mapDrawerHelper.js
-
 import { Category } from './Category.js';
 
 /**
  * Map Drawer Helper Functions
  * Utility functions for the OpenLitterMap drawer component
+ *
+ * FIXED: Updated to match actual API response structure:
+ * - by_category (not categories)
+ * - by_object (not top_objects)
+ * - time_histogram (not time_series.histogram)
+ * - counts (not metadata)
  */
 
 class MapDrawerHelper {
@@ -94,10 +98,8 @@ class MapDrawerHelper {
             };
         } else {
             // If no dot, the key itself is the object name
-            // We need to determine the category from context or default to 'unknown'
-            console.log(`Object key "${key}" has no category prefix`);
             return {
-                category: null, // Will need to be determined from context
+                category: null,
                 name: key,
             };
         }
@@ -142,15 +144,20 @@ class MapDrawerHelper {
 
     /**
      * Process stats data for component consumption
+     * FIXED: Matches actual API response structure
      */
     static processStatsDataForComponent(statsData) {
         if (!statsData) return null;
 
+        // FIXED: API returns { data: { counts, by_category, by_object, ... }, meta: {...} }
+        const apiData = statsData.data || statsData;
+        const counts = apiData.counts || {};
+
         const result = {
-            // Basic counts
-            totalItems: statsData.metadata?.total_photos || 0,
-            totalObjects: statsData.metadata?.total_objects || 0,
-            totalBrands: statsData.metadata?.total_brands || 0,
+            // Basic counts - FIXED: Use 'counts' object
+            totalItems: counts.photos || 0,
+            totalObjects: counts.total_objects || 0,
+            totalBrands: counts.total_brands || 0,
 
             // Pickup percentages
             pickedUpPercentage: 0,
@@ -175,8 +182,8 @@ class MapDrawerHelper {
         };
 
         // Calculate pickup percentages
-        const pickedUp = statsData.metadata?.picked_up || 0;
-        const notPickedUp = statsData.metadata?.not_picked_up || 0;
+        const pickedUp = counts.picked_up || 0;
+        const notPickedUp = counts.not_picked_up || 0;
         const totalPickup = pickedUp + notPickedUp;
 
         if (totalPickup > 0) {
@@ -184,71 +191,69 @@ class MapDrawerHelper {
             result.notPickedUpPercentage = (notPickedUp / totalPickup) * 100;
         }
 
-        // Process top objects
-        if (statsData.top_objects && Array.isArray(statsData.top_objects)) {
-            result.topObjects = statsData.top_objects.slice(0, 20).map((obj) => ({
-                ...obj,
-                key: obj.key || obj.name || 'unknown',
-                name: obj.name || this.getObjectDisplayName(obj.key),
-                count: obj.count || 0,
+        // FIXED: Process by_object (not top_objects)
+        if (apiData.by_object && Array.isArray(apiData.by_object)) {
+            result.topObjects = apiData.by_object.slice(0, 20).map((obj) => ({
+                key: obj.key || 'unknown',
+                name: this.getObjectDisplayName(obj.key),
+                count: obj.qty || 0, // FIXED: API uses 'qty' not 'count'
             }));
         }
 
-        // Process top brands
-        if (statsData.top_brands && Array.isArray(statsData.top_brands)) {
-            result.topBrands = statsData.top_brands.slice(0, 12).map((brand) => ({
-                ...brand,
-                key: brand.key || brand.name || 'unknown',
-                name: brand.name || brand.key || 'Unknown',
-                count: brand.count || 0,
+        // FIXED: Process brands array directly
+        if (apiData.brands && Array.isArray(apiData.brands)) {
+            result.topBrands = apiData.brands.slice(0, 12).map((brand) => ({
+                key: brand.key || 'unknown',
+                name: brand.key || 'Unknown',
+                count: brand.qty || 0, // FIXED: API uses 'qty' not 'count'
             }));
         }
 
-        // Process categories
-        if (statsData.categories && Array.isArray(statsData.categories)) {
-            const totalCategoryCount = statsData.categories.reduce((sum, cat) => sum + (cat.count || 0), 0);
+        // FIXED: Process by_category (not categories)
+        if (apiData.by_category && Array.isArray(apiData.by_category)) {
+            const totalCategoryCount = apiData.by_category.reduce((sum, cat) => sum + (cat.qty || 0), 0);
 
-            result.categoriesWithPercentages = statsData.categories.map((cat) => {
-                const percentage = totalCategoryCount > 0 ? (cat.count / totalCategoryCount) * 100 : 0;
-                const categoryKey = cat.key || cat.name;
+            result.categoriesWithPercentages = apiData.by_category.map((cat) => {
+                const count = cat.qty || 0; // FIXED: API uses 'qty' not 'count'
+                const percentage = totalCategoryCount > 0 ? (count / totalCategoryCount) * 100 : 0;
+                const categoryKey = cat.key;
                 return {
-                    ...cat,
                     key: categoryKey,
                     name: Category.getDisplayName(categoryKey),
-                    count: cat.count || 0,
+                    count: count,
                     percentage,
-                    formattedPercentage: this.formatPercentage(cat.count, totalCategoryCount),
+                    formattedPercentage: this.formatPercentage(count, totalCategoryCount),
                     color: Category.getColor(categoryKey),
                 };
             });
         }
 
-        // Process materials
-        if (statsData.top_materials && Array.isArray(statsData.top_materials)) {
-            const totalMaterialCount = statsData.top_materials.reduce((sum, mat) => sum + (mat.count || 0), 0);
+        // FIXED: Process materials array directly
+        if (apiData.materials && Array.isArray(apiData.materials)) {
+            const totalMaterialCount = apiData.materials.reduce((sum, mat) => sum + (mat.qty || 0), 0);
 
-            result.materialsWithPercentages = statsData.top_materials.slice(0, 10).map((mat) => {
-                const percentage = totalMaterialCount > 0 ? (mat.count / totalMaterialCount) * 100 : 0;
+            result.materialsWithPercentages = apiData.materials.slice(0, 10).map((mat) => {
+                const count = mat.qty || 0; // FIXED: API uses 'qty' not 'count'
+                const percentage = totalMaterialCount > 0 ? (count / totalMaterialCount) * 100 : 0;
                 return {
-                    ...mat,
-                    key: mat.key || mat.name || 'unknown',
-                    name: mat.name || this.formatFilterKey(mat.key),
-                    count: mat.count || 0,
+                    key: mat.key || 'unknown',
+                    name: this.formatFilterKey(mat.key),
+                    count: count,
                     percentage,
-                    formattedPercentage: this.formatPercentage(mat.count, totalMaterialCount),
-                    icon: this.getMaterialIcon(mat.key || mat.name),
+                    formattedPercentage: this.formatPercentage(count, totalMaterialCount),
+                    icon: this.getMaterialIcon(mat.key),
                 };
             });
         }
 
-        // Process time series
-        if (statsData.time_series?.histogram && Array.isArray(statsData.time_series.histogram)) {
-            result.timeSeriesData = statsData.time_series.histogram;
+        // FIXED: Process time_histogram (not time_series.histogram)
+        if (apiData.time_histogram && Array.isArray(apiData.time_histogram)) {
+            result.timeSeriesData = apiData.time_histogram;
 
             // Normalize histogram for visualization
-            const maxValue = Math.max(...statsData.time_series.histogram.map((h) => h.photos || 0));
+            const maxValue = Math.max(...apiData.time_histogram.map((h) => h.photos || 0));
 
-            result.normalizedHistogram = statsData.time_series.histogram.map((item) => ({
+            result.normalizedHistogram = apiData.time_histogram.map((item) => ({
                 ...item,
                 bucket: item.bucket,
                 photos: item.photos || 0,
@@ -276,8 +281,17 @@ class MapDrawerHelper {
                       : '➡️';
         }
 
-        // Check for filters
-        result.hasFilters = statsData.filters_applied && Object.keys(statsData.filters_applied).length > 0;
+        // Check for filters - FIXED: Check meta object
+        const meta = statsData.meta || {};
+        result.hasFilters = !!(
+            meta.categories ||
+            meta.litter_objects ||
+            meta.materials ||
+            meta.brands ||
+            meta.username ||
+            meta.year ||
+            (meta.from && meta.to)
+        );
 
         return result;
     }
@@ -369,10 +383,12 @@ class MapDrawerHelper {
     }
 
     /**
-     * Export to CSV
+     * Export to CSV - FIXED to use actual API structure
      */
     static exportToCSV(statsData, filters) {
         const exportData = [];
+        const apiData = statsData.data || statsData;
+        const counts = apiData.counts || {};
 
         // Add metadata
         exportData.push(['OpenLitterMap Statistics Export']);
@@ -384,17 +400,17 @@ class MapDrawerHelper {
 
         // Add summary stats
         exportData.push(['Summary Statistics']);
-        exportData.push(['Total Photos:', statsData.metadata?.total_photos || 0]);
-        exportData.push(['Total Objects:', statsData.metadata?.total_objects || 0]);
-        exportData.push(['Total Users:', statsData.metadata?.total_users || 0]);
+        exportData.push(['Total Photos:', counts.photos || 0]);
+        exportData.push(['Total Objects:', counts.total_objects || 0]);
+        exportData.push(['Total Users:', counts.users || 0]);
         exportData.push(['']); // Empty row
 
-        // Add top objects
-        if (statsData.top_objects && statsData.top_objects.length > 0) {
+        // Add top objects - FIXED: Use by_object with qty
+        if (apiData.by_object && apiData.by_object.length > 0) {
             exportData.push(['Top Litter Objects']);
             exportData.push(['Object', 'Count']);
-            statsData.top_objects.forEach((obj) => {
-                exportData.push([obj.name || obj.key || 'Unknown', obj.count || 0]);
+            apiData.by_object.forEach((obj) => {
+                exportData.push([this.getObjectDisplayName(obj.key), obj.qty || 0]);
             });
             exportData.push(['']); // Empty row
         }
@@ -472,20 +488,22 @@ class MapDrawerHelper {
     }
 
     /**
-     * Validate stats data
+     * Validate stats data - FIXED to check actual API structure
      */
     static validateStatsData(data) {
         if (!data || typeof data !== 'object') return false;
 
-        // Just check for at least one main section
+        const apiData = data.data || data;
+
+        // Check for at least one main section
         return !!(
-            data.metadata ||
-            data.time_series ||
-            data.categories ||
-            data.top_objects ||
-            data.top_brands ||
-            data.top_materials ||
-            data.top_contributors
+            apiData.counts ||
+            apiData.time_histogram ||
+            apiData.by_category ||
+            apiData.by_object ||
+            apiData.brands ||
+            apiData.materials ||
+            apiData.custom_tags
         );
     }
 

@@ -13,12 +13,18 @@ return new class extends Migration
             DB::statement('DROP INDEX idx_clusters_spatial ON clusters');
         }
 
-        // Convert location to a generated column
+        // Drop the existing location column
+        if (Schema::hasColumn('clusters', 'location')) {
+            DB::statement('ALTER TABLE clusters DROP COLUMN location');
+        }
+
+        // Add location as a generated column
         // This ensures location is always in sync with lat/lon
         DB::statement("
             ALTER TABLE clusters
-            MODIFY COLUMN location POINT NOT NULL
-                AS (ST_SRID(POINT(lon, lat), 4326)) STORED
+            ADD COLUMN location POINT
+                GENERATED ALWAYS AS (ST_SRID(POINT(lon, lat), 4326)) STORED
+                NOT NULL
         ");
 
         // Recreate spatial index
@@ -32,10 +38,15 @@ return new class extends Migration
             DB::statement('DROP INDEX idx_clusters_spatial ON clusters');
         }
 
-        // Convert back to regular column
+        // Drop generated column
+        if (Schema::hasColumn('clusters', 'location')) {
+            DB::statement('ALTER TABLE clusters DROP COLUMN location');
+        }
+
+        // Recreate as regular column
         DB::statement("
             ALTER TABLE clusters
-            MODIFY COLUMN location POINT NOT NULL
+            ADD COLUMN location POINT NOT NULL
         ");
 
         // Recreate spatial index

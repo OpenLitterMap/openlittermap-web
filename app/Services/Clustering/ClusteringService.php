@@ -123,15 +123,15 @@ class ClusteringService
 
         // Insert new clusters
         // Note: We use the grouped columns in the outer SELECT to comply with ONLY_FULL_GROUP_BY
+        // we removed ST_SRID(POINT(AVG(lon), AVG(lat)), 4326), from 132
         DB::statement("
             INSERT INTO clusters
               (tile_key, zoom, year, cell_x, cell_y,
-               lat, lon, location, point_count, grid_size)
+               lat, lon, point_count, grid_size)
             SELECT
               ? AS tile_key, ?, 0,
               cell_x, cell_y,
               AVG(lat), AVG(lon),
-              ST_SRID(POINT(AVG(lon), AVG(lat)), 4326),
               COUNT(*),
               ?
             FROM (
@@ -139,7 +139,7 @@ class ClusteringService
                 lat, lon,
                 FLOOR((lon + 180)/?) AS cell_x,
                 FLOOR((lat + 90)/?) AS cell_y
-              FROM photos
+                FROM photos USE INDEX (idx_photos_fast_cluster)
               WHERE verified = 2
             ) AS grouped_photos
             GROUP BY cell_x, cell_y
@@ -175,30 +175,28 @@ class ClusteringService
             ->delete();
 
         // Process all tiles in one query using generated columns
-        // This uses the covering index and avoids floating point operations
         DB::statement("
-            INSERT INTO clusters
-              (tile_key, zoom, year, cell_x, cell_y,
-               lat, lon, location, point_count, grid_size)
-            SELECT
-              tile_key, ?, 0,
-              cluster_x, cluster_y,
-              AVG(lat), AVG(lon),
-              ST_SRID(POINT(AVG(lon), AVG(lat)), 4326),
-              COUNT(*),
-              ?
-            FROM (
-              SELECT
-                tile_key, lat, lon,
-                FLOOR(cell_x / ?) AS cluster_x,
-                FLOOR(cell_y / ?) AS cluster_y
-              FROM photos
-              WHERE verified = 2
-                AND tile_key IS NOT NULL
-            ) AS grouped_photos
-            GROUP BY tile_key, cluster_x, cluster_y
-            HAVING COUNT(*) >= ?
-        ", [$zoom, $gridSize, $factor, $factor, $min]);
+        INSERT INTO clusters
+          (tile_key, zoom, year, cell_x, cell_y,
+           lat, lon, point_count, grid_size)
+        SELECT
+          tile_key, ?, 0,
+          cluster_x, cluster_y,
+          AVG(lat), AVG(lon),
+          COUNT(*),
+          ?
+        FROM (
+          SELECT
+            tile_key, lat, lon,
+            FLOOR(cell_x / ?) AS cluster_x,
+            FLOOR(cell_y / ?) AS cluster_y
+          FROM photos USE INDEX (idx_photos_fast_cluster)
+          WHERE verified = 2
+            AND tile_key IS NOT NULL
+        ) AS grouped_photos
+        GROUP BY tile_key, cluster_x, cluster_y
+        HAVING COUNT(*) >= ?
+    ", [$zoom, $gridSize, $factor, $factor, $min]);
 
         return DB::table('clusters')
             ->where('zoom', $zoom)
@@ -230,13 +228,12 @@ class ClusteringService
         DB::statement("
             INSERT INTO clusters
               (tile_key, zoom, year, cell_x, cell_y,
-               lat, lon, location, point_count)
+               lat, lon, point_count)
             SELECT
               tile_key, ?, 0,
               FLOOR(cell_x * ?),
               FLOOR(cell_y * ?),
               AVG(lat), AVG(lon),
-              ST_SRID(POINT(AVG(lon), AVG(lat)), 4326),
               SUM(point_count)
             FROM tmp_clusters_z{$fromZoom}
             GROUP BY tile_key,
@@ -348,12 +345,11 @@ class ClusteringService
             DB::statement("
             INSERT INTO clusters
               (tile_key, zoom, year, cell_x, cell_y,
-               lat, lon, location, point_count, grid_size)
+               lat, lon, point_count, grid_size)
             SELECT
               tile_key, ?, 0,
               cluster_x, cluster_y,
               AVG(lat), AVG(lon),
-              ST_SRID(POINT(AVG(lon), AVG(lat)), 4326),
               COUNT(*),
               ?
             FROM (
@@ -361,7 +357,7 @@ class ClusteringService
                 tile_key, lat, lon,
                 FLOOR(cell_x / ?) AS cluster_x,
                 FLOOR(cell_y / ?) AS cluster_y
-              FROM photos
+                FROM photos USE INDEX (idx_photos_fast_cluster)
               WHERE verified = 2
                 AND tile_key = ?
             ) AS grouped_photos

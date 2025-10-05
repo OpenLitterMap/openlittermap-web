@@ -79,11 +79,27 @@ class QueryBuilder
 
     /**
      * Apply tag filters (categories and objects)
+     * FIXED: Use if-elseif to avoid applying multiple conflicting whereExists clauses
      */
     private function applyTagFilters($query, array $params): void
     {
-        // Category filter
-        if (!empty($params['categories'])) {
+        $hasCategories = !empty($params['categories']);
+        $hasObjects = !empty($params['litter_objects']);
+
+        // When both filters are present, they must match the same tag
+        if ($hasCategories && $hasObjects) {
+            $query->whereExists(function($q) use ($params) {
+                $q->select(DB::raw(1))
+                    ->from('photo_tags')
+                    ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
+                    ->join('litter_objects', 'photo_tags.litter_object_id', '=', 'litter_objects.id')
+                    ->whereColumn('photo_tags.photo_id', 'photos.id')
+                    ->whereIn('categories.key', $params['categories'])
+                    ->whereIn('litter_objects.key', $params['litter_objects']);
+            });
+        }
+        // Only category filter
+        elseif ($hasCategories) {
             $query->whereExists(function($q) use ($params) {
                 $q->select(DB::raw(1))
                     ->from('photo_tags')
@@ -92,27 +108,13 @@ class QueryBuilder
                     ->whereIn('categories.key', $params['categories']);
             });
         }
-
-        // Litter object filter
-        if (!empty($params['litter_objects'])) {
+        // Only litter object filter
+        elseif ($hasObjects) {
             $query->whereExists(function($q) use ($params) {
                 $q->select(DB::raw(1))
                     ->from('photo_tags')
                     ->join('litter_objects', 'photo_tags.litter_object_id', '=', 'litter_objects.id')
                     ->whereColumn('photo_tags.photo_id', 'photos.id')
-                    ->whereIn('litter_objects.key', $params['litter_objects']);
-            });
-        }
-
-        // When both category and object filters are present, they must be in the same tag
-        if (!empty($params['categories']) && !empty($params['litter_objects'])) {
-            $query->whereExists(function($q) use ($params) {
-                $q->select(DB::raw(1))
-                    ->from('photo_tags')
-                    ->join('categories', 'photo_tags.category_id', '=', 'categories.id')
-                    ->join('litter_objects', 'photo_tags.litter_object_id', '=', 'litter_objects.id')
-                    ->whereColumn('photo_tags.photo_id', 'photos.id')
-                    ->whereIn('categories.key', $params['categories'])
                     ->whereIn('litter_objects.key', $params['litter_objects']);
             });
         }

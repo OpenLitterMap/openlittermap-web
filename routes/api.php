@@ -12,7 +12,6 @@ use App\Http\Controllers\Location\TagController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
-use App\Http\Controllers\User\Photos\UserPhotosController;
 use App\Http\Controllers\User\Photos\UsersUploadsController;
 use App\Models\Littercoin;
 use Illuminate\Http\Request;
