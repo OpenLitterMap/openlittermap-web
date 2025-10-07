@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Points;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Points\PointsRequest;
 use App\Models\Photo;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,38 @@ class PointsController extends Controller
     private const HIGH_ZOOM_PER_PAGE = 250; // Tighter limit at high zoom
     private const BBOX_PRECISION = 5; // ~1.1m precision at equator
 
+    /**
+     * Load a Photo by ID
+     */
+    public function show(int $id)
+    {
+        $photo = Photo::with([
+            'user:id,name,username,show_username_maps,show_name_maps,settings',
+            'team:id,name',
+        ])->findOrFail($id);
+
+        return [
+            'id' => $photo->id,
+            'lat' => $photo->lat,
+            'lon' => $photo->lon,
+            'datetime' => $photo->datetime,
+            'verified' => $photo->verified,
+            'total_litter' => $photo->total_litter,
+            'filename' => $photo->filename,
+            'username' => $photo->user && $photo->user->show_username_maps ? $photo->user->username : null,
+            'name' => $photo->user && $photo->user->show_name_maps ? $photo->user->name : null,
+            'social' => $photo->user?->social_links,
+            'team' => $photo->team?->name,
+            'summary' => $photo->summary, // Contains all v5 tags structure
+        ];
+    }
+
+    /**
+     * Get Paginated Photos within a bounding box & filters.
+     *
+     * @param PointsRequest $request
+     * @return array
+     */
     public function index(PointsRequest $request): array
     {
         $validated = $request->validated();
@@ -115,7 +148,6 @@ class PointsController extends Controller
                 'photos.verified',
                 'photos.user_id',
                 'photos.team_id',
-                'photos.filename',
                 'photos.lat',
                 'photos.lon',
                 'photos.datetime',
@@ -126,12 +158,12 @@ class PointsController extends Controller
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'team:id,name'
             ])
-            ->where('filename', '!=', '/assets/verified.jpg')
             ->whereNotNull('lat')
             ->whereNotNull('lon');
 
         // Filter by rectangle
-        $query->whereBetween('photos.lon', [$bbox['left'], $bbox['right']])
+        $query
+            ->whereBetween('photos.lon', [$bbox['left'], $bbox['right']])
             ->whereBetween('photos.lat', [$bbox['bottom'], $bbox['top']]);
 
         // Apply all filters
@@ -166,7 +198,7 @@ class PointsController extends Controller
             if ($offset >= $cap) {
                 // Past the cap: return empty page
                 $empty = collect();
-                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $paginator = new LengthAwarePaginator(
                     $empty,
                     0,
                     $perPage,
@@ -181,7 +213,7 @@ class PointsController extends Controller
             // Get actual count but cap at limit (strip ordering for faster count)
             $total = min($cap, (clone $query)->reorder()->count());
 
-            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginator = new LengthAwarePaginator(
                 $items,
                 $total,
                 $perPage,
