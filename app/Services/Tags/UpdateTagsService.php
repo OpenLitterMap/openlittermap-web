@@ -2,6 +2,7 @@
 
 namespace App\Services\Tags;
 
+use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
@@ -10,8 +11,22 @@ use Illuminate\Support\Facades\Log;
 
 class UpdateTagsService
 {
-    protected ClassifyTagsService $classifyTags;
-    protected GeneratePhotoSummaryService $generatePhotoSummaryService;
+    public ClassifyTagsService $classifyTags;
+    public GeneratePhotoSummaryService $generatePhotoSummaryService;
+
+    /**
+     * Priority order for object selection when multiple matches exist
+     * Higher priority objects will be chosen first
+     */
+    private const OBJECT_PRIORITY = [
+        'soda_can' => 1,
+        'fizzy_bottle' => 2,  // Assuming you meant fizzy_bottle not fizzy_other
+        'energy_can' => 3,
+        'beer_can' => 4,
+        'beer_bottle' => 5,
+        'other' => 6,
+        'cup' => 7,  // coffee_cup maps to 'cup' object
+    ];
 
     public function __construct(
         ClassifyTagsService $classifyTags,
@@ -48,11 +63,10 @@ class UpdateTagsService
 
     public function getTags(Photo $photo): array
     {
-        $tags           = $photo->tags() ?? [];
-        $originalTags   = $this->mergeSingleObjectAndBrand($photo->id, $tags);
-        $customTagsOld  = $photo->customTags ?? new EloquentCollection();
+        $tags = $photo->tags() ?? [];
+        $customTagsOld = $photo->customTags ?? new EloquentCollection();
 
-        return [$originalTags, $customTagsOld];
+        return [$tags, $customTagsOld];
     }
 
     public function parseTags(array $originalTags, EloquentCollection $customTagsOld, int $photoId): array
@@ -61,7 +75,7 @@ class UpdateTagsService
         $globalBrands       = [];
         $topLevelCustomTags = [];
 
-        Log::info("=== Starting brand matching for photo {$photoId} ===");
+        Log::info("=== Starting tag parsing for photo {$photoId} ===");
 
         // 1) Category-based blocks
         foreach ($originalTags as $categoryKey => $items) {
@@ -129,14 +143,12 @@ class UpdateTagsService
             }
         }
 
-        // 2) IMPORTANT: Don't distribute brands to groups here!
-        // They will be matched globally via pivot lookup in createPhotoTags()
+        // 2) Log brand parsing status
         if (!empty($globalBrands)) {
-            Log::info("Global brands will be matched via pivot lookup", [
+            Log::info("Global brands parsed successfully", [
                 'photo_id' => $photoId,
                 'brand_count' => count($globalBrands),
                 'brands' => array_map(fn($b) => ['key' => $b['key'] ?? 'unknown', 'qty' => $b['quantity']], $globalBrands),
-                'note' => 'Brands NOT distributed to groups - will be matched globally'
             ]);
         }
 
@@ -172,7 +184,7 @@ class UpdateTagsService
         $topLevelCustomTags = $parsedTags['topLevelCustomTags'];
 
         $hasObjects = false;
-        $createdPhotoTags = []; // Track created PhotoTag records for brand attachment
+        $createdPhotoTags = [];
 
         // First pass: Create all object PhotoTags
         foreach ($groups as $categoryKey => $group) {
@@ -191,6 +203,7 @@ class UpdateTagsService
                     $createdPhotoTags[] = [
                         'photo_tag' => $photoTag,
                         'object' => $object,
+                        'category_id' => $group['category_id'],
                         'category_key' => $categoryKey,
                         'index' => $index
                     ];
@@ -223,15 +236,31 @@ class UpdateTagsService
             }
         }
 
-        // Second pass: Match brands globally via pivot lookup
+        // Second pass: Match brands with priority-based fallback
         if ($hasObjects && !empty($globalBrands)) {
-            Log::info("=== Matching brands globally via RULE 2 (pivot lookup) ===", [
-                'photo_id' => $photo->id,
-                'brand_count' => count($globalBrands),
-                'object_count' => count($createdPhotoTags)
-            ]);
+            $totalObjects = count($createdPhotoTags);
+            $totalBrands = count($globalBrands);
 
-            $this->attachBrandsGlobally($photo, $globalBrands, $createdPhotoTags);
+            if ($totalObjects === 1 && $totalBrands === 1) {
+                // SPECIAL CASE: 1 object + 1 brand = automatic association
+                Log::info("Single object + single brand - automatic association", [
+                    'photo_id' => $photo->id,
+                    'object' => $createdPhotoTags[0]['object']['key'] ?? 'unknown',
+                    'brand' => $globalBrands[0]['key'] ?? 'unknown'
+                ]);
+
+                $createdPhotoTags[0]['photo_tag']->attachExtraTags($globalBrands, 'brand', 0);
+
+                // Also create the pivot relationship for future use
+                $this->createPivotIfMissing(
+                    $createdPhotoTags[0]['category_id'],
+                    $createdPhotoTags[0]['object']['id'],
+                    $globalBrands[0]['id']
+                );
+            } else {
+                // MULTIPLE OBJECTS: Use pivot lookup first, then priority fallback
+                $this->attachBrandsWithPriorityFallback($photo, $globalBrands, $createdPhotoTags);
+            }
         }
 
         // Brands-only
@@ -252,7 +281,10 @@ class UpdateTagsService
         }
     }
 
-    private function attachBrandsGlobally(Photo $photo, array $brands, array $createdPhotoTags): void
+    /**
+     * Attach brands using pivot lookup with priority-based fallback
+     */
+    private function attachBrandsWithPriorityFallback(Photo $photo, array $brands, array $createdPhotoTags): void
     {
         $attachedBrandIds = [];
 
@@ -263,110 +295,196 @@ class UpdateTagsService
 
             // Skip if already attached
             if (in_array($brandId, $attachedBrandIds, true)) {
-                Log::info("→ Skipping already-attached brand", [
-                    'photo_id' => $photo->id,
-                    'brand' => $brandKey
-                ]);
                 continue;
             }
 
-            Log::info("Attempting to match brand", [
-                'photo_id' => $photo->id,
-                'brand' => $brandKey,
-                'qty' => $brandQty
-            ]);
-
             $matched = false;
+            $pivotMatches = [];
+            $allPossibleMatches = [];
 
-            // RULE 2: Try pivot table lookup FIRST - find FIRST object with pivot relationship
+            // RULE 1: Check for pivot relationships
             foreach ($createdPhotoTags as $tagData) {
                 $objectId = $tagData['object']['id'];
                 $objectKey = $tagData['object']['key'] ?? 'unknown';
+                $categoryId = $tagData['category_id'] ?? null;
 
-                // Check if this brand-object pair exists in pivot table
-                $hasPivot = \DB::table('brand_object')
-                    ->where('brand_id', $brandId)
+                if (!$categoryId) {
+                    continue;
+                }
+
+                // Track all objects for fallback
+                $allPossibleMatches[] = [
+                    'tag_data' => $tagData,
+                    'object_key' => $objectKey,
+                ];
+
+                // Check if there's a CategoryObject pivot
+                $categoryObject = \DB::table('category_litter_object')
+                    ->where('category_id', $categoryId)
                     ->where('litter_object_id', $objectId)
+                    ->first();
+
+                if (!$categoryObject) {
+                    continue;
+                }
+
+                // Check if this brand is attached to this category-object combination
+                $hasPivot = \DB::table('taggables')
+                    ->where('category_litter_object_id', $categoryObject->id)
+                    ->where('taggable_type', BrandList::class)
+                    ->where('taggable_id', $brandId)
                     ->exists();
 
                 if ($hasPivot) {
-                    // Found match! Attach brand to this object
-                    $tagData['photo_tag']->attachExtraTags([$brand], 'brand', 0);
-                    $attachedBrandIds[] = $brandId;
-                    $matched = true;
-
-                    Log::info("✓ RULE 2: Brand attached via database pivot (first match)", [
-                        'photo_id' => $photo->id,
-                        'brand' => $brandKey,
-                        'brand_qty' => $brandQty,
-                        'object' => $objectKey,
-                        'object_qty' => $tagData['object']['quantity'],
-                        'category' => $tagData['category_key'],
-                        'rule' => 'database_pivot_match'
-                    ]);
-
-                    break; // Stop after FIRST match
+                    $pivotMatches[] = [
+                        'tag_data' => $tagData,
+                        'object_key' => $objectKey,
+                    ];
                 }
             }
 
-            // RULE 3: If no pivot match, try quantity matching
+            // If we have pivot matches, use the first one
+            if (!empty($pivotMatches)) {
+                $chosen = $pivotMatches[0];
+
+                Log::info("✓ PIVOT MATCH - Brand attached via database relationship", [
+                    'photo_id' => $photo->id,
+                    'brand' => $brandKey,
+                    'object' => $chosen['object_key'],
+                    'rule' => 'pivot_lookup'
+                ]);
+
+                $chosen['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
+                $attachedBrandIds[] = $brandId;
+                $matched = true;
+            }
+
+            // RULE 2: If no pivot match, try quantity matching
             if (!$matched) {
                 $quantityMatches = [];
 
-                // Find all objects with matching quantity
                 foreach ($createdPhotoTags as $tagData) {
                     if ($tagData['object']['quantity'] === $brandQty) {
-                        $quantityMatches[] = $tagData;
+                        $quantityMatches[] = [
+                            'tag_data' => $tagData,
+                            'object_key' => $tagData['object']['key'] ?? 'unknown',
+                        ];
                     }
                 }
 
                 if (count($quantityMatches) === 1) {
-                    // UNIQUE quantity match found
+                    // Unique quantity match
                     $match = $quantityMatches[0];
-                    $match['photo_tag']->attachExtraTags([$brand], 'brand', 0);
+                    Log::info("✓ QUANTITY MATCH - Brand attached via unique quantity", [
+                        'photo_id' => $photo->id,
+                        'brand' => $brandKey,
+                        'object' => $match['object_key'],
+                        'qty' => $brandQty,
+                        'rule' => 'unique_quantity'
+                    ]);
+
+                    $match['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
                     $attachedBrandIds[] = $brandId;
                     $matched = true;
-
-                    Log::info("✓ RULE 3: Brand attached via unique quantity match", [
-                        'photo_id' => $photo->id,
-                        'brand' => $brandKey,
-                        'brand_qty' => $brandQty,
-                        'object' => $match['object']['key'] ?? 'unknown',
-                        'object_qty' => $match['object']['quantity'],
-                        'category' => $match['category_key'],
-                        'rule' => 'unique_quantity_match'
-                    ]);
-                } elseif (count($quantityMatches) > 1) {
-                    // Multiple objects with same quantity - ambiguous
-                    Log::warning("⚠ Multiple objects with matching quantity - brand NOT attached", [
-                        'photo_id' => $photo->id,
-                        'brand' => $brandKey,
-                        'brand_qty' => $brandQty,
-                        'matching_objects' => array_map(fn($m) => [
-                            'object' => $m['object']['key'] ?? 'unknown',
-                            'qty' => $m['object']['quantity'],
-                            'category' => $m['category_key']
-                        ], $quantityMatches),
-                        'action' => 'not_attached_ambiguous'
-                    ]);
                 }
             }
 
-            // NO FALLBACK - If no match found, just log warning
+            // RULE 3: If still no match, use priority-based fallback
+            if (!$matched && !empty($allPossibleMatches)) {
+                $chosen = $this->chooseBestByPriority($allPossibleMatches);
+
+                if ($chosen) {
+                    Log::info("✓ PRIORITY FALLBACK - Brand attached to highest priority object", [
+                        'photo_id' => $photo->id,
+                        'brand' => $brandKey,
+                        'object' => $chosen['object_key'],
+                        'rule' => 'priority_fallback'
+                    ]);
+
+                    $chosen['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
+                    $attachedBrandIds[] = $brandId;
+                    $matched = true;
+
+                    // Create pivot for future use
+                    $this->createPivotIfMissing(
+                        $chosen['tag_data']['category_id'],
+                        $chosen['tag_data']['object']['id'],
+                        $brandId
+                    );
+                }
+            }
+
+            // If STILL no match (shouldn't happen with fallback), log warning
             if (!$matched) {
-                Log::warning("⚠ Brand could not be matched - NOT attached", [
+                Log::warning("Brand could not be matched even with fallback", [
                     'photo_id' => $photo->id,
                     'brand' => $brandKey,
-                    'brand_qty' => $brandQty,
-                    'available_objects' => array_map(fn($t) => [
-                        'object' => $t['object']['key'] ?? 'unknown',
-                        'qty' => $t['object']['quantity'],
-                        'category' => $t['category_key']
-                    ], $createdPhotoTags),
-                    'reason' => 'no_pivot_match_no_unique_quantity_match',
-                    'action' => 'not_attached_needs_review'
+                    'reason' => 'no_objects_available'
                 ]);
             }
+        }
+    }
+
+    /**
+     * Choose the best object match based on priority order
+     */
+    private function chooseBestByPriority(array $matches): ?array
+    {
+        if (empty($matches)) {
+            return null;
+        }
+
+        // Sort matches by priority (lower number = higher priority)
+        usort($matches, function($a, $b) {
+            $aPriority = self::OBJECT_PRIORITY[$a['object_key']] ?? 999;
+            $bPriority = self::OBJECT_PRIORITY[$b['object_key']] ?? 999;
+            return $aPriority <=> $bPriority;
+        });
+
+        // Return the highest priority match
+        return $matches[0];
+    }
+
+    private function createPivotIfMissing(int $categoryId, int $objectId, int $brandId): void
+    {
+        // Get or create CategoryObject
+        $categoryObject = \DB::table('category_litter_object')
+            ->where('category_id', $categoryId)
+            ->where('litter_object_id', $objectId)
+            ->first();
+
+        if (!$categoryObject) {
+            $categoryObjectId = \DB::table('category_litter_object')->insertGetId([
+                'category_id' => $categoryId,
+                'litter_object_id' => $objectId,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        } else {
+            $categoryObjectId = $categoryObject->id;
+        }
+
+        // Create taggable relationship if it doesn't exist
+        $exists = \DB::table('taggables')
+            ->where('category_litter_object_id', $categoryObjectId)
+            ->where('taggable_type', BrandList::class)
+            ->where('taggable_id', $brandId)
+            ->exists();
+
+        if (!$exists) {
+            \DB::table('taggables')->insert([
+                'category_litter_object_id' => $categoryObjectId,
+                'taggable_type' => BrandList::class,
+                'taggable_id' => $brandId,
+                'quantity' => 1,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            Log::info("Created pivot relationship for future use", [
+                'category_object_id' => $categoryObjectId,
+                'brand_id' => $brandId
+            ]);
         }
     }
 
@@ -409,26 +527,5 @@ class UpdateTagsService
         foreach ($customTags as $idx => $extra) {
             $last->attachExtraTags([$extra], 'custom_tag', $idx);
         }
-    }
-
-    private function mergeSingleObjectAndBrand(int $photoId, array $tags): array
-    {
-        if (
-            count($tags) === 2 &&
-            isset($tags['brands']) &&
-            count($tags['brands']) === 1
-        ) {
-            $keys = array_keys($tags);
-            $other = $keys[0] === 'brands' ? $keys[1] : $keys[0];
-
-            if ($other && count($tags[$other]) === 1)
-            {
-                // Merge object & brand into single entry
-                $tags[$other] = array_merge($tags[$other], $tags['brands']);
-                unset($tags['brands']);
-            }
-        }
-
-        return $tags;
     }
 }
