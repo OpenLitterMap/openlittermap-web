@@ -47,7 +47,6 @@ class UpdateTagsService
 
         // If no tags at all, just mark migrated
         if (empty($originalTags) && $customTagsOld->isEmpty()) {
-            Log::info("No tags to migrate for photo ID: {$photo->id}");
             $photo->update(['migrated_at' => now()]);
             return;
         }
@@ -74,8 +73,6 @@ class UpdateTagsService
         $groups             = [];
         $globalBrands       = [];
         $topLevelCustomTags = [];
-
-        Log::info("=== Starting tag parsing for photo {$photoId} ===");
 
         // 1) Category-based blocks
         foreach ($originalTags as $categoryKey => $items) {

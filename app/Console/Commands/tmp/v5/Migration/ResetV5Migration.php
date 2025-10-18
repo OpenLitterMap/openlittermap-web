@@ -54,6 +54,7 @@ class ResetV5Migration extends Command
         $tablesToTruncate = [
             'photo_tags',
             'photo_tag_extra_tags',
+            'taggables',
             'metrics',              // Time-series metrics data
             'user_achievements',    // Achievement unlocks
         ];

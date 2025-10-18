@@ -19,7 +19,7 @@ class MigrationScript extends Command
         {--batch=500 : Number of photos to process per chunk}
         {--user= : Process only this user ID}
         {--discover=1000 : Number of photos to analyze for pivot discovery}
-        {--threshold=3 : Minimum co-occurrences to create pivot}
+        {--threshold=2 : Minimum co-occurrences to create pivot}
         {--skip-discovery : Skip the discovery phase}';
 
     protected $description = 'Smart migration that discovers brand-object relationships first';
@@ -76,7 +76,7 @@ class MigrationScript extends Command
         $this->newLine();
 
         $discover = (int) $this->option('discover');
-        $threshold = (int) $this->option('threshold');
+        $threshold = (int) $this->option('threshold') ?? 2;
 
         $exitCode = Artisan::call('olm:v5:discover-pivots', [
             '--limit' => $discover,
@@ -183,7 +183,6 @@ class MigrationScript extends Command
         $failedForUser = 0;
         $brandsAttachedForUser = 0;
         $brandsSkippedForUser = 0;
-        $startTime = microtime(true);
         $batchNumber = 0;
 
         Photo::where('user_id', $userId)
@@ -191,6 +190,7 @@ class MigrationScript extends Command
             ->orderBy('id')
             ->chunkById($this->option('batch'), function ($photos) use (
                 $userId,
+                $photoCount,
                 &$processedForUser,
                 &$failedForUser,
                 &$brandsAttachedForUser,
