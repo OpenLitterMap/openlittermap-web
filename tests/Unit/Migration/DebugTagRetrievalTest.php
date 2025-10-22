@@ -6,9 +6,6 @@ use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CategoryObject;
-use App\Models\Litter\Tags\LitterObject;
-use App\Models\Litter\Tags\Taggable;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Tags\UpdateTagsService;
@@ -22,7 +19,7 @@ class DebugTagRetrievalTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function debug_what_tags_are_retrieved_from_photo()
+    public function photo_tags_method_returns_brands_correctly()
     {
         $this->seed([
             GenerateTagsSeeder::class,
@@ -30,8 +27,6 @@ class DebugTagRetrievalTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-
-        // Create photo with old tags
         $photo = Photo::factory()->create(['user_id' => $user->id]);
 
         // Create old format tags
@@ -43,82 +38,103 @@ class DebugTagRetrievalTest extends TestCase
         $photo->save();
         $photo = $photo->refresh();
 
-        echo "\n=== PHOTO CREATED ===\n";
-        echo "Photo ID: {$photo->id}\n";
-        echo "SoftDrinks ID: {$photo->softdrinks_id}\n";
-        echo "Brands ID: {$photo->brands_id}\n";
-
-        // Check what the photo relationships return
-        echo "\n=== CHECKING RELATIONSHIPS ===\n";
-
-        if ($photo->softdrinks) {
-            echo "SoftDrinks relationship exists\n";
-            echo "  tinCan value: " . $photo->softdrinks->tinCan . "\n";
-        } else {
-            echo "SoftDrinks relationship is NULL!\n";
-        }
-
-        if ($photo->brands) {
-            echo "Brands relationship exists\n";
-            echo "  coke value: " . $photo->brands->coke . "\n";
-
-            // Check what Brand::types() returns
-            $brandTypes = Brand::types();
-            echo "  Brand::types() includes: " . implode(', ', array_slice($brandTypes, 0, 5)) . "...\n";
-
-            // Check if 'coke' is in the types
-            if (in_array('coke', $brandTypes)) {
-                echo "  ✓ 'coke' is in Brand::types()\n";
-            } else {
-                echo "  ✗ 'coke' is NOT in Brand::types()!\n";
-            }
-        } else {
-            echo "Brands relationship is NULL!\n";
-        }
-
-        // Now check what Photo::tags() returns
-        echo "\n=== CHECKING PHOTO::TAGS() OUTPUT ===\n";
+        // Test photo->tags() returns brands
         $tags = $photo->tags();
-        echo "Tags returned by photo->tags():\n";
-        echo json_encode($tags, JSON_PRETTY_PRINT) . "\n";
 
-        // Check if brands are in the tags
-        if (isset($tags['brands'])) {
-            echo "\n✓ 'brands' key exists in tags\n";
-            echo "Brands content: " . json_encode($tags['brands']) . "\n";
-        } else {
-            echo "\n✗ 'brands' key NOT FOUND in tags!\n";
-            echo "Available keys: " . implode(', ', array_keys($tags)) . "\n";
-        }
+        $this->assertNotEmpty($tags, "Tags should not be empty");
+        $this->assertArrayHasKey('brands', $tags, "Tags should have 'brands' key");
+        $this->assertArrayHasKey('coke', $tags['brands'], "Brands should have 'coke' key");
+        $this->assertEquals(1, $tags['brands']['coke'], "Coke quantity should be 1");
+    }
 
-        // Now test the service's getTags method
-        echo "\n=== TESTING SERVICE->GETTAGS() ===\n";
+    /** @test */
+    public function service_parses_brands_as_global_brands()
+    {
+        $this->seed([
+            GenerateTagsSeeder::class,
+            GenerateBrandsSeeder::class
+        ]);
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        // Create old format tags
+        $softdrinksRecord = SoftDrinks::create(['tinCan' => 1]);
+        $brandsRecord = Brand::create(['coke' => 1]);
+
+        $photo->softdrinks_id = $softdrinksRecord->id;
+        $photo->brands_id = $brandsRecord->id;
+        $photo->save();
+        $photo = $photo->refresh();
+
+        // Test service methods
         $service = app(UpdateTagsService::class);
         [$originalTags, $customTagsOld] = $service->getTags($photo);
 
-        echo "Original tags from service:\n";
-        echo json_encode($originalTags, JSON_PRETTY_PRINT) . "\n";
+        // Verify getTags returns brands
+        $this->assertArrayHasKey('brands', $originalTags, "Service should retrieve brands");
+        $this->assertEquals(['coke' => 1], $originalTags['brands'], "Should have coke brand");
 
-        // Test parseTags
-        echo "\n=== TESTING PARSETAGS ===\n";
+        // Test parseTags extracts brands to globalBrands
         $parsedTags = $service->parseTags($originalTags, $customTagsOld, $photo->id);
 
-        echo "Parsed tags structure:\n";
-        echo "  Groups count: " . count($parsedTags['groups']) . "\n";
-        echo "  Global brands count: " . count($parsedTags['globalBrands']) . "\n";
+        $this->assertArrayHasKey('globalBrands', $parsedTags, "Should have globalBrands key");
+        $this->assertCount(1, $parsedTags['globalBrands'], "Should have 1 global brand");
 
-        if (!empty($parsedTags['globalBrands'])) {
-            echo "  Global brands:\n";
-            foreach ($parsedTags['globalBrands'] as $brand) {
-                echo "    - {$brand['key']} (ID: {$brand['id']}, Qty: {$brand['quantity']})\n";
-            }
-        } else {
-            echo "  ✗ NO GLOBAL BRANDS PARSED!\n";
-        }
+        $brand = $parsedTags['globalBrands'][0];
+        $this->assertEquals('coke', $brand['key'], "Brand key should be 'coke'");
+        $this->assertEquals(1, $brand['quantity'], "Brand quantity should be 1");
+        $this->assertNotNull($brand['id'], "Brand should have an ID");
+    }
 
-        // This should help us see where the brands are getting lost
-        $this->assertNotEmpty($tags, "Tags should not be empty");
-        $this->assertArrayHasKey('brands', $tags, "Tags should have 'brands' key");
-        $this->assertNotEmpty($parsedTags['globalBrands'], "Global brands should be parsed");
+    /** @test */
+    public function brands_are_only_parsed_from_brands_category()
+    {
+        $this->seed([
+            GenerateTagsSeeder::class,
+            GenerateBrandsSeeder::class
+        ]);
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        // Create normal softdrinks and brands records
+        $softdrinksRecord = SoftDrinks::create([
+            'tinCan' => 1,
+            'waterBottle' => 2
+        ]);
+
+        $brandsRecord = Brand::create([
+            'coke' => 1,
+            'pepsi' => 1
+        ]);
+
+        $photo->softdrinks_id = $softdrinksRecord->id;
+        $photo->brands_id = $brandsRecord->id;
+        $photo->save();
+        $photo = $photo->refresh();
+
+        $service = app(UpdateTagsService::class);
+        [$originalTags, $customTagsOld] = $service->getTags($photo);
+
+        // parseTags should extract brands only from the brands category
+        $parsedTags = $service->parseTags($originalTags, $customTagsOld, $photo->id);
+
+        // Check that brands were extracted correctly
+        $this->assertCount(2, $parsedTags['globalBrands'], "Should have 2 global brands");
+
+        $brandKeys = array_column($parsedTags['globalBrands'], 'key');
+        $this->assertContains('coke', $brandKeys, "Should have coke brand");
+        $this->assertContains('pepsi', $brandKeys, "Should have pepsi brand");
+
+        // Check that softdrinks objects are parsed correctly
+        $this->assertCount(1, $parsedTags['groups'], "Should have 1 category group");
+        $softdrinksGroup = $parsedTags['groups'][0];
+        $this->assertEquals('softdrinks', $softdrinksGroup['categoryKey'], "Should be softdrinks category");
+        $this->assertCount(2, $softdrinksGroup['objects'], "Should have 2 objects");
+
+        $objectKeys = array_column($softdrinksGroup['objects'], 'key');
+        $this->assertContains('soda_can', $objectKeys, "Should have soda_can (mapped from tinCan)");
+        $this->assertContains('water_bottle', $objectKeys, "Should have water_bottle");
     }
 }

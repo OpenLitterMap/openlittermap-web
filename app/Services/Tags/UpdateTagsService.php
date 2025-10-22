@@ -14,20 +14,6 @@ class UpdateTagsService
     public ClassifyTagsService $classifyTags;
     public GeneratePhotoSummaryService $generatePhotoSummaryService;
 
-    /**
-     * Priority order for object selection when multiple matches exist
-     * Higher priority objects will be chosen first
-     */
-    private const OBJECT_PRIORITY = [
-        'soda_can' => 1,
-        'fizzy_bottle' => 2,  // Assuming you meant fizzy_bottle not fizzy_other
-        'energy_can' => 3,
-        'beer_can' => 4,
-        'beer_bottle' => 5,
-        'other' => 6,
-        'cup' => 7,  // coffee_cup maps to 'cup' object
-    ];
-
     public function __construct(
         ClassifyTagsService $classifyTags,
         GeneratePhotoSummaryService $generatePhotoSummaryService

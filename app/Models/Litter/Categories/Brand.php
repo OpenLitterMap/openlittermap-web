@@ -20,6 +20,7 @@ class Brand extends LitterCategory
 
     public static function types (): array
     {
+
         return [
             'aadrink',
             'acadia',

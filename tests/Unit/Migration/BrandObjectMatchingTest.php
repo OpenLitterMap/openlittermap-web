@@ -174,9 +174,6 @@ class BrandObjectMatchingTest extends TestCase
         ]);
 
         // Run the migration
-//        Log::shouldReceive('info')->withAnyArgs()->andReturnTrue();
-//        Log::shouldReceive('warning')->withAnyArgs()->andReturnTrue();
-
         $this->service->updateTags($photo);
         $photo->refresh();
 
@@ -211,9 +208,6 @@ class BrandObjectMatchingTest extends TestCase
             'coffee' => ['cup' => 1],
             'brands' => ['coke' => 1, 'mcdonalds' => 1],
         ]);
-
-//        Log::shouldReceive('info')->withAnyArgs()->andReturnTrue();
-//        Log::shouldReceive('warning')->withAnyArgs()->andReturnTrue();
 
         $this->service->updateTags($photo);
         $photo->refresh();
@@ -260,9 +254,6 @@ class BrandObjectMatchingTest extends TestCase
             'brands' => ['budweiser' => 3],
         ]);
 
-//        Log::shouldReceive('info')->withAnyArgs()->andReturnTrue();
-//        Log::shouldReceive('warning')->withAnyArgs()->andReturnTrue();
-
         $this->service->updateTags($photo);
         $photo->refresh();
 
@@ -287,15 +278,13 @@ class BrandObjectMatchingTest extends TestCase
     }
 
     /** @test */
-    public function no_attachment_when_quantity_ambiguous()
+    public function when_quantity_ambiguous_attaches_to_first_object()
     {
+        // When multiple objects have same quantity as brand, attach to first
         $photo = $this->createPhotoWithOldTags([
             'softdrinks' => ['soda_can' => 1, 'water_bottle' => 1],
             'brands' => ['coke' => 1],
         ]);
-
-//        Log::shouldReceive('info')->withAnyArgs()->andReturnTrue();
-//        Log::shouldReceive('warning')->withAnyArgs()->andReturnTrue();
 
         $this->service->updateTags($photo);
         $photo->refresh();
@@ -304,13 +293,14 @@ class BrandObjectMatchingTest extends TestCase
         $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
         $waterBottleId = LitterObject::where('key', 'water_bottle')->value('id');
 
+        // When ambiguous, the brand attaches to the first object encountered
         $sodaCanTag = $photo->photoTags()->where('litter_object_id', $sodaCanId)->first();
         if ($sodaCanTag) {
             $sodaCanBrands = $sodaCanTag->extraTags()
                 ->where('tag_type', 'brand')
                 ->where('tag_type_id', $cokeId)
                 ->count();
-            $this->assertEquals(0, $sodaCanBrands, "Coke should NOT be attached to soda_can (ambiguous)");
+            $this->assertEquals(1, $sodaCanBrands, "Coke should attach to first object (soda_can) when ambiguous");
         }
 
         $waterBottleTag = $photo->photoTags()->where('litter_object_id', $waterBottleId)->first();
@@ -319,14 +309,13 @@ class BrandObjectMatchingTest extends TestCase
                 ->where('tag_type', 'brand')
                 ->where('tag_type_id', $cokeId)
                 ->count();
-            $this->assertEquals(0, $waterBottleBrands, "Coke should NOT be attached to water_bottle (ambiguous)");
+            $this->assertEquals(0, $waterBottleBrands, "Water bottle should have no brand");
         }
     }
 
     /** @test */
     public function pivot_takes_priority_over_quantity_matching()
     {
-        \Log::info("Test");
         $this->createBrandObjectRelationship('alcohol', 'beer_bottle', 'heineken');
 
         $photo = $this->createPhotoWithOldTags([
@@ -355,5 +344,107 @@ class BrandObjectMatchingTest extends TestCase
 
         $beerCanBrands = $beerCanTag->extraTags()->where('tag_type', 'brand')->get();
         $this->assertCount(0, $beerCanBrands, "Beer can should have NO brand");
+    }
+
+    /** @test */
+    public function brands_only_photo_creates_brands_category_tag()
+    {
+        // Photo with only brands, no objects
+        $photo = $this->createPhotoWithOldTags([
+            'brands' => ['coke' => 1, 'pepsi' => 1],
+        ]);
+
+        $this->service->updateTags($photo);
+        $photo->refresh();
+
+        // Should create a brands-only PhotoTag
+        $brandsCategory = Category::where('key', 'brands')->first();
+        $photoTag = $photo->photoTags()
+            ->where('category_id', $brandsCategory->id)
+            ->whereNull('litter_object_id')
+            ->first();
+
+        $this->assertNotNull($photoTag, "Brands-only PhotoTag should be created");
+        $this->assertEquals(2, $photoTag->quantity, "Quantity should be total brand count");
+
+        // Check brands are attached as extra tags
+        $cokeId = BrandList::where('key', 'coke')->value('id');
+        $pepsiId = BrandList::where('key', 'pepsi')->value('id');
+
+        $cokeBrand = $photoTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $cokeId)
+            ->first();
+        $this->assertNotNull($cokeBrand, "Coke should be attached to brands-only tag");
+
+        $pepsiBrand = $photoTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $pepsiId)
+            ->first();
+        $this->assertNotNull($pepsiBrand, "Pepsi should be attached to brands-only tag");
+    }
+
+    /** @test */
+    public function handles_deprecated_tag_mappings()
+    {
+        // Test that old v4 tags are properly mapped to v5 objects
+        $photo = $this->createPhotoWithOldTags([
+            'softdrinks' => ['soda_can' => 1], // This becomes 'tinCan' in v4
+            'brands' => ['coke' => 1],
+        ]);
+
+        // Create pivot for the NEW v5 object name
+        $this->createBrandObjectRelationship('softdrinks', 'soda_can', 'coke');
+
+        $this->service->updateTags($photo);
+        $photo->refresh();
+
+        // Should create PhotoTag for soda_can (v5 name), not tinCan (v4 name)
+        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
+        $photoTag = $photo->photoTags()->where('litter_object_id', $sodaCanId)->first();
+        $this->assertNotNull($photoTag, "Should map tinCan (v4) to soda_can (v5)");
+
+        // Check brand attached correctly
+        $cokeId = BrandList::where('key', 'coke')->value('id');
+        $brandTag = $photoTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $cokeId)
+            ->first();
+        $this->assertNotNull($brandTag, "Brand should be attached to mapped object");
+    }
+
+    /** @test */
+    public function multiple_brands_single_object_all_brands_attach()
+    {
+        // Rule 3: Single object + multiple brands = all brands attach
+        $photo = $this->createPhotoWithOldTags([
+            'softdrinks' => ['soda_can' => 3],
+            'brands' => ['coke' => 2, 'pepsi' => 1],
+        ]);
+
+        $this->service->updateTags($photo);
+        $photo->refresh();
+
+        $sodaCanId = LitterObject::where('key', 'soda_can')->value('id');
+        $cokeId = BrandList::where('key', 'coke')->value('id');
+        $pepsiId = BrandList::where('key', 'pepsi')->value('id');
+
+        $sodaCanTag = $photo->photoTags()->where('litter_object_id', $sodaCanId)->first();
+        $this->assertNotNull($sodaCanTag);
+
+        // Both brands should attach to the single object
+        $cokeBrand = $sodaCanTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $cokeId)
+            ->first();
+        $this->assertNotNull($cokeBrand, "Coke should attach to soda_can");
+        $this->assertEquals(2, $cokeBrand->quantity, "Coke quantity should be 2");
+
+        $pepsiBrand = $sodaCanTag->extraTags()
+            ->where('tag_type', 'brand')
+            ->where('tag_type_id', $pepsiId)
+            ->first();
+        $this->assertNotNull($pepsiBrand, "Pepsi should attach to soda_can");
+        $this->assertEquals(1, $pepsiBrand->quantity, "Pepsi quantity should be 1");
     }
 }

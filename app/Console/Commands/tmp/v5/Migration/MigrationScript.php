@@ -16,11 +16,9 @@ use Illuminate\Support\Facades\{Artisan, DB, Log};
 class MigrationScript extends Command
 {
     protected $signature = 'olm:v5
-        {--batch=500 : Number of photos to process per chunk}
-        {--user= : Process only this user ID}
-        {--discover=1000 : Number of photos to analyze for pivot discovery}
-        {--threshold=2 : Minimum co-occurrences to create pivot}
-        {--skip-discovery : Skip the discovery phase}';
+        {--user= : Specific user ID to migrate}
+        {--batch=500 : Number of photos per batch}
+        {--skip-pivots : Skip brand pivot discovery phase}';
 
     protected $description = 'Smart migration that discovers brand-object relationships first';
 
@@ -52,8 +50,10 @@ class MigrationScript extends Command
         DB::disableQueryLog();
 
         // Step 1: Discover and create brand-object pivots (unless skipped)
-        if (!$this->option('skip-discovery')) {
+        if (!$this->option('skip-pivots')) {
             $this->discoverAndCreatePivots();
+        } else {
+            $this->info("Skipping pivot discovery (--skip-pivots flag used)");
         }
 
         // Step 2: Run migration with improved brand handling
@@ -75,19 +75,31 @@ class MigrationScript extends Command
         $this->info("═══════════════════════════════════════");
         $this->newLine();
 
-        $discover = (int) $this->option('discover');
-        $threshold = (int) $this->option('threshold') ?? 2;
+        // Count photos with brands
+        $photosWithBrands = DB::table('photos')->whereNotNull('brands_id')->count();
+        $this->info("Found {$photosWithBrands} photos with brands to analyze");
 
-        $exitCode = Artisan::call('olm:v5:discover-pivots', [
-            '--limit' => $discover,
-            '--threshold' => $threshold,
-            '--dry-run' => false
+        // Run the comprehensive brand pivot discovery
+        $exitCode = Artisan::call('olm:v5:process-all-brands', [
+            '--batch' => 5000  // Process in batches for memory efficiency
         ]);
+
+        // Get the output
+        $output = Artisan::output();
+        if (!empty($output)) {
+            $this->line($output);
+        }
 
         if ($exitCode !== 0) {
             $this->warn("Pivot discovery encountered issues but continuing...");
         }
 
+        // Report final pivot count
+        $pivotCount = DB::table('taggables')
+            ->where('taggable_type', 'App\\Models\\Litter\\Tags\\BrandList')
+            ->count();
+
+        $this->info("✓ Created {$pivotCount} brand-object pivot relationships");
         $this->newLine(2);
     }
 
