@@ -113,7 +113,19 @@ class GenerateBrandMatchesForReview extends Command
                 if (in_array($category, ['dogshit', 'pathways', 'art', 'brands'])) continue;
 
                 foreach ($objects as $object => $qty) {
-                    $key = "{$category}|{$object}";
+                    // Use ClassifyTagsService to get normalized key
+                    $mappedObject = $object;
+                    if (class_exists(\App\Services\ClassifyTagsService::class)) {
+                        $classifyService = app(\App\Services\ClassifyTagsService::class);
+                        $normalized = $classifyService->getKey($category, $object);
+                        // ONLY use normalized if it's NOT null
+                        if ($normalized !== null) {
+                            $mappedObject = $normalized;
+                        }
+                        // If null, keep using original $object
+                    }
+
+                    $key = "{$category}|{$mappedObject}";
 
                     // Overall stats
                     if (!isset($objectStats[$key])) {
@@ -121,7 +133,7 @@ class GenerateBrandMatchesForReview extends Command
                             'count' => 0,
                             'total_quantity' => 0,
                             'category' => $category,
-                            'object' => $object,
+                            'object' => $mappedObject,  // Use mapped object (or original if no mapping)
                         ];
                     }
                     $objectStats[$key]['count']++;
@@ -134,7 +146,7 @@ class GenerateBrandMatchesForReview extends Command
                         }
                         $singleBrandStats[$key]['count']++;
                         $singleBrandStats[$key]['quantity'] += $qty;
-                        if ($brandCount == 1 && !in_array($photoId, [0])) { // Avoid counting same photo multiple times
+                        if ($brandCount == 1 && !in_array($photoId, [0])) {
                             $singleBrandPhotos = max($singleBrandPhotos, $singleBrandStats[$key]['count']);
                         }
                     }
@@ -398,6 +410,19 @@ class GenerateBrandMatchesForReview extends Command
 
     private function createRelationship(string $brandKey, string $categoryKey, string $objectKey): bool
     {
+        // Use ClassifyTagsService to get normalized key
+        $originalObjectKey = $objectKey;
+        if (class_exists(\App\Services\ClassifyTagsService::class)) {
+            $classifyService = app(\App\Services\ClassifyTagsService::class);
+            $normalizedKey = $classifyService->getKey($categoryKey, $objectKey);
+            // ONLY use normalized if it's NOT null
+            if ($normalizedKey !== null) {
+                $this->line("  Mapping {$objectKey} → {$normalizedKey}");
+                $objectKey = $normalizedKey;
+            }
+            // If null, keep using original $objectKey
+        }
+
         // Get/create brand
         $brandId = DB::table('brandslist')->where('key', $brandKey)->value('id');
         if (!$brandId) {
@@ -408,12 +433,37 @@ class GenerateBrandMatchesForReview extends Command
             ]);
         }
 
-        // Get category and object IDs
+        // Get category ID
         $categoryId = DB::table('categories')->where('key', $categoryKey)->value('id');
+        if (!$categoryId) {
+            $this->warn("Category not found: {$categoryKey}");
+            return false;
+        }
+
+        // Get object ID
         $objectId = DB::table('litter_objects')->where('key', $objectKey)->value('id');
 
-        if (!$categoryId || !$objectId) {
-            $this->warn("Category or object not found: {$categoryKey}.{$objectKey}");
+        if (!$objectId) {
+            // Try with camelCase to snake_case conversion as fallback
+            $snakeCase = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $objectKey));
+            $objectId = DB::table('litter_objects')->where('key', $snakeCase)->value('id');
+            if ($objectId) {
+                $this->line("  Found object using snake_case: {$snakeCase}");
+            }
+        }
+
+        if (!$objectId) {
+            // Also try the original key if we had mapped it
+            if ($originalObjectKey !== $objectKey) {
+                $objectId = DB::table('litter_objects')->where('key', $originalObjectKey)->value('id');
+                if ($objectId) {
+                    $this->line("  Found object using original key: {$originalObjectKey}");
+                }
+            }
+        }
+
+        if (!$objectId) {
+            $this->warn("Object not found: {$categoryKey}.{$objectKey} (original: {$originalObjectKey})");
             return false;
         }
 
@@ -454,5 +504,15 @@ class GenerateBrandMatchesForReview extends Command
         }
 
         return false;
+    }
+
+    private function camelToSnake(string $input): string
+    {
+        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $input));
+    }
+
+    private function snakeToCamel(string $input): string
+    {
+        return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $input))));
     }
 }

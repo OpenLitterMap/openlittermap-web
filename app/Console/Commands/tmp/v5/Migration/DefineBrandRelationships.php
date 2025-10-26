@@ -10,14 +10,16 @@ use Illuminate\Support\Facades\File;
 class DefineBrandRelationships extends Command
 {
     protected $signature = 'olm:v5:define-relationships
-                            {--top=500 : Number of top brands to analyze}
+                            {--all : Analyze ALL brands, not just top N}
+                            {--top=500 : Number of top brands if not using --all}
                             {--export : Export to JSON for review}
                             {--import= : Import reviewed JSON}
                             {--clear : Clear existing relationships first}';
 
-    protected $description = 'Define EXACT brand-object relationships (no ambiguity)';
+    protected $description = 'Define EXACT brand-object relationships with proper tag validation';
 
     private array $relationships = [];
+    private array $validObjectsByCategory = [];
     private array $stats = [
         'guaranteed_1to1' => 0,
         'consistent_patterns' => 0,
@@ -26,6 +28,9 @@ class DefineBrandRelationships extends Command
 
     public function handle()
     {
+        // Load valid objects from database
+        $this->loadValidObjects();
+
         if ($importFile = $this->option('import')) {
             $this->importRelationships($importFile);
             return;
@@ -35,22 +40,27 @@ class DefineBrandRelationships extends Command
             $this->clearExistingRelationships();
         }
 
-        $this->info('Finding DEFINITIVE Brand-Object Relationships');
-        $this->info('=============================================');
+        $this->info('Finding DEFINITIVE Brand-Object Relationships (with validation)');
+        $this->info('===============================================================');
 
-        // Step 1: Get top brands
-        $topBrands = $this->getTopBrands($this->option('top'));
-        $this->info("Analyzing top {$this->option('top')} brands\n");
+        // Get brands to analyze
+        if ($this->option('all')) {
+            $topBrands = $this->getAllBrands();
+            $this->info("Analyzing ALL " . count($topBrands) . " brands\n");
+        } else {
+            $topBrands = $this->getTopBrands($this->option('top'));
+            $this->info("Analyzing top {$this->option('top')} brands\n");
+        }
 
-        // Step 2: Find guaranteed 1:1 relationships
+        // Phase 1: Find guaranteed 1:1 relationships
         $this->info("Phase 1: Finding guaranteed 1:1 relationships...");
         $this->findGuaranteedRelationships($topBrands);
 
-        // Step 3: Find consistent patterns
+        // Phase 2: Find consistent patterns
         $this->info("\nPhase 2: Finding consistent patterns...");
         $this->findConsistentPatterns($topBrands);
 
-        // Step 4: Export or save
+        // Display results
         $this->info("\n" . str_repeat("=", 50));
         $this->displayStatistics();
 
@@ -61,32 +71,100 @@ class DefineBrandRelationships extends Command
         }
     }
 
-    private function getTopBrands(int $limit): array
+    private function loadValidObjects(): void
     {
-        // Get brands from custom tags
+        $this->info("Loading valid objects from database...");
+
+        $objects = DB::table('litter_objects')
+            ->join('category_litter_object', 'litter_objects.id', '=', 'category_litter_object.litter_object_id')
+            ->join('categories', 'category_litter_object.category_id', '=', 'categories.id')
+            ->select('categories.key as category', 'litter_objects.key as object')
+            ->get();
+
+        foreach ($objects as $obj) {
+            if (!isset($this->validObjectsByCategory[$obj->category])) {
+                $this->validObjectsByCategory[$obj->category] = [];
+            }
+            $this->validObjectsByCategory[$obj->category][] = $obj->object;
+        }
+
+        $this->info("Loaded " . count($objects) . " valid objects across " . count($this->validObjectsByCategory) . " categories\n");
+    }
+
+    private function isValidObject(string $category, string $object): bool
+    {
+        return isset($this->validObjectsByCategory[$category])
+            && in_array($object, $this->validObjectsByCategory[$category]);
+    }
+
+    private function normalizeObjectKey(string $category, string $object): ?string
+    {
+        // First check if it's already valid in the database
+        if ($this->isValidObject($category, $object)) {
+            return $object;
+        }
+
+        // Check ClassifyTagsService for deprecated tag mapping
+        if (class_exists(\App\Services\ClassifyTagsService::class)) {
+            $classifyService = app(\App\Services\ClassifyTagsService::class);
+
+            // Use normalizeDeprecatedTag to get the mapping
+            $normalized = $classifyService->normalizeDeprecatedTag($object);
+            if ($normalized !== null && isset($normalized['object'])) {
+                $mappedObject = $normalized['object'];
+                if ($this->isValidObject($category, $mappedObject)) {
+                    return $mappedObject;
+                }
+            }
+
+            // Also try getKey method
+            $mappedKey = $classifyService->getKey($category, $object);
+            if ($mappedKey !== null && $this->isValidObject($category, $mappedKey)) {
+                return $mappedKey;
+            }
+        }
+
+        // No mapping found - the object doesn't exist in the new system
+        return null;
+    }
+
+    private function getAllBrands(): array
+    {
+        // Get ALL brands from custom tags and brands table
+        $brands = [];
+
+        // From custom tags
         $customBrands = DB::table('custom_tags')
             ->selectRaw("LOWER(REPLACE(REPLACE(SUBSTRING(tag, 7), ' ', '_'), '-', '_')) as brand, COUNT(*) as count")
             ->where('tag', 'like', 'brand:%')
             ->groupBy('brand')
             ->orderByDesc('count')
-            ->limit($limit)
             ->pluck('count', 'brand')
             ->toArray();
 
-        // Add brands from brands table
+        foreach ($customBrands as $brand => $count) {
+            $brands[$brand] = $count;
+        }
+
+        // From brands table columns
         $columns = DB::getSchemaBuilder()->getColumnListing('brands');
         foreach ($columns as $column) {
             if (in_array($column, ['id', 'created_at', 'updated_at'])) continue;
 
             $count = DB::table('brands')->where($column, '>', 0)->count();
-            if ($count > 0 && !isset($customBrands[$column])) {
-                $customBrands[$column] = $count;
+            if ($count > 0 && !isset($brands[$column])) {
+                $brands[$column] = $count;
             }
         }
 
-        // Sort and limit
-        arsort($customBrands);
-        return array_slice($customBrands, 0, $limit, true);
+        arsort($brands);
+        return $brands;
+    }
+
+    private function getTopBrands(int $limit): array
+    {
+        $allBrands = $this->getAllBrands();
+        return array_slice($allBrands, 0, $limit, true);
     }
 
     private function findGuaranteedRelationships(array $brands): void
@@ -94,32 +172,35 @@ class DefineBrandRelationships extends Command
         $bar = $this->output->createProgressBar(count($brands));
 
         foreach ($brands as $brandKey => $count) {
-            // Find photos with ONLY this brand and ONLY one object type
             $photos = $this->findSimplePhotos($brandKey);
 
             foreach ($photos as $photo) {
                 $tags = $photo->tags();
                 unset($tags['brands']);
 
-                // Count total objects across all categories
+                // Count total valid objects across all categories
                 $totalObjects = 0;
                 $singleObject = null;
 
                 foreach ($tags as $category => $objects) {
                     if (in_array($category, ['dogshit', 'pathways', 'art'])) continue;
 
-                    $objectCount = count($objects);
-                    $totalObjects += $objectCount;
+                    foreach ($objects as $object => $qty) {
+                        // Normalize and validate the object
+                        $normalizedObject = $this->normalizeObjectKey($category, $object);
+                        if ($normalizedObject === null) continue; // Skip invalid objects
 
-                    if ($objectCount == 1) {
-                        $singleObject = [
-                            'category' => $category,
-                            'object' => array_key_first($objects),
-                        ];
+                        $totalObjects++;
+                        if ($totalObjects == 1) {
+                            $singleObject = [
+                                'category' => $category,
+                                'object' => $normalizedObject,  // Use normalized key
+                            ];
+                        }
                     }
                 }
 
-                // GUARANTEED: 1 brand, 1 object type = definite relationship
+                // GUARANTEED: 1 brand, 1 valid object = definite relationship
                 if ($totalObjects == 1 && $singleObject) {
                     $this->addRelationship(
                         $brandKey,
@@ -149,12 +230,11 @@ class DefineBrandRelationships extends Command
                 continue;
             }
 
-            // Analyze all photos with this brand
             $analysis = $this->analyzeBrandPattern($brandKey);
 
             if (!empty($analysis)) {
                 foreach ($analysis as $pattern) {
-                    // CONSISTENT: Brand ALWAYS appears with same object (>90% of time)
+                    // CONSISTENT: Brand appears with same valid object >90% of time
                     if ($pattern['consistency'] > 0.9 && $pattern['occurrences'] >= 10) {
                         $this->addRelationship(
                             $brandKey,
@@ -202,21 +282,16 @@ class DefineBrandRelationships extends Command
 
         // Filter to photos with only ONE brand
         $simplePhotos = [];
-        foreach ($photoIds->take(100) as $photoId) { // Sample 100 photos
+        foreach ($photoIds->take(100) as $photoId) {
             $photo = Photo::find($photoId);
             if (!$photo) continue;
 
             // Count brands in photo
-            $brandCount = 0;
-
-            // Count from custom tags
-            $customBrandCount = DB::table('custom_tags')
+            $brandCount = DB::table('custom_tags')
                 ->where('photo_id', $photoId)
                 ->where('tag', 'like', 'brand:%')
                 ->count();
-            $brandCount += $customBrandCount;
 
-            // Count from brands table
             if ($photo->brands_id) {
                 $brandRecord = DB::table('brands')->where('id', $photo->brands_id)->first();
                 if ($brandRecord) {
@@ -239,10 +314,10 @@ class DefineBrandRelationships extends Command
 
     private function analyzeBrandPattern(string $brandKey): array
     {
-        $photoIds = $this->getAllPhotosWithBrand($brandKey, 200); // Sample 200
+        $photoIds = $this->getAllPhotosWithBrand($brandKey, 200);
 
         if (count($photoIds) < 10) {
-            return []; // Not enough data
+            return [];
         }
 
         $patterns = [];
@@ -258,7 +333,11 @@ class DefineBrandRelationships extends Command
                 if (in_array($category, ['dogshit', 'pathways', 'art'])) continue;
 
                 foreach ($objects as $object => $qty) {
-                    $key = "{$category}|{$object}";
+                    // Normalize and validate
+                    $normalizedObject = $this->normalizeObjectKey($category, $object);
+                    if ($normalizedObject === null) continue;
+
+                    $key = "{$category}|{$normalizedObject}";
                     $patterns[$key] = ($patterns[$key] ?? 0) + 1;
                 }
             }
@@ -314,11 +393,6 @@ class DefineBrandRelationships extends Command
 
     private function addRelationship(string $brand, string $category, string $object, string $type): void
     {
-        // Apply semantic validation
-        if (!$this->isSemanticallySensible($brand, $category, $object)) {
-            return;
-        }
-
         if (!isset($this->relationships[$brand])) {
             $this->relationships[$brand] = [
                 'category' => $category,
@@ -326,28 +400,6 @@ class DefineBrandRelationships extends Command
                 'type' => $type,
             ];
         }
-    }
-
-    private function isSemanticallySensible(string $brand, string $category, string $object): bool
-    {
-        $brandLower = strtolower($brand);
-
-        // Soft drinks can't be in alcohol/smoking
-        if (preg_match('/(cola|coke|pepsi|sprite|fanta|water|juice)/', $brandLower)) {
-            return !in_array($category, ['alcohol', 'smoking']);
-        }
-
-        // Cigarettes can't be in food/softdrinks
-        if (preg_match('/(marlboro|camel|winston|kent|pallmall)/', $brandLower)) {
-            return $category === 'smoking';
-        }
-
-        // Beer can't be in softdrinks
-        if (preg_match('/(beer|brew|guinness|heineken|budweiser)/', $brandLower)) {
-            return $category === 'alcohol';
-        }
-
-        return true;
     }
 
     private function displayStatistics(): void
@@ -376,7 +428,7 @@ class DefineBrandRelationships extends Command
             ];
         }
 
-        $filename = storage_path('app/brand_relationships_definitive.json');
+        $filename = storage_path('app/brand_relationships_validated.json');
         File::put($filename, json_encode($export, JSON_PRETTY_PRINT));
 
         $this->info("\n✅ Exported to: {$filename}");
@@ -399,6 +451,12 @@ class DefineBrandRelationships extends Command
 
     private function createRelationship(string $brandKey, string $categoryKey, string $objectKey): bool
     {
+        // Validate that the object exists
+        if (!$this->isValidObject($categoryKey, $objectKey)) {
+            $this->warn("Invalid object: {$categoryKey}.{$objectKey}");
+            return false;
+        }
+
         // Get/create brand
         $brandId = DB::table('brandslist')->where('key', $brandKey)->value('id');
         if (!$brandId) {
