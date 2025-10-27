@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
 /**
+ * @deprecated
  * Unifies brands from two sources:
  * 1. Brand::types() - official brands in brands table
  * 2. CustomTags with "brand:" or "brand=" prefix

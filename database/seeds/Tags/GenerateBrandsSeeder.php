@@ -14,11 +14,10 @@ class GenerateBrandsSeeder extends Seeder
         // Insert previously hard-coded
         $brands = Brand::types();
 
-        // commented out for testing
         foreach ($brands as $brand) {
             BrandList::firstOrCreate([
                 'key' => $brand,
-                // 'is_custom' => false
+//                'is_custom' => false, // comment out for testing
             ]);
         }
 

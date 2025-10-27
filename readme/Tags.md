@@ -133,6 +133,33 @@ XP = 5 (upload)
    = 30 XP
 ```
 
+## Brand-Object Relationships
+
+Before migration, brand-object relationships must be established:
+
+### Discovery Process
+```bash
+# Step 1: Discover 1-to-1 relationships
+php artisan olm:define-brand-relationships
+
+# Step 2: Create relationships for remaining brands (≥10% threshold)
+php artisan olm:auto-create-brand-relationships --apply
+```
+
+### How Brands Attach During Migration
+1. **Pivot lookup**: Check taggables table for existing relationships
+2. **Quantity matching**: Match brands to objects with same quantity
+3. **Fallback**: Unmatched brands create brands-only PhotoTag
+
+### Database Structure
+```
+taggables
+├── category_litter_object_id  // Links to pivot table
+├── taggable_type              // 'App\Models\Litter\Tags\BrandList'
+├── taggable_id                // Brand ID from brandslist
+└── quantity                   // Occurrence count
+```
+
 ## Tag Migration from v4 to v5
 
 ### Old Format (v4)
@@ -203,6 +230,8 @@ Old tags are automatically mapped to new equivalents:
 | `plasticFoodPackaging` | `packaging`    | `[plastic]`     |
 | `waterBottle`          | `water_bottle` | `[plastic]`     |
 
+**Note**: Materials are automatically added based on the deprecated tag mappings. For example, `beerBottle` automatically adds `glass` material to the object.
+
 ### 4. Unknown Tags
 Unknown tags are automatically created as new objects:
 
@@ -213,6 +242,16 @@ $created = LitterObject::firstOrCreate(
     ['crowdsourced' => true]
 );
 ```
+
+### 5. Multiple Brands per Object
+A single object can have multiple brands attached:
+- Example: `butts` object with both `marlboro` and `camel` brands
+- Stored in `photo_tag_extra_tags` with `tag_type='brand'`
+
+### 6. Multiple Objects per Brand
+Brands can validly attach to multiple objects:
+- Example: `mcdonalds` → `cup`, `packaging`, `lid`, `wrapper`
+- Relationships defined in `taggables` table
 
 ## Time-Series Metrics
 
@@ -312,6 +351,16 @@ Redis stores aggregated metrics for fast access:
 
 ## Migration Command
 
+### Prerequisites
+```bash
+# 1. Reset if starting fresh
+php artisan olm:v5:reset --force
+
+# 2. Define brand-object relationships
+php artisan olm:define-brand-relationships
+php artisan olm:auto-create-brand-relationships --apply
+```
+
 ```bash
 # Migrate all photos
 php artisan olm:v5
@@ -322,6 +371,13 @@ php artisan olm:v5 --user=123
 # Custom batch size
 php artisan olm:v5 --batch=1000
 ```
+
+## System Statistics (Production Data)
+
+- **Total brands**: 2,686 in brandslist
+- **Photos with brands**: 91,869
+- **Brand-object relationships**: ~2,600+
+- **Success rate**: >95% of photos successfully matched
 
 ## Troubleshooting
 
