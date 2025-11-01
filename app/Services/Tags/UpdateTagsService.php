@@ -69,10 +69,31 @@ class UpdateTagsService
                     if ($qty <= 0) {
                         continue;
                     }
-                    $parsed = $this->classifyTags->classify($tag);
-                    $parsed['quantity'] = $qty;
-                    if ($parsed['type'] === 'brand') {
-                        $globalBrands[] = $parsed;
+
+                    // Try to get brand ID from brandslist table
+                    $brandId = DB::table('brandslist')
+                        ->where('key', $tag)
+                        ->value('id');
+
+                    if ($brandId) {
+                        $globalBrands[] = [
+                            'id' => $brandId,
+                            'key' => $tag,
+                            'type' => 'brand',
+                            'quantity' => $qty
+                        ];
+                    } else {
+                        Log::warning("Brand not found in brandslist", [
+                            'brand_key' => $tag,
+                            'photo_id' => $photoId
+                        ]);
+                        // Still add it but without ID (will become brands-only tag)
+                        $globalBrands[] = [
+                            'id' => null,
+                            'key' => $tag,
+                            'type' => 'brand',
+                            'quantity' => $qty
+                        ];
                     }
                 }
                 continue;
@@ -115,22 +136,96 @@ class UpdateTagsService
                     }
                     $groups[$categoryKey]['objects'][] = $parsed;
                 } elseif ($parsed['type'] === 'custom_tag') {
+                    // Ensure custom tag exists in custom_tags_new table
+                    $customTagId = DB::table('custom_tags_new')
+                        ->where('key', $tag)
+                        ->value('id');
+
+                    if (!$customTagId) {
+                        // Create the custom tag in the correct table
+                        $customTagId = DB::table('custom_tags_new')->insertGetId([
+                            'key' => $tag,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+
+                        Log::info("Created custom tag in custom_tags_new", [
+                            'key' => $tag,
+                            'id' => $customTagId
+                        ]);
+                    }
+
+                    $parsed['id'] = $customTagId;
                     $topLevelCustomTags[] = $parsed;
                 } else {
-                    Log::warning("Unhandled parsed type: {$parsed['type']} for tag: {$tag}");
+                    // Unknown type - treat as custom tag
+                    $customTagId = DB::table('custom_tags_new')
+                        ->where('key', $tag)
+                        ->value('id');
+
+                    if (!$customTagId) {
+                        $customTagId = DB::table('custom_tags_new')->insertGetId([
+                            'key' => $tag,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+
+                        Log::info("Created unknown tag as custom tag in custom_tags_new", [
+                            'key' => $tag,
+                            'id' => $customTagId
+                        ]);
+                    }
+
+                    $topLevelCustomTags[] = [
+                        'id' => $customTagId,
+                        'key' => $tag,
+                        'type' => 'custom_tag',
+                        'quantity' => $qty
+                    ];
                 }
             }
         }
 
         // 2) Custom tags
         foreach ($customTagsOld as $ct) {
-            $parsed = $this->classifyTags->classify($ct->tag);
-            if ($parsed['type'] === 'brand') {
-                $parsed['quantity'] = 1;
-                $globalBrands[] = $parsed;
+            // Check if this custom tag is actually a brand
+            $brandId = DB::table('brandslist')
+                ->where('key', $ct->tag)
+                ->value('id');
+
+            if ($brandId) {
+                $globalBrands[] = [
+                    'id' => $brandId,
+                    'key' => $ct->tag,
+                    'type' => 'brand',
+                    'quantity' => 1
+                ];
             } else {
-                $parsed['quantity'] = 1;
-                $topLevelCustomTags[] = $parsed;
+                // It's a real custom tag - ensure it exists in custom_tags_new
+                $customTagId = DB::table('custom_tags_new')
+                    ->where('key', $ct->tag)
+                    ->value('id');
+
+                if (!$customTagId) {
+                    // Create the custom tag in the correct table
+                    $customTagId = DB::table('custom_tags_new')->insertGetId([
+                        'key' => $ct->tag,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+
+                    Log::info("Migrated custom tag to custom_tags_new", [
+                        'key' => $ct->tag,
+                        'id' => $customTagId
+                    ]);
+                }
+
+                $topLevelCustomTags[] = [
+                    'id' => $customTagId,
+                    'key' => $ct->tag,
+                    'type' => 'custom_tag',
+                    'quantity' => 1
+                ];
             }
         }
 
@@ -157,7 +252,6 @@ class UpdateTagsService
 
             if (!empty($objects)) {
                 $hasObjects = true;
-                $materialCache = $this->classifyTags->getMaterialCache();
 
                 foreach ($objects as $object) {
                     $photoTag = PhotoTag::create([
@@ -178,9 +272,11 @@ class UpdateTagsService
                     if (!empty($object['materials'])) {
                         $materialsToAttach = [];
                         foreach ($object['materials'] as $materialKey) {
-                            if (isset($materialCache[$materialKey])) {
+                            // Get material ID using TagKeyCache
+                            $materialId = \App\Services\Achievements\Tags\TagKeyCache::idFor('material', $materialKey);
+                            if ($materialId) {
                                 $materialsToAttach[] = [
-                                    'id'       => $materialCache[$materialKey],
+                                    'id'       => $materialId,
                                     'key'      => $materialKey,
                                     'quantity' => $object['quantity']
                                 ];
@@ -227,17 +323,38 @@ class UpdateTagsService
         $attachedBrandIds = [];
         $unmatchedBrands = [];
 
+        // Pretty print photo summary
+        $this->logPhotoSummary($photo, $brands, $createdPhotoTags);
+
         foreach ($brands as $brand) {
-            $brandId = $brand['id'];
+            $brandId = $brand['id'] ?? null;
             $brandKey = $brand['key'] ?? 'unknown';
             $matched = false;
+
+            if (!$brandId) {
+                Log::warning("Brand has no ID", [
+                    'photo_id' => $photo->id,
+                    'brand_key' => $brandKey
+                ]);
+                $unmatchedBrands[] = $brand;
+                continue;
+            }
 
             // Skip if already attached
             if (in_array($brandId, $attachedBrandIds, true)) {
                 continue;
             }
 
+            // Log what we're searching for
+            Log::info("════════════════════════════════");
+            Log::info("🔍 SEARCHING FOR BRAND: {$brandKey} (ID: {$brandId})");
+
+            // Get ALL possible pivots for this brand
+            $this->logAllBrandPivots($brandKey, $brandId);
+
             // Check each created PhotoTag for a pivot relationship
+            $possibleMatches = [];
+
             foreach ($createdPhotoTags as $tagData) {
                 $objectId = $tagData['object']['id'];
                 $objectKey = $tagData['object']['key'] ?? 'unknown';
@@ -254,6 +371,7 @@ class UpdateTagsService
                     ->first();
 
                 if (!$categoryObject) {
+                    Log::debug("  ❌ No category_object for {$objectKey}");
                     continue;
                 }
 
@@ -265,33 +383,117 @@ class UpdateTagsService
                     ->exists();
 
                 if ($hasPivot) {
-                    Log::info("✓ Brand attached via existing pivot", [
-                        'photo_id' => $photo->id,
-                        'brand' => $brandKey,
-                        'object' => $objectKey
-                    ]);
+                    $possibleMatches[] = [
+                        'object' => $objectKey,
+                        'object_id' => $objectId,
+                        'category_object_id' => $categoryObject->id,
+                        'tag_data' => $tagData
+                    ];
 
-                    $tagData['photo_tag']->attachExtraTags([$brand], 'brand', 0);
-                    $attachedBrandIds[] = $brandId;
-                    $matched = true;
-                    break; // Move to next brand
+                    Log::info("  ✅ Found pivot: {$brandKey} → {$objectKey} (category_object_id: {$categoryObject->id})");
+                } else {
+                    Log::debug("  ❌ No pivot: {$brandKey} → {$objectKey}");
                 }
             }
 
-            // If no pivot match found, collect for brands-only tag
-            if (!$matched) {
-                Log::info("✗ No pivot relationship found for brand", [
-                    'photo_id' => $photo->id,
-                    'brand' => $brandKey
-                ]);
+            // Decision logic
+            if (count($possibleMatches) === 1) {
+                // Only one match, use it
+                $match = $possibleMatches[0];
+                Log::info("📌 ATTACHING: {$brandKey} → {$match['object']} (only match)");
 
+                $match['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
+                $attachedBrandIds[] = $brandId;
+                $matched = true;
+
+            } elseif (count($possibleMatches) > 1) {
+                // Multiple matches - log them all and choose
+                Log::warning("⚠️  MULTIPLE PIVOTS FOUND for {$brandKey}:");
+                foreach ($possibleMatches as $pm) {
+                    Log::warning("    - {$pm['object']} (category_object_id: {$pm['category_object_id']})");
+                }
+
+                // Choose the first one (you could add smarter logic here)
+                $match = $possibleMatches[0];
+                Log::info("📌 CHOOSING FIRST: {$brandKey} → {$match['object']}");
+
+                $match['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
+                $attachedBrandIds[] = $brandId;
+                $matched = true;
+            }
+
+            // If no pivot match found
+            if (!$matched) {
+                Log::warning("❌ NO MATCH: {$brandKey} will become brands-only tag");
                 $unmatchedBrands[] = $brand;
             }
+
+            Log::info("────────────────────────────────");
         }
 
         // Create brands-only tag for unmatched brands
         if (!empty($unmatchedBrands)) {
             $this->createBrandsOnlyTag($photo, $unmatchedBrands);
+        }
+    }
+
+    /**
+     * Log a pretty summary of the photo's tags
+     */
+    private function logPhotoSummary(Photo $photo, array $brands, array $createdPhotoTags): void
+    {
+        Log::info("╔════════════════════════════════════════════════════════╗");
+        Log::info("║ PHOTO {$photo->id} MIGRATION                          ║");
+        Log::info("╠════════════════════════════════════════════════════════╣");
+
+        // Log objects
+        Log::info("║ OBJECTS:");
+        foreach ($createdPhotoTags as $tag) {
+            $objectKey = $tag['object']['key'] ?? 'unknown';
+            $objectId = $tag['object']['id'] ?? '?';
+            $quantity = $tag['object']['quantity'] ?? 1;
+            Log::info("║   - {$objectKey} (ID: {$objectId}, Qty: {$quantity})");
+        }
+
+        // Log brands
+        Log::info("║ BRANDS:");
+        foreach ($brands as $brand) {
+            $brandKey = $brand['key'] ?? 'unknown';
+            $brandId = $brand['id'] ?? '?';
+            $quantity = $brand['quantity'] ?? 1;
+            Log::info("║   - {$brandKey} (ID: {$brandId}, Qty: {$quantity})");
+        }
+
+        Log::info("╚════════════════════════════════════════════════════════╝");
+    }
+
+    /**
+     * Log all existing pivots for a brand
+     */
+    private function logAllBrandPivots(string $brandKey, int $brandId): void
+    {
+        $pivots = DB::table('taggables as t')
+            ->join('category_litter_object as clo', 't.category_litter_object_id', '=', 'clo.id')
+            ->join('litter_objects as lo', 'clo.litter_object_id', '=', 'lo.id')
+            ->join('categories as c', 'clo.category_id', '=', 'c.id')
+            ->where('t.taggable_type', BrandList::class)
+            ->where('t.taggable_id', $brandId)
+            ->select(
+                't.id as taggable_id',
+                't.category_litter_object_id',
+                'c.key as category',
+                'lo.key as object',
+                't.quantity'
+            )
+            ->get();
+
+        if ($pivots->isEmpty()) {
+            Log::warning("  ⚠️  NO PIVOTS EXIST for {$brandKey}");
+        } else {
+            Log::info("  📋 EXISTING PIVOTS for {$brandKey}:");
+            foreach ($pivots as $pivot) {
+                Log::info("    - {$pivot->category}/{$pivot->object} (taggable.id: {$pivot->taggable_id}, cat_obj_id: {$pivot->category_litter_object_id})");
+            }
         }
     }
 
@@ -325,15 +527,33 @@ class UpdateTagsService
 
     private function createCustomOnlyTag(Photo $photo, array $customTags): void
     {
+        if (empty($customTags)) {
+            return;
+        }
+
         $primary = array_shift($customTags);
+
+        // All custom tags should now have valid IDs from custom_tags_new
+        if (!isset($primary['id']) || !$primary['id']) {
+            Log::error("Custom tag has no valid ID", [
+                'photo_id' => $photo->id,
+                'custom_tag' => $primary
+            ]);
+            return;
+        }
+
         $photoTag = PhotoTag::create([
             'photo_id'              => $photo->id,
             'custom_tag_primary_id' => $primary['id'],
-            'quantity'              => $primary['quantity'],
+            'quantity'              => $primary['quantity'] ?? 1,
             'picked_up'             => !$photo->remaining,
         ]);
+
+        // Attach any additional custom tags as extra tags
         foreach ($customTags as $idx => $extra) {
-            $photoTag->attachExtraTags([$extra], 'custom_tag', $idx);
+            if (isset($extra['id']) && $extra['id']) {
+                $photoTag->attachExtraTags([$extra], 'custom_tag', $idx);
+            }
         }
     }
 

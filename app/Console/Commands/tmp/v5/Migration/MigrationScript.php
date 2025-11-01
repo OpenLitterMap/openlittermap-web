@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\Category;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Achievements\AchievementEngine;
@@ -45,7 +47,6 @@ class MigrationScript extends Command
 
         $this->ensureProcessingColumns();
         $this->seedReferenceTables();
-        $this->reportBrandRelationshipStatus();
         TagKeyCache::preloadAll();
         DB::disableQueryLog();
 
@@ -56,61 +57,6 @@ class MigrationScript extends Command
         $this->reportUnmatchedBrands();
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Report status of brand relationships
-     */
-    private function reportBrandRelationshipStatus(): void
-    {
-        $this->info("═══════════════════════════════════════");
-        $this->info("Brand Relationship Status");
-        $this->info("═══════════════════════════════════════");
-
-        // Count total brands
-        $totalBrands = DB::table('brandslist')->count();
-
-        // Count brands with relationships
-        $brandsWithRelationships = DB::table('taggables')
-            ->where('taggable_type', 'App\\Models\\Litter\\Tags\\BrandList')
-            ->distinct()
-            ->count('taggable_id');
-
-        // Count total relationships
-        $totalRelationships = DB::table('taggables')
-            ->where('taggable_type', 'App\\Models\\Litter\\Tags\\BrandList')
-            ->count();
-
-        // Count photos with brands
-        $photosWithBrands = DB::table('photos')
-            ->whereNotNull('brands_id')
-            ->count();
-
-        $this->table(
-            ['Metric', 'Value'],
-            [
-                ['Total brands in system', number_format($totalBrands)],
-                ['Brands with relationships', number_format($brandsWithRelationships)],
-                ['Brands without relationships', number_format($totalBrands - $brandsWithRelationships)],
-                ['Total brand-object relationships', number_format($totalRelationships)],
-                ['Photos with brands to migrate', number_format($photosWithBrands)],
-            ]
-        );
-
-        if ($brandsWithRelationships === 0) {
-            $this->warn("");
-            $this->warn("⚠️  No brand relationships found!");
-            $this->warn("Run the following commands first:");
-            $this->warn("  php artisan olm:define-brand-relationships");
-            $this->warn("  php artisan olm:auto-create-brand-relationships --apply");
-            $this->warn("");
-
-            if (!$this->confirm('Continue without brand relationships?')) {
-                return;
-            }
-        }
-
-        $this->newLine();
     }
 
     /**
@@ -209,107 +155,163 @@ class MigrationScript extends Command
 
         Photo::where('user_id', $userId)
             ->whereNull('migrated_at')
-            ->orderBy('created_at')
-            ->chunk($this->option('batch'), function ($photos) use (
+            ->orderBy('id')
+            ->chunkById($this->option('batch'), function ($photos) use (
                 $userId,
+                $photoCount,
                 &$processedForUser,
                 &$failedForUser,
-                &$batchNumber,
                 &$brandsAttachedForUser,
-                &$brandsSkippedForUser
+                &$brandsSkippedForUser,
+                &$batchNumber
             ) {
                 $batchNumber++;
-                $startTime = microtime(true);
+                $batchStartTime = microtime(true);
+                $memoryBefore = memory_get_usage(true);
                 $batchSize = $photos->count();
-
-                $this->info("    Batch {$batchNumber} ({$batchSize} photos)...");
+                $successfulPhotos = [];
+                $batchFailed = 0;
+                $batchBrandsAttached = 0;
+                $batchBrandsSkipped = 0;
 
                 foreach ($photos as $photo) {
-                    $hasData = false;
-
-                    // Check for official category tags
-                    $categories = ['smoking', 'food', 'coffee', 'alcohol', 'softdrinks',
-                        'sanitary', 'other', 'coastal', 'dumping', 'industrial'];
-                    foreach ($categories as $category) {
-                        $idColumn = "{$category}_id";
-                        if ($photo->$idColumn > 0) {
-                            $hasData = true;
-                            break;
-                        }
-                    }
-
-                    // Check for brand data
-                    if (!$hasData && $photo->brands_id > 0) {
-                        $hasData = true;
-                    }
-
-                    // Check for custom tags
-                    if (!$hasData) {
-                        $hasCustomTags = DB::table('custom_tags')
-                            ->where('photo_id', $photo->id)
-                            ->exists();
-                        if ($hasCustomTags) {
-                            $hasData = true;
-                        }
-                    }
-
-                    if (!$hasData) {
-                        $this->markAsEmpty($photo);
-                        $processedForUser++;
-                        $this->processed++;
-                        continue;
-                    }
-
-                    DB::beginTransaction();
                     try {
-                        // Process the photo tags
+                        // Track brand attachment stats
+                        $statsBeforeUpdate = $this->getBrandStats($photo);
+
+                        // Update tags
                         $this->updateTagsService->updateTags($photo);
 
-                        DB::update('UPDATE photos SET migrated_at = NOW() WHERE id = ?', [$photo->id]);
-                        DB::commit();
+                        // Check brand attachment after update
+                        $statsAfterUpdate = $this->getBrandStats($photo);
 
+                        if ($statsBeforeUpdate['expected'] > 0) {
+                            if ($statsAfterUpdate['actual'] > 0) {
+                                $batchBrandsAttached += $statsAfterUpdate['actual'];
+                                $brandsAttachedForUser += $statsAfterUpdate['actual'];
+                                $this->brandsAttached += $statsAfterUpdate['actual'];
+                            } else {
+                                $batchBrandsSkipped += $statsBeforeUpdate['expected'];
+                                $brandsSkippedForUser += $statsBeforeUpdate['expected'];
+                                $this->brandsSkipped += $statsBeforeUpdate['expected'];
+
+                                // Track unmatched brands
+                                $this->trackUnmatchedBrands($photo, $statsBeforeUpdate);
+                            }
+                        }
+
+                        // Reload and process metrics
+                        $photo->refresh();
+                        $this->metricsService->processPhoto($photo);
+
+                        $successfulPhotos[] = $photo->id;
                         $processedForUser++;
                         $this->processed++;
+
                     } catch (\Throwable $e) {
-                        DB::rollBack();
-                        Log::error("Migration failed for photo {$photo->id}", [
-                            'user_id' => $userId,
-                            'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString()
-                        ]);
                         $failedForUser++;
                         $this->failed++;
+                        $batchFailed++;
+                        Log::error("Migration failed for photo {$photo->id}", [
+                            'user_id' => $userId,
+                            'error' => $e->getMessage()
+                        ]);
                     }
                 }
 
-                $elapsed = round(microtime(true) - $startTime, 2);
-                $rate = $elapsed > 0 ? round($batchSize / $elapsed, 1) : 0;
-                $this->info("      ✓ Processed in {$elapsed}s ({$rate} photos/s)");
+                // Mark photos as migrated
+                if (!empty($successfulPhotos)) {
+                    Photo::whereIn('id', $successfulPhotos)->update(['migrated_at' => now()]);
+                }
+
+                // Display batch stats
+                $batchDuration = round(microtime(true) - $batchStartTime, 2);
+                $memoryAfter = memory_get_usage(true);
+                $memoryDelta = round(($memoryAfter - $memoryBefore) / 1024 / 1024, 1);
+                $currentMemory = round($memoryAfter / 1024 / 1024, 1);
+                $photosPerSecond = $batchDuration > 0 ? round($batchSize / $batchDuration, 1) : 0;
+                $percent = round(($processedForUser / $photoCount) * 100);
+
+                $status = sprintf(
+                    "    Batch %d: %d/%d photos (%d%%) | Time: %ss | Speed: %s/s | Memory: %sMB %s",
+                    $batchNumber,
+                    $processedForUser,
+                    $photoCount,
+                    $percent,
+                    $batchDuration,
+                    $photosPerSecond,
+                    $currentMemory,
+                    $memoryDelta >= 0 ? "(+{$memoryDelta}MB)" : "({$memoryDelta}MB)"
+                );
+
+                if ($batchFailed > 0) {
+                    $status .= " | Failed: {$batchFailed}";
+                }
+
+                if ($batchBrandsAttached > 0 || $batchBrandsSkipped > 0) {
+                    $status .= sprintf(" | Brands: %d attached, %d skipped",
+                        $batchBrandsAttached,
+                        $batchBrandsSkipped
+                    );
+                }
+
+                $this->info($status);
             });
 
-        // After all photos for user processed - evaluate achievements
+        // Evaluate achievements
         $this->evaluateUserAchievements($userId);
 
         // Display user summary
-        $this->displayUserSummary($userId, $processedForUser, $failedForUser,
-            $brandsAttachedForUser, $brandsSkippedForUser);
+        $this->displayUserSummary($userId, $processedForUser, $failedForUser, $brandsAttachedForUser, $brandsSkippedForUser);
     }
 
-    private function markAsEmpty(Photo $photo): void
+    /**
+     * Get brand statistics for a photo
+     */
+    private function getBrandStats(Photo $photo): array
     {
-        DB::update('UPDATE photos SET migrated_at = NOW() WHERE id = ?', [$photo->id]);
-    }
+        $tags = $photo->tags();
+        $expected = 0;
+        $brandKeys = [];
 
-    private function trackUnmatchedBrand(string $brandKey, Photo $photo): void
-    {
-        if (!isset($this->unmatchedBrands[$brandKey])) {
-            $this->unmatchedBrands[$brandKey] = [
-                'count' => 0,
-                'photo_ids' => []
-            ];
+        if (isset($tags['brands'])) {
+            foreach ($tags['brands'] as $brandKey => $qty) {
+                $expected += (int) $qty;
+                $brandKeys[] = $brandKey;
+            }
         }
-        $this->unmatchedBrands[$brandKey]['count']++;
-        $this->unmatchedBrands[$brandKey]['photo_ids'][] = $photo->id;
+
+        // Force reload the relationship
+        $photo->load('photoTags.extraTags');
+
+        $actual = 0;
+        if ($photo->photoTags) {
+            foreach ($photo->photoTags as $photoTag) {
+                $actual += $photoTag->extraTags()
+                    ->where('tag_type', 'brand')
+                    ->sum('quantity');
+            }
+        }
+
+        return [
+            'expected' => $expected,
+            'actual' => $actual,
+            'brand_keys' => $brandKeys
+        ];
+    }
+
+    private function trackUnmatchedBrands(Photo $photo, array $stats): void
+    {
+        foreach ($stats['brand_keys'] as $brandKey) {
+            if (!isset($this->unmatchedBrands[$brandKey])) {
+                $this->unmatchedBrands[$brandKey] = [
+                    'count' => 0,
+                    'photo_ids' => []
+                ];
+            }
+            $this->unmatchedBrands[$brandKey]['count']++;
+            $this->unmatchedBrands[$brandKey]['photo_ids'][] = $photo->id;
+        }
     }
 
     private function evaluateUserAchievements(int $userId): void
@@ -330,7 +332,7 @@ class MigrationScript extends Command
         }
     }
 
-    private function displayUserSummary(int $userId, int $processed, int $failed, int $brandsAttached = 0, int $brandsSkipped = 0): void
+    private function displayUserSummary(int $userId, int $processed, int $failed, int $brandsAttached, int $brandsSkipped): void
     {
         $this->newLine();
         $this->info("    Summary for User #{$userId}:");
@@ -339,6 +341,13 @@ class MigrationScript extends Command
         $this->info("    ✅ Photos migrated: " . number_format($processed));
         if ($failed > 0) {
             $this->error("    ❌ Photos failed: " . number_format($failed));
+        }
+
+        if ($brandsAttached > 0 || $brandsSkipped > 0) {
+            $this->info("    🏷️  Brands attached: " . number_format($brandsAttached));
+            if ($brandsSkipped > 0) {
+                $this->warn("    ⚠️  Brands skipped: " . number_format($brandsSkipped));
+            }
         }
 
         // Get metrics from Redis
@@ -367,6 +376,8 @@ class MigrationScript extends Command
             [
                 ['Photos processed', number_format($this->processed)],
                 ['Failed photos', number_format($this->failed) . ($this->failed > 0 ? ' ❌' : ' ✅')],
+                ['Brands attached', number_format($this->brandsAttached) . ' ✓'],
+                ['Brands skipped', number_format($this->brandsSkipped) . ($this->brandsSkipped > 0 ? ' ⚠️' : '')],
                 ['Total time', $totalElapsedFormatted],
                 ['Average speed', $totalElapsed > 0 ? round($this->processed / $totalElapsed, 1) . ' photos/s' : 'N/A'],
                 ['Peak memory', round(memory_get_peak_usage(true) / 1024 / 1024, 1) . ' MB'],
@@ -435,14 +446,21 @@ class MigrationScript extends Command
         $this->info("Seeding reference tables...");
 
         // Seed tags
-        $seeder = new GenerateTagsSeeder();
-        $seeder->run();
-        $this->info("✓ Tags seeded");
+        if (Category::count() == 0) {
+            $seeder = new GenerateTagsSeeder();
+            $seeder->run();
+            $this->info("✓ Tags seeded");
+        } else {
+            $this->info("✓ Tags already exist");
+        }
 
-        // Seed brands
-        $brandSeeder = new GenerateBrandsSeeder();
-        $brandSeeder->run();
-        $this->info("✓ Brands seeded");
+        if (BrandList::count() == 0) {
+            $brandSeeder = new GenerateBrandsSeeder();
+            $brandSeeder->run();
+            $this->info("✓ Brands seeded");
+        } else {
+            $this->info("✓ Brands already exist");
+        }
 
         // Seed achievements
         $achievementSeeder = new AchievementsSeeder();

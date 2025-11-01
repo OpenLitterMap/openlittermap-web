@@ -160,6 +160,14 @@ taggables
 └── quantity                   // Occurrence count
 ```
 
+```
+brandslist table:
+├── id              // Primary key
+├── key             // Brand key/slug (e.g., "coca-cola", "marlboro")  
+├── crowdsourced    // Boolean
+└── is_custom       // Boolean
+```
+
 ## Tag Migration from v4 to v5
 
 ### Old Format (v4)
