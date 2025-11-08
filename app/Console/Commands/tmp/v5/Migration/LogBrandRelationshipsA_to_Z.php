@@ -133,6 +133,9 @@ class LogBrandRelationshipsA_to_Z extends Command
         // Display console summary
         $this->displayComprehensiveSummary();
 
+        // Display high-lift summary
+        $this->displayHighLiftSummary();
+
         // Export to CSV
         $this->exportSimplifiedCSV();
 
@@ -300,6 +303,102 @@ class LogBrandRelationshipsA_to_Z extends Command
         }
     }
 
+    /**
+     * Calculate confidence score based on lift, photo count, and probability
+     */
+    protected function calculateConfidence(float $lift, int $photoCount, float $prob): string
+    {
+        if ($lift >= 3.0 && $photoCount >= 20 && $prob >= 0.3) return 'VERY_HIGH';
+        if ($lift >= 2.0 && $photoCount >= 10 && $prob >= 0.2) return 'HIGH';
+        if ($lift >= 1.5 && $photoCount >= 5 && $prob >= 0.1) return 'MEDIUM';
+        if ($photoCount === 1) return 'NOISE';
+        return 'LOW';
+    }
+
+    /**
+     * Display summary of high-lift relationships
+     */
+    protected function displayHighLiftSummary(): void
+    {
+        $this->newLine();
+        $this->info('🎯 High-Confidence Relationships (Lift ≥ 3.0, Photos ≥ 10):');
+
+        $highConfidence = [];
+        foreach ($this->coOccurrences as $co) {
+            $brandKey = $co['brand'];
+            $objectFullKey = "{$co['category']}.{$co['object']}";
+
+            $brandPhotoSupp = $this->brandPhotoSupport[$brandKey] ?? 0;
+            $objectPhotoSupp = $this->objectPhotoSupport[$objectFullKey] ?? 0;
+
+            $p_obj_given_brand = ($brandPhotoSupp > 0) ? $co['photo_count'] / $brandPhotoSupp : 0;
+            $p_obj_global = ($this->totalPhotosWithObjects > 0) ? $objectPhotoSupp / $this->totalPhotosWithObjects : 0;
+            $lift = ($p_obj_global > 0) ? $p_obj_given_brand / $p_obj_global : 0;
+
+            if ($lift >= 3.0 && $co['photo_count'] >= 10) {
+                $highConfidence[] = [
+                    'brand' => $co['brand'],
+                    'category' => $co['category'],
+                    'object' => $co['object'],
+                    'lift' => $lift,
+                    'photo_count' => $co['photo_count'],
+                    'prob' => $p_obj_given_brand
+                ];
+            }
+        }
+
+        // Sort by lift descending
+        usort($highConfidence, fn($a, $b) => $b['lift'] <=> $a['lift']);
+
+        $count = 0;
+        foreach ($highConfidence as $item) {
+            if ($count++ >= 20) break;
+            $this->line(sprintf(
+                '  %2d. %-20s → %-30s (lift: %6.1f, photos: %4d, prob: %.1f%%)',
+                $count,
+                $item['brand'],
+                $item['category'] . '.' . $item['object'],
+                $item['lift'],
+                $item['photo_count'],
+                $item['prob'] * 100
+            ));
+        }
+
+        if (count($highConfidence) > 20) {
+            $this->line(sprintf('  ... and %d more high-confidence relationships', count($highConfidence) - 20));
+        }
+
+        $this->newLine();
+        $this->info('📊 Distribution of Relationships by Confidence:');
+        $confidenceDistribution = [
+            'VERY_HIGH' => 0,
+            'HIGH' => 0,
+            'MEDIUM' => 0,
+            'LOW' => 0,
+            'NOISE' => 0
+        ];
+
+        foreach ($this->coOccurrences as $co) {
+            $brandKey = $co['brand'];
+            $objectFullKey = "{$co['category']}.{$co['object']}";
+
+            $brandPhotoSupp = $this->brandPhotoSupport[$brandKey] ?? 0;
+            $objectPhotoSupp = $this->objectPhotoSupport[$objectFullKey] ?? 0;
+
+            $p_obj_given_brand = ($brandPhotoSupp > 0) ? $co['photo_count'] / $brandPhotoSupp : 0;
+            $p_obj_global = ($this->totalPhotosWithObjects > 0) ? $objectPhotoSupp / $this->totalPhotosWithObjects : 0;
+            $lift = ($p_obj_global > 0) ? $p_obj_given_brand / $p_obj_global : 0;
+
+            $confidence = $this->calculateConfidence($lift, $co['photo_count'], $p_obj_given_brand);
+            $confidenceDistribution[$confidence]++;
+        }
+
+        foreach ($confidenceDistribution as $level => $count) {
+            $percentage = count($this->coOccurrences) > 0 ? ($count / count($this->coOccurrences) * 100) : 0;
+            $this->line(sprintf('  %-10s: %6d (%.1f%%)', $level, $count, $percentage));
+        }
+    }
+
     protected function displayComprehensiveSummary(): void
     {
         $this->info('╔════════════════════════════════════════════════════════╗');
@@ -396,6 +495,7 @@ class LogBrandRelationshipsA_to_Z extends Command
     /**
      * HIGH-IMPACT #1: Export with Lift calculation
      * HIGH-IMPACT #6: Output decimals, not percentages
+     * IMPROVEMENT: Added confidence score column
      */
     protected function exportSimplifiedCSV(): void
     {
@@ -404,7 +504,7 @@ class LogBrandRelationshipsA_to_Z extends Command
 
         $handle = fopen($filename, 'w');
 
-        // Header with lift columns
+        // Header with lift columns and confidence
         fputcsv($handle, [
             'Brand',
             'Category',
@@ -415,6 +515,7 @@ class LogBrandRelationshipsA_to_Z extends Command
             'P_obj_given_brand',
             'P_obj_global',
             'Lift',
+            'Confidence',
             'Brand_Share_qty',
             'Object_Share_qty',
             'Rank_for_Brand',
@@ -455,6 +556,9 @@ class LogBrandRelationshipsA_to_Z extends Command
             $p_obj_global = ($this->totalPhotosWithObjects > 0) ? $objectPhotoSupp / $this->totalPhotosWithObjects : 0;
             $lift = ($p_obj_global > 0) ? $p_obj_given_brand / $p_obj_global : 0;
 
+            // Calculate confidence
+            $confidence = $this->calculateConfidence($lift, $co['photo_count'], $p_obj_given_brand);
+
             // Legacy quantity-based shares (for reference)
             $brandTotal = $this->brandTotals[$brandKey] ?? 0;
             $objectTotal = $this->objectTotals[$objectFullKey] ?? 0;
@@ -490,6 +594,7 @@ class LogBrandRelationshipsA_to_Z extends Command
                 round($p_obj_given_brand, 4),
                 round($p_obj_global, 4),
                 round($lift, 3),
+                $confidence,
                 $brandShare,
                 $objectShare,
                 $co['rank_for_brand'] ?? '',
@@ -521,18 +626,19 @@ class LogBrandRelationshipsA_to_Z extends Command
         $this->info("📊 Export Statistics:");
         $this->line("   Total relationships: " . number_format($totalExported));
         $this->line("   File size: {$fileSizeMB} MB");
-        $this->line("   Columns: 22 (with lift metrics)");
+        $this->line("   Columns: 23 (with confidence scores)");
         $this->newLine();
         $this->info("💡 Key Improvements:");
         $this->line("   ✅ Lift calculation (4x better decisions)");
+        $this->line("   ✅ Confidence scores (VERY_HIGH/HIGH/MEDIUM/LOW/NOISE)");
         $this->line("   ✅ Photo-based support (honest counts)");
         $this->line("   ✅ No double-counting within photos");
         $this->line("   ✅ Normalized keys (no AAdrink vs aadrink split)");
         $this->line("   ✅ Decimal output (easier AI parsing)");
         $this->newLine();
         $this->info("🎯 Next steps:");
-        $this->line("   1. Review lift column - values >2.0 are strong signals");
-        $this->line("   2. Filter by Meets_Min_Support=YES for quick wins");
+        $this->line("   1. Review Confidence column - focus on HIGH/VERY_HIGH");
+        $this->line("   2. Filter by Lift ≥ 2.0 AND Photo_Count ≥ 10");
         $this->line("   3. Use as input for: php artisan olm:validate-brands --all");
     }
 
@@ -579,38 +685,6 @@ class LogBrandRelationshipsA_to_Z extends Command
             'brands' => $brands,
             'objects' => $objects,
         ];
-    }
-
-    protected function displayHighLiftSummary(): void
-    {
-        $this->info('🎯 High-Confidence Relationships (Lift ≥ 3.0, Photos ≥ 10):');
-
-        $highConfidence = array_filter($this->coOccurrences, function($co) {
-            $brandKey = $co['brand'];
-            $objectFullKey = "{$co['category']}.{$co['object']}";
-
-            $brandPhotoSupp = $this->brandPhotoSupport[$brandKey] ?? 0;
-            $objectPhotoSupp = $this->objectPhotoSupport[$objectFullKey] ?? 0;
-
-            $p_obj_given_brand = ($brandPhotoSupp > 0) ? $co['photo_count'] / $brandPhotoSupp : 0;
-            $p_obj_global = ($this->totalPhotosWithObjects > 0) ? $objectPhotoSupp / $this->totalPhotosWithObjects : 0;
-            $lift = ($p_obj_global > 0) ? $p_obj_given_brand / $p_obj_global : 0;
-
-            return $lift >= 3.0 && $co['photo_count'] >= 10;
-        });
-
-        $count = 0;
-        foreach ($highConfidence as $co) {
-            if ($count++ >= 20) break;
-            $this->line(sprintf(
-                '  %s → %s.%s (lift: %.1f, photos: %d)',
-                $co['brand'],
-                $co['category'],
-                $co['object'],
-                $lift,
-                $co['photo_count']
-            ));
-        }
     }
 
     protected function isBrandInBrandslist(string $key): bool

@@ -23,30 +23,120 @@ class BrandValidator
     }
 
     /**
-     * Validate a single brand's relationships
+     * Load brands from new CSV format with lift metrics
+     */
+    public function loadFromCSV(string $path): array
+    {
+        $brands = [];
+        $handle = fopen($path, 'r');
+        $headers = fgetcsv($handle);
+
+        // Map column indices for faster access
+        $columnIndex = array_flip($headers);
+
+        while ($row = fgetcsv($handle)) {
+            $brandKey = strtolower(trim($row[$columnIndex['Brand']]));
+
+            if (!isset($brands[$brandKey])) {
+                $brands[$brandKey] = [
+                    'brand_key' => $brandKey,
+                    'total' => 0,
+                    'brand_photo_support' => 0,
+                    'relationships' => []
+                ];
+            }
+
+            // Update brand totals (use max value found)
+            $brandPhotoSupport = (int) $row[$columnIndex['Brand_Photo_Support']];
+            if ($brandPhotoSupport > $brands[$brandKey]['brand_photo_support']) {
+                $brands[$brandKey]['brand_photo_support'] = $brandPhotoSupport;
+                $brands[$brandKey]['total'] = $brandPhotoSupport; // Use photo support as total
+            }
+
+            // Add relationship with all metrics
+            $brands[$brandKey]['relationships'][] = [
+                'category' => $row[$columnIndex['Category']],
+                'object' => $row[$columnIndex['Object']],
+                'photo_count' => (int) $row[$columnIndex['Photo_Count']],
+                'object_photo_support' => (int) $row[$columnIndex['Object_Photo_Support']],
+                'p_obj_given_brand' => (float) $row[$columnIndex['P_obj_given_brand']],
+                'p_obj_global' => (float) $row[$columnIndex['P_obj_global']],
+                'lift' => (float) $row[$columnIndex['Lift']],
+                'confidence' => $row[$columnIndex['Confidence']] ?? $this->calculateConfidenceFromMetrics(
+                        (float) $row[$columnIndex['Lift']],
+                        (int) $row[$columnIndex['Photo_Count']],
+                        (float) $row[$columnIndex['P_obj_given_brand']]
+                    ),
+                'percentage' => (float) $row[$columnIndex['P_obj_given_brand']] * 100, // Convert to percentage for API
+            ];
+        }
+
+        fclose($handle);
+        return $brands;
+    }
+
+    /**
+     * Calculate confidence from metrics if not in CSV
+     */
+    protected function calculateConfidenceFromMetrics(float $lift, int $photoCount, float $prob): string
+    {
+        if ($lift >= 3.0 && $photoCount >= 20 && $prob >= 0.3) return 'VERY_HIGH';
+        if ($lift >= 2.0 && $photoCount >= 10 && $prob >= 0.2) return 'HIGH';
+        if ($lift >= 1.5 && $photoCount >= 5 && $prob >= 0.1) return 'MEDIUM';
+        if ($photoCount === 1) return 'NOISE';
+        return 'LOW';
+    }
+
+    /**
+     * Validate a single brand's relationships using lift-based filtering
      */
     public function validateBrand(string $brandKey, array $relationships, int $total): array
     {
-        // Filter low-quality relationships (≥1% OR ≥3 photos)
-        $filtered = array_filter($relationships, fn($rel) =>
-            $rel['percentage'] >= 1.0 || $rel['photo_count'] >= 3
-        );
+        // Pre-filter using lift and support metrics
+        $filtered = array_filter($relationships, function($rel) {
+            // Primary criteria: high lift with reasonable support
+            if ($rel['lift'] >= 3.0 && $rel['photo_count'] >= 5) return true;
+
+            // Secondary: medium lift with good support
+            if ($rel['lift'] >= 2.0 && $rel['photo_count'] >= 10) return true;
+
+            // Tertiary: high probability even with lower lift
+            if ($rel['p_obj_given_brand'] >= 0.20 && $rel['photo_count'] >= 10) return true;
+
+            // Filter out noise
+            return false;
+        });
 
         if (empty($filtered)) {
             return [
                 'brand' => $brandKey,
                 'unknown_brand' => true,
-                'validation_notes' => 'No relationships met quality threshold',
+                'validation_notes' => 'No relationships met quality threshold (lift/support too low)',
                 'valid_relationships' => [],
                 'excluded_with_reason' => []
             ];
         }
 
+        // Sort by lift for better context in API
+        usort($filtered, function($a, $b) {
+            // Primary sort by lift
+            $liftCompare = $b['lift'] <=> $a['lift'];
+            if ($liftCompare !== 0) return $liftCompare;
+
+            // Secondary sort by photo count
+            return $b['photo_count'] <=> $a['photo_count'];
+        });
+
+        // Limit to top 30 relationships for API (cost control)
+        if (count($filtered) > 30) {
+            $filtered = array_slice($filtered, 0, 30);
+        }
+
         // Extract unique categories and objects from this brand's data
         $observedContext = $this->extractObservedContext($filtered);
 
-        // Build prompt with context
-        $prompt = $this->buildPrompt($brandKey, $total, $filtered, $observedContext);
+        // Build prompt with lift context
+        $prompt = $this->buildPromptWithLift($brandKey, $total, $filtered, $observedContext);
 
         // Call API
         $response = Http::retry(3, 500)
@@ -58,7 +148,7 @@ class BrandValidator
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o',
                 'messages' => [
-                    ['role' => 'system', 'content' => $this->getSystemPrompt()],
+                    ['role' => 'system', 'content' => $this->getSystemPromptWithLift()],
                     ['role' => 'user', 'content' => $prompt]
                 ],
                 'temperature' => 0,
@@ -83,8 +173,16 @@ class BrandValidator
             throw new \Exception("Invalid JSON response: " . json_last_error_msg());
         }
 
+        // Add lift metrics to result
+        $result['validation_metrics'] = [
+            'relationships_evaluated' => count($filtered),
+            'avg_lift' => round(array_sum(array_column($filtered, 'lift')) / count($filtered), 2),
+            'avg_photo_support' => round(array_sum(array_column($filtered, 'photo_count')) / count($filtered), 1),
+            'confidence_distribution' => array_count_values(array_column($filtered, 'confidence')),
+        ];
+
         // Save individual result
-        Storage::put("brands/{$brandKey}.json", json_encode($result, JSON_PRETTY_PRINT));
+        Storage::put("brands/{$brandKey}.json", json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         return $result;
     }
@@ -117,9 +215,9 @@ class BrandValidator
     }
 
     /**
-     * System prompt asking for manual expert review
+     * System prompt updated for lift-based validation
      */
-    protected function getSystemPrompt(): string
+    protected function getSystemPromptWithLift(): string
     {
         $totalCategories = count($this->allCategories);
 
@@ -129,128 +227,112 @@ You are an expert reviewer for **OpenLitterMap**, a citizen science platform tha
 ---
 
 ### CONTEXT
-OpenLitterMap has {$totalCategories} litter categories (e.g., softdrinks, food, smoking, coffee, alcohol, sanitary, other).
-Each category contains object types (e.g., softdrinks.soda_can, food.wrapper, smoking.cigarette_box).
+OpenLitterMap has {$totalCategories} litter categories. Each category contains specific object types.
+
+You are reviewing brand-object relationships that have been pre-filtered using **lift analysis**:
+- **Lift** measures how much MORE likely an object appears with a brand vs randomly
+- Lift > 1.0 means positive association
+- Lift > 2.0 means strong association
+- Lift > 3.0 means very strong association
+
+The relationships you're reviewing have already passed quality filters, so they likely have merit.
 
 ---
 
 ### YOUR TASK
-Determine which objects legitimately belong to each brand, considering **parent-company and subsidiary products** that are included in the given list.
+Validate which objects legitimately belong to each brand, considering:
 
-**CRITICAL:** The brand key you receive (e.g., "coke") refers to the **parent company** (Coca-Cola Company), not just the main product line.
+1. **Parent Company Products**: The brand key often represents the parent company
+   - "coke" = Coca-Cola Company (includes Dasani, Powerade, Fanta, Sprite, etc.)
+   - "nestle" = Nestlé S.A. (includes KitKat, Nescafé, Perrier, etc.)
+   - "unilever" = Unilever PLC (includes Dove, Lipton, Ben & Jerry's, etc.)
 
-Users often tag the parent company name for items from any of its sub-brands:
-- "coke" → any Coca-Cola Company product (Dasani water, Powerade sports drinks, Fanta, Sprite, Minute Maid juice)
-- "nestle" → any Nestlé product (KitKat candy, Nescafé coffee, Perrier water)
-- "unilever" → any Unilever product (Dove soap, Lipton tea, Ben & Jerry's ice cream)
+2. **High Lift Relationships**: High lift values (>3.0) suggest genuine relationships
+   - These deserve extra consideration even if unexpected
+   - Could indicate regional products or lesser-known subsidiaries
 
-When reviewing, ask:
-1. Does this brand **or its subsidiaries** produce/sell this object type?
-2. Would a typical person reasonably tag this item with this brand name in the field?
-
----
-
-### HOW TO DECIDE
-- ✅ Be inclusive of the brand's full product portfolio (subsidiaries included)
-- ❌ Exclude clear category mismatches (e.g., beverage brand → smoking product)
-- Only include objects you are **confident** belong to the brand family
-- Use occurrence rates as guidance:
-  - >30% = strong evidence, likely valid
-  - 10-30% = plausible, verify it fits brand family
-  - <10% = likely noise unless clearly a brand product
+3. **Category Logic**: Consider if the category makes sense
+   - Beverage brands → beverage containers ✅
+   - Beverage brands → cigarettes ❌ (even with high lift)
 
 ---
 
-### BRAND TYPE GUIDELINES
-**Beverage** (Coca-Cola, Heineken, PepsiCo): cans, bottles, cups, lids, labels, water bottles, sports drinks, juices
-**Tobacco** (Marlboro, Camel): cigarette boxes, butts, cellophane packaging
-**Fast food** (McDonald's, Burger King): wrappers, boxes, napkins, cups, lids, straws, cutlery
-**Retailers** (Tesco, Aldi, Walmart): packaging, plastic bags, receipts across many categories
-**Clothing** (Nike, Adidas): clothing items, tags, packaging boxes
-**Conglomerates** (Unilever, Nestlé, P&G): broad range across food, drinks, sanitary, other
+### DECISION GUIDELINES
+
+**APPROVE when:**
+- Object type matches brand's product portfolio
+- High lift (>3.0) with reasonable photo count (>10)
+- Subsidiaries or regional products of the parent company
+- Logical category match
+
+**REJECT when:**
+- Category completely mismatched (e.g., food brand → smoking products)
+- Even with high lift, if logically impossible
+- Clear data error or confusion
+
+**CONFIDENCE LEVELS:**
+- **very_high**: Recognized brand with clear, obvious relationships
+- **high**: Recognized brand, relationships make sense
+- **medium**: Some uncertainty about brand or borderline relationships
+- **low**: Unfamiliar brand or many questionable relationships
 
 ---
 
 ### OUTPUT FORMAT
-Return **valid JSON only** in this structure:
+Return **valid JSON only**:
 ```json
 {
   "brand": "brand_key",
   "unknown_brand": false,
   "brand_identity": {
-    "recognized_as": "Full Brand or Company Name",
+    "recognized_as": "Full Brand/Company Name",
     "type": "beverage|tobacco|food|fast_food|retailer|clothing|conglomerate|other",
-    "confidence": "high|medium|low",
+    "confidence": "very_high|high|medium|low",
     "subsidiaries_note": "Brief note about relevant sub-brands if applicable"
   },
   "valid_relationships": ["category.object", ...],
   "excluded_with_reason": {
     "category.object": "brief reason"
   },
-  "validation_notes": "Summary of reasoning and subsidiaries considered"
+  "validation_notes": "Summary of reasoning, noting any high-lift surprises"
 }
 ```
 
-**Confidence levels:**
-- **high**: You recognize the brand/company and are certain about decisions
-- **medium**: You recognize the brand but some decisions are borderline
-- **low**: Unfamiliar brand or difficult to determine associations
-
-If the brand is unrecognized, set `"unknown_brand": true` and explain briefly.
-
----
-
-### EXAMPLES
-
-**Brand: coke (Coca-Cola Company)**
-✅ softdrinks.soda_can – Coca-Cola sodas (core product)
-✅ softdrinks.water_bottle – Dasani, SmartWater (subsidiaries)
-✅ softdrinks.sports_bottle – Powerade (subsidiary)
-✅ softdrinks.juice_bottle – Minute Maid, Simply Orange (subsidiaries)
-❌ alcohol.beer_can – Coca-Cola does not produce alcohol
-❌ smoking.butts – Coincidental co-occurrence
-
-**Brand: nestle (Nestlé S.A.)**
-✅ food.wrapper – KitKat, candy bars
-✅ coffee.cup – Nescafé products
-✅ softdrinks.water_bottle – Perrier, Poland Spring (subsidiaries)
-✅ food.packaging – Wide range of food products
-❌ alcohol.beer_can – Not in portfolio
-❌ smoking.butts – Unrelated
-
----
-
-### SUMMARY
-- The brand key represents the **parent company**, not just the main brand name
-- Include only objects you are **confident** belong to the brand or its subsidiaries
-- Exclude all others with a brief reason
-- Respond **only with valid JSON**, no extra text
-
+Remember: High lift values are statistically significant. If you see lift>3.0 with good photo support,
+there's likely a real relationship even if it's not immediately obvious.
 PROMPT;
     }
 
     /**
-     * Build user prompt for specific brand with context
+     * Build user prompt with lift metrics highlighted
      */
-    protected function buildPrompt(string $brandKey, int $total, array $relationships, array $context): string
+    protected function buildPromptWithLift(string $brandKey, int $total, array $relationships, array $context): string
     {
         $categoryCount = count($context['categories']);
         $objectCount = count($context['all_objects']);
 
-        // List all observed objects for this brand
-        $observedObjects = implode(', ', $context['all_objects']);
+        // Calculate summary stats
+        $highLiftCount = count(array_filter($relationships, fn($r) => $r['lift'] >= 3.0));
+        $avgLift = array_sum(array_column($relationships, 'lift')) / count($relationships);
+        $totalPhotoSupport = array_sum(array_column($relationships, 'photo_count'));
 
-        // Build detailed relationship list
+        // Build detailed relationship list with lift emphasis
         $lines = [];
         foreach ($relationships as $i => $rel) {
+            $liftIndicator = '';
+            if ($rel['lift'] >= 5.0) $liftIndicator = ' 🔥'; // Exceptional
+            elseif ($rel['lift'] >= 3.0) $liftIndicator = ' ⭐'; // Very strong
+            elseif ($rel['lift'] >= 2.0) $liftIndicator = ' ✓'; // Strong
+
             $lines[] = sprintf(
-                "%d. %s.%s - %d photos (%.1f%%) - %d total occurrences",
+                "%2d. %-20s %-20s | Lift: %5.1f%s | Photos: %4d | Prob: %5.1f%%",
                 $i + 1,
                 $rel['category'],
                 $rel['object'],
+                $rel['lift'],
+                $liftIndicator,
                 $rel['photo_count'],
-                $rel['percentage'],
-                $rel['total_occurrences'] ?? $rel['photo_count']
+                $rel['percentage']
             );
         }
 
@@ -258,20 +340,25 @@ PROMPT;
 
         return <<<PROMPT
 ═══════════════════════════════════════════════════════════
-BRAND VALIDATION REQUEST
+BRAND VALIDATION WITH LIFT ANALYSIS
 ═══════════════════════════════════════════════════════════
 
 BRAND: {$brandKey}
 
-TOTAL OCCURRENCES IN DATABASE: {$total}
+STATISTICS:
+- Total brand occurrences: {$total} photos
+- Relationships to validate: " . count($relationships) . "
+- High-lift relationships (>3.0): {$highLiftCount}
+- Average lift score: " . number_format($avgLift, 1) . "
+- Total photo evidence: {$totalPhotoSupport}
 
-OBSERVED DATA SUMMARY:
-- Categories observed: {$categoryCount}
-- Unique objects observed: {$objectCount}
-- All observed objects: {$observedObjects}
+LIFT LEGEND:
+🔥 = Exceptional (5.0+) - Almost certainly valid
+⭐ = Very Strong (3.0+) - Likely valid unless illogical
+✓ = Strong (2.0+) - Consider if category matches
 
 ═══════════════════════════════════════════════════════════
-RELATIONSHIPS TO REVIEW:
+RELATIONSHIPS (sorted by lift):
 ═══════════════════════════════════════════════════════════
 
 {$relationshipsList}
@@ -280,20 +367,22 @@ RELATIONSHIPS TO REVIEW:
 YOUR TASK:
 ═══════════════════════════════════════════════════════════
 
-Please review the above data and determine with 100% certainty which category.object pairs legitimately belong to the brand "{$brandKey}".
+Review the above relationships for brand "{$brandKey}".
 
-Remember:
-- Users may have made tagging mistakes
-- Multiple unrelated items may appear in the same photo
-- Only approve relationships you are absolutely certain about
-- Consider: Does this brand actually produce/sell this object type?
+Pay special attention to high-lift relationships (🔥 and ⭐) as these show
+statistically significant associations in our 500,000+ photo dataset.
 
-Return your analysis as valid JSON only (no additional text).
+Consider:
+1. Does this brand (or its parent company) produce these object types?
+2. High lift values suggest real relationships - is there a subsidiary or regional product?
+3. Category mismatches should still be rejected even with high lift
+
+Return your validation as JSON only (no additional text).
 PROMPT;
     }
 
     /**
-     * Generate BrandsConfig PHP file
+     * Generate BrandsConfig PHP file with confidence indicators
      */
     public function generateConfig(array $results, string $outputPath): void
     {
@@ -301,49 +390,73 @@ PROMPT;
         $php .= "/**\n";
         $php .= " * AUTO-GENERATED by olm:validate-brands\n";
         $php .= " * Generated: " . date('Y-m-d H:i:s') . "\n";
-        $php .= " * Brands: " . count($results) . "\n";
+        $php .= " * Brands validated: " . count($results) . "\n";
         $php .= " * \n";
-        $php .= " * ⚠️  REVIEW BEFORE MERGING INTO BrandsConfig.php\n";
+        $php .= " * Confidence levels:\n";
+        $php .= " *   [no marker] = very_high or high confidence\n";
+        $php .= " *   // MEDIUM  = medium confidence, review recommended\n";
+        $php .= " *   // ⚠️ LOW  = low confidence, manual review required\n";
+        $php .= " * \n";
+        $php .= " * ⚠️  REVIEW ALL ENTRIES BEFORE MERGING INTO BrandsConfig.php\n";
         $php .= " */\n";
         $php .= "class BrandsConfigGenerated\n{\n";
         $php .= "    public const BRAND_OBJECTS = [\n";
 
-        // Group by first letter
-        $byLetter = [];
+        // Group by confidence level for easier review
+        $byConfidence = [
+            'very_high' => [],
+            'high' => [],
+            'medium' => [],
+            'low' => [],
+            'unknown' => []
+        ];
+
         foreach ($results as $brandKey => $result) {
-            if ($result['unknown_brand'] ?? false) continue;
+            if ($result['unknown_brand'] ?? false) {
+                $byConfidence['unknown'][$brandKey] = $result;
+                continue;
+            }
             if (empty($result['valid_relationships'])) continue;
 
-            $letter = strtoupper(substr($brandKey, 0, 1));
-            if (is_numeric($letter)) $letter = '#';
-            $byLetter[$letter][$brandKey] = $result;
+            $confidence = $result['brand_identity']['confidence'] ?? 'unknown';
+            $byConfidence[$confidence][$brandKey] = $result;
         }
-        ksort($byLetter);
 
-        // Generate entries
-        foreach ($byLetter as $letter => $brands) {
-            $php .= "\n        // {$letter}\n";
-            ksort($brands);
+        // Generate high confidence brands first
+        if (!empty($byConfidence['very_high']) || !empty($byConfidence['high'])) {
+            $php .= "\n        // ═══════════════════════════════════════\n";
+            $php .= "        // HIGH CONFIDENCE BRANDS\n";
+            $php .= "        // ═══════════════════════════════════════\n\n";
 
-            foreach ($brands as $brandKey => $result) {
-                // Group by category
-                $byCategory = [];
-                foreach ($result['valid_relationships'] as $rel) {
-                    [$category, $object] = explode('.', $rel);
-                    $byCategory[$category][] = $object;
-                }
+            $highConfidence = array_merge($byConfidence['very_high'], $byConfidence['high']);
+            ksort($highConfidence);
 
-                $php .= "        '{$brandKey}' => [\n";
+            foreach ($highConfidence as $brandKey => $result) {
+                $php .= $this->generateBrandEntry($brandKey, $result, '');
+            }
+        }
 
-                foreach ($byCategory as $category => $objects) {
-                    // Deduplicate and sort
-                    $objects = array_unique($objects);
-                    sort($objects);
+        // Medium confidence
+        if (!empty($byConfidence['medium'])) {
+            $php .= "\n        // ═══════════════════════════════════════\n";
+            $php .= "        // MEDIUM CONFIDENCE - REVIEW RECOMMENDED\n";
+            $php .= "        // ═══════════════════════════════════════\n\n";
 
-                    $php .= "            '{$category}' => ['" . implode("', '", $objects) . "'],\n";
-                }
+            ksort($byConfidence['medium']);
+            foreach ($byConfidence['medium'] as $brandKey => $result) {
+                $php .= $this->generateBrandEntry($brandKey, $result, 'MEDIUM');
+            }
+        }
 
-                $php .= "        ],\n";
+        // Low confidence
+        if (!empty($byConfidence['low'])) {
+            $php .= "\n      // ═══════════════════════════════════════\n";
+            $php .= "        // ⚠️  LOW CONFIDENCE - MANUAL REVIEW REQUIRED\n";
+            $php .= "        // ═══════════════════════════════════════\n\n";
+
+            ksort($byConfidence['low']);
+            foreach ($byConfidence['low'] as $brandKey => $result) {
+                $php .= $this->generateBrandEntry($brandKey, $result, '⚠️ LOW');
             }
         }
 
@@ -353,36 +466,37 @@ PROMPT;
     }
 
     /**
-     * Load brands from CSV (keeping original keys)
+     * Generate individual brand entry for config
      */
-    public function loadFromCSV(string $path): array
+    protected function generateBrandEntry(string $brandKey, array $result, string $confidenceMarker): string
     {
-        $brands = [];
-        $handle = fopen($path, 'r');
-        $headers = fgetcsv($handle);
+        $php = '';
 
-        while ($row = fgetcsv($handle)) {
-            $data = array_combine($headers, $row);
-            $brandKey = $data['Brand']; // Keep original key exactly as-is
-
-            if (!isset($brands[$brandKey])) {
-                $brands[$brandKey] = [
-                    'total' => (int) $data['Brand Total'],
-                    'letter' => $data['Letter'],
-                    'relationships' => []
-                ];
-            }
-
-            $brands[$brandKey]['relationships'][] = [
-                'category' => $data['Category'],
-                'object' => $data['Object'],
-                'photo_count' => (int) $data['Photo Count'],
-                'total_occurrences' => (int) $data['Total Occurrences'],
-                'percentage' => floatval(str_replace('%', '', $data['Percentage'])),
-            ];
+        // Add confidence comment if needed
+        if ($confidenceMarker) {
+            $recognizedAs = $result['brand_identity']['recognized_as'] ?? 'Unknown';
+            $php .= "        // {$confidenceMarker}: {$recognizedAs}\n";
         }
 
-        fclose($handle);
-        return $brands;
+        // Group by category
+        $byCategory = [];
+        foreach ($result['valid_relationships'] as $rel) {
+            [$category, $object] = explode('.', $rel);
+            $byCategory[$category][] = $object;
+        }
+
+        $php .= "        '{$brandKey}' => [\n";
+
+        foreach ($byCategory as $category => $objects) {
+            // Deduplicate and sort
+            $objects = array_unique($objects);
+            sort($objects);
+
+            $php .= "            '{$category}' => ['" . implode("', '", $objects) . "'],\n";
+        }
+
+        $php .= "        ],\n";
+
+        return $php;
     }
 }
