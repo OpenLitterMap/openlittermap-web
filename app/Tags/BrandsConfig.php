@@ -119,7 +119,6 @@ class BrandsConfig
 
         'coke' => [
             'softdrinks' => ['soda_can', 'fizzy_bottle', 'water_bottle', 'cup', 'lid', 'label', 'straws', 'pullRing'],
-            // NOT in food - wrappers belong to food brands
         ],
 
         'colgate' => [

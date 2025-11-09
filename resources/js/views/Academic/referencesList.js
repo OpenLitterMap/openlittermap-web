@@ -572,4 +572,10 @@ export const referencesList = [
         link: 'https://books.google.ie/books?hl=en&lr=lang_en&id=jEqCEQAAQBAJ&oi=fnd&pg=PA11&dq=openlittermap&ots=fvEefSh2g1&sig=730tV1UJEZtdw8HuS-zBRaDRWok&redir_esc=y#v=onepage&q=openlittermap&f=false',
         author: 'Shareena & Padmavathi',
     },
+    {
+        date: '2025/10/01',
+        title: 'ENVIRONMENTAL MONITORING AND ASSESSMENT: A REVIEW OF EVOLVING PARADIGMS, TECHNOLOGICAL FRONTIERS METHODOLOGIES, AND FUTURE DIRECTIONS',
+        link: 'https://mediterraneanpublications.com/mejaimr/article/view/946',
+        author: 'Dahiru et al',
+    },
 ];
