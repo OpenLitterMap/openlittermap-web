@@ -11,7 +11,7 @@ class ValidateBrands extends Command
         {--brand= : Validate specific brand}
         {--letter= : Validate all brands starting with letter}
         {--all : Validate all brands}
-        {--min-photos=1 : Process all brands with at least N photos (can be used alone)}
+        {--min-photos=0 : Process all brands with at least N photos (can be used alone)}
         {--min-count=2 : Minimum co-occurrence count to consider}
         {--max-objects=50 : Maximum objects per brand to validate}
         {--dry-run : Show what would be processed without API calls}';
