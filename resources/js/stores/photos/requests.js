@@ -87,19 +87,6 @@ export const requests = {
     },
 
     /**
-     * Get single photo details
-     */
-    async GET_PHOTO_DETAILS(photoId) {
-        try {
-            const response = await axios.get(`/api/v3/user/photos/${photoId}`);
-            return response.data;
-        } catch (error) {
-            console.error('get_photo_details', error);
-            throw error;
-        }
-    },
-
-    /**
      * Fetch stats separately (can be cached)
      */
     async GET_UNTAGGED_STATS() {

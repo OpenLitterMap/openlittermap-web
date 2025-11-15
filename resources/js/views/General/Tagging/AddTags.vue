@@ -1,22 +1,80 @@
 <template>
     <div class="bg-[#1e283a] olm-full">
-        <div class="h-full py-12 px-24">
+        <div class="h-full py-12 px-4">
             <div v-if="paginatedPhotos?.data?.length === 0" class="flex flex-col items-center">
                 <p class="text-4xl text-white text-center mb-8">No photos to tag</p>
-
                 <img :src="litterWorldImg" alt="Litter World" class="w-1/2 h-1/2" />
             </div>
 
             <div v-else>
-                <VerticalXpBar :newTags="newTags" />
-
-                <div class="flex ml-[7em] w-full md:pr-[3em]">
-                    <!-- Image Container -->
+                <div class="flex ml-[2em] w-full md:pr-[3em]">
+                    <!-- Left Column: Image Container -->
                     <div class="flex flex-col items-center w-2/5">
-                        <img :src="paginatedPhotos?.data[0]?.filename" alt="photo" style="max-height: 25em" />
+                        <!-- Image with Skeleton Loader -->
+                        <div class="w-full max-h-[50vh] relative">
+                            <!-- Skeleton Loader -->
+                            <div v-if="isImageLoading" class="animate-pulse">
+                                <div
+                                    class="bg-gray-700 rounded-lg flex flex-col items-center justify-center"
+                                    style="height: 50vh"
+                                >
+                                    <svg
+                                        class="w-16 h-16 text-gray-600 mb-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                        />
+                                    </svg>
+                                    <div class="space-y-2 w-1/2">
+                                        <div class="h-2 bg-gray-600 rounded animate-pulse"></div>
+                                        <div class="h-2 bg-gray-600 rounded animate-pulse w-3/4"></div>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <!-- Actual Image -->
+                            <img
+                                v-show="!isImageLoading"
+                                :src="currentPhotoSrc"
+                                :key="currentPhotoSrc"
+                                alt="photo"
+                                class="max-h-[50vh] w-auto object-contain mx-auto"
+                                @load="onImageLoad"
+                                @error="onImageError"
+                            />
+
+                            <!-- Error State -->
+                            <div
+                                v-if="imageError"
+                                class="bg-gray-800 rounded-lg flex flex-col items-center justify-center"
+                                style="height: 50vh"
+                            >
+                                <svg
+                                    class="w-16 h-16 text-red-500 mb-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                                <p class="text-gray-400">Failed to load image</p>
+                            </div>
+                        </div>
+
+                        <!-- Controls Below Image -->
                         <div class="w-full">
-                            <!-- Needs a key to re-render -->
+                            <!-- Search All Tags -->
                             <SelectTag
                                 :key="searchAllTagsKey"
                                 :tags="getAllTags"
@@ -27,13 +85,8 @@
                             />
 
                             <div class="flex gap-2">
-                                <!-- Select Category -->
                                 <SelectTag :tags="getCategories" v-model="selectedCategory" placeholder="category" />
-
-                                <!-- Select Object -->
                                 <SelectTag :tags="getObjects" v-model="selectedObject" placeholder="object" />
-
-                                <!-- Select Quantity -->
                                 <QuantityPicker v-model="selectedQuantity" />
                             </div>
 
@@ -66,15 +119,17 @@
                         </div>
                     </div>
 
-                    <!-- Right container-->
+                    <!-- Right Column: Navigation + Tags -->
                     <div class="w-2/3 2xl:w-1/2">
                         <AddTagsHeader
                             :paginatedPhotos="paginatedPhotos"
                             :newTags="newTags"
+                            :currentPhotoIndex="currentPhotoIndex"
+                            @update:currentPhotoIndex="handlePhotoIndexChange"
                             @clearTags="resetAllInputs"
                         />
 
-                        <div class="pl-12">
+                        <div class="pl-12 mt-4 max-h-[60vh] overflow-y-auto">
                             <ul role="list" class="grid grid-cols-2 gap-6">
                                 <li
                                     v-for="tag in newTags"
@@ -89,7 +144,6 @@
                                             {{ tag.key }}
                                         </span>
 
-                                        <!-- We need to pluralize this -->
                                         <p v-else class="2xl:text-xl flex-1">
                                             {{ tag.quantity }}
                                             {{ t('litter.' + tag.category.key + '.' + tag.object.key) }}
@@ -139,8 +193,6 @@
                                     <div class="mb-4">
                                         <div class="flex items-center">
                                             <p class="text-sm pr-2">Extra tags:</p>
-
-                                            <!-- Information icon -->
                                             <InformationCircleIcon
                                                 class="w-4 h-4 text-blue-500"
                                                 v-tooltip="'Choose from our suggested tags or add your own'"
@@ -176,10 +228,9 @@
                                     </div>
 
                                     <div class="flex mt-auto">
-                                        <div class="flex w-2/3 m-auto">
+                                        <div class="flex w-2/3 m-auto items-center">
                                             <p class="mr-2">Picked up</p>
-
-                                            <ToggleSwitch :model-value="tag.pickedUp" />
+                                            <ToggleSwitch v-model="tag.pickedUp" />
                                         </div>
 
                                         <div class="flex w-1/3 gap-1">
@@ -219,7 +270,6 @@ import { InformationCircleIcon } from '@heroicons/vue/24/outline';
 import { usePhotosStore } from '../../../stores/photos/index.js';
 import { useTagsStore } from '../../../stores/tags/index.js';
 import AddTagsHeader from './components/AddTagsHeader.vue';
-import VerticalXpBar from './components/VerticalXpBar.vue';
 import SelectTag from './components/SelectTag.vue';
 import CreateTag from './components/CreateTag.vue';
 import QuantityPicker from './components/QuantityPicker.vue';
@@ -230,6 +280,7 @@ const tagsStore = useTagsStore();
 
 const { t } = useI18n();
 const $loading = useLoading();
+const currentPhotoIndex = ref(0);
 const selectedCategory = ref({ id: 0, key: '', text: '' });
 const selectedObject = ref({ id: 0, key: '', text: '' });
 const selectedMaterial = ref({ id: 0, key: '', text: '' });
@@ -237,6 +288,11 @@ const searchAllTags = ref({ id: 0, key: '', text: '' });
 const selectedQuantity = ref(1);
 const searchAllTagsKey = ref(0);
 const newTags = ref([]);
+
+// Image loading states
+const isImageLoading = ref(false);
+const imageError = ref(false);
+
 import litterWorldImg from '@/assets/pixel_art/litterworld.jpeg';
 
 onMounted(async () => {
@@ -261,29 +317,57 @@ onUnmounted(() => {
 // Function to listen for Cmd + Enter (Mac) or Ctrl + Enter (Windows)
 const handleKeyDown = (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-        event.preventDefault(); // Prevent unintended behavior
+        event.preventDefault();
         addTag();
     }
 };
 
 const paginatedPhotos = computed(() => photosStore.paginated);
+const currentPhotoSrc = computed(() => paginatedPhotos.value?.data[currentPhotoIndex.value]?.filename);
 
-// Needs checkboxes to filter by all tags or materials
+// Watch for photo changes to trigger loading state
+watch(currentPhotoSrc, (newSrc) => {
+    if (newSrc) {
+        isImageLoading.value = true;
+        imageError.value = false;
+    }
+});
+
+// Image event handlers
+const onImageLoad = () => {
+    isImageLoading.value = false;
+    imageError.value = false;
+};
+
+const onImageError = () => {
+    isImageLoading.value = false;
+    imageError.value = true;
+};
+
+// Handle photo index change from navigation
+const handlePhotoIndexChange = (newIndex) => {
+    currentPhotoIndex.value = newIndex;
+    isImageLoading.value = true;
+    imageError.value = false;
+};
+
+// Reset photo index when new photos are loaded
+watch(paginatedPhotos, () => {
+    currentPhotoIndex.value = 0;
+    isImageLoading.value = true;
+    imageError.value = false;
+});
+
+// All your existing computed properties and methods
 const getAllTags = computed(() => {
     const tags = [];
-
-    // Iterate over each category in tagsStore.groupedTags.
-    // We assume tagsStore.groupedTags is an object where each key represents a category.
     Object.keys(tagsStore.groupedTags).forEach((categoryKey) => {
         const categoryGroup = tagsStore.groupedTags[categoryKey];
-        // Use the category group's id if provided; otherwise fallback to the categoryKey.
         const categoryId = categoryGroup.id || categoryKey;
         const categoryText = t(`litter.categories.${categoryKey}`);
 
-        // Iterate over the litter_objects array within this category.
         (categoryGroup.litter_objects || []).forEach((obj) => {
             const objectText = t(`litter.${categoryKey}.${obj.key}`);
-
             tags.push({
                 id: `cat-${categoryId}-obj-${obj.id}`,
                 key: `${categoryKey}-${obj.key}`,
@@ -297,7 +381,6 @@ const getAllTags = computed(() => {
             });
         });
     });
-
     return tags;
 });
 
@@ -321,23 +404,19 @@ const getObjects = computed(() => {
             };
         });
     }
-
     return [];
 });
 
 const getMaterials = computed(() => {
     let materials = [];
-
     if (selectedCategory.value.id > 0 && selectedObject.value.id > 0) {
         materials = tagsStore.groupedTags[selectedCategory.value.key].litter_objects.find(
             (obj) => obj.key === selectedObject.value.key
         )?.materials;
     }
-
-    if (materials.length === 0) {
+    if (!materials || materials.length === 0) {
         materials = tagsStore.materials;
     }
-
     return materials;
 });
 
@@ -349,14 +428,11 @@ watch(selectedObject, (newObj) => {
     if (selectedCategory.value.id !== 0) {
         return;
     }
-
     if (newObj) {
         if (newObj.categories?.length === 1) {
             selectedCategory.value = newObj.categories[0];
         }
-
         const materials = getMaterials.value;
-
         if (materials.length === 1) {
             selectedMaterial.value = materials[0];
         }
@@ -388,16 +464,12 @@ const addTag = () => {
         return;
     }
 
-    // If there is only 1 material, apply it
-    // If there are 2+ materials, add them to suggested tags
     newTags.value.push({
         id: Math.random().toString(16).slice(2),
         category: { ...selectedCategory.value },
         object: { ...selectedObject.value },
         quantity: selectedQuantity.value,
-        pickedUp: true, // change to users default settings
-
-        // Brands, Materials, Custom Tags & anything else
+        pickedUp: true,
         extraTags:
             selectedObject.value.materials?.length > 0
                 ? selectedObject.value.materials.map((material) => ({
@@ -414,7 +486,6 @@ const addTag = () => {
 const addCustomTag = (tag) => {
     if (tag.custom) {
         newTags.value.push(tag);
-
         searchAllTags.value = { id: 0, key: '', text: '' };
     }
 };
@@ -427,14 +498,12 @@ const toggleExtraTag = (extraTag) => {
     extraTag.selected = !extraTag.selected;
 };
 
-// This resets the SelectTags, not newTags
 const resetInputs = () => {
     selectedCategory.value = { id: 0, key: '', text: '' };
     selectedObject.value = { id: 0, key: '', text: '' };
     selectedMaterial.value = { id: 0, key: '', text: '' };
     searchAllTags.value = { id: 0, key: '', text: '' };
     selectedQuantity.value = 1;
-    // Increment key to re-render SelectTag component
     searchAllTagsKey.value++;
 };
 
@@ -449,7 +518,6 @@ const deleteTag = (id) => {
 
 const duplicateTag = (id) => {
     const originalTag = newTags.value.find((tag) => tag.id === id);
-
     newTags.value.push({
         id: Math.random().toString(16).slice(2),
         category: originalTag.category,
@@ -457,29 +525,30 @@ const duplicateTag = (id) => {
         material: originalTag.material,
         quantity: originalTag.quantity,
         pickedUp: originalTag.pickedUp,
+        extraTags: originalTag.extraTags ? [...originalTag.extraTags] : [],
     });
 };
 
 const updateNestedTag = (type, id, newVal) => {
-    // If the new selection is cleared (or empty), don't update.
     if (!newVal || !newVal.id) {
         return;
     }
 
-    // Find the tag in newTags array by its id.
     const tagIndex = newTags.value.findIndex((tag) => tag.id === id);
     if (tagIndex === -1) return;
 
     const tag = newTags.value[tagIndex];
 
-    // Create the new extra tag data.
     const updatedExtraTag = {
         ...newVal,
         selected: true,
         type,
     };
 
-    // Check for an existing extra tag based only on newVal.id, newVal.key, and type.
+    if (!tag.extraTags) {
+        tag.extraTags = [];
+    }
+
     const exists = tag.extraTags.find(
         (extra) => extra.type === type && extra.id === newVal.id && extra.key === newVal.key
     );
@@ -487,15 +556,12 @@ const updateNestedTag = (type, id, newVal) => {
     if (!exists) {
         tag.extraTags.push(updatedExtraTag);
     } else {
-        // If it exists, update its properties (including selected) with the new values.
         Object.assign(exists, updatedExtraTag);
     }
 
-    // Replace the tag in the array to ensure reactivity.
     newTags.value.splice(tagIndex, 1, { ...tag });
 };
 
-// Ensure tag.quantity stays between 1 and 100
 const enforceQuantityRange = (tag) => {
     if (tag.quantity < 1) {
         tag.quantity = 1;
