@@ -1,5 +1,7 @@
 # OpenLitterMap v5 Brand Migration Process
 
+NOTE: SOME OF THIS INFORMATION IS OUTDATED AND INCOMPLETE.
+
 ## Executive Summary
 
 The v5 migration consolidates **2,452 unique brands** from two legacy sources into a unified system with AI-validated brand-object relationships. This document reflects the complete migration strategy with all lessons learned during implementation.

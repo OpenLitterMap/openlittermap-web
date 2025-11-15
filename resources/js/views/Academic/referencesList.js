@@ -578,4 +578,10 @@ export const referencesList = [
         link: 'https://mediterraneanpublications.com/mejaimr/article/view/946',
         author: 'Dahiru et al',
     },
+    {
+        date: '2025/11/15',
+        title: 'Emerging AI Solutions for Hazardous PET Waste in Marine Environments: A Review of Underexplored Paradigms',
+        link: 'https://eartharxiv.org/repository/view/10737/',
+        author: 'Hossam et al',
+    },
 ];

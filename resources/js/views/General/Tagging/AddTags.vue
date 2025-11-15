@@ -242,7 +242,7 @@ import litterWorldImg from '@/assets/pixel_art/litterworld.jpeg';
 onMounted(async () => {
     const loader = $loading.show({ container: null });
 
-    await photosStore.GET_USERS_UNTAGGED_PHOTOS();
+    await photosStore.GET_USERS_PHOTOS(1, { tagged: false });
 
     if (tagsStore.groupedTags.length === 0) {
         await tagsStore.GET_TAGS();

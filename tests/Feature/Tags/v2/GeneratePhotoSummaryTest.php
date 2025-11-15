@@ -16,6 +16,7 @@ use Tests\TestCase;
 
 class GeneratePhotoSummaryTest extends TestCase
 {
+    // UpdateTagsService is for our migration script, not for real-world tagging.
     protected UpdateTagsService $updateTagsService;
     protected GeneratePhotoSummaryService $generatePhotoSummaryService;
 
@@ -77,15 +78,15 @@ class GeneratePhotoSummaryTest extends TestCase
         $smokingCategoryId = $smokingCategory->id;
 
         $totals = $summary['totals'];
-        $this->assertEquals(8, $totals['total_tags']);
+        $this->assertEquals(7, $totals['total_tags']);
         $this->assertEquals(2, $totals['total_objects']);
         $this->assertEquals(4, $totals['materials']);
-        $this->assertEquals(1, $totals['brands']);
+        $this->assertEquals(0, $totals['brands']); // we are skipping brand attachment in the migration script
         $this->assertEquals(1, $totals['custom_tags']);
 
         // Check by_category uses category ID
         $this->assertArrayHasKey($smokingCategoryId, $totals['by_category']);
-        $this->assertEquals(8, $totals['by_category'][$smokingCategoryId]);
+        $this->assertEquals(7, $totals['by_category'][$smokingCategoryId]);
 
         // Check tags structure uses category ID
         $this->assertArrayHasKey($smokingCategoryId, $summary['tags']);
@@ -95,9 +96,8 @@ class GeneratePhotoSummaryTest extends TestCase
         $entry = reset($objects);
         $this->assertEquals(2, $entry['quantity']);
 
-        // Verify brands exist (don't check specific brand ID as it may vary)
-        $this->assertNotEmpty($entry['brands']);
-        $this->assertEquals(1, array_sum($entry['brands'])); // Total brand quantity
+        // $this->assertNotEmpty($entry['brands']); // We are skipping brand attachment in the migration script
+        // $this->assertEquals(1, array_sum($entry['brands'])); // Total brand quantity
 
         // Verify materials exist
         $this->assertNotEmpty($entry['materials']);
@@ -107,7 +107,7 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->assertNotEmpty($entry['custom_tags']);
         $this->assertEquals(1, array_sum($entry['custom_tags'])); // Total custom tag quantity
 
-        $this->assertEquals(8, $photo->total_tags);
+        $this->assertEquals(7, $photo->total_tags);
     }
 
     /** @test */

@@ -46,6 +46,10 @@ export const requests = {
             const response = await axios.get('/api/v3/user/photos', { params });
 
             // Update store with new structure
+            this.paginated = {
+                data: response.data.photos || [],
+                ...response.data.pagination,
+            };
             this.photos = response.data.photos || [];
             this.pagination = response.data.pagination || {
                 current_page: 1,

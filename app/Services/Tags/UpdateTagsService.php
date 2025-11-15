@@ -2,7 +2,6 @@
 
 namespace App\Services\Tags;
 
-use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
@@ -10,6 +9,11 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * This is for our migration script, not for real-world tagging.
+ *
+ * We might also use this for old mobile app versions...
+ */
 class UpdateTagsService
 {
     public ClassifyTagsService $classifyTags;
@@ -291,9 +295,15 @@ class UpdateTagsService
             }
         }
 
-        // Second pass: Attach brands using ONLY existing pivot relationships
-        if ($hasObjects && !empty($globalBrands)) {
-            $this->attachBrandsUsingExistingPivots($photo, $globalBrands, $createdPhotoTags);
+        // Skip brand attachment for now - will be handled in a separate process
+        // Just log that we have brands to process later
+        if (!empty($globalBrands)) {
+            $brandKeys = array_map(fn($b) => $b['key'] ?? 'unknown', $globalBrands);
+            Log::info("Photo has brands for future processing", [
+                'photo_id' => $photo->id,
+                'brands' => $brandKeys,
+                'count' => count($globalBrands)
+            ]);
         }
 
         // If no objects at all but have brands, create brands-only tag
@@ -315,189 +325,6 @@ class UpdateTagsService
     }
 
     /**
-     * Attach brands using ONLY existing pivot relationships
-     * Unmatched brands get their own brands-only PhotoTag
-     */
-    private function attachBrandsUsingExistingPivots(Photo $photo, array $brands, array $createdPhotoTags): void
-    {
-        $attachedBrandIds = [];
-        $unmatchedBrands = [];
-
-        // Pretty print photo summary
-        $this->logPhotoSummary($photo, $brands, $createdPhotoTags);
-
-        foreach ($brands as $brand) {
-            $brandId = $brand['id'] ?? null;
-            $brandKey = $brand['key'] ?? 'unknown';
-            $matched = false;
-
-            if (!$brandId) {
-                Log::warning("Brand has no ID", [
-                    'photo_id' => $photo->id,
-                    'brand_key' => $brandKey
-                ]);
-                $unmatchedBrands[] = $brand;
-                continue;
-            }
-
-            // Skip if already attached
-            if (in_array($brandId, $attachedBrandIds, true)) {
-                continue;
-            }
-
-            // Log what we're searching for
-            Log::info("════════════════════════════════");
-            Log::info("🔍 SEARCHING FOR BRAND: {$brandKey} (ID: {$brandId})");
-
-            // Get ALL possible pivots for this brand
-            $this->logAllBrandPivots($brandKey, $brandId);
-
-            // Check each created PhotoTag for a pivot relationship
-            $possibleMatches = [];
-
-            foreach ($createdPhotoTags as $tagData) {
-                $objectId = $tagData['object']['id'];
-                $objectKey = $tagData['object']['key'] ?? 'unknown';
-                $categoryId = $tagData['category_id'] ?? null;
-
-                if (!$categoryId) {
-                    continue;
-                }
-
-                // Check if there's a CategoryObject pivot
-                $categoryObject = DB::table('category_litter_object')
-                    ->where('category_id', $categoryId)
-                    ->where('litter_object_id', $objectId)
-                    ->first();
-
-                if (!$categoryObject) {
-                    Log::debug("  ❌ No category_object for {$objectKey}");
-                    continue;
-                }
-
-                // Check if this brand has a pre-existing relationship
-                $hasPivot = DB::table('taggables')
-                    ->where('category_litter_object_id', $categoryObject->id)
-                    ->where('taggable_type', BrandList::class)
-                    ->where('taggable_id', $brandId)
-                    ->exists();
-
-                if ($hasPivot) {
-                    $possibleMatches[] = [
-                        'object' => $objectKey,
-                        'object_id' => $objectId,
-                        'category_object_id' => $categoryObject->id,
-                        'tag_data' => $tagData
-                    ];
-
-                    Log::info("  ✅ Found pivot: {$brandKey} → {$objectKey} (category_object_id: {$categoryObject->id})");
-                } else {
-                    Log::debug("  ❌ No pivot: {$brandKey} → {$objectKey}");
-                }
-            }
-
-            // Decision logic
-            if (count($possibleMatches) === 1) {
-                // Only one match, use it
-                $match = $possibleMatches[0];
-                Log::info("📌 ATTACHING: {$brandKey} → {$match['object']} (only match)");
-
-                $match['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
-                $attachedBrandIds[] = $brandId;
-                $matched = true;
-
-            } elseif (count($possibleMatches) > 1) {
-                // Multiple matches - log them all and choose
-                Log::warning("⚠️  MULTIPLE PIVOTS FOUND for {$brandKey}:");
-                foreach ($possibleMatches as $pm) {
-                    Log::warning("    - {$pm['object']} (category_object_id: {$pm['category_object_id']})");
-                }
-
-                // Choose the first one (you could add smarter logic here)
-                $match = $possibleMatches[0];
-                Log::info("📌 CHOOSING FIRST: {$brandKey} → {$match['object']}");
-
-                $match['tag_data']['photo_tag']->attachExtraTags([$brand], 'brand', 0);
-                $attachedBrandIds[] = $brandId;
-                $matched = true;
-            }
-
-            // If no pivot match found
-            if (!$matched) {
-                Log::warning("❌ NO MATCH: {$brandKey} will become brands-only tag");
-                $unmatchedBrands[] = $brand;
-            }
-
-            Log::info("────────────────────────────────");
-        }
-
-        // Create brands-only tag for unmatched brands
-        if (!empty($unmatchedBrands)) {
-            $this->createBrandsOnlyTag($photo, $unmatchedBrands);
-        }
-    }
-
-    /**
-     * Log a pretty summary of the photo's tags
-     */
-    private function logPhotoSummary(Photo $photo, array $brands, array $createdPhotoTags): void
-    {
-        Log::info("╔════════════════════════════════════════════════════════╗");
-        Log::info("║ PHOTO {$photo->id} MIGRATION                          ║");
-        Log::info("╠════════════════════════════════════════════════════════╣");
-
-        // Log objects
-        Log::info("║ OBJECTS:");
-        foreach ($createdPhotoTags as $tag) {
-            $objectKey = $tag['object']['key'] ?? 'unknown';
-            $objectId = $tag['object']['id'] ?? '?';
-            $quantity = $tag['object']['quantity'] ?? 1;
-            Log::info("║   - {$objectKey} (ID: {$objectId}, Qty: {$quantity})");
-        }
-
-        // Log brands
-        Log::info("║ BRANDS:");
-        foreach ($brands as $brand) {
-            $brandKey = $brand['key'] ?? 'unknown';
-            $brandId = $brand['id'] ?? '?';
-            $quantity = $brand['quantity'] ?? 1;
-            Log::info("║   - {$brandKey} (ID: {$brandId}, Qty: {$quantity})");
-        }
-
-        Log::info("╚════════════════════════════════════════════════════════╝");
-    }
-
-    /**
-     * Log all existing pivots for a brand
-     */
-    private function logAllBrandPivots(string $brandKey, int $brandId): void
-    {
-        $pivots = DB::table('taggables as t')
-            ->join('category_litter_object as clo', 't.category_litter_object_id', '=', 'clo.id')
-            ->join('litter_objects as lo', 'clo.litter_object_id', '=', 'lo.id')
-            ->join('categories as c', 'clo.category_id', '=', 'c.id')
-            ->where('t.taggable_type', BrandList::class)
-            ->where('t.taggable_id', $brandId)
-            ->select(
-                't.id as taggable_id',
-                't.category_litter_object_id',
-                'c.key as category',
-                'lo.key as object',
-                't.quantity'
-            )
-            ->get();
-
-        if ($pivots->isEmpty()) {
-            Log::warning("  ⚠️  NO PIVOTS EXIST for {$brandKey}");
-        } else {
-            Log::info("  📋 EXISTING PIVOTS for {$brandKey}:");
-            foreach ($pivots as $pivot) {
-                Log::info("    - {$pivot->category}/{$pivot->object} (taggable.id: {$pivot->taggable_id}, cat_obj_id: {$pivot->category_litter_object_id})");
-            }
-        }
-    }
-
-    /**
      * Create a brands-only PhotoTag for brands without object relationships
      */
     private function createBrandsOnlyTag(Photo $photo, array $brands): void
@@ -509,7 +336,7 @@ class UpdateTagsService
         // Extract brand keys for logging
         $brandKeys = array_map(fn($b) => $b['key'] ?? 'unknown', $brands);
 
-        Log::info("Creating brands-only tag for unmatched brands", [
+        Log::info("Creating brands-only tag", [
             'photo_id' => $photo->id,
             'brands' => $brandKeys,
             'count' => count($brands)

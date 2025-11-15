@@ -39,7 +39,9 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
     Route::post('/add-tags-to-uploaded-image', 'API\AddTagsToUploadedImageController');
 });
 
-
+/**
+ * New for OLM v5
+ */
 Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
     Route::get('/user/photos', [UsersUploadsController::class, 'index']);
     Route::get('/user/photos/stats', [UsersUploadsController::class, 'stats']);
