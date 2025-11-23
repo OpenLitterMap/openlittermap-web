@@ -17,6 +17,7 @@
             <!-- Links -->
             <div :class="['md:space-x-6', mobileNavOpen ? 'md:block' : 'hidden md:flex items-center']">
                 <router-link to="/about" class="nav-item">{{ t('About') }}</router-link>
+                <router-link to="/changelog" class="nav-item">{{ t('Changelog') }}</router-link>
                 <!--                <router-link to="/cleanups" class="nav-item">Cleanups</router-link>-->
                 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
                 <router-link to="/leaderboard" class="nav-item">{{ t('Leaderboard') }}</router-link>

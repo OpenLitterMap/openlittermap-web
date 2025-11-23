@@ -27,6 +27,7 @@ Route::get('/community', HomeController::class);
 Route::get('/references', HomeController::class);
 Route::get('/leaderboard', HomeController::class);
 Route::get('/faq', HomeController::class);
+Route::get('/changelog', HomeController::class);
 
 Route::get('/community/stats', 'CommunityController@stats');
 Route::get('/tags-search', 'DisplayTagsOnMapController@show');

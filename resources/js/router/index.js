@@ -20,6 +20,7 @@ import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
 import World from '../views/Locations/World.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
+import Changelog from '../views/General/Changelog.vue';
 
 const routes = [
     // Public routes
@@ -27,6 +28,11 @@ const routes = [
         path: '/about',
         name: 'About',
         component: About,
+    },
+    {
+        path: '/changelog',
+        name: 'Changelog',
+        component: Changelog,
     },
     {
         path: '/terms',
