@@ -21,6 +21,7 @@ import Privacy from '../views/General/Privacy.vue';
 import World from '../views/Locations/World.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
 import Changelog from '../views/General/Changelog.vue';
+import NewAddTags from '../views/General/Tagging/v2/NewAddTags.vue';
 
 const routes = [
     // Public routes
@@ -81,9 +82,17 @@ const routes = [
     },
     // Auth Routes
     {
+        path: '/oldtag',
+        name: 'OldTag',
+        component: AddTags,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
         path: '/tag',
         name: 'AddTags',
-        component: AddTags,
+        component: NewAddTags,
         meta: {
             middleware: [auth],
         },
