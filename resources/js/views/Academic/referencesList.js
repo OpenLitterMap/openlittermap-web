@@ -584,4 +584,10 @@ export const referencesList = [
         link: 'https://eartharxiv.org/repository/view/10737/',
         author: 'Hossam et al',
     },
+    {
+        date: '2025/11/24',
+        title: 'StreetView-Waste: A Multi-Task Dataset for Urban Waste Management',
+        link: 'https://arxiv.org/pdf/2511.16440',
+        author: 'Paulo et al',
+    },
 ];

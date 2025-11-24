@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="relative">
         <Combobox :modelValue="selected" @update:modelValue="handleSelection" nullable>
             <div class="relative">
                 <ComboboxInput
@@ -20,7 +20,7 @@
             <transition leave="transition ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0">
                 <ComboboxOptions
                     v-if="filteredTags.length > 0 || query.length > 2"
-                    class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-gray-700 py-1 shadow-lg ring-1 ring-black ring-opacity-25 focus:outline-none"
+                    class="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-lg bg-gray-700 py-1 shadow-lg ring-1 ring-black ring-opacity-25 focus:outline-none"
                 >
                     <!-- Regular tag options -->
                     <ComboboxOption

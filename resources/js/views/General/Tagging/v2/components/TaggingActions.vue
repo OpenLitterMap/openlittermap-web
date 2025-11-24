@@ -1,6 +1,6 @@
 <template>
-    <div class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <div class="bg-gray-800 border-t border-gray-700 px-6 py-4">
+        <div class="flex items-center justify-between">
             <!-- Left: Clear button -->
             <button
                 v-if="tags.length > 0"

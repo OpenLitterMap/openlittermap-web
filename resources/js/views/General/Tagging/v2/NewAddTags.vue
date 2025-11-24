@@ -1,12 +1,17 @@
 <template>
     <div class="h-[calc(100vh-80px)] bg-gray-900 flex flex-col overflow-hidden">
-        <!-- Compact Header -->
+        <!-- Enhanced Header with integrated actions and XP display -->
         <TaggingHeader
             :current-photo="currentPhoto"
             :photos="paginatedPhotos"
             :current-index="currentPhotoIndex"
+            :tags="activeTags"
+            :xp-preview="calculateXP"
+            :submitting="isSubmitting"
             @navigate="handleNavigation"
             @skip="skipPhoto"
+            @clear="clearAllTags"
+            @submit="submitTags"
         />
 
         <!-- Main Content Area - Scrollable -->
@@ -98,16 +103,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Action Bar - Fixed at bottom -->
-        <TaggingActions
-            :tags="activeTags"
-            :xp-preview="calculateXP"
-            :submitting="isSubmitting"
-            @clear="clearAllTags"
-            @submit="submitTags"
-            class="flex-shrink-0"
-        />
     </div>
 </template>
 
@@ -121,7 +116,6 @@ import TaggingHeader from './components/TaggingHeader.vue';
 import UnifiedTagSearch from './components/UnifiedTagSearch.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import ActiveTagsList from './components/ActiveTagsList.vue';
-import TaggingActions from './components/TaggingActions.vue';
 
 // Stores
 const photosStore = usePhotosStore();

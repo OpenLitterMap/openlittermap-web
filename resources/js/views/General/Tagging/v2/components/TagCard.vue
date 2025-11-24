@@ -66,65 +66,158 @@
             </div>
         </div>
 
-        <!-- Additional details (collapsed by default) -->
-        <div v-if="showDetails || hasDetails">
-            <!-- Show existing details -->
-            <div v-if="hasDetails" class="mb-2 space-y-1">
-                <div v-if="tag.brands?.length" class="text-sm">
-                    <span class="text-gray-400">Brands:</span>
-                    <span class="ml-2 text-gray-300">{{ tag.brands.map((b) => b.key).join(', ') }}</span>
-                </div>
-                <div v-if="tag.materials?.length" class="text-sm">
-                    <span class="text-gray-400">Materials:</span>
-                    <span class="ml-2 text-gray-300">{{ tag.materials.map((m) => m.key).join(', ') }}</span>
-                </div>
-                <div v-if="tag.customTags?.length" class="text-sm">
-                    <span class="text-gray-400">Custom:</span>
-                    <span class="ml-2 text-gray-300">{{ tag.customTags.join(', ') }}</span>
-                </div>
+        <!-- Show existing details if any -->
+        <div v-if="hasDetails" class="mb-2 space-y-1 text-sm">
+            <div v-if="tag.brands?.length" class="flex flex-wrap gap-1">
+                <span class="text-gray-400">Brands:</span>
+                <span
+                    v-for="brand in tag.brands"
+                    :key="brand.id"
+                    class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md"
+                >
+                    {{ brand.key }}
+                </span>
             </div>
-
-            <!-- Toggle to show/hide detail inputs -->
-            <button
-                @click="showDetails = !showDetails"
-                class="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-                {{ showDetails ? 'Hide details' : 'Add details' }} →
-            </button>
-
-            <!-- Detail inputs (when expanded) -->
-            <div v-if="showDetails" class="mt-3 space-y-2">
-                <input
-                    v-model="newDetail"
-                    @keydown.enter="addDetail"
-                    placeholder="Add brand, material, or custom detail..."
-                    class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
-                />
-                <div class="text-xs text-gray-400">Press Enter to add detail</div>
+            <div v-if="tag.materials?.length" class="flex flex-wrap gap-1">
+                <span class="text-gray-400">Materials:</span>
+                <span
+                    v-for="material in tag.materials"
+                    :key="material.id"
+                    class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md"
+                >
+                    {{ material.key }}
+                </span>
+            </div>
+            <div v-if="tag.objects?.length" class="flex flex-wrap gap-1">
+                <span class="text-gray-400">Also contains:</span>
+                <span v-for="obj in tag.objects" :key="obj.id" class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md">
+                    {{ obj.key }}
+                </span>
+            </div>
+            <div v-if="tag.customTags?.length" class="flex flex-wrap gap-1">
+                <span class="text-gray-400">Custom:</span>
+                <span
+                    v-for="custom in tag.customTags"
+                    :key="custom"
+                    class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md"
+                >
+                    {{ custom }}
+                </span>
             </div>
         </div>
 
-        <!-- Show "Add details" button if no details exist yet -->
-        <button v-else @click="showDetails = true" class="text-sm text-gray-400 hover:text-gray-300 transition-colors">
-            + Add details
+        <!-- Toggle to show/hide detail inputs -->
+        <button
+            v-if="!showDetails"
+            @click="showDetails = true"
+            class="text-sm text-blue-400 hover:text-blue-300 transition-colors mb-2"
+        >
+            {{ hasDetails ? 'Add more details' : '+ Add details' }} →
         </button>
+
+        <!-- Detail inputs section (collapsible) -->
+        <div v-if="showDetails" class="space-y-2 pt-2 border-t border-gray-600">
+            <!-- Add Brands -->
+            <div class="relative">
+                <UnifiedTagSearch
+                    v-model="selectedBrand"
+                    :tags="brandsForSelect"
+                    placeholder="Add Brands"
+                    @tag-selected="addBrand"
+                    class="detail-select"
+                />
+            </div>
+
+            <!-- Add Materials -->
+            <div class="relative">
+                <UnifiedTagSearch
+                    v-model="selectedMaterial"
+                    :tags="materialsForSelect"
+                    placeholder="Add Materials"
+                    @tag-selected="addMaterial"
+                    class="detail-select"
+                />
+            </div>
+
+            <!-- Add More Objects (only for non-brand/material tags) -->
+            <div v-if="!tag.type || tag.type === 'object'" class="relative">
+                <UnifiedTagSearch
+                    v-model="selectedObject"
+                    :tags="objectsForSelect"
+                    placeholder="Add More Objects"
+                    @tag-selected="addObject"
+                    class="detail-select"
+                />
+            </div>
+
+            <!-- Add Custom Tags -->
+            <input
+                v-model="customTagInput"
+                @keydown.enter="addCustomTag"
+                placeholder="Add Custom Tags (press Enter)"
+                class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            />
+
+            <button @click="showDetails = false" class="text-sm text-gray-400 hover:text-gray-300 transition-colors">
+                Hide details
+            </button>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
+import UnifiedTagSearch from './UnifiedTagSearch.vue';
 
 const props = defineProps({
     tag: {
         type: Object,
         required: true,
     },
+    brands: {
+        type: Array,
+        default: () => [],
+    },
+    materials: {
+        type: Array,
+        default: () => [],
+    },
+    searchableTags: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const emit = defineEmits(['update-quantity', 'toggle-picked-up', 'add-detail', 'remove']);
 
 const showDetails = ref(false);
-const newDetail = ref('');
+const selectedBrand = ref(null);
+const selectedMaterial = ref(null);
+const selectedObject = ref(null);
+const customTagInput = ref('');
+
+// Convert brands array to format expected by UnifiedTagSearch
+const brandsForSelect = computed(() =>
+    props.brands.map((b) => ({
+        id: `brand-${b.id}`,
+        key: b.key,
+        type: 'brand',
+        raw: b,
+    }))
+);
+
+// Convert materials array to format expected by UnifiedTagSearch
+const materialsForSelect = computed(() =>
+    props.materials.map((m) => ({
+        id: `mat-${m.id}`,
+        key: m.key,
+        type: 'material',
+        raw: m,
+    }))
+);
+
+// Filter objects from searchable tags
+const objectsForSelect = computed(() => props.searchableTags.filter((t) => t.type === 'object'));
 
 const tagDisplay = computed(() => {
     if (props.tag.custom) {
@@ -140,7 +233,12 @@ const tagDisplay = computed(() => {
 });
 
 const hasDetails = computed(() => {
-    return props.tag.brands?.length > 0 || props.tag.materials?.length > 0 || props.tag.customTags?.length > 0;
+    return (
+        props.tag.brands?.length > 0 ||
+        props.tag.materials?.length > 0 ||
+        props.tag.objects?.length > 0 ||
+        props.tag.customTags?.length > 0
+    );
 });
 
 const updateQuantity = (value) => {
@@ -162,15 +260,51 @@ const decreaseQuantity = () => {
     }
 };
 
-const addDetail = () => {
-    if (newDetail.value.trim()) {
-        // For now, treat all as custom details
-        // In a real implementation, we'd detect if it's a brand or material
+const addBrand = (selected) => {
+    if (selected?.raw) {
+        emit('add-detail', {
+            type: 'brand',
+            value: selected.raw,
+        });
+        selectedBrand.value = null;
+    }
+};
+
+const addMaterial = (selected) => {
+    if (selected?.raw) {
+        emit('add-detail', {
+            type: 'material',
+            value: selected.raw,
+        });
+        selectedMaterial.value = null;
+    }
+};
+
+const addObject = (selected) => {
+    if (selected?.raw) {
+        emit('add-detail', {
+            type: 'object',
+            value: selected.raw,
+        });
+        selectedObject.value = null;
+    }
+};
+
+const addCustomTag = () => {
+    if (customTagInput.value.trim()) {
         emit('add-detail', {
             type: 'custom',
-            value: newDetail.value.trim(),
+            value: customTagInput.value.trim(),
         });
-        newDetail.value = '';
+        customTagInput.value = '';
     }
 };
 </script>
+
+<style scoped>
+/* Smaller input size for detail selects */
+:deep(.detail-select input) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+</style>

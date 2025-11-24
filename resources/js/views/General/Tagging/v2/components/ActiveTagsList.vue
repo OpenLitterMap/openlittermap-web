@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-gray-800 rounded-lg p-4">
+    <div class="bg-gray-800 rounded-lg p-4 h-full overflow-y-auto">
         <h3 class="text-white font-semibold mb-4 flex items-center justify-between">
             <span>Active Tags</span>
             <span v-if="tags.length > 0" class="text-sm font-normal text-gray-400">
@@ -27,6 +27,9 @@
                 v-for="tag in tags"
                 :key="tag.id"
                 :tag="tag"
+                :brands="brands"
+                :materials="materials"
+                :searchable-tags="searchableTags"
                 @update-quantity="(q) => $emit('update-quantity', tag.id, q)"
                 @toggle-picked-up="() => $emit('toggle-picked-up', tag.id)"
                 @add-detail="(detail) => $emit('add-detail', tag.id, detail)"
@@ -41,6 +44,18 @@ import TagCard from './TagCard.vue';
 
 defineProps({
     tags: {
+        type: Array,
+        default: () => [],
+    },
+    brands: {
+        type: Array,
+        default: () => [],
+    },
+    materials: {
+        type: Array,
+        default: () => [],
+    },
+    searchableTags: {
         type: Array,
         default: () => [],
     },
