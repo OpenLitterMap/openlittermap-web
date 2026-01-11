@@ -4,7 +4,6 @@
 
         <Modal />
 
-        <!-- style="height: calc(100% - 90px);"-->
         <router-view />
     </div>
 </template>

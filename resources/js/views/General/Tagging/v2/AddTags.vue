@@ -15,19 +15,22 @@
         />
 
         <!-- Main Content Area - Scrollable -->
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-hidden">
             <div class="flex flex-col lg:flex-row p-6 gap-6 h-full">
                 <!-- Left Column -->
-                <div class="lg:w-1/3 space-y-4">
+                <div class="lg:w-1/3 h-full">
                     <!-- Photo Viewer -->
                     <PhotoViewer
                         :photo-src="currentPhotoSrc"
                         :loading="imageLoading"
                         @image-loaded="imageLoading = false"
                     />
+                </div>
 
-                    <!-- Search Section (below image) -->
-                    <div class="space-y-3">
+                <!-- Right Column: Active Tags (2/3 on desktop) -->
+                <div class="lg:w-2/3 h-full flex flex-col overflow-hidden">
+                    <!-- Search Section -->
+                    <div class="space-y-3 mb-4 flex-shrink-0">
                         <!-- Learn about tagging prompt -->
                         <div
                             v-if="showTaggingHelp"
@@ -86,20 +89,20 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Right Column: Active Tags (2/3 on desktop) -->
-                <div class="lg:w-2/3">
-                    <ActiveTagsList
-                        :tags="activeTags"
-                        :searchable-tags="searchableTags"
-                        :brands="brandsList"
-                        :materials="materialsList"
-                        @update-quantity="updateTagQuantity"
-                        @toggle-picked-up="togglePickedUp"
-                        @add-detail="addTagDetail"
-                        @remove-tag="removeTag"
-                    />
+                    <div class="flex-1 min-h-0">
+                        <ActiveTagsList
+                            :tags="activeTags"
+                            :searchable-tags="searchableTags"
+                            :brands="brandsList"
+                            :materials="materialsList"
+                            @update-quantity="updateTagQuantity"
+                            @set-picked-up="setPickedUp"
+                            @add-detail="addTagDetail"
+                            @remove-tag="removeTag"
+                            @remove-detail="removeTagDetail"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -110,7 +113,6 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { usePhotosStore } from '@stores/photos/index.js';
 import { useTagsStore } from '@stores/tags/index.js';
-import { useUserStore } from '@stores/user/index.js';
 
 import TaggingHeader from './components/TaggingHeader.vue';
 import UnifiedTagSearch from './components/UnifiedTagSearch.vue';
@@ -120,12 +122,11 @@ import ActiveTagsList from './components/ActiveTagsList.vue';
 // Stores
 const photosStore = usePhotosStore();
 const tagsStore = useTagsStore();
-const userStore = useUserStore();
 
 // State
 const currentPhotoIndex = ref(0);
 const searchQuery = ref('');
-const activeTags = ref([]);
+const tagsByPhoto = ref({}); // { [photoId]: Tag[] }
 const recentTags = ref([]);
 const imageLoading = ref(true);
 const isSubmitting = ref(false);
@@ -136,22 +137,27 @@ const paginatedPhotos = computed(() => photosStore.paginated);
 const currentPhoto = computed(() => paginatedPhotos.value?.data?.[currentPhotoIndex.value]);
 const currentPhotoSrc = computed(() => currentPhoto.value?.filename);
 
+// Get current photo's tags
+const activeTags = computed(() => {
+    const photoId = currentPhoto.value?.id;
+    if (!photoId) return [];
+    return tagsByPhoto.value[photoId] || [];
+});
+
 // Create searchable tags index combining all tag types
 const searchableTags = computed(() => {
     const tags = [];
 
-    // Add objects with their categories
     tagsStore.objects.forEach((obj) => {
         tags.push({
             id: `obj-${obj.id}`,
             key: obj.key,
-            text: obj.key, // Will be translated later
+            text: obj.key,
             type: 'object',
             raw: obj,
         });
     });
 
-    // Add brands
     tagsStore.brands.forEach((brand) => {
         tags.push({
             id: `brand-${brand.id}`,
@@ -162,7 +168,6 @@ const searchableTags = computed(() => {
         });
     });
 
-    // Add materials
     tagsStore.materials.forEach((material) => {
         tags.push({
             id: `mat-${material.id}`,
@@ -176,7 +181,6 @@ const searchableTags = computed(() => {
     return tags;
 });
 
-// Separate lists for brands and materials (for tag card dropdowns)
 const brandsList = computed(() => tagsStore.brands || []);
 const materialsList = computed(() => tagsStore.materials || []);
 
@@ -186,12 +190,21 @@ const calculateXP = computed(() => {
     activeTags.value.forEach((tag) => {
         xp += tag.quantity || 1;
         if (tag.pickedUp) xp += 5;
-        // Add XP for brands/materials
         if (tag.brands?.length) xp += tag.brands.length * 3;
         if (tag.materials?.length) xp += tag.materials.length * 2;
     });
     return xp;
 });
+
+// Helper to ensure photo has an array in tagsByPhoto
+const ensurePhotoTags = () => {
+    const photoId = currentPhoto.value?.id;
+    if (!photoId) return null;
+    if (!tagsByPhoto.value[photoId]) {
+        tagsByPhoto.value[photoId] = [];
+    }
+    return photoId;
+};
 
 // Initialize
 onMounted(async () => {
@@ -201,13 +214,11 @@ onMounted(async () => {
         await tagsStore.GET_ALL_TAGS();
     }
 
-    // Load recent tags from localStorage
     const stored = localStorage.getItem('recentTags');
     if (stored) {
         recentTags.value = JSON.parse(stored).slice(0, 5);
     }
 
-    // Check if user has hidden the tagging help
     const hideHelp = localStorage.getItem('hideTaggingHelp');
     if (hideHelp === 'true') {
         showTaggingHelp.value = false;
@@ -222,7 +233,6 @@ onUnmounted(() => {
 
 // Keyboard shortcuts
 const handleKeyDown = (event) => {
-    // Cmd/Ctrl + Enter to submit
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if (activeTags.value.length > 0) {
@@ -230,11 +240,13 @@ const handleKeyDown = (event) => {
         }
     }
 
-    // Number keys for quantity on last added tag
     if (event.key >= '1' && event.key <= '9' && !event.ctrlKey && !event.metaKey) {
         const target = event.target;
         if (target.tagName !== 'INPUT' && activeTags.value.length > 0) {
-            activeTags.value[activeTags.value.length - 1].quantity = parseInt(event.key);
+            const photoId = currentPhoto.value?.id;
+            if (photoId && tagsByPhoto.value[photoId]?.length > 0) {
+                tagsByPhoto.value[photoId][tagsByPhoto.value[photoId].length - 1].quantity = parseInt(event.key);
+            }
         }
     }
 };
@@ -263,7 +275,6 @@ const skipPhoto = () => {
     handleNavigation('next');
 };
 
-// Hide tagging help prompt
 const hideTaggingHelp = () => {
     showTaggingHelp.value = false;
     localStorage.setItem('hideTaggingHelp', 'true');
@@ -272,53 +283,53 @@ const hideTaggingHelp = () => {
 // Tag handling
 const handleTagSelection = (selected) => {
     if (!selected || !selected.raw) return;
+    const photoId = ensurePhotoTags();
+    if (!photoId) return;
 
     const tagId = Math.random().toString(16).slice(2);
 
-    // Create appropriate PhotoTag structure based on type
     if (selected.type === 'object') {
-        // Create object tag (we'll handle category mapping later)
-        activeTags.value.push({
+        tagsByPhoto.value[photoId].push({
             id: tagId,
             object: selected.raw,
             quantity: 1,
-            pickedUp: false,
+            pickedUp: true,
             brands: [],
             materials: [],
             customTags: [],
         });
     } else if (selected.type === 'brand') {
-        // Create brand-only tag
-        activeTags.value.push({
+        tagsByPhoto.value[photoId].push({
             id: tagId,
             brand: selected.raw,
             quantity: 1,
-            pickedUp: false,
+            pickedUp: null,
             type: 'brand-only',
         });
     } else if (selected.type === 'material') {
-        // Create material-only tag
-        activeTags.value.push({
+        tagsByPhoto.value[photoId].push({
             id: tagId,
             material: selected.raw,
             quantity: 1,
-            pickedUp: false,
+            pickedUp: null,
             type: 'material-only',
         });
     }
 
-    // Update recent tags
     updateRecentTags(selected);
 };
 
 const handleCustomTag = (customTag) => {
+    const photoId = ensurePhotoTags();
+    if (!photoId) return;
+
     const tagId = Math.random().toString(16).slice(2);
-    activeTags.value.push({
+    tagsByPhoto.value[photoId].push({
         id: tagId,
         custom: true,
         key: customTag.key,
         quantity: 1,
-        pickedUp: false,
+        pickedUp: null,
     });
 };
 
@@ -338,9 +349,9 @@ const updateTagQuantity = (tagId, quantity) => {
     if (tag) tag.quantity = Math.max(1, Math.min(100, quantity));
 };
 
-const togglePickedUp = (tagId) => {
+const setPickedUp = (tagId, value) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (tag) tag.pickedUp = !tag.pickedUp;
+    if (tag) tag.pickedUp = value;
 };
 
 const addTagDetail = (tagId, detail) => {
@@ -349,37 +360,53 @@ const addTagDetail = (tagId, detail) => {
 
     if (detail.type === 'brand') {
         if (!tag.brands) tag.brands = [];
-        // Check if brand already exists
         if (!tag.brands.some((b) => b.id === detail.value.id)) {
             tag.brands.push(detail.value);
         }
     } else if (detail.type === 'material') {
         if (!tag.materials) tag.materials = [];
-        // Check if material already exists
         if (!tag.materials.some((m) => m.id === detail.value.id)) {
             tag.materials.push(detail.value);
         }
     } else if (detail.type === 'object') {
         if (!tag.objects) tag.objects = [];
-        // Check if object already exists
         if (!tag.objects.some((o) => o.id === detail.value.id)) {
             tag.objects.push(detail.value);
         }
     } else if (detail.type === 'custom') {
         if (!tag.customTags) tag.customTags = [];
-        // Check if custom tag already exists
         if (!tag.customTags.includes(detail.value)) {
             tag.customTags.push(detail.value);
         }
     }
 };
 
+const removeTagDetail = (tagId, detail) => {
+    const tag = activeTags.value.find((t) => t.id === tagId);
+    if (!tag) return;
+
+    if (detail.type === 'brand') {
+        tag.brands = tag.brands?.filter((b) => b.id !== detail.value.id) || [];
+    } else if (detail.type === 'material') {
+        tag.materials = tag.materials?.filter((m) => m.id !== detail.value.id) || [];
+    } else if (detail.type === 'object') {
+        tag.objects = tag.objects?.filter((o) => o.id !== detail.value.id) || [];
+    } else if (detail.type === 'custom') {
+        tag.customTags = tag.customTags?.filter((c) => c !== detail.value) || [];
+    }
+};
+
 const removeTag = (tagId) => {
-    activeTags.value = activeTags.value.filter((t) => t.id !== tagId);
+    const photoId = currentPhoto.value?.id;
+    if (!photoId || !tagsByPhoto.value[photoId]) return;
+    tagsByPhoto.value[photoId] = tagsByPhoto.value[photoId].filter((t) => t.id !== tagId);
 };
 
 const clearAllTags = () => {
-    activeTags.value = [];
+    const photoId = currentPhoto.value?.id;
+    if (photoId) {
+        tagsByPhoto.value[photoId] = [];
+    }
 };
 
 // Submit tags
@@ -387,8 +414,8 @@ const submitTags = async () => {
     if (activeTags.value.length === 0) return;
 
     isSubmitting.value = true;
+    const photoId = currentPhoto.value.id;
 
-    // Transform tags to backend format
     const tagsForUpload = activeTags.value.map((tag) => {
         if (tag.custom) {
             return {
@@ -412,7 +439,6 @@ const submitTags = async () => {
                 picked_up: tag.pickedUp,
             };
         } else {
-            // Regular object tag
             return {
                 object: { id: tag.object.id, key: tag.object.key },
                 quantity: tag.quantity,
@@ -426,12 +452,13 @@ const submitTags = async () => {
 
     try {
         await photosStore.UPLOAD_TAGS({
-            photoId: currentPhoto.value.id,
+            photoId: photoId,
             tags: tagsForUpload,
         });
 
-        // Clear tags and advance to next photo
-        clearAllTags();
+        // Clear only this photo's tags after successful submit
+        delete tagsByPhoto.value[photoId];
+
         await handleNavigation('next');
     } catch (error) {
         console.error('Failed to submit tags:', error);

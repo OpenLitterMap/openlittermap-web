@@ -1,59 +1,85 @@
 <template>
-    <div class="bg-gray-700 rounded-lg p-4">
-        <!-- Main tag info -->
-        <div class="flex items-center justify-between mb-3">
-            <div class="flex-1 flex items-center gap-3">
-                <!-- Tag name -->
-                <span class="text-white font-medium">
-                    {{ tagDisplay }}
-                </span>
+    <div class="bg-gray-700 rounded-lg p-3">
+        <!-- Line 1: Tag name, quantity, actions -->
+        <div class="flex items-center gap-3">
+            <!-- Tag name (truncated) -->
+            <span class="text-white font-medium truncate max-w-[200px]" :title="tagDisplay">
+                {{ tagDisplay }}
+            </span>
 
-                <!-- Quantity controls -->
-                <div class="flex items-center gap-1">
-                    <button
-                        @click="decreaseQuantity"
-                        :disabled="tag.quantity <= 1"
-                        class="w-7 h-7 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <span class="text-white text-sm">−</span>
-                    </button>
-
-                    <input
-                        type="number"
-                        :value="tag.quantity"
-                        @input="updateQuantity($event.target.value)"
-                        min="1"
-                        max="100"
-                        class="w-12 text-center bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
-                    />
-
-                    <button
-                        @click="increaseQuantity"
-                        :disabled="tag.quantity >= 100"
-                        class="w-7 h-7 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <span class="text-white text-sm">+</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center gap-2">
-                <!-- Picked up toggle -->
+            <!-- Quantity controls -->
+            <div class="flex items-center gap-1 flex-shrink-0">
                 <button
-                    @click="$emit('toggle-picked-up')"
-                    :class="[
-                        'px-3 py-1 rounded text-xs font-medium transition-colors',
-                        tag.pickedUp
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-gray-600 text-gray-300 hover:bg-gray-500',
-                    ]"
+                    @click="decreaseQuantity"
+                    :disabled="tag.quantity <= 1"
+                    aria-label="Decrease quantity"
+                    class="w-9 h-9 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
-                    {{ tag.pickedUp ? 'Picked up' : 'Not picked up' }}
+                    <span class="text-white text-lg">−</span>
                 </button>
 
+                <input
+                    type="number"
+                    v-model.number="localQuantity"
+                    @blur="commitQuantity"
+                    @keydown.enter="commitQuantity"
+                    inputmode="numeric"
+                    min="1"
+                    max="100"
+                    aria-label="Quantity"
+                    class="w-12 h-9 text-center bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+                />
+
+                <button
+                    @click="increaseQuantity"
+                    :disabled="tag.quantity >= 100"
+                    aria-label="Increase quantity"
+                    class="w-9 h-9 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                >
+                    <span class="text-white text-lg">+</span>
+                </button>
+            </div>
+
+            <!-- Spacer -->
+            <div class="flex-1"></div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <!-- Add details button -->
+                <button
+                    v-if="!showDetails"
+                    @click="openDetails"
+                    class="px-2 py-1.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                >
+                    Add more tags
+                </button>
+
+                <!-- Picked up dropdown -->
+                <select
+                    :value="tag.pickedUp"
+                    @change="setPickedUp($event.target.value)"
+                    aria-label="Picked up status"
+                    :class="[
+                        'px-2 py-1.5 rounded text-xs font-medium transition-colors appearance-none cursor-pointer',
+                        tag.pickedUp === true
+                            ? 'bg-green-600 text-white'
+                            : tag.pickedUp === false
+                              ? 'bg-red-600/60 text-red-100'
+                              : 'bg-gray-600 text-gray-300',
+                    ]"
+                >
+                    <option :value="null" class="bg-gray-800 text-white">? Unknown</option>
+                    <option :value="true" class="bg-gray-800 text-white">✓ Picked up</option>
+                    <option :value="false" class="bg-gray-800 text-white">✗ Not picked</option>
+                </select>
+
                 <!-- Remove button -->
-                <button @click="$emit('remove')" class="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                <button
+                    @click="$emit('remove')"
+                    aria-label="Delete all tags"
+                    title="Delete all tags"
+                    class="w-9 h-9 flex items-center justify-center text-red-500 bg-red-500/10 rounded transition-colors"
+                >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                             stroke-linecap="round"
@@ -66,63 +92,155 @@
             </div>
         </div>
 
-        <!-- Show existing details if any -->
-        <div v-if="hasDetails" class="mb-2 space-y-1 text-sm">
-            <div v-if="tag.brands?.length" class="flex flex-wrap gap-1">
-                <span class="text-gray-400">Brands:</span>
+        <!-- Line 2: Detail badges (when panel closed and has details) -->
+        <div
+            v-if="!showDetails && hasDetails"
+            class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 pt-2 border-t border-gray-600/50"
+        >
+            <div v-if="tag.brands?.length" class="flex items-center gap-1">
+                <span class="text-gray-400 text-xs">Brands:</span>
                 <span
                     v-for="brand in tag.brands"
-                    :key="brand.id"
-                    class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md"
+                    :key="'b-' + brand.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/40 text-purple-200 rounded text-xs"
                 >
                     {{ brand.key }}
+                    <button
+                        @click="removeBrand(brand)"
+                        aria-label="Remove brand"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
                 </span>
             </div>
-            <div v-if="tag.materials?.length" class="flex flex-wrap gap-1">
-                <span class="text-gray-400">Materials:</span>
+            <div v-if="tag.materials?.length" class="flex items-center gap-1">
+                <span class="text-gray-400 text-xs">Materials:</span>
                 <span
                     v-for="material in tag.materials"
-                    :key="material.id"
-                    class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md"
+                    :key="'m-' + material.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-600/40 text-teal-200 rounded text-xs"
                 >
                     {{ material.key }}
+                    <button
+                        @click="removeMaterial(material)"
+                        aria-label="Remove material"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
                 </span>
             </div>
-            <div v-if="tag.objects?.length" class="flex flex-wrap gap-1">
-                <span class="text-gray-400">Also contains:</span>
-                <span v-for="obj in tag.objects" :key="obj.id" class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md">
+            <div v-if="tag.objects?.length" class="flex items-center gap-1">
+                <span class="text-gray-400 text-xs">Objects:</span>
+                <span
+                    v-for="obj in tag.objects"
+                    :key="'o-' + obj.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded text-xs"
+                >
                     {{ obj.key }}
+                    <button
+                        @click="removeObject(obj)"
+                        aria-label="Remove object"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
                 </span>
             </div>
-            <div v-if="tag.customTags?.length" class="flex flex-wrap gap-1">
-                <span class="text-gray-400">Custom:</span>
+            <div v-if="tag.customTags?.length" class="flex items-center gap-1">
+                <span class="text-gray-400 text-xs">Custom:</span>
                 <span
                     v-for="custom in tag.customTags"
-                    :key="custom"
-                    class="px-2 py-0.5 bg-gray-600 text-gray-200 rounded-md"
+                    :key="'c-' + custom"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-600/40 text-amber-200 rounded text-xs"
                 >
                     {{ custom }}
+                    <button
+                        @click="removeCustom(custom)"
+                        aria-label="Remove custom tag"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
                 </span>
             </div>
         </div>
 
-        <!-- Toggle to show/hide detail inputs -->
-        <button
-            v-if="!showDetails"
-            @click="showDetails = true"
-            class="text-sm text-blue-400 hover:text-blue-300 transition-colors mb-2"
-        >
-            {{ hasDetails ? 'Add more details' : '+ Add details' }} →
-        </button>
-
         <!-- Detail inputs section (collapsible) -->
-        <div v-if="showDetails" class="space-y-2 pt-2 border-t border-gray-600">
+        <div v-if="showDetails" class="space-y-2 pt-3 mt-3 border-t border-gray-600">
+            <!-- Hint text -->
+            <p v-if="!hasDetails" class="text-xs text-gray-400 mb-2">
+                Add optional details: brand, material, related objects, or custom tags.
+            </p>
+
+            <!-- Current details with remove capability -->
+            <div v-if="hasDetails" class="flex flex-wrap gap-1 mb-2">
+                <span
+                    v-for="brand in tag.brands"
+                    :key="'b-' + brand.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/40 text-purple-200 rounded text-xs"
+                >
+                    {{ brand.key }}
+                    <button
+                        @click="removeBrand(brand)"
+                        aria-label="Remove brand"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
+                </span>
+                <span
+                    v-for="material in tag.materials"
+                    :key="'m-' + material.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-600/40 text-teal-200 rounded text-xs"
+                >
+                    {{ material.key }}
+                    <button
+                        @click="removeMaterial(material)"
+                        aria-label="Remove material"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
+                </span>
+                <span
+                    v-for="obj in tag.objects"
+                    :key="'o-' + obj.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded text-xs"
+                >
+                    {{ obj.key }}
+                    <button
+                        @click="removeObject(obj)"
+                        aria-label="Remove object"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
+                </span>
+                <span
+                    v-for="custom in tag.customTags"
+                    :key="'c-' + custom"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-600/40 text-amber-200 rounded text-xs"
+                >
+                    {{ custom }}
+                    <button
+                        @click="removeCustom(custom)"
+                        aria-label="Remove custom tag"
+                        class="hover:text-red-300 transition-colors"
+                    >
+                        ×
+                    </button>
+                </span>
+            </div>
+
             <!-- Add Brands -->
             <div class="relative">
                 <UnifiedTagSearch
-                    v-model="selectedBrand"
+                    ref="brandSearchRef"
+                    v-model="brandQuery"
                     :tags="brandsForSelect"
-                    placeholder="Add Brands"
+                    placeholder="Add brand..."
                     @tag-selected="addBrand"
                     class="detail-select"
                 />
@@ -131,9 +249,10 @@
             <!-- Add Materials -->
             <div class="relative">
                 <UnifiedTagSearch
-                    v-model="selectedMaterial"
+                    ref="materialSearchRef"
+                    v-model="materialQuery"
                     :tags="materialsForSelect"
-                    placeholder="Add Materials"
+                    placeholder="Add material..."
                     @tag-selected="addMaterial"
                     class="detail-select"
                 />
@@ -142,10 +261,12 @@
             <!-- Add More Objects (only for non-brand/material tags) -->
             <div v-if="!tag.type || tag.type === 'object'" class="relative">
                 <UnifiedTagSearch
-                    v-model="selectedObject"
+                    ref="objectSearchRef"
+                    v-model="objectQuery"
                     :tags="objectsForSelect"
-                    placeholder="Add More Objects"
+                    placeholder="Add more objects..."
                     @tag-selected="addObject"
+                    @custom-tag="addCustomFromObject"
                     class="detail-select"
                 />
             </div>
@@ -154,19 +275,19 @@
             <input
                 v-model="customTagInput"
                 @keydown.enter="addCustomTag"
-                placeholder="Add Custom Tags (press Enter)"
+                placeholder="Custom tag (press Enter)"
                 class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
             />
 
-            <button @click="showDetails = false" class="text-sm text-gray-400 hover:text-gray-300 transition-colors">
-                Hide details
+            <button @click="showDetails = false" class="text-xs text-gray-400 hover:text-gray-300 transition-colors">
+                Hide Tagging Menu
             </button>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import UnifiedTagSearch from './UnifiedTagSearch.vue';
 
 const props = defineProps({
@@ -188,13 +309,53 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['update-quantity', 'toggle-picked-up', 'add-detail', 'remove']);
+const emit = defineEmits(['update-quantity', 'set-picked-up', 'add-detail', 'remove-detail', 'remove']);
 
 const showDetails = ref(false);
-const selectedBrand = ref(null);
-const selectedMaterial = ref(null);
-const selectedObject = ref(null);
+const brandQuery = ref('');
+const materialQuery = ref('');
+const objectQuery = ref('');
 const customTagInput = ref('');
+
+const brandSearchRef = ref(null);
+const materialSearchRef = ref(null);
+const objectSearchRef = ref(null);
+
+// Open details panel and focus brand input
+const openDetails = () => {
+    showDetails.value = true;
+    nextTick(() => {
+        brandSearchRef.value?.$el?.querySelector('input')?.focus();
+    });
+};
+
+// Local quantity with sync to prop
+const localQuantity = ref(props.tag.quantity);
+watch(
+    () => props.tag.quantity,
+    (val) => {
+        localQuantity.value = val;
+    }
+);
+
+const commitQuantity = () => {
+    let val = localQuantity.value;
+    if (val === null || val === '' || isNaN(val)) {
+        val = 1;
+    }
+    val = Math.max(1, Math.min(100, Math.floor(val)));
+    localQuantity.value = val;
+    emit('update-quantity', val);
+};
+
+// Picked up dropdown handler
+const setPickedUp = (value) => {
+    let parsed;
+    if (value === 'true') parsed = true;
+    else if (value === 'false') parsed = false;
+    else parsed = null;
+    emit('set-picked-up', parsed);
+};
 
 // Convert brands array to format expected by UnifiedTagSearch
 const brandsForSelect = computed(() =>
@@ -241,22 +402,17 @@ const hasDetails = computed(() => {
     );
 });
 
-const updateQuantity = (value) => {
-    const num = parseInt(value);
-    if (!isNaN(num)) {
-        emit('update-quantity', Math.max(1, Math.min(100, num)));
-    }
-};
-
 const increaseQuantity = () => {
-    if (props.tag.quantity < 100) {
-        emit('update-quantity', props.tag.quantity + 1);
+    if (localQuantity.value < 100) {
+        localQuantity.value++;
+        emit('update-quantity', localQuantity.value);
     }
 };
 
 const decreaseQuantity = () => {
-    if (props.tag.quantity > 1) {
-        emit('update-quantity', props.tag.quantity - 1);
+    if (localQuantity.value > 1) {
+        localQuantity.value--;
+        emit('update-quantity', localQuantity.value);
     }
 };
 
@@ -266,7 +422,11 @@ const addBrand = (selected) => {
             type: 'brand',
             value: selected.raw,
         });
-        selectedBrand.value = null;
+        brandQuery.value = '';
+        // Move focus to materials input
+        nextTick(() => {
+            materialSearchRef.value?.$el?.querySelector('input')?.focus();
+        });
     }
 };
 
@@ -276,7 +436,11 @@ const addMaterial = (selected) => {
             type: 'material',
             value: selected.raw,
         });
-        selectedMaterial.value = null;
+        materialQuery.value = '';
+        // Move focus to objects input
+        nextTick(() => {
+            objectSearchRef.value?.$el?.querySelector('input')?.focus();
+        });
     }
 };
 
@@ -286,23 +450,51 @@ const addObject = (selected) => {
             type: 'object',
             value: selected.raw,
         });
-        selectedObject.value = null;
+        objectQuery.value = '';
+    }
+};
+
+const addCustomFromObject = (customTag) => {
+    const value = customTag?.key?.trim().replace(/\s+/g, ' ').slice(0, 64);
+    if (value) {
+        emit('add-detail', {
+            type: 'custom',
+            value: value,
+        });
+        objectQuery.value = '';
     }
 };
 
 const addCustomTag = () => {
-    if (customTagInput.value.trim()) {
+    const value = customTagInput.value.trim().replace(/\s+/g, ' ').slice(0, 64);
+    if (value) {
         emit('add-detail', {
             type: 'custom',
-            value: customTagInput.value.trim(),
+            value: value,
         });
         customTagInput.value = '';
     }
 };
+
+// Remove functions
+const removeBrand = (brand) => {
+    emit('remove-detail', { type: 'brand', value: brand });
+};
+
+const removeMaterial = (material) => {
+    emit('remove-detail', { type: 'material', value: material });
+};
+
+const removeObject = (obj) => {
+    emit('remove-detail', { type: 'object', value: obj });
+};
+
+const removeCustom = (custom) => {
+    emit('remove-detail', { type: 'custom', value: custom });
+};
 </script>
 
 <style scoped>
-/* Smaller input size for detail selects */
 :deep(.detail-select input) {
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;

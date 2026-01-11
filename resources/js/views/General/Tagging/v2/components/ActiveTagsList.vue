@@ -34,6 +34,8 @@
                 @toggle-picked-up="() => $emit('toggle-picked-up', tag.id)"
                 @add-detail="(detail) => $emit('add-detail', tag.id, detail)"
                 @remove="() => $emit('remove-tag', tag.id)"
+                @set-picked-up="(val) => $emit('set-picked-up', tag.id, val)"
+                @remove-detail="(detail) => $emit('remove-detail', tag.id, detail)"
             />
         </div>
     </div>
@@ -61,5 +63,5 @@ defineProps({
     },
 });
 
-defineEmits(['update-quantity', 'toggle-picked-up', 'add-detail', 'remove-tag']);
+defineEmits(['update-quantity', 'set-picked-up', 'add-detail', 'remove-detail', 'remove-tag']);
 </script>

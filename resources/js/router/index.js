@@ -1,7 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+// Middleware
+import middlewarePipeline from './middleware/middlewarePipeline';
+import auth from './middleware/auth';
+
+// Components
 import About from '../views/General/About.vue';
-import AddTags from '../views/General/Tagging/AddTags.vue';
 import CreateAccount from '../views/Account/CreateAccount.vue';
 import GlobalMap from '../views/Maps/GlobalMap.vue';
 import History from '../views/General/History.vue';
@@ -9,10 +13,6 @@ import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
 import References from '../views/Academic/References.vue';
 import Upload from '../views/Upload/Upload.vue';
 import Welcome from '../views/Welcome/Welcome.vue';
-
-// Import Middleware
-import middlewarePipeline from './middleware/middlewarePipeline';
-import auth from './middleware/auth';
 import Countries from '../views/Locations/Countries.vue';
 import Achievements from '../views/Achievements/Achievements.vue';
 import Redis from '../views/Admin/Redis.vue';
@@ -21,7 +21,7 @@ import Privacy from '../views/General/Privacy.vue';
 import World from '../views/Locations/World.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
 import Changelog from '../views/General/Changelog.vue';
-import NewAddTags from '../views/General/Tagging/v2/NewAddTags.vue';
+import AddTags from '../views/General/Tagging/v2/AddTags.vue';
 
 const routes = [
     // Public routes
@@ -82,17 +82,9 @@ const routes = [
     },
     // Auth Routes
     {
-        path: '/oldtag',
-        name: 'OldTag',
-        component: AddTags,
-        meta: {
-            middleware: [auth],
-        },
-    },
-    {
         path: '/tag',
         name: 'AddTags',
-        component: NewAddTags,
+        component: AddTags,
         meta: {
             middleware: [auth],
         },

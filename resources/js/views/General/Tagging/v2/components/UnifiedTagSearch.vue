@@ -4,7 +4,6 @@
             <div class="relative">
                 <ComboboxInput
                     @change="query = $event.target.value"
-                    @keydown.enter.prevent="handleEnter"
                     :displayValue="(item) => item?.key || ''"
                     :placeholder="placeholder"
                     class="w-full rounded-lg bg-gray-700 border border-gray-600 text-white px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-gray-400"
@@ -121,13 +120,5 @@ const handleSelection = (value) => {
     // Clear after selection
     query.value = '';
     selected.value = null;
-};
-
-const handleEnter = () => {
-    if (filteredTags.value.length > 0) {
-        handleSelection(filteredTags.value[0]);
-    } else if (query.value.length > 2) {
-        handleSelection({ custom: true, key: query.value });
-    }
 };
 </script>
