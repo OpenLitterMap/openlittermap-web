@@ -146,6 +146,7 @@ class PointsController extends Controller
             ->select([
                 'photos.id',
                 'photos.verified',
+                'photos.filename', // provide if verified >=2
                 'photos.user_id',
                 'photos.team_id',
                 'photos.lat',

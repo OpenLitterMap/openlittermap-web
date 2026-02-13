@@ -2,9 +2,11 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\Dimension;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
+use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -44,11 +46,11 @@ class UpdateTagsService
 
         $parsedTags = $this->parseTags($originalTags, $customTagsOld, $photo->id);
 
-        $this->createPhotoTags($photo, $parsedTags);
-
-        $this->generatePhotoSummaryService->run($photo);
-
-        $photo->update(['migrated_at' => now()]);
+        DB::transaction(function () use ($parsedTags, $photo, $customTagsOld) {
+            $this->createPhotoTags($photo, $parsedTags);
+            $this->generatePhotoSummaryService->run($photo);
+            $photo->update(['migrated_at' => now()]);
+        });
     }
 
     public function getTags(Photo $photo): array
@@ -87,15 +89,15 @@ class UpdateTagsService
                             'quantity' => $qty
                         ];
                     } else {
-                        Log::warning("Brand not found in brandslist", [
-                            'brand_key' => $tag,
-                            'photo_id' => $photoId
-                        ]);
+//                        Log::warning("Brand not found in brandslist", [
+//                            'brand_key' => $tag,
+//                            'photo_id' => $photoId
+//                        ]);
                         // Still add it but without ID (will become brands-only tag)
                         $globalBrands[] = [
                             'id' => null,
                             'key' => $tag,
-                            'type' => 'brand',
+                            'type' => Dimension::BRAND->value,
                             'quantity' => $qty
                         ];
                     }
@@ -127,9 +129,9 @@ class UpdateTagsService
                 $parsed['quantity'] = $qty;
 
                 // Determine classification
-                if ($parsed['type'] === 'brand') {
+                if ($parsed['type'] === Dimension::BRAND->value) {
                     $globalBrands[] = $parsed;
-                } elseif ($parsed['type'] === 'material') {
+                } elseif ($parsed['type'] === Dimension::MATERIAL->value) {
                     $groups[$categoryKey]['materials'][] = $parsed;
                 } elseif ($parsed['type'] === 'object') {
                     // Check if this is a deprecated tag with material(s)
@@ -139,7 +141,7 @@ class UpdateTagsService
                         $parsed['materials'] = $mapping['materials'] ?? [];
                     }
                     $groups[$categoryKey]['objects'][] = $parsed;
-                } elseif ($parsed['type'] === 'custom_tag') {
+                } elseif ($parsed['type'] === Dimension::CUSTOM_TAG->value) {
                     // Ensure custom tag exists in custom_tags_new table
                     $customTagId = DB::table('custom_tags_new')
                         ->where('key', $tag)
@@ -151,11 +153,6 @@ class UpdateTagsService
                             'key' => $tag,
                             'created_at' => now(),
                             'updated_at' => now()
-                        ]);
-
-                        Log::info("Created custom tag in custom_tags_new", [
-                            'key' => $tag,
-                            'id' => $customTagId
                         ]);
                     }
 
@@ -277,7 +274,7 @@ class UpdateTagsService
                         $materialsToAttach = [];
                         foreach ($object['materials'] as $materialKey) {
                             // Get material ID using TagKeyCache
-                            $materialId = \App\Services\Achievements\Tags\TagKeyCache::idFor('material', $materialKey);
+                            $materialId = TagKeyCache::idFor(Dimension::MATERIAL->value, $materialKey);
                             if ($materialId) {
                                 $materialsToAttach[] = [
                                     'id'       => $materialId,
@@ -288,7 +285,7 @@ class UpdateTagsService
                         }
 
                         if (!empty($materialsToAttach)) {
-                            $photoTag->attachExtraTags($materialsToAttach, 'material', 0);
+                            $photoTag->attachExtraTags($materialsToAttach, Dimension::MATERIAL->value, 0);
                         }
                     }
                 }
@@ -299,11 +296,6 @@ class UpdateTagsService
         // Just log that we have brands to process later
         if (!empty($globalBrands)) {
             $brandKeys = array_map(fn($b) => $b['key'] ?? 'unknown', $globalBrands);
-            Log::info("Photo has brands for future processing", [
-                'photo_id' => $photo->id,
-                'brands' => $brandKeys,
-                'count' => count($globalBrands)
-            ]);
         }
 
         // If no objects at all but have brands, create brands-only tag
@@ -349,7 +341,7 @@ class UpdateTagsService
             'picked_up'   => !$photo->remaining,
         ]);
 
-        $photoTag->attachExtraTags($brands, 'brand', 0);
+        $photoTag->attachExtraTags($brands, Dimension::BRAND->value, 0);
     }
 
     private function createCustomOnlyTag(Photo $photo, array $customTags): void
@@ -379,7 +371,7 @@ class UpdateTagsService
         // Attach any additional custom tags as extra tags
         foreach ($customTags as $idx => $extra) {
             if (isset($extra['id']) && $extra['id']) {
-                $photoTag->attachExtraTags([$extra], 'custom_tag', $idx);
+                $photoTag->attachExtraTags([$extra], Dimension::CUSTOM_TAG->value, $idx);
             }
         }
     }
@@ -391,7 +383,7 @@ class UpdateTagsService
             return;
         }
         foreach ($customTags as $idx => $extra) {
-            $last->attachExtraTags([$extra], 'custom_tag', $idx);
+            $last->attachExtraTags([$extra], Dimension::CUSTOM_TAG->value, $idx);
         }
     }
 }

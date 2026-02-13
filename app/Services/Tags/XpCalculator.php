@@ -57,6 +57,7 @@ final class XpCalculator
     }
 
     /**
+     * Deprecated?
      * Calculate XP from photo summary structure
      * This version can access the keys mapping from the summary
      */
@@ -99,6 +100,7 @@ final class XpCalculator
     }
 
     /**
+     * Deprecated?
      * Calculate XP for a single object by key
      * Used during summary generation when we have the key
      */
@@ -108,6 +110,7 @@ final class XpCalculator
     }
 
     /**
+     * Deprecated?
      * Calculate XP for a tag type
      */
     public static function getTagXp(string $tagType): int

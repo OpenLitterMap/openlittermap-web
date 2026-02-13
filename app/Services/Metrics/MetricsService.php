@@ -250,7 +250,9 @@ final class MetricsService
         // Tags count excludes categories to avoid double-counting
         $tagsCount = array_sum($tags['objects']) +
             array_sum($tags['materials']) +
-            array_sum($tags['brands']);
+            array_sum($tags['brands']) +
+            array_sum($tags['custom_tags']);
+        ;
 
         return [
             'tags' => $tags,

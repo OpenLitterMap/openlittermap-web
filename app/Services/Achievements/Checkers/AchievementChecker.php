@@ -2,6 +2,7 @@
 
 namespace App\Services\Achievements\Checkers;
 
+use App\Enums\Dimension;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Support\Collection;
 
@@ -20,11 +21,11 @@ abstract class AchievementChecker
     {
         // Get dimension from table name
         $dimMap = [
-            'categories' => 'category',
-            'litter_objects' => 'object',
-            'materials' => 'material',
-            'brandslist' => 'brand',
-            'custom_tags_new' => 'customTag'
+            'categories' => Dimension::CATEGORY->value,
+            'litter_objects' => Dimension::LITTER_OBJECT->value,
+            'materials' => Dimension::MATERIAL->value,
+            'brandslist' => Dimension::BRAND->value,
+            'custom_tags_new' => Dimension::CUSTOM_TAG->value,
         ];
 
         $dimension = $dimMap[$table] ?? null;

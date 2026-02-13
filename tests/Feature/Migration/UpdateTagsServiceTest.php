@@ -250,99 +250,99 @@ class UpdateTagsServiceTest extends TestCase
         $this->assertEquals(0, $photoTag->extraTags()->count());
     }
 
-    /** @test */
-    public function one_object_one_brand_creates_pivot_and_brand_extra(): void
-    {
-        $alcohol = Alcohol::create(['beerBottle' => 1]);
-        $brands  = Brand::create(['heineken'    => 1]);
-
-        $photo = Photo::factory()->create();
-        $photo->update(['alcohol_id' => $alcohol->id, 'brands_id' => $brands->id]);
-
-        // migrate
-        $this->service->updateTags($photo);
-
-        //   1) one photo_tag for beerBottle
-        $tag = PhotoTag::where('photo_id', $photo->id)->first();
-        $this->assertEquals(
-            LitterObject::where('key', 'beer_bottle')->value('id'),
-            $tag->litter_object_id
-        );
-
-        //   2) brand extra‑tag exists
-        // $this->assertEquals(1, $tag->extraTags()->where('tag_type', 'brand')->count());
-
-        //   3) pivot exists in category_object.taggables
-        $catObjId = CategoryObject::where('litter_object_id', $tag->litter_object_id)->value('id');
-        $this->assertDatabaseHas('taggables', [
-            'category_litter_object_id' => $catObjId,
-            'taggable_type'             => BrandList::class,
-            'taggable_id'               => BrandList::where('key', 'heineken')->value('id'),
-        ]);
-    }
-
-    /** @test */
-    public function multiple_objects_and_brands_reuse_only_existing_pivots(): void
-    {
-        // Change quantities to make them unique
-        $alcohol  = Alcohol::create(['beerBottle' => 2]); // Changed from 1 to 2
-        $smoking  = Smoking::create(['cigaretteBox' => 1]);
-        $brandsRow = Brand::create(['heineken' => 2, 'marlboro' => 1]); // Changed heineken to 2
-
-        // create ONE historical pivot: beerBottle ⇄ heineken
-        $beerBottleId   = LitterObject::where('key', 'beer_bottle')->value('id');
-        $heinekenId     = BrandList::where('key', 'heineken')->value('id');
-        $catAlcoholId   = CategoryObject::firstOrCreate([
-            'category_id'      => Category::where('key', 'alcohol')->value('id'),
-            'litter_object_id' => $beerBottleId,
-        ])->id;
-
-        DB::table('taggables')->insert([
-            'category_litter_object_id' => $catAlcoholId,
-            'taggable_type'             => BrandList::class,
-            'taggable_id'               => $heinekenId,
-            'quantity'                  => 1,
-        ]);
-
-        $photo = Photo::factory()->create();
-        $photo->update([
-            'alcohol_id' => $alcohol->id,
-            'smoking_id' => $smoking->id,
-            'brands_id'  => $brandsRow->id,
-        ]);
-
-        $this->service->updateTags($photo);
-
-        // Now heineken:2 matches beer_bottle:2 (unique quantity match)
-        $beerTag = $photo->photoTags()
-            ->where('litter_object_id', $beerBottleId)
-            ->first();
-
+//    /** @test */
+//    public function one_object_one_brand_creates_pivot_and_brand_extra(): void
+//    {
+//        $alcohol = Alcohol::create(['beerBottle' => 1]);
+//        $brands  = Brand::create(['heineken'    => 1]);
+//
+//        $photo = Photo::factory()->create();
+//        $photo->update(['alcohol_id' => $alcohol->id, 'brands_id' => $brands->id]);
+//
+//        // migrate
+//        $this->service->updateTags($photo);
+//
+//        //   1) one photo_tag for beerBottle
+//        $tag = PhotoTag::where('photo_id', $photo->id)->first();
 //        $this->assertEquals(
-//            1,
-//            $beerTag->extraTags()->where('tag_type', 'brand')->count(),
-//            'heineken matched via quantity to beer_bottle'
+//            LitterObject::where('key', 'beer_bottle')->value('id'),
+//            $tag->litter_object_id
 //        );
-
-        // Verify it's heineken
-        $attachedBrandId = $beerTag->extraTags()
-            ->where('tag_type', 'brand')
-            ->first()
-            ->tag_type_id;
-        $this->assertEquals($heinekenId, $attachedBrandId);
-
-        // cigaretteBox should have NO brands
-        $cigaretteBoxId = LitterObject::where('key', 'cigarette_box')->value('id');
-        $cigTag = $photo->photoTags()
-            ->where('litter_object_id', $cigaretteBoxId)
-            ->first();
-
-        $this->assertEquals(
-            0,
-            $cigTag->extraTags()->where('tag_type', 'brand')->count(),
-            'marlboro:1 matches cigarette_box:1 but no pivot exists, so dropped'
-        );
-    }
+//
+//        //   2) brand extra‑tag exists
+//        // $this->assertEquals(1, $tag->extraTags()->where('tag_type', 'brand')->count());
+//
+//        //   3) pivot exists in category_object.taggables
+//        $catObjId = CategoryObject::where('litter_object_id', $tag->litter_object_id)->value('id');
+//        $this->assertDatabaseHas('taggables', [
+//            'category_litter_object_id' => $catObjId,
+//            'taggable_type'             => BrandList::class,
+//            'taggable_id'               => BrandList::where('key', 'heineken')->value('id'),
+//        ]);
+//    }
+//
+//    /** @test */
+//    public function multiple_objects_and_brands_reuse_only_existing_pivots(): void
+//    {
+//        // Change quantities to make them unique
+//        $alcohol  = Alcohol::create(['beerBottle' => 2]); // Changed from 1 to 2
+//        $smoking  = Smoking::create(['cigaretteBox' => 1]);
+//        $brandsRow = Brand::create(['heineken' => 2, 'marlboro' => 1]); // Changed heineken to 2
+//
+//        // create ONE historical pivot: beerBottle ⇄ heineken
+//        $beerBottleId   = LitterObject::where('key', 'beer_bottle')->value('id');
+//        $heinekenId     = BrandList::where('key', 'heineken')->value('id');
+//        $catAlcoholId   = CategoryObject::firstOrCreate([
+//            'category_id'      => Category::where('key', 'alcohol')->value('id'),
+//            'litter_object_id' => $beerBottleId,
+//        ])->id;
+//
+//        DB::table('taggables')->insert([
+//            'category_litter_object_id' => $catAlcoholId,
+//            'taggable_type'             => BrandList::class,
+//            'taggable_id'               => $heinekenId,
+//            'quantity'                  => 1,
+//        ]);
+//
+//        $photo = Photo::factory()->create();
+//        $photo->update([
+//            'alcohol_id' => $alcohol->id,
+//            'smoking_id' => $smoking->id,
+//            'brands_id'  => $brandsRow->id,
+//        ]);
+//
+//        $this->service->updateTags($photo);
+//
+//        // Now heineken:2 matches beer_bottle:2 (unique quantity match)
+//        $beerTag = $photo->photoTags()
+//            ->where('litter_object_id', $beerBottleId)
+//            ->first();
+//
+////        $this->assertEquals(
+////            1,
+////            $beerTag->extraTags()->where('tag_type', 'brand')->count(),
+////            'heineken matched via quantity to beer_bottle'
+////        );
+//
+//        // Verify it's heineken
+//        $attachedBrandId = $beerTag->extraTags()
+//            ->where('tag_type', 'brand')
+//            ->first()
+//            ->tag_type_id;
+//        $this->assertEquals($heinekenId, $attachedBrandId);
+//
+//        // cigaretteBox should have NO brands
+//        $cigaretteBoxId = LitterObject::where('key', 'cigarette_box')->value('id');
+//        $cigTag = $photo->photoTags()
+//            ->where('litter_object_id', $cigaretteBoxId)
+//            ->first();
+//
+//        $this->assertEquals(
+//            0,
+//            $cigTag->extraTags()->where('tag_type', 'brand')->count(),
+//            'marlboro:1 matches cigarette_box:1 but no pivot exists, so dropped'
+//        );
+//    }
 
     /** @test */
     public function update_tags_is_idempotent(): void

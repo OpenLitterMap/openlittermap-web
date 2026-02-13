@@ -2,6 +2,7 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\Dimension;
 use App\Enums\XpScore;
 use App\Models\Photo;
 
@@ -145,9 +146,9 @@ class GeneratePhotoSummaryService
                 if ($extraId && $extra->extraTag) {
                     $tagType = $extra->tag_type;
                     $mapKey = match($tagType) {
-                        'material' => 'materials',
-                        'brand' => 'brands',
-                        'custom_tag' => 'custom_tags',
+                        Dimension::MATERIAL->value => 'materials',
+                        Dimension::BRAND->value => 'brands',
+                        Dimension::CUSTOM_TAG->value => 'custom_tags',
                         default => null,
                     };
 
@@ -158,21 +159,21 @@ class GeneratePhotoSummaryService
 
                 // Accumulate by type
                 switch ($extra->tag_type) {
-                    case 'material':
+                    case Dimension::MATERIAL->value:
                         $materialCount += $extraQty;
                         $grouped[$categoryId][$objectId]['materials'][$extraId] =
                             ($grouped[$categoryId][$objectId]['materials'][$extraId] ?? 0) + $extraQty;
                         $xpTags['materials'][$extraId] = ($xpTags['materials'][$extraId] ?? 0) + $extraQty;
                         break;
 
-                    case 'brand':
+                    case Dimension::BRAND->value:
                         $brandCount += $extraQty;
                         $grouped[$categoryId][$objectId]['brands'][$extraId] =
                             ($grouped[$categoryId][$objectId]['brands'][$extraId] ?? 0) + $extraQty;
                         $xpTags['brands'][$extraId] = ($xpTags['brands'][$extraId] ?? 0) + $extraQty;
                         break;
 
-                    case 'custom_tag':
+                    case Dimension::CUSTOM_TAG->value:
                         $customTagCount += $extraQty;
                         $grouped[$categoryId][$objectId]['custom_tags'][$extraId] =
                             ($grouped[$categoryId][$objectId]['custom_tags'][$extraId] ?? 0) + $extraQty;
@@ -189,7 +190,7 @@ class GeneratePhotoSummaryService
                 $qty = $pt->quantity;
 
                 $customTagCount += $qty;
-                $totalTags += $qty;
+                // totasTagsCount already counted
 
                 // Add to XP calculation
                 $xpTags['custom_tags'][$customId] = ($xpTags['custom_tags'][$customId] ?? 0) + $qty;

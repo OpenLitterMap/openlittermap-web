@@ -2,13 +2,12 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\Dimension;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -92,23 +91,23 @@ class ClassifyTagsService
     public function classifyNewKey(string $key): array
     {
         if (isset($this->brands[$key])) {
-            return ['type' => 'brand', 'id' => $this->brands[$key], 'key'  => $key];
+            return ['type' => Dimension::BRAND->value, 'id' => $this->brands[$key], 'key'  => $key];
         }
 
         if (isset($this->objects[$key])) {
-            return ['type' => 'object', 'id' => $this->objects[$key], 'key'  => $key];
+            return ['type' => Dimension::LITTER_OBJECT->value, 'id' => $this->objects[$key], 'key'  => $key];
         }
 
         if (isset($this->materials[$key])) {
-            return ['type' => 'material', 'id' => $this->materials[$key], 'key'  => $key];
+            return ['type' => Dimension::MATERIAL->value, 'id' => $this->materials[$key], 'key'  => $key];
         }
 
         if (isset($this->categories[$key])) {
-            return ['type' => 'category', 'id' => $this->categories[$key], 'key'  => $key];
+            return ['type' => Dimension::CATEGORY->value, 'id' => $this->categories[$key], 'key'  => $key];
         }
 
         if (isset($this->customTags[$key])) {
-            return ['type' => 'custom', 'id' => $this->customTags[$key], 'key'  => $key];
+            return ['type' => Dimension::CUSTOM_TAG->value, 'id' => $this->customTags[$key], 'key'  => $key];
         }
 
         /** -----------------------------------------------------------------
@@ -123,8 +122,6 @@ class ClassifyTagsService
         );
 
         $this->objects[$key] = $created->id;  // update cache for current request
-
-        Log::info("Autocreated new object slug '{$key}' (#{$created->id})");
 
         return ['type' => 'object', 'id' => $created->id, 'key' => $key];
     }

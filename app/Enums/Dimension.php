@@ -8,7 +8,7 @@ enum Dimension: string
     case CATEGORY = 'category';
     case MATERIAL = 'material';
     case BRAND = 'brand';
-    case CUSTOM_TAG = 'customTag';
+    case CUSTOM_TAG = 'custom_tag';
 
     public function table(): string
     {

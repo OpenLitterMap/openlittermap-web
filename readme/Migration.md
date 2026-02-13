@@ -50,6 +50,7 @@ photos
 
 ## Migration Rules
 
+### NOTE: IGNORE FOR NOW, WE WILL DO BRANDS LATER
 ### Rule 1: Single Object + Single Brand
 When a photo has exactly 1 object and 1 brand, they are automatically associated:
 
@@ -62,6 +63,7 @@ PhotoTag for soda_can with coke brand attached
 + Creates pivot relationship for future use
 ```
 
+### NOTE: IGNORE FOR NOW, WE WILL DO BRANDS LATER
 ### Rule 2: Multiple Objects/Brands - Pivot Lookup
 For multiple items, brands are matched using database relationships:
 
@@ -284,14 +286,8 @@ php artisan olm:v5 --user=123
 # Custom batch size
 php artisan olm:v5 --batch=1000
 
-# Dry run (no commits)
-php artisan olm:v5 --dry-run
-
 # Verbose output
 php artisan olm:v5 -v
-
-# Only unmigrated photos
-php artisan olm:v5 --unmigrated
 ```
 
 ## Post-Migration Validation

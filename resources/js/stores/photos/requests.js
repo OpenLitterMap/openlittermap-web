@@ -118,7 +118,7 @@ export const requests = {
             });
 
             if (response.data.success) {
-                const title = t('notifications.tags.uploaded-success');
+                const title = t('Tags Added');
                 toast.success(title);
 
                 // Refresh stats after successful upload

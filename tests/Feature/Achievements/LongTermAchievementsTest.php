@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Achievements;
 
+use App\Enums\Dimension;
 use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\{BrandList, Category, CustomTagNew, LitterObject, Materials};
 use App\Models\Location\{Country, State, City};
@@ -257,11 +258,11 @@ class LongTermAchievementsTest extends TestCase
         ];
 
         foreach ($tags as $catKey => $objects) {
-            $catId = (string)TagKeyCache::getOrCreateId('category', $catKey);
+            $catId = (string)TagKeyCache::getOrCreateId(Dimension::CATEGORY->value, $catKey);
             $catTotal = 0;
 
             foreach ($objects as $objKey => $data) {
-                $objId = (string)TagKeyCache::getOrCreateId('object', $objKey);
+                $objId = (string)TagKeyCache::getOrCreateId(Dimension::LITTER_OBJECT->value, $objKey);
                 $qty = max(0, (int)($data['quantity'] ?? 0));
 
                 $result['litter'] += $qty;
@@ -270,19 +271,19 @@ class LongTermAchievementsTest extends TestCase
 
                 // Process materials
                 foreach ($data['materials'] ?? [] as $matKey => $matQty) {
-                    $matId = (string)TagKeyCache::getOrCreateId('material', $matKey);
+                    $matId = (string)TagKeyCache::getOrCreateId(Dimension::MATERIAL->value, $matKey);
                     $result['tags']['materials'][$matId] = ($result['tags']['materials'][$matId] ?? 0) + max(0, (int)$matQty);
                 }
 
                 // Process brands
                 foreach ($data['brands'] ?? [] as $brandKey => $brandQty) {
-                    $brandId = (string)TagKeyCache::getOrCreateId('brand', $brandKey);
+                    $brandId = (string)TagKeyCache::getOrCreateId(Dimension::BRAND->value, $brandKey);
                     $result['tags']['brands'][$brandId] = ($result['tags']['brands'][$brandId] ?? 0) + max(0, (int)$brandQty);
                 }
 
                 // Process custom tags
                 foreach ($data['custom_tags'] ?? [] as $customKey => $customQty) {
-                    $customId = (string)TagKeyCache::getOrCreateId('customTag', $customKey);
+                    $customId = (string)TagKeyCache::getOrCreateId(Dimension::CUSTOM_TAG->value, $customKey);
                     $result['tags']['custom_tags'][$customId] = ($result['tags']['custom_tags'][$customId] ?? 0) + max(0, (int)$customQty);
                 }
             }

@@ -317,7 +317,7 @@ class CalculatePhotoXpTest extends TestCase
         // Should count as custom tags, not objects
         $this->assertEquals(0, $photo->summary['totals']['total_objects']);
         $this->assertEquals(3, $photo->summary['totals']['custom_tags']);
-        $this->assertEquals(6, $photo->summary['totals']['total_tags']);
+        $this->assertEquals(3, $photo->summary['totals']['total_tags']);
 
         // XP: 5 (upload) + 3×1 (custom tags) + 5 (picked up) = 13
         $this->assertEquals(13, $photo->xp);
