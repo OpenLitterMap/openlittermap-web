@@ -13,7 +13,7 @@ use App\Services\Tags\UpdateTagsService;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Database\Seeders\{AchievementsSeeder, Tags\GenerateBrandsSeeder, Tags\GenerateTagsSeeder};
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\{Artisan, DB, Log};
+use Illuminate\Support\Facades\{DB, Log, Schema};
 
 class MigrationScript extends Command
 {

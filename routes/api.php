@@ -13,6 +13,7 @@ use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
 use App\Http\Controllers\User\Photos\UsersUploadsController;
+use App\Http\Controllers\WorldCup\GetDataForWorldCupController;
 use App\Models\Littercoin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,7 +51,7 @@ Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], functi
 });
 
 Route::get('/locations/global', [LocationController::class, 'global']);
-Route::get('/locations/world-cup', [LocationController::class, 'worldCup']);
+Route::get('/locations/world-cup', GetDataForWorldCupController::class);
 Route::get('/locations/{type}', [LocationController::class, 'index']);
 Route::get('/locations/{type}/{id}', [LocationController::class, 'show']);
 Route::get('/locations/{type}/{id}/categories', [LocationController::class, 'categories']);

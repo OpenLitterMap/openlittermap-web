@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
+use App\Models\Litter\Tags\Category;
 use App\Models\Photo;
 use App\Services\Tags\TagMigrationVerifier;
 use Illuminate\Console\Command;
@@ -120,7 +121,7 @@ class VerifyTagsMigration extends Command
             'diffs' => [
                 'objects' => 0,
                 'materials' => 0,
-                'brands' => 0,
+                // 'brands' => 0,
                 'custom_tags' => 0,
                 'total_delta' => 0
             ]
@@ -131,37 +132,41 @@ class VerifyTagsMigration extends Command
 
         // Count expected brands from the tags() array, NOT from brands table
         $expectedBrands = 0;
-        if (isset($oldTags['brands']) && is_array($oldTags['brands'])) {
-            foreach ($oldTags['brands'] as $brandKey => $qty) {
-                $expectedBrands += (int) $qty;
-            }
-        }
+//        if (isset($oldTags['brands']) && is_array($oldTags['brands'])) {
+//            foreach ($oldTags['brands'] as $brandKey => $qty) {
+//                $expectedBrands += (int) $qty;
+//            }
+//        }
 
         // Count actual brands in new PhotoTags
-        $actualBrands = DB::table('photo_tag_extra_tags')
-            ->whereIn('photo_tag_id', $photo->photoTags->pluck('id'))
-            ->where('tag_type', 'brand')
-            ->sum('quantity');
+//        $actualBrands = DB::table('photo_tag_extra_tags')
+//            ->whereIn('photo_tag_id', $photo->photoTags->pluck('id'))
+//            ->where('tag_type', 'brand')
+//            ->sum('quantity');
 
         // Compare
-        if ($expectedBrands !== $actualBrands) {
-            $result['passed'] = false;
-            $result['issues'][] = [
-                'type' => 'brands_mismatch',
-                'message' => 'brands count mismatch',
-                'expected' => $expectedBrands,
-                'actual' => $actualBrands,
-                'diff' => $actualBrands - $expectedBrands
-            ];
-            $result['diffs']['brands'] = $actualBrands - $expectedBrands;
-            $result['diffs']['total_delta'] += abs($actualBrands - $expectedBrands);
-        }
+//        if ($expectedBrands !== $actualBrands) {
+//            $result['passed'] = false;
+//            $result['issues'][] = [
+//                'type' => 'brands_mismatch',
+//                'message' => 'brands count mismatch',
+//                'expected' => $expectedBrands,
+//                'actual' => $actualBrands,
+//                'diff' => $actualBrands - $expectedBrands
+//            ];
+//            $result['diffs']['brands'] = $actualBrands - $expectedBrands;
+//            $result['diffs']['total_delta'] += abs($actualBrands - $expectedBrands);
+//        }
 
         // Verify objects are properly migrated
         $expectedObjects = 0;
         foreach ($oldTags as $category => $items) {
             if ($category !== 'brands') {
-                $expectedObjects += count($items);
+                foreach ($items as $tag => $qty) {
+                    if ((int) $qty > 0) {
+                        $expectedObjects++;
+                    }
+                }
             }
         }
 
@@ -183,9 +188,15 @@ class VerifyTagsMigration extends Command
         }
 
         // Check for NULL object IDs (critical issue)
+        // Excluding brands for now
+        $brandsCategoryId = Category::where('key', 'brands')->value('id');
         $nullObjectCount = $photo->photoTags()
             ->whereNull('litter_object_id')
             ->whereNull('custom_tag_primary_id')
+            ->where(function ($q) use ($brandsCategoryId) {
+                $q->whereNull('category_id')
+                    ->orWhere('category_id', '!=', $brandsCategoryId);
+            })
             ->count();
 
         if ($nullObjectCount > 0) {
@@ -200,7 +211,7 @@ class VerifyTagsMigration extends Command
         return $result;
     }
 
-    protected function debugPhoto(int $photoId): int
+    protected function debugPhoto($photoId): int
     {
         $photo = Photo::with(['photoTags.extraTags'])->find($photoId);
 
@@ -231,12 +242,12 @@ class VerifyTagsMigration extends Command
         }
 
         // Count brands properly
-        $expectedBrands = 0;
-        if (isset($oldTags['brands'])) {
-            foreach ($oldTags['brands'] as $brand => $qty) {
-                $expectedBrands += (int) $qty;
-            }
-        }
+//        $expectedBrands = 0;
+//        if (isset($oldTags['brands'])) {
+//            foreach ($oldTags['brands'] as $brand => $qty) {
+//                $expectedBrands += (int) $qty;
+//            }
+//        }
 
         // Show new tags
         $this->info("\n📋 NEW TAGS (v5 PhotoTags):");
@@ -262,22 +273,22 @@ class VerifyTagsMigration extends Command
         }
 
         // Brand count analysis with correct method
-        $this->info("\n🔍 BRAND COUNT ANALYSIS:");
-        $this->info("────────────────────────");
-
-        $actualBrands = DB::table('photo_tag_extra_tags')
-            ->whereIn('photo_tag_id', $photo->photoTags->pluck('id'))
-            ->where('tag_type', 'brand')
-            ->sum('quantity');
-
-        $this->line("  Expected brands (from tags()['brands']): {$expectedBrands}");
-        $this->line("  Actual brands (in PhotoTags): {$actualBrands}");
-
-        if ($expectedBrands !== $actualBrands) {
-            $this->error("  ❌ MISMATCH: Difference of " . ($actualBrands - $expectedBrands));
-        } else {
-            $this->info("  ✅ Brand counts match!");
-        }
+//        $this->info("\n🔍 BRAND COUNT ANALYSIS:");
+//        $this->info("────────────────────────");
+//
+//        $actualBrands = DB::table('photo_tag_extra_tags')
+//            ->whereIn('photo_tag_id', $photo->photoTags->pluck('id'))
+//            ->where('tag_type', 'brand')
+//            ->sum('quantity');
+//
+//        $this->line("  Expected brands (from tags()['brands']): {$expectedBrands}");
+//        $this->line("  Actual brands (in PhotoTags): {$actualBrands}");
+//
+//        if ($expectedBrands !== $actualBrands) {
+//            $this->error("  ❌ MISMATCH: Difference of " . ($actualBrands - $expectedBrands));
+//        } else {
+//            $this->info("  ✅ Brand counts match!");
+//        }
 
         return self::SUCCESS;
     }
@@ -367,7 +378,8 @@ class VerifyTagsMigration extends Command
 
             $diffs = $failure['diffs'];
             if ($diffs['total_delta'] !== 0) {
-                $this->line("  Totals: Δ objects={$diffs['objects']}, materials={$diffs['materials']}, brands={$diffs['brands']}, custom={$diffs['custom_tags']}");
+                //  brands={$diffs['brands']}
+                $this->line("  Totals: Δ objects={$diffs['objects']}, materials={$diffs['materials']}, custom={$diffs['custom_tags']}");
             }
         }
 

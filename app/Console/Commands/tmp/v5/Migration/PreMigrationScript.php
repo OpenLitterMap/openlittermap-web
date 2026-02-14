@@ -11,6 +11,8 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 
 /**
+ * @deprecated
+ * Temp disabled. Keeping for reference.
  * Loops over original CustomTags data and creates new Category, Objects, Materials and Brands.
  */
 class PreMigrationScript extends Command
@@ -61,7 +63,8 @@ class PreMigrationScript extends Command
 
     public function handle(): void
     {
-        $this->info("🚀 Starting to process custom_tags...");
+        $this->error("Temp disabled. We will review this later manually before adding many new tags.");
+        return;
 
         // Pre-load known keys from lookup tables (all lowercased)
         $this->brandKeys    = array_map('strtolower', BrandList::pluck('key')->all());

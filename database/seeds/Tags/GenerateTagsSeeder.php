@@ -4,6 +4,7 @@ namespace Database\Seeders\Tags;
 
 use App\Models\Litter\Categories\Material;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterState;
@@ -12,6 +13,7 @@ use App\Models\Photo;
 use App\Tags\TagsConfig;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class GenerateTagsSeeder extends Seeder
 {
@@ -22,6 +24,7 @@ class GenerateTagsSeeder extends Seeder
     {
         DB::transaction(function () {
             $this->seedCategories();
+            $this->seedCustomTags();
             $this->seedMaterials();
             $this->seedStates();
             $this->seedCategoryObjectRelationships();
@@ -37,6 +40,29 @@ class GenerateTagsSeeder extends Seeder
 
         foreach ($categories as $category) {
             Category::firstOrCreate(['key' => $category]);
+        }
+    }
+
+    protected function seedCustomTags(): void
+    {
+        if (!Schema::hasTable('custom_tags')) {
+            return;
+        }
+
+        $existing = CustomTagNew::count();
+        if ($existing > 0) {
+            return;
+        }
+
+        $tags = DB::table('custom_tags')
+            ->select('tag')
+            ->distinct()
+            ->pluck('tag')
+            ->filter()
+            ->unique();
+
+        foreach ($tags as $tag) {
+            CustomTagNew::firstOrCreate(['key' => trim($tag)]);
         }
     }
 
