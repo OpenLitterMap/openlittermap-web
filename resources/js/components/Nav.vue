@@ -24,7 +24,7 @@
                 <router-link to="/global" class="nav-item">{{ t('Global Map') }}</router-link>
                 <router-link to="/references" class="nav-item">{{ t('References') }}</router-link>
                 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->
-                <router-link to="/world" class="nav-item">{{ t('World Cup') }}</router-link>
+                <router-link to="/locations" class="nav-item">{{ t('Locations') }}</router-link>
 
                 <div v-if="auth" class="flex items-center space-x-4">
                     <router-link to="/upload" class="nav-item">{{ t('Upload') }}</router-link>

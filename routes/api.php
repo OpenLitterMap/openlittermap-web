@@ -25,6 +25,13 @@ Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 Route::get('/points', [PointsController::class, 'index']);
 Route::get('/points/stats', [PointsStatsController::class, 'index']);
 
+Route::prefix('v1')->group(function () {
+    Route::get('locations', [LocationController::class, 'index']);
+    Route::get('locations/{type}/{id}', [LocationController::class, 'show'])
+        ->where('type', 'country|state|city')
+        ->where('id', '[0-9]+');
+});
+
 Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function(){
 
     // Route::get('/user/setup-intent', 'API\UserController@getSetupIntent');

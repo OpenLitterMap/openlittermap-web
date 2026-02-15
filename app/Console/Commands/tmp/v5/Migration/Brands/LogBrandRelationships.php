@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\tmp\v5\Migration;
+namespace App\Console\Commands\tmp\v5\Migration\Brands;
 
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Photo;

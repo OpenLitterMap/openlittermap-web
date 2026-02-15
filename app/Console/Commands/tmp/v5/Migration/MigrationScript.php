@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\tmp\v5\Migration;
 
+use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Photo;
@@ -13,11 +14,12 @@ use App\Services\Tags\UpdateTagsService;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Database\Seeders\{AchievementsSeeder, Tags\GenerateBrandsSeeder, Tags\GenerateTagsSeeder};
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\{DB, Log, Schema};
+use Illuminate\Support\Facades\{Artisan, DB, Log, Schema};
 
 class MigrationScript extends Command
 {
     protected $signature = 'olm:v5
+        {--skip-locations : Skip the locations cleanup step}
         {--user= : Specific user ID to migrate}
         {--batch=500 : Number of photos per batch}';
 
@@ -37,9 +39,13 @@ class MigrationScript extends Command
     public function handle(): int
     {
         // Check for required columns
-        if (!DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
+        if (! DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
             $this->error('Column photos.migrated_at missing. Run migrations first.');
             return self::FAILURE;
+        }
+
+        if (! $this->option('skip-locations')) {
+            $this->runLocationsMigrationScript();
         }
 
         $this->ensureProcessingColumns();
@@ -225,6 +231,18 @@ class MigrationScript extends Command
         $this->displayUserSummary($userId, $processedForUser, $failedForUser);
     }
 
+    private function runLocationsMigrationScript () {
+        $this->info("Running location cleanup...");
+
+        $exitCode = Artisan::call('olm:locations:cleanup', [], $this->output);
+
+        if ($exitCode === 0) {
+            $this->info("✓ Location cleanup complete");
+        } else {
+            $this->warn("⚠ Location cleanup exited with code {$exitCode}");
+        }
+    }
+
     private function evaluateUserAchievements(int $userId): void
     {
         try {
@@ -327,10 +345,12 @@ class MigrationScript extends Command
             $this->info("✓ Brands already exist");
         }
 
-        // Seed achievements
-        $achievementSeeder = new AchievementsSeeder();
-        $achievementSeeder->run();
-        $this->info("✓ Achievements seeded");
+        if (Achievement::count() == 0) {
+            // Seed achievements
+            $achievementSeeder = new AchievementsSeeder();
+            $achievementSeeder->run();
+            $this->info("✓ Achievements seeded");
+        }
 
         $this->newLine();
     }

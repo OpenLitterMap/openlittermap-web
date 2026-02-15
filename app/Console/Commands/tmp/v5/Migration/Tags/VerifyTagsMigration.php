@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Console\Commands\tmp\v5\Migration;
+namespace App\Console\Commands\tmp\v5\Migration\Tags;
 
 use App\Models\Litter\Tags\Category;
 use App\Models\Photo;
 use App\Services\Tags\TagMigrationVerifier;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class VerifyTagsMigration extends Command
 {

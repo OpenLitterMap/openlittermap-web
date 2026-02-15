@@ -22,6 +22,7 @@ Route::get('impact/{period?}/{year?}/{monthOrWeek?}', GenerateImpactReportContro
 Route::get('/', HomeController::class);
 Route::get('/about', HomeController::class);
 Route::get('/world', HomeController::class);
+Route::get('/locations/{any?}', HomeController::class)->where('any', '.*');
 Route::get('/tags', HomeController::class);
 Route::get('/community', HomeController::class);
 Route::get('/references', HomeController::class);

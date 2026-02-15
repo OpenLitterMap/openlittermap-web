@@ -13,15 +13,14 @@ import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
 import References from '../views/Academic/References.vue';
 import Upload from '../views/Upload/Upload.vue';
 import Welcome from '../views/Welcome/Welcome.vue';
-import Countries from '../views/Locations/Countries.vue';
 import Achievements from '../views/Achievements/Achievements.vue';
 import Redis from '../views/Admin/Redis.vue';
 import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
-import World from '../views/Locations/World.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
 import Changelog from '../views/General/Changelog.vue';
 import AddTags from '../views/General/Tagging/v2/AddTags.vue';
+import Locations from '../views/Locations/Locations.vue';
 
 const routes = [
     // Public routes
@@ -46,9 +45,27 @@ const routes = [
         component: Privacy,
     },
     {
-        path: '/world',
-        name: 'World',
-        component: World,
+        path: '/locations',
+        name: 'locations.global',
+        component: Locations,
+    },
+    {
+        path: '/locations/country/:id',
+        name: 'locations.country',
+        component: Locations,
+        props: (route) => ({ type: 'country', id: route.params.id }),
+    },
+    {
+        path: '/locations/state/:id',
+        name: 'locations.state',
+        component: Locations,
+        props: (route) => ({ type: 'state', id: route.params.id }),
+    },
+    {
+        path: '/locations/city/:id',
+        name: 'locations.city',
+        component: Locations,
+        props: (route) => ({ type: 'city', id: route.params.id }),
     },
     {
         path: '/history',

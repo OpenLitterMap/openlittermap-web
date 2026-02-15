@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\tmp\v5\Migration;
+namespace App\Console\Commands\tmp\v5\Migration\Locations;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
