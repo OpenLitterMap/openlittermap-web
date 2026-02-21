@@ -12,19 +12,22 @@
                 alt=""
                 class="h-full w-full object-cover pointer-events-none select-none hidden md:block"
             />
-            <!-- Optional subtle vignette -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/15"></div>
         </div>
 
         <!-- Content layer with higher z-index -->
         <div class="relative z-10 flex min-h-[calc(100vh-80px)] flex-col">
-            <!-- Form Section -->
             <section class="flex-1 flex items-center justify-center flex-col p-4">
                 <div class="w-full max-w-md">
                     <div class="rounded-xl bg-white p-4 shadow-xl md:p-6">
                         <h2 class="mb-4 text-xl font-bold text-gray-900">
                             Sign up to tell your story about litter & plastic pollution.
                         </h2>
+
+                        <!-- General server error -->
+                        <p v-if="serverErrors.general" class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                            {{ serverErrors.general[0] }}
+                        </p>
 
                         <form @submit.prevent="submit" novalidate>
                             <!-- Username -->
@@ -56,8 +59,8 @@
                                         required
                                     />
                                 </div>
-                                <p v-if="fieldErrors.username" class="mt-1 text-xs text-red-600">
-                                    {{ fieldErrors.username }}
+                                <p v-if="errorFor('username')" class="mt-1 text-xs text-red-600">
+                                    {{ errorFor('username') }}
                                 </p>
                             </div>
 
@@ -96,8 +99,8 @@
                                         required
                                     />
                                 </div>
-                                <p v-if="fieldErrors.email" class="mt-1 text-xs text-red-600">
-                                    {{ fieldErrors.email }}
+                                <p v-if="errorFor('email')" class="mt-1 text-xs text-red-600">
+                                    {{ errorFor('email') }}
                                 </p>
                             </div>
 
@@ -107,7 +110,6 @@
                                     Create a password
                                 </label>
                                 <div class="relative">
-                                    <!-- Left icon: vertically centered via inset-y + flex -->
                                     <span
                                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
                                         :style="{ color: activeField === 'password' ? '#4a4a4a' : '#dbdbdb' }"
@@ -139,7 +141,6 @@
                                         required
                                     />
 
-                                    <!-- Right toggle button: also vertically centered -->
                                     <span class="absolute inset-y-0 right-0 flex items-center pr-3">
                                         <button
                                             type="button"
@@ -185,8 +186,8 @@
                                     </span>
                                 </div>
 
-                                <p v-if="fieldErrors.password" class="mt-1 text-xs text-red-600">
-                                    {{ fieldErrors.password }}
+                                <p v-if="errorFor('password')" class="mt-1 text-xs text-red-600">
+                                    {{ errorFor('password') }}
                                 </p>
                             </div>
 
@@ -221,7 +222,10 @@
                                     @errorCallback="onRecaptchaError"
                                 />
                             </div>
-                            <p v-if="errors['g-recaptcha-response']" class="mb-2 text-center text-xs text-red-600">
+                            <p
+                                v-if="serverErrors['g-recaptcha-response']"
+                                class="mb-2 text-center text-xs text-red-600"
+                            >
                                 Please complete the reCAPTCHA
                             </p>
 
@@ -256,7 +260,7 @@
                                 Check spam folder if verification email doesn't arrive
                             </p>
 
-                            <!-- Sign in link moved inside form -->
+                            <!-- Sign in link -->
                             <div class="mt-4 pt-4 border-t border-gray-200">
                                 <p class="text-center text-sm text-gray-600">
                                     Have an account?
@@ -278,16 +282,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { usePlansStore } from '@/stores/plans';
+import { useUserStore } from '@/stores/user';
 import { useModalStore } from '@/stores/modal';
 import { RecaptchaV2 } from 'vue3-recaptcha-v2';
 import mountainsBg from '@/assets/pixel_art/mountains.JPG';
 import mountainsWideBg from '@/assets/pixel_art/boy1.jpg';
 
 const router = useRouter();
-const plansStore = usePlansStore();
+const userStore = useUserStore();
 const modalStore = useModalStore();
 
 // Form fields
@@ -302,19 +306,29 @@ const isSubmitting = ref(false);
 const showPassword = ref(false);
 const fieldErrors = ref({});
 const activeField = ref(null);
-const showRecaptcha = ref(false); // Start with false, enable when component mounts
+const showRecaptcha = ref(false);
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh';
 
 // Server errors from store
-const errors = computed(() => plansStore.errors || {});
+const serverErrors = computed(() => userStore.errors || {});
+
+/**
+ * Return the first error for a field — client-side takes priority,
+ * then fall back to the first server-side error string.
+ */
+function errorFor(field) {
+    if (fieldErrors.value[field]) return fieldErrors.value[field];
+    if (serverErrors.value[field]) {
+        return Array.isArray(serverErrors.value[field]) ? serverErrors.value[field][0] : serverErrors.value[field];
+    }
+    return null;
+}
 
 const canSubmit = computed(() => {
-    // Check if basic form requirements are met
     const basicRequirements =
         username.value && email.value && password.value && acceptedTerms.value && !isSubmitting.value;
 
-    // Only require recaptcha if it's shown and loaded
     if (showRecaptcha.value) {
         return basicRequirements && g_recaptcha_response.value;
     }
@@ -322,9 +336,7 @@ const canSubmit = computed(() => {
     return basicRequirements;
 });
 
-// Navigation function for login
 function navigateToLogin() {
-    // Try modal first
     if (modalStore && modalStore.showModal) {
         modalStore.showModal({
             type: 'Login',
@@ -332,12 +344,10 @@ function navigateToLogin() {
             showIcon: true,
         });
     } else {
-        // Fallback to root route if modal store isn't available
         router.push('/');
     }
 }
 
-// Field validation
 function validateField(field) {
     const newErrors = { ...fieldErrors.value };
 
@@ -384,10 +394,7 @@ function clearError(field) {
     delete newErrors[field];
     fieldErrors.value = newErrors;
 
-    // Clear server errors if plansStore has the method
-    if (errors.value?.[field] && plansStore.clearError) {
-        plansStore.clearError(field);
-    }
+    userStore.clearError(field);
 }
 
 function onPasswordInput() {
@@ -395,30 +402,16 @@ function onPasswordInput() {
 }
 
 function inputClass(field) {
-    const hasLocalError = fieldErrors.value[field];
-    const hasServerError = errors.value?.[field];
-
-    if (hasLocalError || hasServerError) {
+    if (errorFor(field)) {
         return 'border-red-300 focus:border-red-400 focus:ring-red-200';
     }
     return 'border-gray-300 focus:border-green-400 focus:ring-green-200';
 }
 
 async function submit() {
-    console.log('Submit clicked. Form state:', {
-        username: username.value,
-        email: email.value,
-        password: password.value ? 'set' : 'not set',
-        acceptedTerms: acceptedTerms.value,
-        recaptcha: g_recaptcha_response.value ? 'set' : 'not set',
-        canSubmit: canSubmit.value,
-    });
-
-    // Validate all fields
     ['username', 'email', 'password'].forEach(validateField);
 
     if (Object.keys(fieldErrors.value).length > 0) {
-        console.log('Validation errors:', fieldErrors.value);
         return;
     }
 
@@ -429,25 +422,18 @@ async function submit() {
             username: username.value,
             email: email.value,
             password: password.value,
-            password_confirmation: password.value,
-            'g-recaptcha-response': g_recaptcha_response.value || 'bypass',
-            plan: 1,
-            plan_id: null,
         };
 
-        const result = await plansStore.createAccount(payload);
-
-        // Clear sensitive data on success
-        password.value = '';
-
-        // Navigate to home after successful signup
-        // Check if result indicates success
-        if (result !== false) {
-            console.log('Account created successfully, navigating to home');
-            await router.push('/');
+        if (g_recaptcha_response.value) {
+            payload['g-recaptcha-response'] = g_recaptcha_response.value;
         }
-    } catch (error) {
-        console.error('Signup error:', error);
+
+        const result = await userStore.REGISTER(payload);
+
+        if (result !== false) {
+            password.value = '';
+            await router.push('/upload');
+        }
     } finally {
         isSubmitting.value = false;
     }
@@ -464,45 +450,20 @@ function onRecaptchaExpired() {
 
 function onRecaptchaError() {
     g_recaptcha_response.value = '';
-    // Optionally hide recaptcha if it fails to load
     console.error('reCAPTCHA failed to load');
     showRecaptcha.value = false;
 }
 
-// Clean up on unmount
 onUnmounted(() => {
-    // Clear any errors when leaving the page
-    if (plansStore.clearErrors) {
-        plansStore.clearErrors();
-    }
-});
-
-onMounted(async () => {
-    // Only fetch plans if the method exists
-    if (plansStore.fetchPlans) {
-        try {
-            await plansStore.fetchPlans();
-        } catch (error) {
-            console.error('Failed to fetch plans:', error);
-        }
-    }
-
-    // Enable recaptcha after mount to avoid loading issues
-    // You can set this to true if you want to try loading recaptcha
-    // showRecaptcha.value = true;
-
-    // For debugging: log when validation state changes
-    console.log('Form mounted. Initial canSubmit:', canSubmit.value);
+    userStore.clearErrors();
 });
 </script>
 
 <style scoped>
-/* Ensure the form is always accessible and above background */
 .relative {
     position: relative;
 }
 
-/* Ensure z-index layering works properly */
 .z-0 {
     z-index: 0;
 }
@@ -511,12 +472,10 @@ onMounted(async () => {
     z-index: 10;
 }
 
-/* Prevent any overflow issues */
 button:focus {
     outline: none;
 }
 
-/* Ensure router-links work properly */
 a,
 button {
     position: relative;

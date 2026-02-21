@@ -5,6 +5,7 @@ use App\Http\Controllers\API\GetUntaggedUploadController;
 use App\Http\Controllers\API\Tags\GetTagsController;
 use App\Http\Controllers\API\Tags\PhotoTagsController;
 use App\Http\Controllers\ApiPhotosController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Clusters\ClusterController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
 use App\Http\Controllers\Location\LocationController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Location\TagController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
+use App\Http\Controllers\Uploads\UploadPhotoController;
 use App\Http\Controllers\User\Photos\UsersUploadsController;
 use App\Http\Controllers\WorldCup\GetDataForWorldCupController;
 use App\Models\Littercoin;
@@ -24,6 +26,9 @@ Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 // Route::post('/tags', [UploadTagsController::class, 'upload']);
 Route::get('/points', [PointsController::class, 'index']);
 Route::get('/points/stats', [PointsStatsController::class, 'index']);
+
+Route::post('/upload', UploadPhotoController::class)
+    ->middleware(['web', 'auth:api,web']);
 
 Route::prefix('v1')->group(function () {
     Route::get('locations', [LocationController::class, 'index']);
@@ -89,8 +94,12 @@ Route::post('/validate-token', function(Request $request) {
     return ['message' => 'valid'];
 })->middleware('auth:api');
 
-// Create Account
-Route::post('/register', 'ApiRegisterController@register');
+// Create Account — shared controller for web + mobile
+// Vue3 frontend posts here: /api/auth/register
+Route::post('/auth/register', [RegisterController::class, 'register']);
+
+// Legacy mobile route (keep for backwards compat)
+Route::post('/register', [RegisterController::class, 'register']);
 
 // Fetch User
 Route::get('/user', function (Request $request) {
@@ -183,6 +192,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/redis-data/performance}', [RedisDataController::class, 'performance']);
     Route::get('/redis-data/key-analysis', [RedisDataController::class, 'keyAnalysis']);
 
-    Route::get('/user/photos', [UserPhotosController::class, 'index']);
-    Route::get('/user/photos/{id}', [UserPhotosController::class, 'show']);
+    // Route::get('/user/photos', [UserPhotosController::class, 'index']);
+    // Route::get('/user/photos/{id}', [UserPhotosController::class, 'show']);
 });

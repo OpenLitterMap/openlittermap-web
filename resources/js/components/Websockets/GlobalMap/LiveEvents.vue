@@ -47,9 +47,9 @@ const props = defineProps({
 const { mapInstance } = toRefs(props);
 const emit = defineEmits(['fly-to-location']);
 
-const events = ref([]); // The “shown” events (animated into the UI)
-const pendingEvents = ref([]); // Events waiting to be shown
-const animating = ref(false); // Flag to allow only 1 event to animate at a time
+const events = ref([]);
+const pendingEvents = ref([]);
+const animating = ref(false);
 const clicks = ref(0);
 const timer = ref(null);
 
@@ -63,28 +63,20 @@ onUnmounted(() => {
 });
 
 /**
- * 1) Push new event into 'pendingEvents' queue.
- * 2) If we’re not currently animating, move one event from 'pendingEvents' -> 'events'.
+ * Push new event into the pending queue, then process.
+ *
+ * Every event gets a unique UUID — we never deduplicate on payload
+ * because broadcast payloads (e.g. ImageUploaded) may not carry a
+ * unique id, causing legitimate events to be silently dropped.
  */
 const addEvent = (eventType, payload) => {
-    console.log({ eventType });
-    console.log({ payload });
-
     if (!components[eventType]) {
         console.error(`Component "${eventType}" is not registered.`);
         return;
     }
 
-    const existingEvent = pendingEvents.value.find((event) => event.payload.id === payload.id);
-    if (existingEvent) {
-        console.warn('Duplicate event detected, skipping:', payload.id);
-        return;
-    }
-
-    const id = uuidv4();
-
     pendingEvents.value.unshift({
-        id,
+        id: uuidv4(),
         type: eventType,
         payload,
     });
@@ -93,7 +85,7 @@ const addEvent = (eventType, payload) => {
 };
 
 /**
- * If not currently animating, move the next event from 'pendingEvents' into 'events'
+ * If not currently animating, move the next event from pending into visible events.
  */
 const processQueue = () => {
     if (!animating.value && pendingEvents.value.length > 0) {
@@ -103,36 +95,27 @@ const processQueue = () => {
     }
 };
 
-/**
- * Fired by transition-group when an item finishes “entering”.
- * We'll set animating to false and attempt to process next event in the queue.
- */
 const handleAfterEnter = () => {
     animating.value = false;
     processQueue();
 };
 
-// Prevent accidental overlap in animations
 const handleBeforeLeave = (el) => {
     el.style.pointerEvents = 'none';
 };
 
-// Prevent accidental overlap in animations
 const handleAfterLeave = (el) => {
     el.style.pointerEvents = '';
 };
 
 /**
- * Tracks single or double-clicks on an event.
+ * Single click: fly to location. Double click: dismiss.
  */
 const handleClick = (event, index) => {
-    // Check if a timer exists (indicating a potential double-click sequence)
     if (timer.value) {
         clearTimeout(timer.value);
         timer.value = null;
         clicks.value = 0;
-
-        // perform doubleClick action
         removeEvent(index);
     } else {
         clicks.value++;
@@ -140,8 +123,6 @@ const handleClick = (event, index) => {
         timer.value = setTimeout(() => {
             timer.value = null;
             clicks.value = 0;
-
-            // Perform single-click action
             flyToLocation(event);
         }, 300);
     }
@@ -155,7 +136,6 @@ const flyToLocation = (event) => {
 
 const removeEventTimeouts = new Map();
 const removeEvent = (index) => {
-    // Prevent multiple calls for the same index.
     if (removeEventTimeouts.has(index)) return;
 
     removeEventTimeouts.set(
@@ -216,7 +196,6 @@ const updateDocumentTitle = () => {
     padding-bottom: 10px;
 }
 
-/* Slow slide in from the right */
 @keyframes slideInRightCalm {
     0% {
         transform: translateX(100%);
@@ -228,7 +207,6 @@ const updateDocumentTitle = () => {
     }
 }
 
-/* Slide out to the left */
 @keyframes slideOutLeft {
     0% {
         transform: translateX(0);
@@ -240,11 +218,6 @@ const updateDocumentTitle = () => {
     }
 }
 
-/* =========================
-     * Vue Transition Classes
-     * ========================= */
-
-/* Slower, calm approach (1.5s) */
 .list-enter-active {
     animation: slideInRightCalm 1.5s ease-in-out forwards;
 }
@@ -252,7 +225,6 @@ const updateDocumentTitle = () => {
     animation: slideOutLeft 1.5s ease forwards;
 }
 
-/* Vue needs these initial/end states for transitions to work properly */
 .list-enter {
     opacity: 0;
     transform: translateX(100%);
@@ -262,11 +234,6 @@ const updateDocumentTitle = () => {
     transform: translateX(-100%);
 }
 
-/*
-      The .list-move transition ensures items reorder smoothly,
-      but with our queue approach, you’ll typically see only one
-      new item entering at a time anyway.
-    */
 .list-move {
     transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.5, 1);
 }

@@ -2,23 +2,15 @@
 
 namespace App\Models\Location;
 
-class State extends Location
+class City extends Location
 {
     protected $fillable = [
-        'id',
-        'state',
+        'city',
         'country_id',
-        'created_at',
-        'updated_at',
-        'manual_verify',
-        'littercoin_paid',
+        'state_id',
         'created_by',
-        'user_id_last_uploaded'
     ];
 
-    /**
-     * Extra columns appended to JSON
-     */
     protected $appends = [
         'total_litter_redis',
         'total_photos_redis',
@@ -31,7 +23,7 @@ class State extends Location
         'total_xp',
         'ppm',
         'updatedAtDiffForHumans',
-        'total_ppm'
+        'total_ppm',
     ];
 
     public function country()
@@ -39,8 +31,13 @@ class State extends Location
         return $this->belongsTo(Country::class);
     }
 
-    public function cities()
+    public function state()
     {
-        return $this->hasMany(City::class);
+        return $this->belongsTo(State::class);
+    }
+
+    public function users()
+    {
+        return $this->hasMany('App\Models\Users\User');
     }
 }

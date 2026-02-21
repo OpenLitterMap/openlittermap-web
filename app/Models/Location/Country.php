@@ -5,26 +5,11 @@ namespace App\Models\Location;
 class Country extends Location
 {
     protected $fillable = [
-        'id',
         'country',
         'shortcode',
-        'created_at',
-        'updated_at',
-        'manual_verify',
-        'countrynameb',
-        'littercoin_paid',
         'created_by',
-        'user_id_last_uploaded'
     ];
 
-    public function getRouteKeyName()
-    {
-        return 'country';
-    }
-
-    /**
-     * Extra columns appended to JSON
-     */
     protected $appends = [
         'total_litter_redis',
         'total_photos_redis',
@@ -37,12 +22,14 @@ class Country extends Location
         'total_xp',
         'ppm',
         'updatedAtDiffForHumans',
-        'total_ppm'
+        'total_ppm',
     ];
 
-    /**
-     * Country-specific relationships
-     */
+    public function getRouteKeyName(): string
+    {
+        return 'shortcode';
+    }
+
     public function states()
     {
         return $this->hasMany(State::class);

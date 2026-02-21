@@ -39,11 +39,8 @@ class User extends Authenticatable
      */
     public static function boot ()
     {
-        // trigger the boot method of the Model Class that Eloquent models extend
         parent::boot();
 
-        // listen for model events
-        // When a user is created, add tokens
         static::creating(function($user) {
             $user->token = str_random(30);
         });

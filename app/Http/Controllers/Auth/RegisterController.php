@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Models\Users\User;
 use App\Mail\NewUserRegMail;
 use App\Events\UserSignedUp;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
@@ -14,39 +15,17 @@ use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Register Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles the registration of new users as well as their
-    | validation and creation. By default this controller uses a trait to
-    | provide this functionality without requiring any additional code.
-    |
-    */
+    protected string $redirectTo = '/upload';
 
-    /**
-     * Where to redirect users after registration.
-     */
-    protected string $redirectTo = '/submit';
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct ()
+    public function __construct()
     {
-        $this->middleware('guest');
+        $this->middleware('guest')->except([]);
     }
 
-    /**
-     * Create a new user instance after a valid registration.
-     */
-    protected function create (array $data): User
+    protected function create(array $data): User
     {
         return User::create([
-            'name' => $data['name'],
+            'name' => $data['name'] ?? '',
             'username' => $data['username'],
             'email' => $data['email'],
             'password' => $data['password'],
@@ -54,18 +33,17 @@ class RegisterController extends Controller
     }
 
     /**
-     * Handle a registration request for the application.
+     * Handle a registration request for both web and API.
      *
      * @throws ValidationException
      */
-    public function register (Request $request): array
+    public function register(Request $request): array
     {
         $this->validate($request, [
-            'name' => 'required|min:3|max:25',
+            'name' => 'sometimes|nullable|string|max:25',
             'username' => 'required|min:3|max:20|unique:users|different:password',
             'email' => 'required|email|max:75|unique:users',
-            'password' => ['required', Password::min(5)]
-//            'g-recaptcha-response' => 'required|captcha'
+            'password' => ['required', Password::min(5)],
         ]);
 
         event(new Registered($user = $this->create($request->all())));
@@ -78,16 +56,18 @@ class RegisterController extends Controller
         $user->verify_remaining = 5000;
         $user->save();
 
+        Auth::login($user);
+
         return [
             'user_id' => $user->id,
-            'email' => $user->email
+            'email' => $user->email,
         ];
     }
 
-   /**
-    * The user clicked the confirm email link
-    */
-    public function confirmEmail ($token)
+    /**
+     * The user clicked the confirm email link.
+     */
+    public function confirmEmail($token)
     {
         /** @var User $user */
         $user = User::whereToken($token)->first();
@@ -100,6 +80,4 @@ class RegisterController extends Controller
 
         return view('root', compact('auth', 'user', 'verified', 'unsub'));
     }
-
-
 }

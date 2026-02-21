@@ -10,11 +10,13 @@
             <i v-else class="fa fa-image fa-2x" />
             <div>
                 <p class="font-bold">
-                    <span v-if="payload.isPickedUp">{{ t('home.globalMap.litter-picked-up') }}</span>
-                    <span v-else>{{ t('home.globalMap.litter-uploaded') }}</span>
+                    <span v-if="payload.isPickedUp === true">Litter picked up</span>
+                    <span v-else-if="payload.isPickedUp === false">Litter uploaded</span>
+                    <span v-else>New upload</span>
                 </p>
                 <p class="text-xs lg:text-sm">
-                    <i class="hidden md:inline">{{ cityText }}</i>{{ country }}
+                    <i class="hidden md:inline">{{ cityText }}</i
+                    >{{ country }}
                 </p>
             </div>
             <div class="event-source">
@@ -23,15 +25,15 @@
         </div>
 
         <p v-if="payload.user.name || payload.user.username" class="text-sm">
-            {{ t('locations.cityVueMap.by') }}
+            by
             <span class="font-bold">
                 {{ payload.user.name }}
-                {{ payload.user.username ? ('@' + payload.user.username) : '' }}
+                {{ payload.user.username ? '@' + payload.user.username : '' }}
             </span>
         </p>
 
         <p v-if="payload.teamName" class="text-sm truncate">
-            {{ $t('common.team') }}
+            Team
             <span class="font-bold">{{ payload.teamName }}</span>
         </p>
     </div>
@@ -39,7 +41,6 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
     payload: {
@@ -47,8 +48,6 @@ const props = defineProps({
         default: () => ({}),
     },
 });
-
-const { t } = useI18n();
 
 const country = computed(() => {
     return props.payload.country?.includes('error_') ? null : props.payload.country;
@@ -75,14 +74,12 @@ const countryFlag = (countryCode) => {
 };
 
 const photoSource = computed(() => {
-    return (props.payload.photoSource === 'web')
-        ? 'fa-desktop'
-        : 'fa-mobile large-icon';
+    return props.payload.photoSource === 'web' ? 'fa-desktop' : 'fa-mobile large-icon';
 });
 </script>
 
 <style scoped>
-    .large-icon {
-        font-size: 1rem;
-    }
+.large-icon {
+    font-size: 1rem;
+}
 </style>

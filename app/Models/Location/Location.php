@@ -2,172 +2,169 @@
 
 namespace App\Models\Location;
 
+use App\Enums\LocationType;
+use App\Services\Achievements\Tags\TagKeyCache;
+use App\Services\Redis\RedisKeys;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\Achievements\Tags\TagKeyCache;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 abstract class Location extends Model
 {
     use HasFactory;
 
     /**
-     * Get the Redis prefix for this location type (FIXED to match service keys)
+     * Get the Redis scope prefix for this location type.
+     * Uses RedisKeys as the single source of truth for key naming.
      */
-    protected function getLocationRedisPrefix(): string
+    protected function getRedisScope(): string
     {
-        if ($this instanceof Country) return "{c:{$this->id}}";
-        if ($this instanceof State) return "{s:{$this->id}}";
-        if ($this instanceof City) return "{ci:{$this->id}}";
-        return "{c:{$this->id}}";
+        if ($this instanceof Country) return RedisKeys::country($this->id);
+        if ($this instanceof State) return RedisKeys::state($this->id);
+        if ($this instanceof City) return RedisKeys::city($this->id);
+
+        return RedisKeys::global();
     }
 
     /**
-     * Safe Redis operation wrapper
+     * Get the LocationType enum for this model
      */
-    private function safeRedisOperation(callable $operation, $fallback = null)
+    protected function getLocationType(): LocationType
     {
-        try {
-            return $operation();
-        } catch (\Exception $e) {
-            Log::error('Redis operation failed in Location model', [
-                'location_type' => get_class($this),
-                'location_id' => $this->id,
-                'error' => $e->getMessage()
-            ]);
+        if ($this instanceof Country) return LocationType::Country;
+        if ($this instanceof State) return LocationType::State;
+        if ($this instanceof City) return LocationType::City;
 
-            return $fallback ?? 0;
-        }
+        return LocationType::Global;
     }
 
+    // ─── Real-time stats (read directly from RedisMetricsCollector writes) ───
+
     /**
-     * Return the total_litter value from Redis (sum of all objects)
+     * Total litter items tagged at this location
      */
     public function getTotalLitterRedisAttribute(): int
     {
-        $prefix = $this->getLocationRedisPrefix();
-
-        // Try denormalized total first
-        $stats = $this->safeRedisOperation(
-            fn() => Redis::hget("$prefix:stats", 'litter'),
-            null
+        return (int) $this->redisGet(
+            RedisKeys::stats($this->getRedisScope()),
+            'litter'
         );
-
-        if ($stats !== null) {
-            return (int) $stats;
-        }
-
-        // Fallback to calculating from hash
-        $objects = $this->safeRedisOperation(
-            fn() => Redis::hgetall("$prefix:t"),
-            []
-        );
-
-        $total = 0;
-        foreach ($objects as $count) {
-            $total += (int)$count;
-        }
-
-        return $total;
     }
 
     /**
-     * Return the total_photos value from Redis
+     * Total photos uploaded at this location
      */
     public function getTotalPhotosRedisAttribute(): int
     {
-        $prefix = $this->getLocationRedisPrefix();
-        $stats = $this->safeRedisOperation(
-            fn() => Redis::hget("$prefix:stats", 'photos'),
-            0
+        return (int) $this->redisGet(
+            RedisKeys::stats($this->getRedisScope()),
+            'photos'
         );
-
-        return (int)$stats;
     }
 
     /**
-     * Return the total number of people who uploaded a photo from Redis
+     * Total XP earned at this location
+     */
+    public function getTotalXpAttribute(): int
+    {
+        return (int) $this->redisGet(
+            RedisKeys::stats($this->getRedisScope()),
+            'xp'
+        );
+    }
+
+    /**
+     * Approximate number of unique contributors.
+     * Uses HyperLogLog (probabilistic, ~0.81% error, but O(1) and non-decrementable).
      */
     public function getTotalContributorsRedisAttribute(): int
     {
-        $prefix = $this->getLocationRedisPrefix();
-        return $this->safeRedisOperation(
-            fn() => Redis::scard("$prefix:users"),
+        return $this->safeRedis(
+            fn () => Redis::pfCount(RedisKeys::hll($this->getRedisScope())),
             0
         );
     }
 
+    // ─── Tag breakdowns (read from RedisKeys dimension hashes) ───
+
     /**
-     * Return array of category => count with proper names
+     * Category => count breakdown
      */
     public function getLitterDataAttribute(): array
     {
-        $prefix = $this->getLocationRedisPrefix();
-        $categories = $this->safeRedisOperation(
-            fn() => Redis::hgetall("$prefix:c"),
-            []
+        return $this->getTagBreakdown(
+            RedisKeys::categories($this->getRedisScope()),
+            'category'
         );
-
-        $totals = [];
-        foreach ($categories as $categoryId => $count) {
-            $categoryName = TagKeyCache::keyFor('category', (int)$categoryId);
-            if ($categoryName) {
-                $totals[$categoryName] = (int)$count;
-            }
-        }
-
-        return $totals;
     }
 
     /**
-     * Return array of brand => count with proper names
+     * Object => count breakdown (top 20)
+     */
+    public function getObjectsDataAttribute(): array
+    {
+        return array_slice(
+            $this->getTagBreakdown(
+                RedisKeys::objects($this->getRedisScope()),
+                'object'
+            ),
+            0, 20, true
+        );
+    }
+
+    /**
+     * Material => count breakdown
+     */
+    public function getMaterialsDataAttribute(): array
+    {
+        return $this->getTagBreakdown(
+            RedisKeys::materials($this->getRedisScope()),
+            'material'
+        );
+    }
+
+    /**
+     * Brand => count breakdown
      */
     public function getBrandsDataAttribute(): array
     {
-        $prefix = $this->getLocationRedisPrefix();
-        $brands = $this->safeRedisOperation(
-            fn() => Redis::hgetall("$prefix:brands"),
-            []
+        return $this->getTagBreakdown(
+            RedisKeys::brands($this->getRedisScope()),
+            'brand'
         );
-
-        $totals = [];
-        foreach ($brands as $brandId => $count) {
-            $brandName = TagKeyCache::keyFor('brand', (int)$brandId);
-            if ($brandName) {
-                $totals[$brandName] = (int)$count;
-            }
-        }
-
-        return $totals;
     }
 
+    // ─── Time-series (Option C: metrics table → cached in Redis with TTL) ───
+
     /**
-     * Get the Photos Per Month attribute - using new structure
+     * Photos per month for the last 24 months
      */
     public function getPpmAttribute(): array
     {
-        $prefix = $this->getLocationRedisPrefix();
-        $ppm = [];
+        return $this->cachedTimeSeries('ppm', function () {
+            $rows = DB::table('metrics')
+                ->where('timescale', 3) // monthly
+                ->where('location_type', $this->getLocationType()->value)
+                ->where('location_id', $this->id)
+                ->where('user_id', 0)
+                ->where('bucket_date', '>=', now()->subMonths(24)->startOfMonth()->toDateString())
+                ->orderBy('bucket_date')
+                ->pluck('uploads', 'bucket_date');
 
-        // Check last 24 months deterministically (no KEYS command)
-        for ($i = 0; $i < 24; $i++) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $data = $this->safeRedisOperation(
-                fn() => Redis::hgetall("$prefix:$month:t"),
-                []
-            );
-            if (!empty($data) && isset($data['p'])) {
-                $ppm[$month] = (int)$data['p'];
+            $ppm = [];
+            foreach ($rows as $date => $count) {
+                $key = substr($date, 0, 7); // 'YYYY-MM'
+                $ppm[$key] = (int) $count;
             }
-        }
 
-        ksort($ppm);
-        return $ppm;
+            return $ppm;
+        });
     }
 
     /**
-     * Get total photos per month (same as ppm for compatibility)
+     * Alias for backwards compatibility
      */
     public function getTotalPpmAttribute(): array
     {
@@ -175,155 +172,99 @@ abstract class Location extends Model
     }
 
     /**
-     * Get updatedAtDiffForHumans
+     * Daily photo activity for the last 7 days
      */
+    public function getRecentActivityAttribute(): array
+    {
+        return $this->cachedTimeSeries('recent', function () {
+            $rows = DB::table('metrics')
+                ->where('timescale', 1) // daily
+                ->where('location_type', $this->getLocationType()->value)
+                ->where('location_id', $this->id)
+                ->where('user_id', 0)
+                ->where('bucket_date', '>=', now()->subDays(7)->toDateString())
+                ->pluck('uploads', 'bucket_date');
+
+            $activity = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = now()->subDays($i)->format('Y-m-d');
+                $activity[$date] = (int) ($rows[$date] ?? 0);
+            }
+
+            return $activity;
+        }, 300); // 5 min TTL — recent activity benefits from freshness
+    }
+
+    // ─── Rankings ───
+
+    /**
+     * Get top tags by dimension (uses ranking ZSETs)
+     */
+    public function getTopTags(string $dimension = 'objects', int $limit = 10): array
+    {
+        $scope = $this->getRedisScope();
+        $rankKey = RedisKeys::ranking($scope, $dimension);
+
+        $topItems = $this->safeRedis(
+            fn () => Redis::zRevRange($rankKey, 0, $limit - 1, 'WITHSCORES'),
+            []
+        );
+
+        if (empty($topItems)) {
+            return [];
+        }
+
+        $dimensionMap = [
+            'objects' => 'object',
+            'categories' => 'category',
+            'materials' => 'material',
+            'brands' => 'brand',
+        ];
+
+        $dim = $dimensionMap[$dimension] ?? null;
+        $result = [];
+
+        foreach ($topItems as $id => $count) {
+            $name = $dim ? TagKeyCache::keyFor($dim, (int) $id) : null;
+            if ($name) {
+                $result[] = [
+                    'id' => (int) $id,
+                    'name' => $name,
+                    'count' => (int) $count,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    // ─── Utility ───
+
     public function getUpdatedAtDiffForHumansAttribute(): string
     {
         return $this->updated_at->diffForHumans();
     }
 
     /**
-     * Get object breakdown (litter objects with names)
-     */
-    public function getObjectsDataAttribute(): array
-    {
-        $prefix = $this->getLocationRedisPrefix();
-        $objects = $this->safeRedisOperation(
-            fn() => Redis::hgetall("$prefix:t"),
-            []
-        );
-
-        $totals = [];
-        foreach ($objects as $objectId => $count) {
-            $objectName = TagKeyCache::keyFor('object', (int)$objectId);
-            if ($objectName) {
-                $totals[$objectName] = (int)$count;
-            }
-        }
-
-        arsort($totals);
-        return array_slice($totals, 0, 20, true); // Top 20
-    }
-
-    /**
-     * Get material breakdown
-     */
-    public function getMaterialsDataAttribute(): array
-    {
-        $prefix = $this->getLocationRedisPrefix();
-        $materials = $this->safeRedisOperation(
-            fn() => Redis::hgetall("$prefix:m"),
-            []
-        );
-
-        $totals = [];
-        foreach ($materials as $materialId => $count) {
-            $materialName = TagKeyCache::keyFor('material', (int)$materialId);
-            if ($materialName) {
-                $totals[$materialName] = (int)$count;
-            }
-        }
-
-        arsort($totals);
-        return $totals;
-    }
-
-    /**
-     * Get recent activity (last 7 days)
-     */
-    public function getRecentActivityAttribute(): array
-    {
-        $prefix = $this->getLocationRedisPrefix();
-        $tsKey = "$prefix:t:p";
-
-        $activity = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
-            $count = $this->safeRedisOperation(
-                fn() => Redis::hget($tsKey, $date),
-                0
-            );
-            $activity[$date] = (int)$count;
-        }
-
-        return $activity;
-    }
-
-    /**
-     * Get total XP for this location
-     */
-    public function getTotalXpAttribute(): int
-    {
-        $prefix = $this->getLocationRedisPrefix();
-        $xp = 0;
-
-        // Sum XP from monthly aggregates
-        for ($i = 0; $i < 24; $i++) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $data = $this->safeRedisOperation(
-                fn() => Redis::hgetall("$prefix:$month:t"),
-                []
-            );
-            if (!empty($data) && isset($data['xp'])) {
-                $xp += (int)$data['xp'];
-            }
-        }
-
-        return $xp;
-    }
-
-    /**
-     * Get daily time series for a date range
+     * Get daily time series for a date range (queries metrics table directly)
      */
     public function getDailyTimeSeries(int $days = 30): array
     {
-        $prefix = $this->getLocationRedisPrefix();
-        $tsKey = "$prefix:t:p";
+        $rows = DB::table('metrics')
+            ->where('timescale', 1)
+            ->where('location_type', $this->getLocationType()->value)
+            ->where('location_id', $this->id)
+            ->where('user_id', 0)
+            ->where('bucket_date', '>=', now()->subDays($days)->toDateString())
+            ->pluck('uploads', 'bucket_date');
 
         $series = [];
         for ($i = $days - 1; $i >= 0; $i--) {
             $date = now()->subDays($i)->format('Y-m-d');
-            $count = $this->safeRedisOperation(
-                fn() => Redis::hget($tsKey, $date),
-                0
-            );
-            $series[$date] = (int)$count;
+            $series[$date] = (int) ($rows[$date] ?? 0);
         }
 
         return $series;
-    }
-
-    /**
-     * Get top contributors for this location
-     */
-    public function getTopContributors(int $limit = 10): array
-    {
-        $prefix = $this->getLocationRedisPrefix();
-        $userIds = $this->safeRedisOperation(
-            fn() => Redis::smembers("$prefix:users"),
-            []
-        );
-
-        if (empty($userIds)) {
-            return [];
-        }
-
-        // This is a simplified version - in production you might want to
-        // track contributor scores in a ZSET for better performance
-        $contributors = [];
-        foreach ($userIds as $userId) {
-            $userPhotos = $this->photos()
-                ->where('user_id', $userId)
-                ->whereNotNull('processed_at')
-                ->count();
-
-            if ($userPhotos > 0) {
-                $contributors[$userId] = $userPhotos;
-            }
-        }
-
-        arsort($contributors);
-        return array_slice($contributors, 0, $limit, true);
     }
 
     /**
@@ -331,16 +272,15 @@ abstract class Location extends Model
      */
     public function hasRecentActivity(int $days = 7): bool
     {
-        $activity = $this->getRecentActivityAttribute();
-        return array_sum($activity) > 0;
+        return array_sum($this->getRecentActivityAttribute()) > 0;
     }
 
     /**
-     * Get percentage of global totals (FIXED)
+     * Get percentage of global totals
      */
     public function getGlobalPercentage(string $metric = 'litter'): float
     {
-        $localValue = match($metric) {
+        $localValue = match ($metric) {
             'photos' => $this->total_photos_redis,
             'contributors' => $this->total_contributors_redis,
             default => $this->total_litter_redis,
@@ -350,120 +290,22 @@ abstract class Location extends Model
             return 0.0;
         }
 
-        // Get global total (FIXED to use correct keys and methods)
-        $globalTotal = $this->safeRedisOperation(function() use ($metric) {
-            return match($metric) {
-                'photos' => (int) Redis::hGet('{g}:stats', 'photos'),
-                'contributors' => Redis::sCard('{g}:users'),
-                default => (int) Redis::hGet('{g}:stats', 'litter'),
-            };
-        }, 0);
+        $globalScope = RedisKeys::global();
 
-        // Fallback for litter if stats not populated
-        if ($globalTotal === 0 && $metric === 'litter') {
-            $globalTotal = $this->calculateTotalFromHash('{g}:t');
-        }
+        $globalTotal = match ($metric) {
+            'photos' => (int) $this->redisGet(RedisKeys::stats($globalScope), 'photos'),
+            'contributors' => $this->safeRedis(fn () => Redis::pfCount(RedisKeys::hll($globalScope)), 0),
+            default => (int) $this->redisGet(RedisKeys::stats($globalScope), 'litter'),
+        };
 
         return $globalTotal > 0 ? round(($localValue / $globalTotal) * 100, 2) : 0.0;
     }
 
-    /**
-     * Calculate total from hash (migration helper)
-     */
-    private function calculateTotalFromHash(string $hashKey): int
-    {
-        $items = $this->safeRedisOperation(
-            fn() => Redis::hgetall($hashKey),
-            []
-        );
+    // ─── Relationships ───
 
-        $total = 0;
-        foreach ($items as $count) {
-            $total += (int) $count;
-        }
-
-        return $total;
-    }
-
-    /**
-     * Get top tags using ranking ZSETs for performance (FIXED key pattern)
-     */
-    public function getTopTags(string $dimension = 'objects', int $limit = 10): array
-    {
-        $prefix = $this->getLocationRedisPrefix();
-
-        // Try to get from ranking ZSET first (FIXED: consistent key pattern)
-        $rankKey = "$prefix:rank:$dimension";
-        $topItems = $this->safeRedisOperation(
-            fn() => Redis::zRevRange($rankKey, 0, $limit - 1, 'WITHSCORES'),
-            []
-        );
-
-        if (empty($topItems)) {
-            // Fallback to hash if ZSETs not populated
-            $hashKey = match($dimension) {
-                'objects' => "$prefix:t",
-                'categories' => "$prefix:c",
-                'materials' => "$prefix:m",
-                'brands' => "$prefix:brands",
-                default => "$prefix:t"
-            };
-
-            $allItems = $this->safeRedisOperation(
-                fn() => Redis::hgetall($hashKey),
-                []
-            );
-
-            if (empty($allItems)) {
-                return [];
-            }
-
-            arsort($allItems);
-            $topItems = array_slice($allItems, 0, $limit, true);
-        }
-
-        $result = [];
-        foreach ($topItems as $id => $count) {
-            $name = $this->getTagName($dimension, (int)$id);
-            if ($name) {
-                $result[] = [
-                    'id' => (int)$id,
-                    'name' => $name,
-                    'count' => (int)$count
-                ];
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Helper to get tag name from cache
-     */
-    private function getTagName(string $dimension, int $id): ?string
-    {
-        $dimensionMap = [
-            'objects' => 'object',
-            'categories' => 'category',
-            'materials' => 'material',
-            'brands' => 'brand',
-        ];
-
-        $dim = $dimensionMap[$dimension] ?? null;
-        return $dim ? TagKeyCache::keyFor($dim, $id) : null;
-    }
-
-    /**
-     * Common relationships that all locations have
-     */
     public function creator()
     {
         return $this->belongsTo('App\Models\Users\User', 'created_by');
-    }
-
-    public function lastUploader()
-    {
-        return $this->belongsTo('App\Models\Users\User', 'user_id_last_uploaded');
     }
 
     public function photos()
@@ -471,30 +313,86 @@ abstract class Location extends Model
         return $this->hasMany('App\Models\Photo', $this->getForeignKey());
     }
 
-    /**
-     * Get the foreign key name for this location type
-     */
     public function getForeignKey(): string
     {
         if ($this instanceof Country) return 'country_id';
         if ($this instanceof State) return 'state_id';
         if ($this instanceof City) return 'city_id';
+
         return 'location_id';
     }
 
+    // ─── Private helpers ───
+
     /**
-     * Scope for verified locations
+     * Safe HGET from Redis
      */
-    public function scopeVerified($query)
+    private function redisGet(string $key, string $field): string|null
     {
-        return $query->where('manual_verify', true);
+        return $this->safeRedis(fn () => Redis::hGet($key, $field), null);
     }
 
     /**
-     * Scope for locations with recent activity
+     * Safe Redis operation wrapper
      */
-    public function scopeActive($query, int $days = 30)
+    private function safeRedis(callable $operation, mixed $fallback = null): mixed
     {
-        return $query->where('updated_at', '>=', now()->subDays($days));
+        try {
+            return $operation();
+        } catch (\Exception $e) {
+            Log::error('Redis operation failed in Location model', [
+                'location_type' => get_class($this),
+                'location_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $fallback;
+        }
+    }
+
+    /**
+     * Get tag breakdown from a Redis hash, resolving IDs to names
+     */
+    private function getTagBreakdown(string $hashKey, string $tagType): array
+    {
+        $items = $this->safeRedis(fn () => Redis::hGetAll($hashKey), []);
+
+        $totals = [];
+        foreach ($items as $id => $count) {
+            $name = TagKeyCache::keyFor($tagType, (int) $id);
+            if ($name) {
+                $totals[$name] = (int) $count;
+            }
+        }
+
+        arsort($totals);
+
+        return $totals;
+    }
+
+    /**
+     * Option C: Query metrics table, cache result in Redis with TTL.
+     *
+     * Metrics table is source of truth. Redis is a read cache only.
+     * Default TTL is 15 minutes — dashboard data doesn't need to be real-time.
+     */
+    private function cachedTimeSeries(string $suffix, callable $query, int $ttlSeconds = 900): array
+    {
+        $cacheKey = $this->getRedisScope() . ":cache:$suffix";
+
+        // Try cache first
+        $cached = $this->safeRedis(fn () => Redis::get($cacheKey), null);
+
+        if ($cached !== null) {
+            return json_decode($cached, true) ?: [];
+        }
+
+        // Cache miss — query metrics table
+        $data = $query();
+
+        // Store in Redis with TTL
+        $this->safeRedis(fn () => Redis::setex($cacheKey, $ttlSeconds, json_encode($data)));
+
+        return $data;
     }
 }

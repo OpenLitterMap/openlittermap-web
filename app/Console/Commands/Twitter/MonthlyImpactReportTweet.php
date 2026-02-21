@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands\Twitter;
 
 use App\Helpers\Twitter;
-use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
 use Spatie\Browsershot\Browsershot;
 
@@ -13,42 +14,44 @@ class MonthlyImpactReportTweet extends Command
 
     protected $description = 'Generates an image of the monthly impact report and tweets it via OLM_bot';
 
-    public function handle()
+    public function handle(): int
     {
-        $month = now()->subMonth()->month;
+        $lastMonth = now()->subMonth();
+        $year  = $lastMonth->year;
+        $month = $lastMonth->month;
 
-        $year = ($month === 1)
-            ? now()->subYear()->year
-            : now()->year;
+        $url = "https://openlittermap.com/impact/monthly/{$year}/{$month}";
+        $dir = public_path("images/reports/monthly/{$year}/{$month}");
 
-        $url = "https://openlittermap.com/impact/monthly/$year/$month";
-
-        $dir = public_path("images/reports/monthly/$year/$month");
-
-        if (!file_exists($dir)) {
+        if (! file_exists($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        $path = "$dir/impact-report.png";
+        $path = "{$dir}/impact-report.png";
 
-        Browsershot::url($url)
-            ->windowSize(1200, 800)
-            ->setOption('logLevel', 'debug')
-            ->setChromePath('/snap/bin/chromium')
-            ->save($path);
+        try {
+            Browsershot::url($url)
+                ->windowSize(1200, 800)
+                ->fullPage()
+                ->waitUntilNetworkIdle()
+                ->setChromePath('/snap/bin/chromium')
+                ->save($path);
+        } catch (\Throwable $e) {
+            $this->error("Browsershot failed: {$e->getMessage()}");
+            return self::FAILURE;
+        }
 
-        $this->info("Image saved to $path");
+        $this->info("Image saved to {$path}");
 
-        $time = Carbon::parse("$year-$month-01")->format('F Y');
+        $time = $lastMonth->format('F Y');
+        $msg = "Monthly Impact Report for {$time}. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
-        $msg = "Monthly Impact Report for $time. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
-
-        // Tweet the image
         Twitter::sendTweetWithImage($msg, $path);
 
-        $this->info("Tweet sent");
+        $this->info('Tweet sent');
 
-        // Delete the image
-        unlink($path);
+        @unlink($path);
+
+        return self::SUCCESS;
     }
 }

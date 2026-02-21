@@ -5,7 +5,7 @@ export const useUserStore = defineStore('user', {
     state: () => ({
         admin: false,
         auth: false,
-        countries: {}, // options for flags => { ie: "Ireland" }
+        countries: {},
         errorLogin: '',
         errors: {},
         geojson: {
@@ -18,7 +18,7 @@ export const useUserStore = defineStore('user', {
         tagPercent: 0,
         totalPhotos: 0,
         totalTags: 0,
-        totalUsers: 0, // Should be on users.old_js
+        totalUsers: 0,
         user: {},
     }),
 
@@ -27,6 +27,18 @@ export const useUserStore = defineStore('user', {
     actions: {
         clearErrorLogin() {
             this.errorLogin = '';
+        },
+
+        clearError(key) {
+            if (this.errors?.[key]) {
+                const next = { ...this.errors };
+                delete next[key];
+                this.errors = next;
+            }
+        },
+
+        clearErrors() {
+            this.errors = {};
         },
 
         logout() {

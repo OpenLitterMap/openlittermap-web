@@ -63,11 +63,6 @@ class UploadPhotoController extends Controller
     {
         $user = Auth::user();
 
-        \Log::channel('photos')->info([
-            'web_upload' => $request->all(),
-            'user_id' => $user->id
-        ]);
-
         $file = $request->file('photo');
 
         $imageAndExifData = $this->makeImageAction->run($file);

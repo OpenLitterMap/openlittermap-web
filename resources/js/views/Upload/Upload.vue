@@ -10,10 +10,6 @@
                 <p>Upload Progress: {{ uploadProgress.toFixed() }}%</p>
             </div>
 
-            <!--            <p v-if="team" class="text-center">-->
-            <!--                {{ $t('common.team') }}: <strong>{{ team }}</strong>-->
-            <!--            </p>-->
-
             <!-- After uploading-->
             <transition name="fade">
                 <div v-if="uploadSuccess" class="text-center mb-6">
@@ -81,33 +77,29 @@ const pond = ref(null);
 const acceptedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', '.heic', '.heif'];
 
 const server = {
-    url: '.', // current host
+    url: '.',
     process: {
-        url: '/upload',
+        url: '/api/upload',
         method: 'POST',
-        withCredentials: false,
+        withCredentials: true,
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
         },
-        timeout: 120000, // 2 minutes
+        timeout: 120000,
         onload: null,
         onerror: (response) => {
             try {
                 const errorResponse = JSON.parse(response);
-
                 return errorResponse.error || 'An unknown error occurred.';
             } catch (e) {
                 console.error('Error parsing response:', e);
-
                 return 'An unknown error occurred. Please contact support';
             }
         },
     },
 };
 
-// Configure FilePond labels
 const options = {
-    // FilePond label to display when an upload fails
     labelFileProcessingError: (error) => {
         return error.body;
     },
@@ -117,12 +109,10 @@ import { useUploadingStore } from '../../stores/uploading/index.js';
 const uploadingStore = useUploadingStore();
 const isUploading = computed(() => uploadingStore.isUploading);
 
-// Handle when a file is dropped onto the view
 const handleFileAdded = () => {
     uploadingStore.setIsUploading(true);
 };
 
-// Handle file upload success and errors
 const handleFileUpload = (error, file) => {
     if (error) {
         console.error('Error uploading file:', error);
@@ -131,7 +121,6 @@ const handleFileUpload = (error, file) => {
 
         const name = file.file.name;
 
-        // Show success notification
         toast.success(`File ${name} uploaded successfully`);
 
         updateProgress();
@@ -158,28 +147,28 @@ const team = computed(() => {
 @media (max-width: 1300px) {
     .filepond--root,
     .filepond--root .filepond--drop-label {
-        width: 50em; /* Shrink width for medium screens */
+        width: 50em;
     }
 }
 
 @media (max-width: 1024px) {
     .filepond--root,
     .filepond--root .filepond--drop-label {
-        width: 40em; /* Shrink width for medium screens */
+        width: 40em;
     }
 }
 
 @media (max-width: 768px) {
     .filepond--root,
     .filepond--root .filepond--drop-label {
-        width: 30em; /* Shrink width for small screens */
+        width: 30em;
     }
 }
 
 @media (max-width: 520px) {
     .filepond--root,
     .filepond--root .filepond--drop-label {
-        width: 20em; /* Shrink width for very small screens */
+        width: 20em;
     }
 }
 

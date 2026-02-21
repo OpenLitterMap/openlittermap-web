@@ -26,9 +26,6 @@ export const requests = {
             .get('/current-user')
             .then((response) => {
                 console.log('get_current_user', response);
-
-                // context.commit('initUser', response.data);
-                // context.commit('set_default_litter_picked_up', response.data.picked_up);
             })
             .catch((error) => {
                 console.log('error.get_current_user', error);
@@ -83,5 +80,28 @@ export const requests = {
             .catch((error) => {
                 console.log('error.logout', error);
             });
+    },
+
+    /**
+     * Register a new account via the API
+     */
+    async REGISTER(payload) {
+        this.errors = {};
+
+        try {
+            const { data } = await axios.post('/api/auth/register', payload);
+
+            this.auth = true;
+            this.user = { id: data.user_id, email: data.email };
+
+            return data;
+        } catch (error) {
+            if (error?.response?.status === 422) {
+                this.errors = error.response.data.errors || {};
+            } else {
+                this.errors = { general: ['Something went wrong. Please try again.'] };
+            }
+            return false;
+        }
     },
 };
