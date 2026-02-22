@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API\Tags;
 
-use App\Actions\Tags\AddTagsToPhotoActionNew;
+use App\Actions\Tags\AddTagsToPhotoAction;
 use App\Http\Requests\Api\PhotoTagsRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Auth;
 
 class PhotoTagsController extends Controller
 {
-    private AddTagsToPhotoActionNew $addTagsToPhotoActionNew;
+    private AddTagsToPhotoAction $addTagsToPhotoActionNew;
 
-    public function __construct(AddTagsToPhotoActionNew $addTagsToPhotoActionNew)
+    public function __construct(AddTagsToPhotoAction $addTagsToPhotoActionNew)
     {
         $this->addTagsToPhotoActionNew = $addTagsToPhotoActionNew;
     }

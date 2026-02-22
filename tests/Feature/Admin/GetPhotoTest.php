@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Location\Country;
 use App\Models\Users\User;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class GetPhotoTest extends TestCase
 {
     use HasPhotoUploads;

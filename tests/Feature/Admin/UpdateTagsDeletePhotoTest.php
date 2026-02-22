@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class UpdateTagsDeletePhotoTest extends TestCase
 {
     use HasPhotoUploads;

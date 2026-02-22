@@ -2,12 +2,11 @@
 
 namespace App\Models\Location;
 
-class City extends Location
+class State extends Location
 {
     protected $fillable = [
-        'city',
+        'state',
         'country_id',
-        'state_id',
         'created_by',
     ];
 
@@ -31,13 +30,8 @@ class City extends Location
         return $this->belongsTo(Country::class);
     }
 
-    public function state()
+    public function cities()
     {
-        return $this->belongsTo(State::class);
-    }
-
-    public function users()
-    {
-        return $this->hasMany('App\Models\Users\User');
+        return $this->hasMany(City::class);
     }
 }

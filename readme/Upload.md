@@ -6,7 +6,7 @@ Two distinct phases, one metrics writer:
 
 1. **Upload** — photo + GPS → S3 + location resolution → `Photo::create()` → broadcast
 2. **Tag finalization** — user/admin adds tags → `MetricsService::processPhoto()` → all metrics
-3. **Delete** — `MetricsService::deletePhoto()` → reverses everything
+3. **Delete** — `MetricsService::deletePhoto()` → reverses everything (flow deferred — see below)
 
 **Golden rule:** `MetricsService` is the **single writer** for all metrics (MySQL + Redis). Nothing else touches metric counters.
 
@@ -15,7 +15,7 @@ Two distinct phases, one metrics writer:
 ## Phase 1: Upload
 
 ```
-POST /api/photos
+POST /v5/photos  (route not yet wired)
 
 UploadPhotoController::__invoke()
 ├── MakeImageAction::run($file)              → image + EXIF
@@ -31,15 +31,9 @@ UploadPhotoController::__invoke()
 
 ### `ImageUploaded` listeners (v5)
 
-| Listener | v5 status | Reason |
-|---|---|---|
-| `AddLocationContributor` | **Delete** | Writes to dead keys (`country:{id}:user_ids`). `RedisMetricsCollector` handles contributors at tag time. |
-| `IncreaseLocationTotalPhotos` | **Delete** | Writes to dead keys (`country:{id}` → `total_photos`). `RedisMetricsCollector` increments `{prefix}:stats` → `photos` at tag time. |
-| `IncreaseTeamTotalPhotos` | **Keep for now** | Team metrics not yet in MetricsService. Migrate later. |
+All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now has **zero listeners** — broadcast is handled by the event itself via `ShouldBroadcast`.
 
-After cleanup, `ImageUploaded` only triggers:
-- Real-time map broadcast (WebSocket)
-- `IncreaseTeamTotalPhotos` (temporary, until teams migrate to MetricsService)
+Note: `ImageUploaded` still has `ShouldQueue` on the event, which is technically incorrect (should be on listeners, not events). Low risk but should be fixed.
 
 ---
 
@@ -47,7 +41,16 @@ After cleanup, `ImageUploaded` only triggers:
 
 **Trigger:** `TagsVerifiedByAdmin` event (or self-verification for trusted users)
 
-This is where `MetricsService::processPhoto()` must run. It is the **single writer** for:
+This is where `MetricsService::processPhoto()` runs via the `ProcessPhotoMetrics` listener:
+
+```
+TagsVerifiedByAdmin
+  → ProcessPhotoMetrics::handle()
+    → MetricsService::processPhoto()
+      ├── MySQL metrics upsert (all timescales × all scopes)
+      ├── Photo::update (processed_at, processed_fp, processed_tags, processed_xp)
+      └── DB::afterCommit → RedisMetricsCollector::processPhoto()
+```
 
 ### MySQL (`metrics` table)
 - Upserts across all timescales (all-time, daily, weekly, monthly, yearly)
@@ -65,27 +68,24 @@ This is where `MetricsService::processPhoto()` must run. It is the **single writ
 - `user:{id}:tags` → per-user tag breakdown
 - `user:{id}:bitmap` → streak tracking
 
-### `TagsVerifiedByAdmin` listeners (v5)
+### `TagsVerifiedByAdmin` listeners (v5 — current state)
 
-| Listener | v5 status | Reason |
-|---|---|---|
-| `CompileResultsString` | **Review** | Need to check if still consumed by frontend |
-| `IncrementLocation` | **Delete** | Replaced by `MetricsService` + `RedisMetricsCollector` |
-| `IncreaseTeamTotalLitter` | **Keep for now** | Team metrics not yet in MetricsService |
-| `RewardLittercoin` | **Keep** | Separate domain concern |
-| `UpdateUserCategories` | **Delete** | Replaced by `RedisMetricsCollector::updateUserMetrics()` |
-| `UpdateUserTimeSeries` | **Delete** | Replaced by `metrics` table timescales |
-| `UpdateUserIdLastUpdatedLocation` | **Delete** | Column dropped in migration |
+| Listener | Status |
+|---|---|
+| `ProcessPhotoMetrics` | **Active** — calls MetricsService::processPhoto() |
+| `RewardLittercoin` | **Active** — separate domain concern |
+| `CompileResultsString` | **Removed** |
+| `IncrementLocation` | **Removed** — replaced by MetricsService |
+| `IncreaseTeamTotalLitter` | **Removed** — team metrics dropped |
+| `UpdateUserCategories` | **Removed** — replaced by RedisMetricsCollector |
+| `UpdateUserTimeSeries` | **Removed** — replaced by metrics table |
+| `UpdateUserIdLastUpdatedLocation` | **Removed** — column dropped |
 
-After cleanup, `TagsVerifiedByAdmin` triggers:
-- `MetricsService::processPhoto()` ← **add this**
-- `CompileResultsString` (if still needed)
-- `IncreaseTeamTotalLitter` (temporary)
-- `RewardLittercoin`
+**Open issue:** `TagsVerifiedByAdmin` constructor changed to `($photo_id, $user_id, $country_id, $state_id, $city_id, $team_id)`. The caller(s) that dispatch this event haven't been updated yet.
 
 ---
 
-## Phase 3: Delete
+## Phase 3: Delete (deferred)
 
 ```
 MetricsService::deletePhoto()
@@ -95,19 +95,19 @@ MetricsService::deletePhoto()
 └── (S3 cleanup via queued job)
 ```
 
-### `ImageDeleted` listeners (v5)
+`DeletePhotoMetrics` listener exists but is **parked**. Problem: `ImageDeleted` doesn't carry `photo_id`, and `MetricsService::deletePhoto()` needs the photo row to still exist. The current `ApiPhotosController::deleteImage()` hard-deletes the photo before dispatching the event.
 
-| Listener | v5 status | Reason |
-|---|---|---|
-| `RemoveLocationContributor` | **Delete** | Writes to dead keys. MetricsService handles it. |
-| `DecreaseLocationTotalPhotos` | **Delete** | Writes to dead keys. MetricsService handles it. |
-| `DecreaseTeamTotalPhotos` | **Keep for now** | Team metrics not yet in MetricsService |
+Options: call MetricsService directly in the controller before delete, or implement soft-deletes.
+
+### `ImageDeleted` listeners (v5 — current state)
+
+All location listeners removed. `ImageDeleted` now has **zero listeners**. Delete flow needs redesign before `DeletePhotoMetrics` can be activated.
 
 ---
 
-## Redis Key Alignment: Location Model ↔ RedisMetricsCollector — ✅ Resolved
+## Redis Key Alignment — ✅ Resolved
 
-The Location model has been rewritten to read all keys via `RedisKeys::*`, eliminating mismatches.
+The Location model reads all keys via `RedisKeys::*`, eliminating mismatches with `RedisMetricsCollector`.
 
 ### Real-time stats (read directly from Redis)
 
@@ -123,7 +123,7 @@ The Location model has been rewritten to read all keys via `RedisKeys::*`, elimi
 | `brands_data` | `RedisKeys::brands($scope)` | `RedisMetricsCollector` |
 | top tags | `RedisKeys::ranking($scope, $dim)` | `RedisMetricsCollector` |
 
-### Time-series (Option C: metrics table → cached in Redis with TTL)
+### Time-series (metrics table → cached in Redis with TTL)
 
 | Accessor | Source of truth | Cache key | TTL |
 |---|---|---|---|
@@ -132,50 +132,27 @@ The Location model has been rewritten to read all keys via `RedisKeys::*`, elimi
 
 ### Contributors: HyperLogLog
 
-Contributors now use `PFCOUNT` on the HLL key instead of `SCARD` on a SET. Trade-off: ~0.81% error margin, but O(1) reads, no memory growth, and cannot go negative on deletes (HLL is append-only). For a citizen science platform this is the right call — exact contributor counts matter less than tag/litter accuracy.
+Contributors use `PFCOUNT` on the HLL key instead of `SCARD` on a SET. Trade-off: ~0.81% error margin, but O(1) reads, no memory growth, and cannot go negative on deletes (HLL is append-only). For a citizen science platform this is the right call.
 
 ---
 
-## Files to delete
-
-| File | Reason |
-|---|---|
-| `App\Helpers\Post\UploadHelper` | Replaced by `ResolveLocationAction` |
-| `App\Actions\Locations\UpdateLeaderboardsForLocationAction` | Replaced by `MetricsService` |
-| `App\Actions\Locations\UpdateLeaderboardsXpAction` | Called only by above |
-| `App\Actions\Locations\AddContributorForLocationAction` | Writes to dead keys |
-| `App\Actions\Locations\UpdateTotalPhotosForLocationAction` | Writes to dead keys |
-| `App\Listeners\Locations\AddLocationContributor` | Uses dead action above |
-| `App\Listeners\Locations\IncreaseLocationTotalPhotos` | Uses dead action above |
-| `App\Listeners\Locations\DecreaseLocationTotalPhotos` | Uses dead action above |
-| `App\Listeners\Locations\RemoveLocationContributor` | Uses dead action above |
-| `App\Listeners\Locations\User\UpdateUserIdLastUpdatedLocation` | Column dropped |
-| `App\Listeners\AddTags\IncrementLocation` | Replaced by MetricsService |
-| `App\Listeners\User\UpdateUserCategories` | Replaced by RedisMetricsCollector |
-| `App\Listeners\User\UpdateUserTimeSeries` | Replaced by metrics table |
-| `App\Listeners\UpdateTimes\IncrementCountryMonth` | Replaced by metrics table |
-| `App\Listeners\UpdateTimes\IncrementStateMonth` | Replaced by metrics table |
-| `App\Listeners\UpdateTimes\IncrementCityMonth` | Replaced by metrics table |
-| `App\Events\Photo\IncrementPhotoMonth` | Event with no remaining listeners |
-
-## Location model cleanup — ✅ Done
+## Location Model Cleanup — ✅ Done
 
 | Issue | Resolution |
 |---|---|
-| `lastUploader()` relationship | Deleted — `user_id_last_uploaded` column dropped |
-| `scopeVerified()` | Deleted — `manual_verify` column dropped |
+| `lastUploader()` relationship | Deleted — column dropped |
+| `scopeVerified()` | Deleted — column dropped |
 | `scopeActive()` | Deleted — use `hasRecentActivity()` from metrics instead |
-| `getTopContributors()` | Deleted — was doing N+1 SQL queries per user. Use `contributorRanking` ZSET instead |
-| `getTotalContributorsRedisAttribute()` | Fixed — now uses `PFCOUNT` on HLL key |
-| `getTotalXpAttribute()` | Fixed — reads `{scope}:stats` → `xp` directly instead of looping 24 monthly hashes |
-| `getPpmAttribute()` | Fixed — Option C: queries metrics table (timescale=3), cached 15 min |
-| `getRecentActivityAttribute()` | Fixed — Option C: queries metrics table (timescale=1), cached 5 min |
-| All tag accessors | Fixed — reads via `RedisKeys::categories/objects/materials/brands()` |
-| All key references | Fixed — uses `RedisKeys::*` as single source of truth for key naming |
+| `getTopContributors()` | Deleted — was N+1 SQL. Use `contributorRanking` ZSET instead |
+| `getTotalContributorsRedisAttribute()` | Fixed — uses `PFCOUNT` on HLL key |
+| `getTotalXpAttribute()` | Fixed — reads `{scope}:stats` → `xp` directly |
+| `getPpmAttribute()` | Fixed — queries metrics table, cached 15 min |
+| `getRecentActivityAttribute()` | Fixed — queries metrics table, cached 5 min |
+| All tag/key references | Fixed — uses `RedisKeys::*` as single source of truth |
 
 ---
 
-## Updated EventServiceProvider (v5 target)
+## EventServiceProvider (v5 — current state)
 
 ```php
 protected $listen = [
@@ -183,37 +160,23 @@ protected $listen = [
         SendEmailVerificationNotification::class,
     ],
 
-    ImageUploaded::class => [
-        // Real-time map broadcast (handled by event itself)
-        // Team photo count (temporary — migrate to MetricsService later)
-        IncreaseTeamTotalPhotos::class,
-    ],
-
-    ImageDeleted::class => [
-        // MetricsService::deletePhoto() called directly, not via listener
-        DecreaseTeamTotalPhotos::class,
-    ],
+    // ImageUploaded: zero listeners (broadcast via ShouldBroadcast on event)
+    // ImageDeleted: zero listeners (delete flow deferred)
 
     TagsVerifiedByAdmin::class => [
-        // THE metrics moment — single writer
-        // MetricsService::processPhoto() — wire this in
-        CompileResultsString::class,  // review if still needed
-        IncreaseTeamTotalLitter::class,  // temporary
+        ProcessPhotoMetrics::class,
         RewardLittercoin::class,
     ],
 
     NewCountryAdded::class => [
-        NotifySlackOfNewCountry::class,
         TweetNewCountry::class,
     ],
 
     NewStateAdded::class => [
-        NotifySlackOfNewState::class,
         TweetNewState::class,
     ],
 
     NewCityAdded::class => [
-        NotifySlackOfNewCity::class,
         TweetNewCity::class,
     ],
 
@@ -229,10 +192,8 @@ protected $listen = [
 
 ---
 
-## What's next
+## Related Docs
 
-1. **Wire `MetricsService::processPhoto()` into `TagsVerifiedByAdmin`** — need to see the tagging controller/listener that persists tags and fires this event
-2. **Clean up `EventServiceProvider`** — remove dead listeners
-3. **Delete 17 files** listed above
-4. **Flush old Redis keys** — one-off artisan command to clear all `country:*`, `state:*`, `city:*` legacy patterns
-5. **Rebuild Redis from metrics table** — artisan command to repopulate `RedisMetricsCollector` keys from MySQL
+- **PostMigrationCleanup.md** — full list of files to delete, tables to drop, Redis keys to flush
+- **Locations.md** — `ResolveLocationAction`, location schema, upload controller code
+- **Strategy.md** — overall status, blockers, and what's next

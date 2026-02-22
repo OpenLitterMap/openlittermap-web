@@ -2,11 +2,12 @@
 
 namespace Tests\Unit\Exports;
 
-
 use App\Exports\CreateCSVExport;
 use App\Models\Photo;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
+#[Group('deprecated')]
 class CreateCSVExportTest extends TestCase
 {
     public function test_it_has_correct_headings_for_all_categories_and_tags()

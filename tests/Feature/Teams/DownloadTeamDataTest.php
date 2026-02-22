@@ -9,7 +9,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class DownloadTeamDataTest extends TestCase
 {
     public static function routeDataProvider(): array

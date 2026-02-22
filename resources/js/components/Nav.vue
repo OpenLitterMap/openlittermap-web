@@ -85,6 +85,10 @@
                             >Profile</router-link
                         >
 
+                        <router-link to="/teams" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >Teams</router-link
+                        >
+
                         <router-link to="/settings" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >Settings</router-link
                         >
@@ -124,7 +128,7 @@ const login = () => {
 };
 
 const logout = async () => {
-    userStore.logout();
+    await userStore.LOGOUT_REQUEST();
 };
 </script>
 

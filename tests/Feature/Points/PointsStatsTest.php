@@ -429,20 +429,22 @@ class PointsStatsTest extends TestCase
     /** @test */
     public function it_indicates_truncation_at_max_results()
     {
-        // Arrange - Create 1001 photos to exceed limit
         $user = User::factory()->create();
+        $country = \App\Models\Location\Country::factory()->create();
+        $state = \App\Models\Location\State::factory()->create(['country_id' => $country->id]);
 
         for ($i = 0; $i < 1001; $i++) {
-            $this->createPhotoWithLocation($user, 0.0, 51.5);
+            $this->createPhotoWithLocation($user, 0.0, 51.5, [
+                'country_id' => $country->id,
+                'state_id' => $state->id,
+            ]);
         }
 
-        // Act
         $stats = $this->service->getStats([
             'bbox' => $this->testBbox,
             'zoom' => 16
         ]);
 
-        // Assert
         $this->assertArrayHasKey('meta', $stats);
         $this->assertArrayHasKey('truncated', $stats['meta']);
         $this->assertTrue($stats['meta']['truncated']);

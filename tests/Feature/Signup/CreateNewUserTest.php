@@ -4,6 +4,9 @@ namespace Tests\Feature\Signup;
 
 use Tests\TestCase;
 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('deprecated')]
 class CreateNewUserTest extends TestCase
 {
     public function test_user_can_create_account_with_valid_password()

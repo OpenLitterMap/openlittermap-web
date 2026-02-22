@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
@@ -24,7 +25,7 @@ trait HasPhotoUploads
         $this->setMockForGeocodingAction();
     }
 
-    protected function setImagePath (): void
+    protected function setImagePath(): void
     {
         $this->setMockForGeocodingAction();
     }
@@ -38,12 +39,12 @@ trait HasPhotoUploads
         "postcode" => "17324",
         "country" => "United States of America",
         "country_code" => "us",
-        "suburb" => "unknown"
+        "suburb" => "unknown",
     ];
+
     private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
 
-
-    public function getImageAndAttributes ($mimeType = 'jpg', $withAddress = []): array
+    public function getImageAndAttributes($mimeType = 'jpg', $withAddress = []): array
     {
         $file = new UploadedFile(
             storage_path('framework/testing/img_with_exif.JPG'),
@@ -58,7 +59,7 @@ trait HasPhotoUploads
         $geoHash = 'dr15u73vccgyzbs9w4uj';
         $displayName = $this->imageDisplayName;
 
-        if (!empty($withAddress)) {
+        if (! empty($withAddress)) {
             $this->address = $withAddress;
             $this->setMockForGeocodingAction();
         }
@@ -87,7 +88,7 @@ trait HasPhotoUploads
         );
     }
 
-    protected function getApiImageAttributes (array $imageAttributes): array
+    protected function getApiImageAttributes(array $imageAttributes): array
     {
         return [
             'photo' => $imageAttributes['file'],
@@ -95,11 +96,11 @@ trait HasPhotoUploads
             'lon' => $imageAttributes['longitude'],
             'date' => $imageAttributes['dateTime'],
             'model' => 'test model',
-            'picked_up' => true
+            'picked_up' => true,
         ];
     }
 
-    protected function setMockForGeocodingAction (): void
+    protected function setMockForGeocodingAction(): void
     {
         $this->geocodingAction = (new FakeReverseGeocodingAction())->withAddress($this->address);
         $this->swap(ReverseGeocodeLocationAction::class, $this->geocodingAction);
@@ -116,21 +117,16 @@ trait HasPhotoUploads
             'datetime' => $attributes['dateTime'],
             'lat' => $attributes['latitude'],
             'lon' => $attributes['longitude'],
-            'display_name' => $attributes['displayName'],
-            'location' => $attributes['address']['house_number'],
-            'road' => $attributes['address']['road'],
             'country_id' => $locationData['country_id'],
             'state_id' => $locationData['state_id'],
             'city_id' => $locationData['city_id'],
-            'city' => $attributes['address']['city'],
-            'county' => $attributes['address']['state'],
-            'country' => $attributes['address']['country'],
-            'country_code' => $attributes['address']['country_code'],
             'model' => 'test model',
             'platform' => 'mobile',
             'geohash' => $attributes['geoHash'],
             'team_id' => $user->active_team,
+            'suburb' => $attributes['address']['suburb'] ?? null,
             'address_array' => json_encode($attributes['address']),
+            'geom' => DB::raw("ST_GeomFromText('POINT({$attributes['latitude']} {$attributes['longitude']})', 4326)"),
         ]);
     }
 }

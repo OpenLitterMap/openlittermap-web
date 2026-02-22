@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class TrustedTeamsTest extends TestCase
 {
     use HasPhotoUploads;

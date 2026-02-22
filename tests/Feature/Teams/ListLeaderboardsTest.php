@@ -6,7 +6,9 @@ use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class ListLeaderboardsTest extends TestCase
 {
     public static function routeDataProvider(): array

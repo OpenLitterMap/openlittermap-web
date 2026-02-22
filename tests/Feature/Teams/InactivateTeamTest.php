@@ -5,7 +5,9 @@ namespace Tests\Feature\Teams;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class InactivateTeamTest extends TestCase
 {
     public static function routeDataProvider(): array

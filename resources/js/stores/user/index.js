@@ -41,15 +41,18 @@ export const useUserStore = defineStore('user', {
             this.errors = {};
         },
 
-        logout() {
-            this.auth = false;
-            this.admin = false;
-            this.helper = false;
-            window.location.href = '/';
-        },
+        // deprecated. just do $reset
+        // logout() {
+        //     this.auth = false;
+        //     this.admin = false;
+        //     this.helper = false;
+        //     this.user = null;
+        //     window.location.href = '/';
+        // },
 
         initUser(user) {
             this.user = user;
+            this.auth = true;
         },
 
         ...requests,

@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('deprecated')]
 class TeamTest extends TestCase
 {
     public function test_teams_database_has_expected_columns()

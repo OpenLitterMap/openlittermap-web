@@ -2,22 +2,38 @@
 
 namespace App\Http\Requests\Api;
 
-use Illuminate\Validation\Rule;
+use App\Models\Photo;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PhotoTagsRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        $photo = Photo::find($this->input('photo_id'));
+
+        // If photo doesn't exist, let validation handle it (422)
+        if (! $photo) {
+            return true;
+        }
+
+        // Ownership check (403)
+        if ($photo->user_id !== $this->user()->id) {
+            return false;
+        }
+
+        // Already verified check (403)
+        if ($photo->verified >= 1) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function rules(): array
     {
         return [
-            'photo_id' => [
-                'required',
-                'integer',
-                Rule::exists('photos', 'id')->where(function ($query) {
-                    $query->where('user_id', $this->user()->id);
-                }),
-            ],
-            'tags' => 'required|array',
+            'photo_id' => 'required|integer|exists:photos,id',
+            'tags' => 'required|array|min:1',
         ];
     }
 }

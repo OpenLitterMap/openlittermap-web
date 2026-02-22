@@ -5,24 +5,20 @@ namespace App\Http\Controllers;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
+use App\Exceptions\GeocodingException;
 use GeoHash;
 use Carbon\Carbon;
 use App\Models\Photo;
-use App\Models\Users\User;
 
 use App\Jobs\Api\AddTags;
 
 use App\Events\ImageDeleted;
 use App\Events\ImageUploaded;
-use App\Events\Photo\IncrementPhotoMonth;
-
-use App\Helpers\Post\UploadHelper;
 
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\UploadPhotoAction;
-use App\Actions\Locations\ReverseGeocodeLocationAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Actions\Locations\ResolveLocationAction;
 
 use App\Exceptions\InvalidCoordinates;
 use App\Exceptions\PhotoAlreadyUploaded;
@@ -30,62 +26,53 @@ use App\Exceptions\PhotoAlreadyUploaded;
 use App\Http\Requests\Api\AddTagsRequest;
 use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
 
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 
 class ApiPhotosController extends Controller
 {
     protected int $userId;
 
-    protected UploadHelper $uploadHelper;
     private UploadPhotoAction $uploadPhotoAction;
     private DeletePhotoAction $deletePhotoAction;
     private MakeImageAction $makeImageAction;
+    private ResolveLocationAction $resolveLocationAction;
 
-    /**
-     * ApiPhotosController constructor
-     * Apply middleware to all of these routes
-     */
-    public function __construct (
-        UploadHelper $uploadHelper,
+    public function __construct(
         UploadPhotoAction $uploadPhotoAction,
         DeletePhotoAction $deletePhotoAction,
-        MakeImageAction $makeImageAction
-    )
-    {
-        $this->uploadHelper = $uploadHelper;
+        MakeImageAction $makeImageAction,
+        ResolveLocationAction $resolveLocationAction
+    ) {
         $this->uploadPhotoAction = $uploadPhotoAction;
         $this->deletePhotoAction = $deletePhotoAction;
         $this->makeImageAction = $makeImageAction;
+        $this->resolveLocationAction = $resolveLocationAction;
 
         $this->middleware('auth:api');
     }
 
     /**
-     * Stores a photo
-     * This is to handle all APIs from mobile app versions
+     * Stores a photo from mobile app.
+     *
+     * Mobile sends lat/lon/date explicitly (not from EXIF).
+     * Uses ResolveLocationAction (v5) — no deprecated string columns.
      *
      * @param Request $request
      * @return Photo
      * @throws InvalidCoordinates
-     * @throws PhotoAlreadyUploaded
+     * @throws GeocodingException
+     * @throws GuzzleException
      */
-    protected function storePhoto (Request $request): Photo
+    protected function storePhoto(Request $request): Photo
     {
         $file = $request->file('photo');
-
         $user = auth()->user();
-
-        if (!$user->has_uploaded) {
-            $user->has_uploaded = 1;
-            $user->save();
-        }
 
         Log::channel('photos')->info([
             'app_upload' => $request->all(),
-            'user_id' => $user['id']
+            'user_id' => $user->id,
         ]);
 
         $model = $request->filled('model')
@@ -97,33 +84,18 @@ class ApiPhotosController extends Controller
         $lat = $request['lat'];
         $lon = $request['lon'];
 
-        if (($lat === 0 && $lon === 0) || ($lat === '0' && $lon === '0'))
-        {
-            \Log::info("invalid coordinates found for userId $user->id \n");
+        if (($lat === 0 && $lon === 0) || ($lat === '0' && $lon === '0')) {
+            Log::info("invalid coordinates found for userId $user->id");
             throw new InvalidCoordinates();
         }
 
         $date = str_contains($request['date'], ':')
             ? $request['date']
-            : (int)$request['date'];
+            : (int) $request['date'];
 
         $date = Carbon::parse($date);
 
-        // These users can upload duplicate photos
-        // we assume that in 1 second only 1 photo can be taken for each user
-        $excludedUserIds = [1,3233];
-
-        // temp disabling this
-        // The user with id = 1 needs to upload duplicate images for testing
-//        if (app()->environment() === "production" && !in_array($user->id, $excludedUserIds)) {
-//            if (Photo::where(['user_id' => $user->id, 'datetime' => $date])->exists()) {
-//                \Log::info(['user_id', $user->id]);
-//                \Log::info(['date', $date]);
-//                throw new PhotoAlreadyUploaded();
-//            }
-//        }
-
-        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        // Upload images to both 's3' and 'bbox' disks
         $imageName = $this->uploadPhotoAction->run(
             $image,
             $date,
@@ -137,207 +109,128 @@ class ApiPhotosController extends Controller
             'bbox'
         );
 
-        $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($lat, $lon);
+        // v5: Resolve locations via ResolveLocationAction
+        $location = $this->resolveLocationAction->run($lat, $lon);
 
-        // The entire address as a string
-        $display_name = $revGeoCode["display_name"];
-        // Extract the address array as $key => $value pairs.
-        $addressArray = $revGeoCode["address"];
-        $location = array_values($addressArray)[0];
-        $road = array_values($addressArray)[1];
-
-        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
-        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $lat, $lon);
-
-        $pickedUp = (isset($request->picked_up) && !is_null($request->picked_up))
+        $pickedUp = (isset($request->picked_up) && ! is_null($request->picked_up))
             ? $request->picked_up
-            : !$user->items_remaining;
+            : ! $user->items_remaining;
 
+        // v5: FKs only, no deprecated string columns
         $photo = $user->photos()->create([
             'filename' => $imageName,
             'datetime' => $date,
             'lat' => $lat,
             'lon' => $lon,
-            'display_name' => $display_name,
-            'location' => $location,
-            'road' => $road,
-            'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
-            'city' => $city->city,
-            'county' => $state->state,
-            'country' => $country->country,
-            'country_code' => $country->shortcode,
+            'country_id' => $location->country->id,
+            'state_id' => $location->state->id,
+            'city_id' => $location->city->id,
             'model' => $model,
-            'remaining' => !$pickedUp,
+            'remaining' => ! $pickedUp,
             'platform' => 'mobile',
             'geohash' => GeoHash::encode($lat, $lon),
             'team_id' => $user->active_team,
             'five_hundred_square_filepath' => $bboxImageName,
-            'address_array' => json_encode($addressArray)
+            'address_array' => $location->addressArray,
         ]);
 
-        // Since a user can upload multiple photos at once,
-        // we might get old values for xp, so we update the values directly
-        // without retrieving them
-        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
-
-        $user->refresh();
-
-        // XP is awarded for each photo uploaded
-        $action = app(UpdateLeaderboardsForLocationAction::class);
-        $action->run($photo, $user->id, 1);
-
-        // Broadcast an event to anyone viewing the Global Map
+        // Broadcast to real-time map
         event(new ImageUploaded(
             $user,
             $photo,
-            $country,
-            $state,
-            $city
+            $location->country,
+            $location->state,
+            $location->city,
         ));
 
-        // Broadcast an event to anyone viewing the Global Map
-        // Sends Notification to Twitter & Slack
-        if ($country->wasRecentlyCreated) {
-            event(new NewCountryAdded($country->country, $country->shortcode, now()));
+        // Notify on new locations
+        if ($location->country->wasRecentlyCreated) {
+            event(new NewCountryAdded($location->country->country, $location->country->shortcode, now()));
         }
 
-        if ($state->wasRecentlyCreated) {
-            event(new NewStateAdded($state->state, $country->country, now()));
+        if ($location->state->wasRecentlyCreated) {
+            event(new NewStateAdded($location->state->state, $location->country->country, now()));
         }
 
-        if ($city->wasRecentlyCreated) {
+        if ($location->city->wasRecentlyCreated) {
             event(new NewCityAdded(
-                $city->city,
-                $state->state,
-                $country->country,
+                $location->city->city,
+                $location->state->state,
+                $location->country->country,
                 now(),
-                $city->id,
+                $location->city->id,
                 $lat,
                 $lon,
                 $photo->id
             ));
         }
 
-        event(new IncrementPhotoMonth(
-            $country->id,
-            $state->id,
-            $city->id,
-            $date
-        ));
-
         return $photo;
     }
 
     /**
-     * Upload Photo
-     *
-     * array (
-        'lat' => '55.455525',
-        'lon' => '-5.713071670000001',
-        'date' => '2021:06:04 15:50:55',
-        'presence' => 'true',
-        'model' => 'iPhone 12',
-        'photo' =>
-            Illuminate\Http\UploadedFile::__set_state(array(
-                'test' => false,
-                'originalName' => 'IMG_2624.JPG',
-                'mimeType' => 'image/jpeg',
-                'error' => 0,
-                'hashName' => NULL
-            ))
-        );
+     * Upload Photo (mobile v1)
      */
-    public function store (Request $request): array
+    public function store(Request $request): array
     {
         $request->validate([
             'photo' => 'required|mimes:jpg,png,jpeg,heic,heif',
             'lat' => 'required|numeric',
             'lon' => 'required|numeric',
-            'date' => 'required'
+            'date' => 'required',
         ]);
 
         $file = $request->file('photo');
 
-        if ($file->getError() === 3)
-        {
+        if ($file->getError() === 3) {
             return [
                 'success' => false,
-                'msg' => 'error-3'
+                'msg' => 'error-3',
             ];
         }
 
-        try
-        {
+        try {
             $photo = $this->storePhoto($request);
-        }
-        catch (PhotoAlreadyUploaded | InvalidCoordinates $e)
-        {
+        } catch (PhotoAlreadyUploaded|InvalidCoordinates $e) {
             return [
                 'success' => false,
-                'msg' => $e->getMessage()
+                'msg' => $e->getMessage(),
             ];
         }
 
         return [
             'success' => true,
-            'photo_id' => $photo->id
+            'photo_id' => $photo->id,
         ];
     }
 
     /**
-     * Upload Photo
-     *
-     * May or may not have tags.
-     *
-     * @param UploadPhotoWithOrWithoutTagsRequest $request
-     * @return array
+     * Upload Photo with or without tags (mobile v2)
      */
-    public function uploadWithOrWithoutTags (UploadPhotoWithOrWithoutTagsRequest $request) :array
+    public function uploadWithOrWithoutTags(UploadPhotoWithOrWithoutTagsRequest $request): array
     {
-//        not sure if we need this
-//        $file = $request->file('photo');
-//
-//
-//        // The uploaded file was only partially uploaded.
-//        // we are not handling this on the app
-//        if ($file->getError() === 3)
-//        {
-//            return [
-//                'success' => false,
-//                'msg' => 'error-3'
-//            ];
-//        }
-
-        try
-        {
+        try {
             $photo = $this->storePhoto($request);
-        }
-        catch (PhotoAlreadyUploaded $e)
-        {
+        } catch (PhotoAlreadyUploaded $e) {
             Log::info('ApiPhotosController@uploadWithOrWithoutTags.1', [$e->getMessage()]);
 
             return [
                 'success' => false,
-                'msg' => 'photo-already-uploaded'
+                'msg' => 'photo-already-uploaded',
             ];
-        }
-        catch (InvalidCoordinates $e)
-        {
-            Log::info('ApiPhotosoController@uploadWithOrWithoutTags.2', [$e->getMessage()]);
+        } catch (InvalidCoordinates $e) {
+            Log::info('ApiPhotosController@uploadWithOrWithoutTags.2', [$e->getMessage()]);
 
             return [
                 'success' => false,
-                'msg' => 'invalid-coordinates'
+                'msg' => 'invalid-coordinates',
             ];
         }
 
-        // customTags was added 10th March 2023
-        if ($request->tags || $request->custom_tags)
-        {
-            dispatch (new AddTags(
+        // Old mobile tag format — dispatches to AddTags job
+        // TODO: convert old tag format to v5 PhotoTag format
+        if ($request->tags || $request->custom_tags) {
+            dispatch(new AddTags(
                 auth()->id(),
                 $photo->id,
                 $request->tags,
@@ -347,14 +240,14 @@ class ApiPhotosController extends Controller
 
         return [
             'success' => true,
-            'photo_id' => $photo->id
+            'photo_id' => $photo->id,
         ];
     }
 
     /**
-     * Check if the user has any available photos that are uploaded, but not tagged
+     * Check if the user has any available photos that are uploaded but not tagged
      */
-    public function check ()
+    public function check()
     {
         $user = auth()->user();
 
@@ -368,35 +261,28 @@ class ApiPhotosController extends Controller
 
     /**
      * Delete an image
+     *
+     * TODO: refactor delete flow — MetricsService needs photo to exist
      */
-    public function deleteImage (Request $request)
+    public function deleteImage(Request $request)
     {
         $user = auth()->user();
 
-        // $photo = Photo::findOrFail($request->photoId);
         $photo = Photo::where([
             'id' => $request->photoId,
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ])->first();
 
-        if (!$photo) {
+        if (! $photo) {
             return response()->json([
                 'success' => false,
-                'msg' => 'Photo not found'
+                'msg' => 'Photo not found',
             ], 403);
         }
 
         $this->deletePhotoAction->run($photo);
 
         $photo->delete();
-
-        $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
-        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-        $user->save();
-
-        /** @var UpdateLeaderboardsForLocationAction $action */
-        $action = app(UpdateLeaderboardsForLocationAction::class);
-        $action->run($photo, $user->id, -1);
 
         event(new ImageDeleted(
             $user,
@@ -406,8 +292,6 @@ class ApiPhotosController extends Controller
             $photo->team_id
         ));
 
-        return response()->json([
-            'success' => true
-        ]);
+        return response()->json(['success' => true]);
     }
 }

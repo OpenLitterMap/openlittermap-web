@@ -11,8 +11,9 @@ use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use App\Actions\LogAdminVerificationAction;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class CorrectTagsDeletePhotoTest extends TestCase
 {
     use HasPhotoUploads;

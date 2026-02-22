@@ -6,6 +6,14 @@ use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Models\Photo;
 use Tests\TestCase;
 
+/**
+ * @group deprecated
+ * @deprecated Needs rewrite for v5 — admin routes moved to /api/admin/*,
+ *             setUp uses dead routes (/submit, /add-tags)
+ */
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('deprecated')]
 class AddTagsToPhotoActionTest extends TestCase
 {
     public function test_it_returns_correct_number_of_litter_and_brands()

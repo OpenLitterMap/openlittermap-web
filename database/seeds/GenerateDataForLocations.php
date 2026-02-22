@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Actions\Tags\AddTagsToPhotoActionNew;
+use App\Actions\Tags\AddTagsToPhotoAction;
 use App\Events\ImageUploaded;
 use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Litter\Tags\BrandList;
@@ -19,9 +19,9 @@ use Faker\Factory as Faker;
 
 class GenerateDataForLocations extends Seeder
 {
-    private AddTagsToPhotoActionNew $addTagsAction;
+    private AddTagsToPhotoAction $addTagsAction;
 
-    public function __construct(AddTagsToPhotoActionNew $addTagsAction)
+    public function __construct(AddTagsToPhotoAction $addTagsAction)
     {
         $this->addTagsAction = $addTagsAction;
     }

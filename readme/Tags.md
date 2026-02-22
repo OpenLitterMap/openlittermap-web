@@ -31,7 +31,9 @@ photos
 ├── total_tags (INT) - Total item count
 ├── total_brands (INT) - Total brand count
 ├── processed_at (TIMESTAMP) - When metrics were processed
+├── processed_fp (VARCHAR) - Fingerprint for idempotency
 ├── processed_tags (TEXT) - Cached tags for metrics
+├── processed_xp (TINYINT) - XP processing flag
 └── migrated_at (TIMESTAMP) - v5 migration timestamp
 
 photo_tags
@@ -135,7 +137,7 @@ XP = 5 (upload)
 
 ## Brand-Object Relationships
 
-Before migration, brand-object relationships must be established:
+### NOTE: Brands are deferred — doing them later.
 
 ### Discovery Process
 ```bash
@@ -240,11 +242,12 @@ Old tags are automatically mapped to new equivalents:
 
 **Note**: Materials are automatically added based on the deprecated tag mappings. For example, `beerBottle` automatically adds `glass` material to the object.
 
+Full mapping in `ClassifyTagsService::normalizeDeprecatedTag()`.
+
 ### 4. Unknown Tags
 Unknown tags are automatically created as new objects:
 
 ```php
-// Tag "mystery_item" doesn't exist
 $created = LitterObject::firstOrCreate(
     ['key' => 'mystery_item'],
     ['crowdsourced' => true]
@@ -260,56 +263,6 @@ A single object can have multiple brands attached:
 Brands can validly attach to multiple objects:
 - Example: `mcdonalds` → `cup`, `packaging`, `lid`, `wrapper`
 - Relationships defined in `taggables` table
-
-## Time-Series Metrics
-
-All photos contribute to time-series metrics across multiple dimensions:
-
-### Timescales
-- **0**: All-time aggregate
-- **1**: Daily
-- **2**: Weekly (ISO week)
-- **3**: Monthly
-- **4**: Yearly
-
-### Location Hierarchy
-- Global (id: 0)
-- Country
-- State
-- City
-
-### Metrics Tracked
-- `uploads`: Number of photos
-- `tags`: Total tag count
-- `brands`: Total brand count
-- `litter`: Total litter items
-- `xp`: Experience points
-
-## Redis Caching Structure
-
-Redis stores aggregated metrics for fast access:
-
-```
-{g}:stats                    // Global stats
-{c:123}:stats               // Country stats
-{s:456}:stats              // State stats
-{ci:789}:stats            // City stats
-{u:111}:stats            // User stats
-
-{g}:rank:objects         // Global object rankings
-{g}:rank:brands         // Global brand rankings
-{c:123}:rank:materials // Country material rankings
-```
-
-## Processing Pipeline
-
-1. **Photo Upload** → Initial record created
-2. **Tag Addition** → User adds tags via UI
-3. **UpdateTagsService** → Migrates old format to new
-4. **GeneratePhotoSummaryService** → Creates JSON summary & calculates XP
-5. **TimeSeriesService** → Updates MySQL metrics
-6. **RedisMetricsCollector** → Updates Redis caches
-7. **AchievementEngine** → Evaluates user achievements
 
 ## Validation Rules
 
@@ -347,52 +300,10 @@ Redis stores aggregated metrics for fast access:
 }
 ```
 
-## Best Practices
+---
 
-1. **Always use IDs** for database operations, keys for display
-2. **Batch operations** when processing multiple photos
-3. **Use transactions** for data consistency
-4. **Cache aggressively** but invalidate precisely
-5. **Log unknown tags** for future classification
-6. **Validate quantities** before database writes
-7. **Track processing state** via fingerprints
+## Related Docs
 
-## Migration Command
-
-### Prerequisites
-```bash
-# 1. Reset if starting fresh
-php artisan olm:v5:reset --force
-
-# 2. Define brand-object relationships
-php artisan olm:define-brand-relationships
-php artisan olm:auto-create-brand-relationships --apply
-```
-
-```bash
-# Migrate all photos
-php artisan olm:v5
-
-# Migrate specific user
-php artisan olm:v5 --user=123
-
-# Custom batch size
-php artisan olm:v5 --batch=1000
-```
-
-## System Statistics (Production Data)
-
-- **Total brands**: 2,686 in brandslist
-- **Photos with brands**: 91,869
-- **Brand-object relationships**: ~2,600+
-- **Success rate**: >95% of photos successfully matched
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Missing XP for special objects**: Ensure object keys match exactly (case-sensitive)
-2. **Duplicate processing**: Check `processed_fp` fingerprint field
-3. **Memory issues during migration**: Reduce batch size
-4. **Redis inconsistency**: Flush cache and rebuild from MySQL
-
+- **Migration.md** — v4→v5 migration rules, brand matching logic, deprecated mappings
+- **MigrationScript.md** — how to run the `olm:v5` artisan command
+- **Upload.md** — upload/tagging architecture, metrics pipeline, Redis key alignment

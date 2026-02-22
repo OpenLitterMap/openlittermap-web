@@ -7,6 +7,8 @@ import auth from './middleware/auth';
 // Components
 import About from '../views/General/About.vue';
 import CreateAccount from '../views/Account/CreateAccount.vue';
+import ForgotPassword from '../views/Auth/ForgotPassword.vue';
+import ResetPassword from '../views/Auth/ResetPassword.vue';
 import GlobalMap from '../views/Maps/GlobalMap.vue';
 import History from '../views/General/History.vue';
 import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
@@ -96,6 +98,16 @@ const routes = [
         path: '/signup',
         name: 'CreateAccount',
         component: CreateAccount,
+    },
+    {
+        path: '/password/reset',
+        name: 'ForgotPassword',
+        component: ForgotPassword,
+    },
+    {
+        path: '/password/reset/:token',
+        name: 'ResetPassword',
+        component: ResetPassword,
     },
     // Auth Routes
     {

@@ -5,80 +5,60 @@ namespace App\Http\Controllers\Uploads;
 use Geohash\GeoHash;
 
 use App\Models\Photo;
-use App\Helpers\Post\UploadHelper;
 
+use App\Events\ImageUploaded;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
-use App\Events\ImageUploaded;
-use App\Events\Photo\IncrementPhotoMonth;
 
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
-use App\Actions\Locations\ReverseGeocodeLocationAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Actions\Locations\ResolveLocationAction;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadPhotoRequest;
-use GuzzleHttp\Exception\GuzzleException;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class UploadPhotoController extends Controller
 {
-    protected UploadHelper $uploadHelper;
-    private MakeImageAction $makeImageAction;
-    private UploadPhotoAction $uploadPhotoAction;
-    private UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
-
-    public function __construct (
-        MakeImageAction $makeImageAction,
-        UploadPhotoAction $uploadPhotoAction,
-        UploadHelper $uploadHelper,
-        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-    )
-    {
-        $this->makeImageAction = $makeImageAction;
-        $this->uploadPhotoAction = $uploadPhotoAction;
-        $this->uploadHelper = $uploadHelper;
-        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
-    }
+    public function __construct(
+        private MakeImageAction $makeImageAction,
+        private UploadPhotoAction $uploadPhotoAction,
+        private ResolveLocationAction $resolveLocationAction,
+    ) {}
 
     /**
-     * The user wants to upload a photo
+     * Upload a photo with GPS coordinates.
      *
-     * Steps:
-     * Get/Create Country, State, and City for the lat/lon
+     * 1. Process image & extract EXIF
+     * 2. Upload to S3 (full + bbox thumbnail)
+     * 3. Reverse geocode → resolve Country, State, City
+     * 4. Create Photo record (FKs only, no string duplication)
+     * 5. Broadcast events & new-location notifications
      *
-     * Move photo to AWS S3 in production || local in development
-     * then persist new record to photos table
-     *
-     * @param UploadPhotoRequest $request
-     * @return JsonResponse
-     * @throws GuzzleException
+     * No metrics, XP, or leaderboard updates happen here.
+     * MetricsService::processPhoto() runs at tag verification time.
      */
-    public function __invoke (UploadPhotoRequest $request): JsonResponse
+    public function __invoke(UploadPhotoRequest $request): JsonResponse
     {
         $user = Auth::user();
-
         $file = $request->file('photo');
 
-        $imageAndExifData = $this->makeImageAction->run($file);
-        $image = $imageAndExifData['image'];
-        $exif = $imageAndExifData['exif'];
-
+        // 1. Process image & extract EXIF
+        $imageAndExif = $this->makeImageAction->run($file);
+        $image = $imageAndExif['image'];
+        $exif = $imageAndExif['exif'];
         $dateTime = getDateTimeForPhoto($exif);
 
-        // Step 1: Upload The Image(s) to both 's3' and 'bbox' disks
+        // 2. Upload full image + bbox thumbnail to S3
         $imageName = $this->uploadPhotoAction->run(
             $image,
             $dateTime,
             $file->hashName()
         );
 
-        // We should do this asynchronously after everything else is complete
         $bboxImageName = $this->uploadPhotoAction->run(
             $this->makeImageAction->run($file, true)['image'],
             $dateTime,
@@ -86,124 +66,71 @@ class UploadPhotoController extends Controller
             'bbox'
         );
 
-        // Step 2: Get GPS & Check for Locations
+        // 3. Resolve location from GPS coordinates
         $coordinates = getCoordinatesFromPhoto($exif);
+        $lat = $coordinates[0];
+        $lon = $coordinates[1];
 
-        $latitude = $coordinates[0];
-        $longitude = $coordinates[1];
+        $location = $this->resolveLocationAction->run($lat, $lon);
 
-        // Use OpenStreetMap to Reverse Geocode the coordinates into an address.
-        $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
-
-        // The entire address as a string
-        $display_name = $revGeoCode["display_name"];
-
-        // Extract the address array
-        $addressArray = $revGeoCode["address"];
-        $location = array_values($addressArray)[0];
-        $road = array_values($addressArray)[1];
-
-        // todo- check all locations for "/" and replace with "-"
-        // this should return wasRecentlyCreated. This would enable us to create the photo,
-        // and include the photo ID when we dispatch notifications.
-        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
-        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
-
-        // Step 3: Create the Photo
-        // prepare data we need to create
-        $geohasher = new GeoHash();
-        $geohash = $geohasher->encode($latitude, $longitude);
-
-        // Get phone model
-        $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
-            ? $exif["Model"]
-            : 'Unknown';
-
+        // 4. Create Photo — FKs only, no string duplication
         $photo = Photo::create([
             'user_id' => $user->id,
             'filename' => $imageName,
             'datetime' => $dateTime,
-            'remaining' => !$user->picked_up,
-            'lat' => $latitude,
-            'lon' => $longitude,
-            'display_name' => $display_name,
-            'location' => $location,
-            'road' => $road,
-            'city' => $city->city,
-            'county' => $state->state,
-            'country' => $country->country,
-            'country_code' => $country->shortcode,
-            'model' => $model,
-            'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
+            'remaining' => $user->items_remaining,
+            'lat' => $lat,
+            'lon' => $lon,
+            'model' => $exif['Model'] ?? 'Unknown',
+            'country_id' => $location->country->id,
+            'state_id' => $location->state->id,
+            'city_id' => $location->city->id,
             'platform' => 'web',
-            'geohash' => $geohash,
+            'geohash' => (new GeoHash())->encode($lat, $lon),
             'team_id' => $user->active_team,
             'five_hundred_square_filepath' => $bboxImageName,
-            'address_array' => json_encode($addressArray)
+            'address_array' => $location->addressArray,
         ]);
 
-        // Step 4: Reward XP, update resources & Update Leaderboards
-        // $user->images_remaining -= 1;
-
-        // move this to redis
-        // Since a user can upload multiple photos at once,
-        // we might get old values for xp, so we update the values directly
-        // without retrieving them
-        // $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
-        // $user->refresh();
-
-        // Step 5: Dispatch Events & Notifications
-        // Broadcast this event to anyone viewing the global map
-        // This will also update country, state, and city.total_contributors_redis
+        // 5. Broadcast to real-time map
         event(new ImageUploaded(
             $user,
             $photo,
-            $country,
-            $state,
-            $city,
+            $location->country,
+            $location->state,
+            $location->city,
         ));
 
-        // Update the Leaderboards and give xp.
-        $this->updateLeaderboardsAction->run($photo, $user->id);
-
-        // Broadcast an event to anyone viewing the Global Map
-        // Sends Notification to Twitter & Slack
-        if ($country->wasRecentlyCreated) {
-            event(new NewCountryAdded($country->country, $country->shortcode, now()));
+        // 6. Notify on new locations
+        if ($location->country->wasRecentlyCreated) {
+            event(new NewCountryAdded(
+                $location->country->country,
+                $location->country->shortcode,
+                now()
+            ));
         }
 
-        if ($state->wasRecentlyCreated) {
-            event(new NewStateAdded($state->state, $country->country, now()));
+        if ($location->state->wasRecentlyCreated) {
+            event(new NewStateAdded(
+                $location->state->state,
+                $location->country->country,
+                now()
+            ));
         }
 
-        if ($city->wasRecentlyCreated) {
+        if ($location->city->wasRecentlyCreated) {
             event(new NewCityAdded(
-                $city->city,
-                $state->state,
-                $country->country,
+                $location->city->city,
+                $location->state->state,
+                $location->country->country,
                 now(),
-                $city->id,
-                $latitude,
-                $longitude,
+                $location->city->id,
+                $lat,
+                $lon,
                 $photo->id
             ));
         }
 
-        // Increment the { Month-Year: int } value for each location
-        // Todo - this needs debugging
-        // Todo: Capture PhotosPerDay & PhotosPerWeek
-        event(new IncrementPhotoMonth(
-            $country->id,
-            $state->id,
-            $city->id,
-            $dateTime
-        ));
-
-        return response()->json([
-            'success' => true
-        ]);
+        return response()->json(['success' => true]);
     }
 }

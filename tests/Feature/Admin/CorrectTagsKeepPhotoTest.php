@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Litter\Categories\Smoking;
 use App\Actions\LogAdminVerificationAction;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class CorrectTagsKeepPhotoTest extends TestCase
 {
     use HasPhotoUploads;

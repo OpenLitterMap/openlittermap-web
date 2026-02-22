@@ -16,7 +16,7 @@ class TagsVerifiedByAdmin implements ShouldBroadcast
     public int $user_id;
     public int $country_id;
     public int $state_id;
-    public int $city_id;
+    public ?int $city_id;
     public ?int $team_id;
 
     /**
@@ -26,8 +26,14 @@ class TagsVerifiedByAdmin implements ShouldBroadcast
      * and extracts all tag/XP data from the summary JSON directly.
      * Listeners that need more data should load it themselves.
      */
-    public function __construct(int $photo_id, int $user_id, int $country_id, int $state_id, int $city_id, ?int $team_id = null)
-    {
+    public function __construct(
+        int $photo_id,
+        int $user_id,
+        int $country_id,
+        int $state_id,
+        ?int $city_id = null,
+        ?int $team_id = null
+    ) {
         $this->photo_id = $photo_id;
         $this->user_id = $user_id;
         $this->country_id = $country_id;

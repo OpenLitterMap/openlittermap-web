@@ -8,10 +8,12 @@ use App\Models\Litter\Categories\Smoking;
 use App\Models\Photo;
 use App\Models\Users\User;
 use Tests\TestCase;
+use App\Actions\LogAdminVerificationAction;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class AddManyTagsToManyPhotosTest extends TestCase
 {
-
     public function test_a_user_can_bulk_tag_photos()
     {
         /** @var User $user */

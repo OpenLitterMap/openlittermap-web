@@ -18,253 +18,287 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    private function dropForeignIfExists(string $table, string $fkName): void
+    {
+        $db = DB::getDatabaseName();
+
+        $exists = DB::table('information_schema.TABLE_CONSTRAINTS')
+            ->where('CONSTRAINT_SCHEMA', $db)
+            ->where('TABLE_NAME', $table)
+            ->where('CONSTRAINT_NAME', $fkName)
+            ->where('CONSTRAINT_TYPE', 'FOREIGN KEY')
+            ->exists();
+
+        if ($exists) {
+            Schema::table($table, fn (Blueprint $t) => $t->dropForeign($fkName));
+        }
+    }
+
+    private function dropIndexIfExists(string $table, string $indexName): void
+    {
+        $db = DB::getDatabaseName();
+
+        $exists = DB::table('information_schema.STATISTICS')
+            ->where('TABLE_SCHEMA', $db)
+            ->where('TABLE_NAME', $table)
+            ->where('INDEX_NAME', $indexName)
+            ->exists();
+
+        if ($exists) {
+            Schema::table($table, fn (Blueprint $t) => $t->dropIndex($indexName));
+        }
+    }
+
+    private function dropUniqueIfExists(string $table, string $indexName): void
+    {
+        // In MySQL, UNIQUE is still an index (STATISTICS).
+        $this->dropIndexIfExists($table, $indexName);
+    }
+
+    private function dropColumnsIfExist(string $table, array $columns): void
+    {
+        $existing = [];
+        foreach ($columns as $col) {
+            if (Schema::hasColumn($table, $col)) {
+                $existing[] = $col;
+            }
+        }
+
+        if ($existing) {
+            // Chunk to avoid huge ALTER statements
+            foreach (array_chunk($existing, 10) as $chunk) {
+                Schema::table($table, fn (Blueprint $t) => $t->dropColumn($chunk));
+            }
+        }
+    }
+
     public function up(): void
     {
-        // --- COUNTRIES ---
-        Schema::table('countries', function (Blueprint $table) {
-            // Drop FK on user_id_last_uploaded first
-            $table->dropForeign('countries_user_id_last_uploaded_foreign');
+        // COUNTRIES
+        $this->dropForeignIfExists('countries', 'countries_user_id_last_uploaded_foreign');
+        $this->dropUniqueIfExists('countries', 'countries_slug_unique');
 
-            // Drop unique index on slug
-            $table->dropUnique('countries_slug_unique');
-        });
+        $this->dropColumnsIfExist('countries', [
+            'countrynameb',
+            'countrynamec',
+            'user_id_last_uploaded',
+            'total_images',
+            'total_litter',
+            'total_smoking',
+            'total_cigaretteButts',
+            'total_food',
+            'total_softdrinks',
+            'total_plasticBottles',
+            'total_alcohol',
+            'total_coffee',
+            'total_drugs',
+            'total_needles',
+            'total_sanitary',
+            'total_other',
+            'total_contributors',
+            'total_pathways',
+            'littercoin_paid',
+            'littercoin_issued',
+            'total_coastal',
+            'total_brands',
+            'total_adidas',
+            'total_amazon',
+            'total_apple',
+            'total_budweiser',
+            'total_coke',
+            'total_colgate',
+            'total_corona',
+            'total_fritolay',
+            'total_gillette',
+            'total_heineken',
+            'total_kellogs',
+            'total_lego',
+            'total_loreal',
+            'total_nescafe',
+            'total_nestle',
+            'total_marlboro',
+            'total_mcdonalds',
+            'total_nike',
+            'total_pepsi',
+            'total_redbull',
+            'total_samsung',
+            'total_subway',
+            'total_starbucks',
+            'total_tayto',
+            'total_applegreen',
+            'total_avoca',
+            'total_bewleys',
+            'total_brambles',
+            'total_butlers',
+            'total_cafe_nero',
+            'total_centra',
+            'total_costa',
+            'total_esquires',
+            'total_frank_and_honest',
+            'total_insomnia',
+            'total_obriens',
+            'total_lolly_and_cookes',
+            'total_supermacs',
+            'total_wilde_and_greene',
+            'slug',
+            'total_art',
+            'total_dumping',
+            'total_industrial',
+            'photos_per_month',
+            'total_dogshit',
+        ]);
 
-        Schema::table('countries', function (Blueprint $table) {
-            $table->dropColumn([
-                'countrynameb',
-                'countrynamec',
-                'user_id_last_uploaded',
-                'manual_verify',
-                'total_images',
-                'total_litter',
-                'total_smoking',
-                'total_cigaretteButts',
-                'total_food',
-                'total_softdrinks',
-                'total_plasticBottles',
-                'total_alcohol',
-                'total_coffee',
-                'total_drugs',
-                'total_needles',
-                'total_sanitary',
-                'total_other',
-                'total_contributors',
-                'total_pathways',
-                'littercoin_paid',
-                'littercoin_issued',
-                'total_coastal',
-                'total_brands',
-                'total_adidas',
-                'total_amazon',
-                'total_apple',
-                'total_budweiser',
-                'total_coke',
-                'total_colgate',
-                'total_corona',
-                'total_fritolay',
-                'total_gillette',
-                'total_heineken',
-                'total_kellogs',
-                'total_lego',
-                'total_loreal',
-                'total_nescafe',
-                'total_nestle',
-                'total_marlboro',
-                'total_mcdonalds',
-                'total_nike',
-                'total_pepsi',
-                'total_redbull',
-                'total_samsung',
-                'total_subway',
-                'total_starbucks',
-                'total_tayto',
-                'total_applegreen',
-                'total_avoca',
-                'total_bewleys',
-                'total_brambles',
-                'total_butlers',
-                'total_cafe_nero',
-                'total_centra',
-                'total_costa',
-                'total_esquires',
-                'total_frank_and_honest',
-                'total_insomnia',
-                'total_obriens',
-                'total_lolly_and_cookes',
-                'total_supermacs',
-                'total_wilde_and_greene',
-                'slug',
-                'total_art',
-                'total_dumping',
-                'total_industrial',
-                'photos_per_month',
-                'total_dogshit',
-            ]);
-        });
+        // STATES
+        $this->dropForeignIfExists('states', 'states_user_id_last_uploaded_foreign');
 
-        // --- STATES ---
-        Schema::table('states', function (Blueprint $table) {
-            $table->dropForeign('states_user_id_last_uploaded_foreign');
-        });
+        $this->dropColumnsIfExist('states', [
+            'statenameb',
+            'user_id_last_uploaded',
+            'total_images',
+            'total_litter',
+            'total_smoking',
+            'total_cigaretteButts',
+            'total_food',
+            'total_softdrinks',
+            'total_plasticBottles',
+            'total_alcohol',
+            'total_coffee',
+            'total_drugs',
+            'total_needles',
+            'total_sanitary',
+            'total_other',
+            'total_coastal',
+            'total_contributors',
+            'total_pathways',
+            'littercoin_paid',
+            'littercoin_issued',
+            'total_brands',
+            'total_adidas',
+            'total_amazon',
+            'total_apple',
+            'total_budweiser',
+            'total_coke',
+            'total_colgate',
+            'total_corona',
+            'total_fritolay',
+            'total_gillette',
+            'total_heineken',
+            'total_kellogs',
+            'total_lego',
+            'total_loreal',
+            'total_nescafe',
+            'total_nestle',
+            'total_marlboro',
+            'total_mcdonalds',
+            'total_nike',
+            'total_pepsi',
+            'total_redbull',
+            'total_samsung',
+            'total_subway',
+            'total_starbucks',
+            'total_tayto',
+            'total_applegreen',
+            'total_avoca',
+            'total_bewleys',
+            'total_brambles',
+            'total_butlers',
+            'total_cafe_nero',
+            'total_centra',
+            'total_costa',
+            'total_esquires',
+            'total_frank_and_honest',
+            'total_insomnia',
+            'total_obriens',
+            'total_lolly_and_cookes',
+            'total_supermacs',
+            'total_wilde_and_greene',
+            'total_art',
+            'total_dumping',
+            'total_industrial',
+            'photos_per_month',
+            'total_dogshit',
+        ]);
 
-        Schema::table('states', function (Blueprint $table) {
-            $table->dropColumn([
-                'statenameb',
-                'manual_verify',
-                'user_id_last_uploaded',
-                'total_images',
-                'total_litter',
-                'total_smoking',
-                'total_cigaretteButts',
-                'total_food',
-                'total_softdrinks',
-                'total_plasticBottles',
-                'total_alcohol',
-                'total_coffee',
-                'total_drugs',
-                'total_needles',
-                'total_sanitary',
-                'total_other',
-                'total_coastal',
-                'total_contributors',
-                'total_pathways',
-                'littercoin_paid',
-                'littercoin_issued',
-                'total_brands',
-                'total_adidas',
-                'total_amazon',
-                'total_apple',
-                'total_budweiser',
-                'total_coke',
-                'total_colgate',
-                'total_corona',
-                'total_fritolay',
-                'total_gillette',
-                'total_heineken',
-                'total_kellogs',
-                'total_lego',
-                'total_loreal',
-                'total_nescafe',
-                'total_nestle',
-                'total_marlboro',
-                'total_mcdonalds',
-                'total_nike',
-                'total_pepsi',
-                'total_redbull',
-                'total_samsung',
-                'total_subway',
-                'total_starbucks',
-                'total_tayto',
-                'total_applegreen',
-                'total_avoca',
-                'total_bewleys',
-                'total_brambles',
-                'total_butlers',
-                'total_cafe_nero',
-                'total_centra',
-                'total_costa',
-                'total_esquires',
-                'total_frank_and_honest',
-                'total_insomnia',
-                'total_obriens',
-                'total_lolly_and_cookes',
-                'total_supermacs',
-                'total_wilde_and_greene',
-                'total_art',
-                'total_dumping',
-                'total_industrial',
-                'photos_per_month',
-                'total_dogshit',
-            ]);
-        });
+        // CITIES
+        $this->dropForeignIfExists('cities', 'cities_user_id_last_uploaded_foreign');
 
-        // --- CITIES ---
-        Schema::table('cities', function (Blueprint $table) {
-            $table->dropForeign('cities_user_id_last_uploaded_foreign');
-        });
+        $this->dropColumnsIfExist('cities', [
+            'user_id_last_uploaded',
+            'total_images',
+            'total_litter',
+            'total_smoking',
+            'total_cigaretteButts',
+            'total_food',
+            'total_softdrinks',
+            'total_plasticBottles',
+            'total_alcohol',
+            'total_coffee',
+            'total_drugs',
+            'total_needles',
+            'total_sanitary',
+            'total_other',
+            'total_contributors',
+            'total_coastal',
+            'total_pathways',
+            'total_art',
+            'littercoin_paid',
+            'littercoin_issued',
+            'total_brands',
+            'total_adidas',
+            'total_amazon',
+            'total_apple',
+            'total_budweiser',
+            'total_coke',
+            'total_colgate',
+            'total_corona',
+            'total_fritolay',
+            'total_gillette',
+            'total_heineken',
+            'total_kellogs',
+            'total_lego',
+            'total_loreal',
+            'total_nescafe',
+            'total_nestle',
+            'total_marlboro',
+            'total_mcdonalds',
+            'total_nike',
+            'total_pepsi',
+            'total_redbull',
+            'total_samsung',
+            'total_subway',
+            'total_starbucks',
+            'total_tayto',
+            'total_applegreen',
+            'total_avoca',
+            'total_bewleys',
+            'total_brambles',
+            'total_butlers',
+            'total_cafe_nero',
+            'total_centra',
+            'total_costa',
+            'total_esquires',
+            'total_frank_and_honest',
+            'total_insomnia',
+            'total_obriens',
+            'total_lolly_and_cookes',
+            'total_supermacs',
+            'total_wilde_and_greene',
+            'total_dumping',
+            'total_industrial',
+            'photos_per_month',
+            'total_dogshit',
+        ]);
 
-        Schema::table('cities', function (Blueprint $table) {
-            $table->dropColumn([
-                'user_id_last_uploaded',
-                'total_images',
-                'total_litter',
-                'total_smoking',
-                'total_cigaretteButts',
-                'total_food',
-                'total_softdrinks',
-                'total_plasticBottles',
-                'total_alcohol',
-                'total_coffee',
-                'total_drugs',
-                'total_needles',
-                'total_sanitary',
-                'total_other',
-                'total_contributors',
-                'total_coastal',
-                'total_pathways',
-                'manual_verify',
-                'total_art',
-                'littercoin_paid',
-                'littercoin_issued',
-                'total_brands',
-                'total_adidas',
-                'total_amazon',
-                'total_apple',
-                'total_budweiser',
-                'total_coke',
-                'total_colgate',
-                'total_corona',
-                'total_fritolay',
-                'total_gillette',
-                'total_heineken',
-                'total_kellogs',
-                'total_lego',
-                'total_loreal',
-                'total_nescafe',
-                'total_nestle',
-                'total_marlboro',
-                'total_mcdonalds',
-                'total_nike',
-                'total_pepsi',
-                'total_redbull',
-                'total_samsung',
-                'total_subway',
-                'total_starbucks',
-                'total_tayto',
-                'total_applegreen',
-                'total_avoca',
-                'total_bewleys',
-                'total_brambles',
-                'total_butlers',
-                'total_cafe_nero',
-                'total_centra',
-                'total_costa',
-                'total_esquires',
-                'total_frank_and_honest',
-                'total_insomnia',
-                'total_obriens',
-                'total_lolly_and_cookes',
-                'total_supermacs',
-                'total_wilde_and_greene',
-                'total_dumping',
-                'total_industrial',
-                'photos_per_month',
-                'total_dogshit',
-            ]);
-        });
-
-        // --- PHOTOS ---
-        Schema::table('photos', function (Blueprint $table) {
-            $table->dropColumn([
-                'country',
-                'country_code',
-                'county',
-                'city',
-                'display_name',
-                'location',
-                'road',
-            ]);
-        });
+        // PHOTOS
+        $this->dropColumnsIfExist('photos', [
+            'country',
+            'country_code',
+            'county',
+            'city',
+            'display_name',
+            'location',
+            'road',
+        ]);
     }
 
     public function down(): void

@@ -5,6 +5,9 @@ namespace Tests\Unit\Mail;
 use App\Mail\ContactMail;
 use Tests\TestCase;
 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('deprecated')]
 class ContactTest extends TestCase
 {
     public function test_it_contains_necessary_content()

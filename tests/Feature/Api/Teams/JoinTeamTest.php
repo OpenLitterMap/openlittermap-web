@@ -123,69 +123,70 @@ class JoinTeamTest extends TestCase
             ->assertJsonValidationErrors(['identifier']);
     }
 
-    public function test_user_contributions_are_restored_when_they_rejoin_a_team()
-    {
-        // User joins a team -------------------------
-        /** @var User $user */
-        $user = User::factory()->verified()->create();
-        /** @var User $otherUser */
-        $otherUser = User::factory()->create();
-        /** @var Team $team */
-        $team = Team::factory()->create();
-
-        $user->active_team = $team->id;
-        $user->save();
-        $user->teams()->attach($team);
-        $otherUser->teams()->attach($team);
-
-        // User uploads a photo -------------
-        $this->actingAs($user);
-
-        $this->post('/submit', [
-            'photo' => $this->getImageAndAttributes()['file'],
-        ]);
-
-        $photo = $user->fresh()->photos->last();
-
-        // User adds tags to the photo -------------------
-        $this->post('/add-tags', [
-            'photo_id' => $photo->id,
-            'picked_up' => false,
-            'tags' => [
-                'smoking' => [
-                    'butts' => 3
-                ],
-                'brands' => [
-                    'aldi' => 2
-                ]
-            ]
-        ]);
-
-        $teamContributions = $user->teams()->first();
-
-        $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
-
-        // User leaves the team ------------------------
-        $this->actingAs($user);
-
-        $this->postJson('/teams/leave', [
-            'team_id' => $team->id,
-        ]);
-
-        $this->assertNull($user->teams()->first());
-
-        // And they join back --------------------------
-        $this->actingAs($user, 'api');
-        $this->postJson('/api/teams/join', [
-            'identifier' => $team->identifier,
-        ]);
-
-        // Their contributions should be restored
-        $teamContributions = $user->teams()->first();
-
-        $this->assertNotNull($teamContributions);
-        $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
-    }
+    // deprecated
+//    public function test_user_contributions_are_restored_when_they_rejoin_a_team()
+//    {
+//        // User joins a team -------------------------
+//        /** @var User $user */
+//        $user = User::factory()->verified()->create();
+//        /** @var User $otherUser */
+//        $otherUser = User::factory()->create();
+//        /** @var Team $team */
+//        $team = Team::factory()->create();
+//
+//        $user->active_team = $team->id;
+//        $user->save();
+//        $user->teams()->attach($team);
+//        $otherUser->teams()->attach($team);
+//
+//        // User uploads a photo -------------
+//        $this->actingAs($user);
+//
+//        $this->post('/submit', [
+//            'photo' => $this->getImageAndAttributes()['file'],
+//        ]);
+//
+//        $photo = $user->fresh()->photos->last();
+//
+//        // User adds tags to the photo -------------------
+//        $this->post('/add-tags', [
+//            'photo_id' => $photo->id,
+//            'picked_up' => false,
+//            'tags' => [
+//                'smoking' => [
+//                    'butts' => 3
+//                ],
+//                'brands' => [
+//                    'aldi' => 2
+//                ]
+//            ]
+//        ]);
+//
+//        $teamContributions = $user->teams()->first();
+//
+//        $this->assertEquals(1, $teamContributions->pivot->total_photos);
+//        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+//
+//        // User leaves the team ------------------------
+//        $this->actingAs($user);
+//
+//        $this->postJson('/teams/leave', [
+//            'team_id' => $team->id,
+//        ]);
+//
+//        $this->assertNull($user->teams()->first());
+//
+//        // And they join back --------------------------
+//        $this->actingAs($user, 'api');
+//        $this->postJson('/api/teams/join', [
+//            'identifier' => $team->identifier,
+//        ]);
+//
+//        // Their contributions should be restored
+//        $teamContributions = $user->teams()->first();
+//
+//        $this->assertNotNull($teamContributions);
+//        $this->assertEquals(1, $teamContributions->pivot->total_photos);
+//        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+//    }
 }

@@ -7,7 +7,9 @@ export const requests = {
             .then((response) => {
                 console.log('check_auth', response);
 
-                if (!response.data.success) {
+                if (response.data.success) {
+                    this.auth = true;
+                } else {
                     this.$reset();
                 }
             })
@@ -16,70 +18,62 @@ export const requests = {
             });
     },
 
-    /**
-     * When we log in, we need to dispatch a request to get the current user
-     *
-     * Also checks for auth on app load.
-     */
-    async GET_CURRENT_USER() {
-        await axios
-            .get('/current-user')
-            .then((response) => {
-                console.log('get_current_user', response);
-            })
-            .catch((error) => {
-                console.log('error.get_current_user', error);
-            });
-    },
+    // /**
+    //  * When we log in, we need to dispatch a request to get the current user
+    //  *
+    //  * Also checks for auth on app load.
+    //  */
+    // async GET_CURRENT_USER() {
+    //     await axios
+    //         .get('/api/current-user')
+    //         .then((response) => {
+    //             console.log('get_current_user', response);
+    //         })
+    //         .catch((error) => {
+    //             console.log('error.get_current_user', error);
+    //         });
+    // },
 
     /**
-     * Try to log the user in
-     * Todo - return the user object
+     * Log in via email or username
      */
     async LOGIN(payload) {
         try {
-            await axios
-                .post('/login', {
-                    email: payload.email,
-                    password: payload.password,
-                })
-                .then((response) => {
-                    const modalStore = useModalStore();
-                    modalStore.hideModal();
-                    this.auth = true;
+            const response = await axios.post('/api/auth/login', {
+                identifier: payload.identifier,
+                password: payload.password,
+            });
 
-                    // we need to force page refresh to put CSRF token in the session
-                    window.location.href = '/upload';
-                })
-                .catch((error) => {
-                    console.log('error.login', error.response.data);
+            const modalStore = useModalStore();
+            modalStore.hideModal();
 
-                    this.errorLogin = error.response.data.email;
-                });
+            this.auth = true;
+            this.user = response.data.user;
+
+            // Session cookie is set automatically — redirect to upload
+            window.location.href = '/upload';
         } catch (error) {
-            console.log('error.get_csrf_cookie', error);
+            if (error?.response?.status === 422) {
+                this.errorLogin =
+                    error.response.data.errors?.identifier?.[0] || error.response.data.message || 'Invalid credentials';
+            } else {
+                this.errorLogin = 'Something went wrong. Please try again.';
+            }
         }
     },
 
     /**
-     * Try to log the user out
+     * Log out and invalidate session
      */
-    async LOGOUT() {
-        await axios
-            .get('/logout')
-            .then((response) => {
-                console.log('logout', response);
-
-                this.logout();
-
-                // this will reset state for all objects
-                this.$reset();
-
-                window.location.href = '/';
-            })
-            .catch((error) => {
-                console.log('error.logout', error);
-            });
+    async LOGOUT_REQUEST() {
+        try {
+            await axios.post('/api/auth/logout');
+        } catch (error) {
+            console.log('error.logout', error);
+        } finally {
+            this.$reset();
+            window.location.href = '/';
+        }
     },
 
     /**

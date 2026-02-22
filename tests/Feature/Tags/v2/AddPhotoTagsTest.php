@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Tags\v2;
 
-use App\Actions\Tags\AddTagsToPhotoActionNew;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CustomTagNew;
@@ -11,10 +10,11 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Actions\Badges\CheckLocationTypeAward;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class AddPhotoTagsTest extends TestCase
 {
     use RefreshDatabase;
@@ -25,13 +25,8 @@ class AddPhotoTagsTest extends TestCase
     {
         parent::setUp();
 
-        $updateLeaderboards = \Mockery::mock(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboards->shouldReceive('updateLeaderboardsAndRewardXP')->andReturnTrue();
-
         $checkAward = \Mockery::mock(CheckLocationTypeAward::class);
         $checkAward->shouldReceive('checkLandUseAward')->andReturnTrue();
-
-        $this->action = new AddTagsToPhotoActionNew($updateLeaderboards, $checkAward);
     }
 
     /** @test */

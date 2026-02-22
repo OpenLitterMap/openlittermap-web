@@ -33,7 +33,7 @@ class UserAccountTest extends TestCase
      */
     private function registerRoute(): string
     {
-        return '/register';
+        return '/api/auth/register';
     }
 
     /* ------------------------------------------------------------------

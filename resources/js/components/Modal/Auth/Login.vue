@@ -5,13 +5,13 @@
         <form class="space-y-4 text-center" @submit.prevent="login">
             <input
                 class="input border border-gray-300 rounded px-4 py-2 w-full text-lg"
-                placeholder="you@email.com"
-                type="email"
-                name="email"
+                placeholder="Email or username"
+                type="text"
+                name="identifier"
                 required
-                v-model="email"
+                v-model="identifier"
                 @keydown="clearLoginError"
-                autocomplete="email"
+                autocomplete="username"
             />
 
             <input
@@ -34,7 +34,6 @@
             </button>
         </form>
 
-        <!-- Bottom footer section -->
         <footer class="mt-6 border-t border-gray-200 pt-4">
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <a
@@ -62,7 +61,7 @@ export default {
     name: 'Login',
     setup() {
         const userStore = useUserStore();
-        const email = ref('');
+        const identifier = ref('');
         const password = ref('');
         const processing = ref(false);
 
@@ -73,12 +72,15 @@ export default {
 
         const login = async () => {
             processing.value = true;
-            await userStore.LOGIN({ email: email.value, password: password.value });
+            await userStore.LOGIN({
+                identifier: identifier.value,
+                password: password.value,
+            });
             processing.value = false;
         };
 
         return {
-            email,
+            identifier,
             password,
             processing,
             errorLogin,

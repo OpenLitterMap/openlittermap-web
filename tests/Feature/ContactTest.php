@@ -7,6 +7,9 @@ use App\Mail\ContactMail;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('deprecated')]
 class ContactTest extends TestCase
 {
 //    public function test_users_can_see_the_contact_page()

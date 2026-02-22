@@ -18,7 +18,9 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class UploadPhotoTest extends TestCase
 {
     use HasPhotoUploads;

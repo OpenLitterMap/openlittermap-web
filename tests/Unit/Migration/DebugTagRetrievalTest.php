@@ -14,6 +14,9 @@ use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('deprecated')]
 class DebugTagRetrievalTest extends TestCase
 {
     use RefreshDatabase;

@@ -4,7 +4,9 @@ namespace Tests\Feature\Photos;
 
 use App\Models\Photo;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('deprecated')]
 class DisplayTagsOnMapTest extends TestCase
 {
     public function test_a_user_can_filter_photos_by_their_custom_tag()
