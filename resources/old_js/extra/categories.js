@@ -1,0 +1,16 @@
+export const categories = [
+    'alcohol',
+    'art',
+    'brands',
+    'coastal',
+    'coffee',
+    'dogshit',
+    'dumping',
+    'food',
+    'industrial',
+    'sanitary',
+    'softdrinks',
+    'smoking',
+    'material',
+    'other',
+];
