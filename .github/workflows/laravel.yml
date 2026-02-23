@@ -60,6 +60,22 @@ jobs:
       x500_AWS_REGION: us-east-1
       x500_AWS_BUCKET: olm-public-bbox
       x500_AWS_ENDPOINT: http://127.0.0.1:9000
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_ROOT_HOST: '%'
+          MYSQL_DATABASE: olm_test
+        ports:
+          - 3306/tcp
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout code
