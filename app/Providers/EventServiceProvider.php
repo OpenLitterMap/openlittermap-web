@@ -8,6 +8,7 @@ use App\Events\Images\BadgeCreated;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
+use App\Events\SchoolDataApproved;
 use App\Events\TagsVerifiedByAdmin;
 use App\Events\UserSignedUp;
 
@@ -16,8 +17,8 @@ use App\Listeners\Littercoin\RewardLittercoin;
 use App\Listeners\Locations\Twitter\TweetNewCity;
 use App\Listeners\Locations\Twitter\TweetNewCountry;
 use App\Listeners\Locations\Twitter\TweetNewState;
-use App\Listeners\Metrics\DeletePhotoMetrics;
 use App\Listeners\Metrics\ProcessPhotoMetrics;
+use App\Listeners\NotifyTeamOfApproval;
 use App\Listeners\SendNewUserEmail;
 
 use Illuminate\Auth\Events\Registered;
@@ -45,9 +46,14 @@ class EventServiceProvider extends ServiceProvider
             RewardLittercoin::class,
         ],
 
-        // Phase 3: Delete — reverse metrics
+        // Phase 3: Delete — metrics reversal is synchronous in controllers
+        // (MetricsService::deletePhoto called before soft-delete)
         ImageDeleted::class => [
-            DeletePhotoMetrics::class,
+        ],
+
+        // School team approval — notify team members
+        SchoolDataApproved::class => [
+            NotifyTeamOfApproval::class,
         ],
 
         // New location notifications (dispatched from UploadPhotoController)

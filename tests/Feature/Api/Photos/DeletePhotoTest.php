@@ -61,7 +61,7 @@ class DeletePhotoTest extends TestCase
         Storage::disk('s3')->assertMissing($imageAttributes['filepath']);
         Storage::disk('bbox')->assertMissing($imageAttributes['filepath']);
         $this->assertCount(0, $user->photos);
-        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
     }
 
     public function test_leaderboards_are_updated_when_a_user_deletes_a_photo()

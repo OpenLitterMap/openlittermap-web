@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 
 use App\Events\ImageDeleted;
@@ -16,6 +17,7 @@ use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\GetPreviousCustomTagsAction;
 use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
+use App\Services\Metrics\MetricsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,6 +60,8 @@ class PhotosController extends Controller
             abort(403);
         }
 
+        app(MetricsService::class)->deletePhoto($photo);
+
         $this->deletePhotoAction->run($photo);
 
         $photo->delete();
@@ -93,7 +97,7 @@ class PhotosController extends Controller
         $user = Auth::user();
         $photo = Photo::findOrFail($request->photo_id);
 
-        if ($photo->user_id !== $user->id || $photo->verified > 0)
+        if ($photo->user_id !== $user->id || $photo->verified->value > VerificationStatus::UNVERIFIED->value)
         {
             abort(403, 'Forbidden');
         }
@@ -122,7 +126,7 @@ class PhotosController extends Controller
         {
             // the user is trusted. Dispatch event to update OLM.
             $photo->verification = 1;
-            $photo->verified = 2;
+            $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
             event (new TagsVerifiedByAdmin($photo->id));
         }
 

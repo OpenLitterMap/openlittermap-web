@@ -25,6 +25,7 @@ use App\Exceptions\PhotoAlreadyUploaded;
 
 use App\Http\Requests\Api\AddTagsRequest;
 use App\Http\Requests\Api\UploadPhotoWithOrWithoutTagsRequest;
+use App\Services\Metrics\MetricsService;
 
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
@@ -261,8 +262,6 @@ class ApiPhotosController extends Controller
 
     /**
      * Delete an image
-     *
-     * TODO: refactor delete flow — MetricsService needs photo to exist
      */
     public function deleteImage(Request $request)
     {
@@ -279,6 +278,8 @@ class ApiPhotosController extends Controller
                 'msg' => 'Photo not found',
             ], 403);
         }
+
+        app(MetricsService::class)->deletePhoto($photo);
 
         $this->deletePhotoAction->run($photo);
 

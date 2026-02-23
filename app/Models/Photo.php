@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\VerificationStatus;
 use App\Models\AI\Annotation;
 use App\Models\Litter\Categories\Brand;
 use App\Models\Litter\Tags\PhotoTag;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -27,17 +29,22 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Photo extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $guarded = [];
 
     protected $appends = ['selected', 'picked_up'];
+
+    protected $hidden = ['geom'];
 
     protected $casts = [
         'datetime' => 'datetime',
         'summary' => 'array',
         'address_array' => 'array',
         'xp' => 'integer',
+        'verified' => VerificationStatus::class,
+        'is_public' => 'boolean',
+        'team_approved_at' => 'datetime',
     ];
 
     // ─── Relationships ───
@@ -91,6 +98,42 @@ class Photo extends Model
                 ->from('users')
                 ->where('prevent_others_tagging_my_photos', true);
         });
+    }
+
+    /**
+     * Only public photos — excludes school team photos not yet approved by teacher.
+     */
+    public function scopePublic(Builder $query): Builder
+    {
+        return $query->where('is_public', true);
+    }
+
+    /**
+     * Only photos for a specific team (private view).
+     */
+    public function scopeForTeam(Builder $query, int $teamId): Builder
+    {
+        return $query->where('team_id', $teamId);
+    }
+
+    /**
+     * Photos pending team approval (tagged but not yet approved by teacher).
+     */
+    public function scopePendingTeamApproval(Builder $query, int $teamId): Builder
+    {
+        return $query->where('team_id', $teamId)
+            ->where('is_public', false)
+            ->where('verified', '>=', VerificationStatus::VERIFIED)
+            ->whereNull('team_approved_at');
+    }
+
+    /**
+     * Photos approved by the team (ready for public display).
+     */
+    public function scopeTeamApproved(Builder $query, int $teamId): Builder
+    {
+        return $query->where('team_id', $teamId)
+            ->whereNotNull('team_approved_at');
     }
 
     // ─── Tags ───
@@ -147,6 +190,29 @@ class Photo extends Model
         }
 
         return implode(', ', array_values($address));
+    }
+
+    // ─── Team Helpers ───
+
+    /**
+     * Mark photo as approved by team leader.
+     */
+    public function approveForTeam(int $approverId): void
+    {
+        $this->update([
+            'is_public' => true,
+            'verified' => VerificationStatus::ADMIN_APPROVED->value,
+            'team_approved_at' => now(),
+            'team_approved_by' => $approverId,
+        ]);
+    }
+
+    /**
+     * Should this photo be hidden from public APIs?
+     */
+    public function isPrivate(): bool
+    {
+        return ! $this->is_public;
     }
 
     // ═══════════════════════════════════════════════════════════════════

@@ -93,7 +93,7 @@ class DeletePhotoTest extends TestCase
         Storage::disk('s3')->assertMissing($this->photo->filename);
         Storage::disk('bbox')->assertMissing($this->photo->five_hundred_square_filepath);
         $this->assertCount(0, $this->user->photos);
-        $this->assertDatabaseMissing('photos', ['id' => $this->photo->id]);
+        $this->assertSoftDeleted('photos', ['id' => $this->photo->id]);
     }
 
     public function test_it_fires_imaged_deleted_event_when_an_admin_deletes_a_photo()
