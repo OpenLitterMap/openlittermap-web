@@ -64,6 +64,7 @@ public function run(int $userId, int $photoId, array $tags): array
 {
     $photoTags = $this->addTagsToPhoto($userId, $photoId, $tags);
     // Creates PhotoTag + PhotoTagExtraTags (materials, brands, custom)
+    // Handles 4 tag types: object, custom-only, brand-only, material-only
 
     $photo->generateSummary();
     // ALWAYS — generates summary JSON from PhotoTag records
@@ -75,6 +76,15 @@ public function run(int $userId, int $photoId, array $tags): array
     // Routes to trusted path or school-pending path
 }
 ```
+
+### Frontend tag types handled by AddTagsToPhotoAction
+
+The web frontend sends 4 distinct tag types. `resolveTag()` handles each:
+
+1. **Object tag** — `{ object: { id, key }, quantity, materials?, brands? }`. Category auto-resolved from `object->categories()->first()`.
+2. **Custom-only** — `{ custom: true, key: "dirty-bench", quantity }`. Uses `$tag['key']` (not `$tag['custom']`).
+3. **Brand-only** — `{ brand_only: true, brand: { id, key }, quantity }`. PhotoTag with null category/object.
+4. **Material-only** — `{ material_only: true, material: { id, key }, quantity }`. Same as brand-only pattern.
 
 ### Verification routing
 

@@ -300,6 +300,57 @@ Brands can validly attach to multiple objects:
 }
 ```
 
+## Web Frontend Tagging (POST /api/v3/tags)
+
+The Vue frontend (`/tag` route → `AddTags.vue`) sends tags via `POST /api/v3/tags` to `PhotoTagsController` → `AddTagsToPhotoAction` (v5). The frontend sends 4 distinct tag types:
+
+### 1. Object tag (with optional materials/brands/custom tags)
+```json
+{
+    "object": { "id": 5, "key": "butts" },
+    "quantity": 3,
+    "picked_up": true,
+    "materials": [{ "id": 2, "key": "plastic" }],
+    "brands": [{ "id": 1, "key": "marlboro" }],
+    "custom_tags": ["dirty-bench"]
+}
+```
+**Backend:** `resolveTag()` looks up object, auto-resolves category from `object->categories()->first()`. Category need NOT be sent.
+
+### 2. Custom-only tag
+```json
+{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }
+```
+**Backend:** `$tag['custom']` is boolean true (flag), `$tag['key']` is the actual tag name. Creates `CustomTagNew` record via `$tag['key']`.
+
+### 3. Brand-only tag
+```json
+{ "brand_only": true, "brand": { "id": 1, "key": "coca-cola" }, "quantity": 1, "picked_up": null }
+```
+**Backend:** Creates PhotoTag with `category_id=null`, `litter_object_id=null`, attaches brand as extra tag.
+
+### 4. Material-only tag
+```json
+{ "material_only": true, "material": { "id": 2, "key": "plastic" }, "quantity": 1, "picked_up": null }
+```
+**Backend:** Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
+
+### Frontend files
+
+| File | Purpose |
+|---|---|
+| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page |
+| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Tag search combobox |
+| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Individual tag card with details |
+| `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags |
+| `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | Header with XP preview + actions |
+| `resources/js/views/General/Tagging/v2/components/PhotoViewer.vue` | Photo display with zoom |
+| `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST /api/v3/tags |
+| `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → GET /api/tags/all |
+
+### Tag data loading
+`GET /api/tags/all` returns flat arrays: `{ categories, objects, materials, brands }`. Objects include their categories via eager load: `LitterObject::with(['categories:id,key'])`.
+
 ---
 
 ## Related Docs
@@ -307,3 +358,4 @@ Brands can validly attach to multiple objects:
 - **Migration.md** — v4→v5 migration rules, brand matching logic, deprecated mappings
 - **MigrationScript.md** — how to run the `olm:v5` artisan command
 - **Upload.md** — upload/tagging architecture, metrics pipeline, Redis key alignment
+- **Mobile.md** — mobile v4 tag shim (ConvertV4TagsAction)

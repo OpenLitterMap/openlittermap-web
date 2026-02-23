@@ -98,8 +98,9 @@ RedisKeys::userBitmap($userId)        // {u:$userId}:bitmap (activity bitmap)
 
 ### Where TagsVerifiedByAdmin fires
 
-1. **Trusted users tag a photo:** `AddTagsToPhotoAction::updateVerification()` — dispatches immediately after summary + XP.
+1. **Trusted users tag a photo (web):** `AddTagsToPhotoAction::updateVerification()` — dispatches immediately after summary + XP.
 2. **Teacher approves school photos:** `TeamPhotosController::approve()` — dispatches per photo after atomic `is_public = true` update.
+3. **Trusted users tag a photo (mobile):** `ConvertV4TagsAction::run()` — dispatches after v4→v5 conversion + summary generation.
 
 ### Delete flow (metrics reversal)
 

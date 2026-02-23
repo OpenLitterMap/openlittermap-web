@@ -703,6 +703,32 @@ If tags are submitted at upload time (e.g. pre-tagged uploads), then `MetricsSer
 
 ## API Endpoints (Location Data)
 
+### LocationController (v1) — Browsing UI
+
+`app/Http/Controllers/Location/LocationController.php` serves the hierarchical location browsing.
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/v1/locations` | Global view: list of countries with stats |
+| `GET /api/v1/locations/{type}/{id}` | Drill into country/state/city |
+
+**Response format:**
+```json
+{
+    "stats": { "countries": 120, "uploads": 50000, "tags": 120000, ... },
+    "locations": [ ... ],
+    "location_type": "country",
+    "breadcrumbs": [ { "label": "World", "type": null, "id": null } ],
+    "activity": [ ... ]
+}
+```
+
+Key naming: `locations` (not `children`) and `location_type` (not `children_type`). Pinia store `useLocationsStore` reads these keys.
+
+Time filtering: `?period=today|yesterday|this_month|last_month|this_year` or `?year=2024`. Mutually exclusive.
+
+### Legacy endpoints (Redis-backed)
+
 All location aggregate data is served from Redis (fast) with MySQL metrics table as the source of truth (rebuildable).
 
 | Endpoint | Source | Notes |

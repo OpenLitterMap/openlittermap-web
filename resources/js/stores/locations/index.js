@@ -75,8 +75,8 @@ export const useLocationsStore = defineStore('locations', () => {
             meta.value = null;
             activity.value = data.activity ?? null;
             stats.value = data.stats;
-            children.value = data.children;
-            childrenType.value = data.children_type;
+            children.value = data.locations;
+            childrenType.value = data.location_type;
             breadcrumbs.value = data.breadcrumbs;
         } catch (e) {
             error.value = e.response?.status === 404 ? 'Not found' : 'Failed to load locations';
@@ -94,8 +94,8 @@ export const useLocationsStore = defineStore('locations', () => {
             meta.value = data.meta ?? null;
             activity.value = data.activity ?? null;
             stats.value = data.stats;
-            children.value = data.children ?? [];
-            childrenType.value = data.children_type;
+            children.value = data.locations ?? [];
+            childrenType.value = data.location_type;
             breadcrumbs.value = data.breadcrumbs;
         } catch (e) {
             error.value = e.response?.status === 404 ? 'Location not found' : 'Failed to load location';

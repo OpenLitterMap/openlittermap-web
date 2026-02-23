@@ -39,12 +39,12 @@ class LocationController extends Controller
         $stats = $this->getStats(LocationType::Global, 0, $time);
         $stats['contributors'] = (int) DB::table('photos')->distinct()->count('user_id');
         $stats['total_users'] = (int) DB::table('users')->count();
-        $stats['countries'] = (int) DB::table('countries')->where('manual_verify', true)->count();
 
         $countries = $this->getChildrenWithStats(
-            'countries', 'c', 'country', LocationType::Country, $time,
-            fn ($q) => $q->where('c.manual_verify', true)
+            'countries', 'c', 'country', LocationType::Country, $time
         );
+
+        $stats['countries'] = $countries->count();
 
         $this->enrichChildrenMeta($countries, 'country_id', $stats);
 
@@ -54,8 +54,8 @@ class LocationController extends Controller
         return response()->json([
             'stats' => $stats,
             'activity' => $activity,
-            'children' => $countries,
-            'children_type' => 'country',
+            'locations' => $countries,
+            'location_type' => 'country',
             'breadcrumbs' => [
                 ['name' => 'World', 'type' => 'global', 'id' => null],
             ],
@@ -105,8 +105,8 @@ class LocationController extends Controller
             'stats' => $stats,
             'meta' => $meta,
             'activity' => $this->getActivity($locationType, $id),
-            'children' => $children,
-            'children_type' => $childrenType,
+            'locations' => $children,
+            'location_type' => $childrenType,
             'breadcrumbs' => $breadcrumbs,
         ]);
     }

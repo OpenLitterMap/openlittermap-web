@@ -9,16 +9,18 @@ The mobile app sends v4 tag format (`{smoking: {butts: 3}}`) to old endpoints. T
 
 ## Key Files
 
-- `app/Http/Controllers/API/AddTagsToUploadedImageController.php` — Current old mobile tag endpoint
+- `app/Actions/Tags/ConvertV4TagsAction.php` — Shim: v4 payload → UpdateTagsService → v5 PhotoTags
+- `app/Http/Controllers/API/AddTagsToUploadedImageController.php` — Mobile tag endpoint (wired to shim)
+- `app/Http/Controllers/ApiPhotosController.php` — Upload-with-tags endpoint (wired to shim)
 - `app/Http/Requests/Api/AddTagsRequest.php` — Validation for old mobile format
-- `app/Jobs/Api/AddTags.php` — Queued job dispatched by old controller
-- `app/Jobs/Photos/AddTagsToPhoto.php` — Alternative queued tagging job
+- `app/Services/Tags/UpdateTagsService.php` — Reused: same pipeline as olm:v5 migration
 - `app/Services/Tags/ClassifyTagsService.php` — Tag classification + deprecated key mapping
+- `tests/Feature/Mobile/ConvertV4TagsTest.php` — 7 tests (payload, summary, idempotency, verification)
 - `readme/Mobile.md` — Design document for the shim
 
-## Current State
+## Current State — DEPLOYED
 
-The old mobile flow uses **deprecated v4 category tables** (being removed). It needs to be replaced with a shim that converts v4 format to v5 PhotoTags.
+The `ConvertV4TagsAction` shim is built and wired into both mobile tagging controllers. Mobile users contribute to v5 metrics immediately without an app update. The shim reuses the same `UpdateTagsService` pipeline as the `olm:v5` migration script (battle-tested against 500k+ photos).
 
 ### Old endpoints (routes/api.php)
 
@@ -74,20 +76,29 @@ Route::post('photos/upload/with-or-without-tags', ...);
 
 ## Patterns
 
-### Conversion flow (ConvertV4TagsAction — to be built)
+### Conversion flow (ConvertV4TagsAction — BUILT)
 
 ```php
-// Planned flow:
-// 1. Accept v4 payload: {category: {tagKey: quantity}}
-// 2. For each tag:
-//    - ClassifyTagsService::classify($tagKey) → handles deprecated keys
-//    - ClassifyTagsService::normalizeDeprecatedTag($key) → old key -> new key + materials
-//    - Create PhotoTag with category_id + litter_object_id
-//    - Attach materials as PhotoTagExtraTags
-// 3. Handle 'brands' category separately (brand-only tags)
-// 4. Handle custom_tags
-// 5. GeneratePhotoSummaryService::run($photo) → summary + XP
-// 6. If trusted: fire TagsVerifiedByAdmin
+class ConvertV4TagsAction
+{
+    public function __construct(
+        private OldAddTagsToPhotoAction $oldAddTagsAction,     // Writes v4 data to category columns
+        private AddCustomTagsToPhotoAction $oldAddCustomTagsAction,
+        private UpdateTagsService $updateTagsService,           // v4→v5 conversion (same as olm:v5)
+    ) {}
+
+    public function run(int $userId, int $photoId, array $v4Tags, bool $pickedUp, array $customTags = []): void
+    {
+        // Idempotency: skip if already converted
+        if ($photo->migrated_at !== null || $photo->photoTags()->exists()) return;
+
+        // Step 1: Set remaining (affects XP picked_up bonus)
+        // Step 2: Filter to known categories via Photo::categories()
+        // Step 3: Old action writes v4 data to category columns
+        // Step 4: UpdateTagsService reads back, creates v5 PhotoTags + summary + XP
+        // Step 5: Handle verification (trusted/school/untrusted)
+    }
+}
 ```
 
 ### Key deprecated mappings used by mobile
@@ -103,18 +114,9 @@ ClassifyTagsService::normalizeDeprecatedTag('coffeeCups')
 // → ['object' => 'cup', 'materials' => ['paper']]
 ```
 
-### Current AddTags job flow (to be replaced)
+### Old AddTags job flow (REPLACED by ConvertV4TagsAction)
 
-```php
-// app/Jobs/Api/AddTags.php
-public function handle(): void
-{
-    // 1. Calls old AddTagsToPhotoAction (writes to v4 category tables)
-    // 2. Sets total_litter, result_string (deprecated columns)
-    // 3. If trusted: fires TagsVerifiedByAdmin
-    // PROBLEM: Writes to deprecated tables, no PhotoTags created
-}
-```
+The old `AddTags` job has been replaced. Both `AddTagsToUploadedImageController` and `ApiPhotosController::uploadWithOrWithoutTags()` now call `ConvertV4TagsAction::run()` synchronously instead of dispatching the old job.
 
 ## Common Mistakes
 

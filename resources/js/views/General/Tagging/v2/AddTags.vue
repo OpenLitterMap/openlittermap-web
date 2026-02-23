@@ -208,7 +208,7 @@ const ensurePhotoTags = () => {
 
 // Initialize
 onMounted(async () => {
-    await photosStore.GET_USERS_PHOTOS(1, { tagged: false });
+    await photosStore.fetchUntaggedData(1, { tagged: false });
 
     if (tagsStore.objects.length === 0) {
         await tagsStore.GET_ALL_TAGS();
@@ -459,7 +459,16 @@ const submitTags = async () => {
         // Clear only this photo's tags after successful submit
         delete tagsByPhoto.value[photoId];
 
-        await handleNavigation('next');
+        // UPLOAD_TAGS already reloaded photos — the tagged photo is removed
+        // from the untagged list, so currentPhotoIndex now points to the next
+        // photo. Just clamp if we were at the end.
+        const newLength = paginatedPhotos.value?.data?.length || 0;
+        if (newLength === 0) {
+            currentPhotoIndex.value = 0;
+        } else if (currentPhotoIndex.value >= newLength) {
+            currentPhotoIndex.value = newLength - 1;
+        }
+        imageLoading.value = true;
     } catch (error) {
         console.error('Failed to submit tags:', error);
     } finally {

@@ -112,6 +112,30 @@ states    (id, state, country_id, created_by, timestamps, UNIQUE(country_id, sta
 cities    (id, city, country_id, state_id, created_by, timestamps, UNIQUE(country_id, state_id, city))
 ```
 
+## LocationController API (v1)
+
+`app/Http/Controllers/Location/LocationController.php` serves the locations browsing UI.
+
+### Endpoints
+- `GET /api/v1/locations` — Global view: list of countries with stats
+- `GET /api/v1/locations/{type}/{id}` — Drill into country/state/city
+
+### Response keys
+```json
+{
+    "stats": { "countries": 120, "states": 450, "cities": 1200, ... },
+    "locations": [ ... ],
+    "location_type": "country",
+    "breadcrumbs": [ ... ],
+    "activity": [ ... ]
+}
+```
+
+**Key naming:** Response uses `locations` (not `children`) and `location_type` (not `children_type`). The Pinia store `useLocationsStore` reads these exact keys.
+
+### Time filtering
+Supports `?period=today|yesterday|this_month|last_month|this_year` and `?year=2024` query params. Mutually exclusive — year clears period and vice versa.
+
 ## Common Mistakes
 
 - **Adding aggregate columns to location tables.** Aggregates live in `metrics` table and Redis. Location tables are identity only.
@@ -120,3 +144,5 @@ cities    (id, city, country_id, state_id, created_by, timestamps, UNIQUE(countr
 - **Treating Redis location stats as authoritative.** They're derived caches. The `metrics` table is source of truth.
 - **Decrementing HyperLogLog.** PFCOUNT is append-only. You cannot remove a contributor from HLL.
 - **Forgetting `GeocodingException`.** `ResolveLocationAction::run()` throws `GeocodingException` when geocoding fails. Always handle this.
+- **Using `children` or `children_type` in API responses.** The correct keys are `locations` and `location_type`.
+- **Filtering locations by `manual_verify`.** This deprecated column is no longer used. Don't scope queries with it.

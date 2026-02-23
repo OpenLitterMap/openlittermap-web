@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-505 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. Deprecated tests (40 files) excluded via `#[Group('deprecated')]` in phpunit.xml.
+516 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. Deprecated tests (40 files) excluded via `#[Group('deprecated')]` in phpunit.xml.
 
 ## Key Files
 

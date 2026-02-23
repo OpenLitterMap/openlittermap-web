@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Photos;
 
+use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
 use App\Models\Users\User;
@@ -236,7 +240,7 @@ class AddTagsToPhotoTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(1, $photo->verification);
-        $this->assertEquals(2, $photo->verified);
+        $this->assertEquals(VerificationStatus::ADMIN_APPROVED, $photo->verified);
 
         Event::assertDispatched(
             TagsVerifiedByAdmin::class,
@@ -380,5 +384,129 @@ class AddTagsToPhotoTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['tags']);
+    }
+
+    // ─── Category auto-resolution ───
+
+    public function test_category_is_auto_resolved_from_object_when_not_sent()
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        // Frontend sends object without category
+        $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                [
+                    'object' => ['id' => \App\Models\Litter\Tags\LitterObject::where('key', 'butts')->first()->id, 'key' => 'butts'],
+                    'quantity' => 2,
+                    'picked_up' => true,
+                ],
+            ],
+        ])->assertOk();
+
+        $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
+        $this->assertNotNull($photoTag);
+        $this->assertNotNull($photoTag->category_id, 'category_id should be auto-resolved from the object');
+        $this->assertNotNull($photoTag->litter_object_id);
+    }
+
+    // ─── Custom tags ───
+
+    public function test_custom_tag_uses_key_not_boolean()
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        // Frontend sends { custom: true, key: "myTag" }
+        $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                [
+                    'custom' => true,
+                    'key' => 'dirty-bench',
+                    'quantity' => 1,
+                    'picked_up' => null,
+                ],
+            ],
+        ])->assertOk();
+
+        $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
+        $this->assertNotNull($photoTag);
+        $this->assertNotNull($photoTag->custom_tag_primary_id);
+
+        $customTag = CustomTagNew::find($photoTag->custom_tag_primary_id);
+        $this->assertEquals('dirty-bench', $customTag->key);
+        $this->assertEquals($user->id, $customTag->created_by);
+    }
+
+    // ─── Brand-only tags ───
+
+    public function test_brand_only_tag_creates_photo_tag_with_brand()
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        $brand = BrandList::first();
+
+        $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                [
+                    'brand_only' => true,
+                    'brand' => ['id' => $brand->id, 'key' => $brand->key],
+                    'quantity' => 1,
+                    'picked_up' => null,
+                ],
+            ],
+        ])->assertOk();
+
+        $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
+        $this->assertNotNull($photoTag);
+        $this->assertNull($photoTag->category_id);
+        $this->assertNull($photoTag->litter_object_id);
+
+        $brandExtra = $photoTag->extraTags()->where('tag_type', 'brand')->first();
+        $this->assertNotNull($brandExtra, 'Brand should be attached as extra tag');
+        $this->assertEquals($brand->id, $brandExtra->tag_type_id);
+    }
+
+    // ─── Material-only tags ───
+
+    public function test_material_only_tag_creates_photo_tag_with_material()
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user);
+
+        $material = Materials::first();
+
+        $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                [
+                    'material_only' => true,
+                    'material' => ['id' => $material->id, 'key' => $material->key],
+                    'quantity' => 1,
+                    'picked_up' => null,
+                ],
+            ],
+        ])->assertOk();
+
+        $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
+        $this->assertNotNull($photoTag);
+        $this->assertNull($photoTag->category_id);
+        $this->assertNull($photoTag->litter_object_id);
+
+        $materialExtra = $photoTag->extraTags()->where('tag_type', 'material')->first();
+        $this->assertNotNull($materialExtra, 'Material should be attached as extra tag');
+        $this->assertEquals($material->id, $materialExtra->tag_type_id);
     }
 }

@@ -155,6 +155,44 @@ TagKeyCache::preloadAll();
 
 Three-layer cache: in-memory array -> Redis hash (24h TTL) -> database fallback.
 
+## Web Frontend Tag Types (POST /api/v3/tags)
+
+The Vue frontend sends 4 distinct tag types to `AddTagsToPhotoAction`:
+
+### 1. Object tag (with optional materials/brands/custom_tags)
+```json
+{ "object": { "id": 5, "key": "butts" }, "quantity": 3, "picked_up": true,
+  "materials": [{ "id": 2, "key": "plastic" }], "brands": [], "custom_tags": [] }
+```
+Backend auto-resolves category from `object->categories()->first()`. Category need NOT be sent.
+
+### 2. Custom-only tag
+```json
+{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }
+```
+`$tag['custom']` is boolean true (flag), `$tag['key']` is the actual tag name. Creates `CustomTagNew` via `$tag['key']`.
+
+### 3. Brand-only tag
+```json
+{ "brand_only": true, "brand": { "id": 1, "key": "coca-cola" }, "quantity": 1 }
+```
+Creates PhotoTag with null category/object, attaches brand as extra tag.
+
+### 4. Material-only tag
+```json
+{ "material_only": true, "material": { "id": 2, "key": "plastic" }, "quantity": 1 }
+```
+Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
+
+### Frontend files
+| File | Purpose |
+|---|---|
+| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page |
+| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Tag search combobox |
+| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Individual tag card |
+| `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST /api/v3/tags |
+| `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → GET /api/tags/all |
+
 ## Common Mistakes
 
 - **Using string keys in `photo_tags`.** The table uses `category_id` and `litter_object_id` (integer FKs), not string columns like `'smoking'` or `'butts'`.
@@ -163,3 +201,6 @@ Three-layer cache: in-memory array -> Redis hash (24h TTL) -> database fallback.
 - **Confusing `brandslist` table name.** Not `brands` — the table is literally `brandslist`.
 - **Attaching brands directly to objects.** Brand matching is deferred. Brands go through `attachExtraTags()` or as brand-only PhotoTags.
 - **Not handling `custom_tag_primary_id`.** Custom-only tags have no `category_id` or `litter_object_id` — they use `custom_tag_primary_id` instead.
+- **Expecting category from frontend.** The web frontend sends `object.id` but NOT `category`. Backend auto-resolves category from `object->categories()->first()`.
+- **Reading `$tag['custom']` as the tag name.** It's a boolean flag. The actual name is `$tag['key']`.
+- **Checking `$tag['brands']` for brand-only tags.** Brand-only tags use `$tag['brand']` (singular) + `$tag['brand_only']` flag.
