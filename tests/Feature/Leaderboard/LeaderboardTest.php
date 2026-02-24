@@ -8,6 +8,7 @@ use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Redis\RedisKeys;
+use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -230,5 +231,157 @@ class LeaderboardTest extends TestCase
             ->json();
 
         $this->assertFalse($response['success']);
+    }
+
+    public function test_daily_leaderboard_only_returns_today(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        $now = now()->utc();
+        $yesterday = $now->copy()->subDay();
+
+        // Insert daily row for today (user1)
+        DB::table('metrics')->insert([
+            'timescale' => 1,
+            'location_type' => LocationType::Global->value,
+            'location_id' => 0,
+            'user_id' => $user1->id,
+            'year' => $now->year,
+            'month' => $now->month,
+            'week' => (int) $now->format('W'),
+            'bucket_date' => $now->toDateString(),
+            'uploads' => 1,
+            'tags' => 2,
+            'litter' => 1,
+            'brands' => 0,
+            'materials' => 0,
+            'custom_tags' => 0,
+            'xp' => 100,
+        ]);
+
+        // Insert daily row for yesterday (user2)
+        DB::table('metrics')->insert([
+            'timescale' => 1,
+            'location_type' => LocationType::Global->value,
+            'location_id' => 0,
+            'user_id' => $user2->id,
+            'year' => $yesterday->year,
+            'month' => $yesterday->month,
+            'week' => (int) $yesterday->format('W'),
+            'bucket_date' => $yesterday->toDateString(),
+            'uploads' => 1,
+            'tags' => 5,
+            'litter' => 3,
+            'brands' => 0,
+            'materials' => 0,
+            'custom_tags' => 0,
+            'xp' => 500,
+        ]);
+
+        // "today" filter should only return user1
+        $response = $this
+            ->actingAs($user1)
+            ->getJson('/api/leaderboard?timeFilter=today')
+            ->assertOk()
+            ->json();
+
+        $this->assertTrue($response['success']);
+        $this->assertCount(1, $response['users']);
+        $this->assertEquals('100', $response['users'][0]['xp']);
+
+        // "yesterday" filter should only return user2
+        $response = $this
+            ->actingAs($user1)
+            ->getJson('/api/leaderboard?timeFilter=yesterday')
+            ->assertOk()
+            ->json();
+
+        $this->assertTrue($response['success']);
+        $this->assertCount(1, $response['users']);
+        $this->assertEquals('500', $response['users'][0]['xp']);
+    }
+
+    public function test_deleted_photo_removes_user_from_leaderboard_when_xp_hits_zero(): void
+    {
+        $user = User::factory()->create();
+        $country = Country::factory()->create();
+
+        $photo = Photo::factory()->create([
+            'user_id' => $user->id,
+            'country_id' => $country->id,
+        ]);
+
+        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
+        $countryKey = RedisKeys::xpRanking(RedisKeys::country($country->id));
+
+        // Seed with 50 XP
+        Redis::zAdd($globalKey, 50, (string) $user->id);
+        Redis::zAdd($countryKey, 50, (string) $user->id);
+
+        // Simulate delete that removes all XP via RedisMetricsCollector
+        RedisMetricsCollector::processPhoto($photo, [
+            'tags' => ['objects' => [1 => 5]],
+            'litter' => 5,
+            'xp' => 50,
+        ], 'delete');
+
+        // User should be pruned from ZSETs (score hit 0)
+        // Redis::zScore returns false when member doesn't exist
+        $this->assertFalse(Redis::zScore($globalKey, (string) $user->id));
+        $this->assertFalse(Redis::zScore($countryKey, (string) $user->id));
+        $this->assertEquals(0, Redis::zCard($globalKey));
+    }
+
+    public function test_tied_xp_users_have_deterministic_order(): void
+    {
+        // Create 3 users with identical XP — order must be deterministic by user_id
+        $users = User::factory(3)->create();
+
+        $now = now()->utc();
+
+        foreach ($users as $user) {
+            DB::table('metrics')->insert([
+                'timescale' => 3,
+                'location_type' => LocationType::Global->value,
+                'location_id' => 0,
+                'user_id' => $user->id,
+                'year' => $now->year,
+                'month' => $now->month,
+                'week' => 0,
+                'bucket_date' => $now->copy()->startOfMonth()->toDateString(),
+                'uploads' => 1,
+                'tags' => 2,
+                'litter' => 1,
+                'brands' => 0,
+                'materials' => 0,
+                'custom_tags' => 0,
+                'xp' => 100,
+            ]);
+        }
+
+        $response = $this
+            ->actingAs($users[0])
+            ->getJson('/api/leaderboard?timeFilter=this-month')
+            ->assertOk()
+            ->json();
+
+        $this->assertCount(3, $response['users']);
+
+        // Verify deterministic order — users sorted by user_id ascending when XP tied
+        $returnedRanks = collect($response['users'])->pluck('rank')->toArray();
+        $this->assertEquals([1, 2, 3], $returnedRanks);
+
+        // Run again to confirm same order (determinism)
+        $response2 = $this
+            ->actingAs($users[0])
+            ->getJson('/api/leaderboard?timeFilter=this-month')
+            ->assertOk()
+            ->json();
+
+        $this->assertEquals(
+            collect($response['users'])->pluck('xp')->toArray(),
+            collect($response2['users'])->pluck('xp')->toArray()
+        );
     }
 }

@@ -116,6 +116,13 @@ $photo->update([
 ]);
 ```
 
+In Redis, the delete operation also prunes zero-XP members from leaderboard ZSETs:
+```php
+$pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), (string)$userId);
+$pipe->zRemRangeByScore(RedisKeys::xpRanking($scope), '-inf', '0');
+```
+This keeps Redis consistent with MySQL (which filters `xp > 0`).
+
 ## Common Mistakes
 
 - **Writing metrics outside MetricsService.** Never `DB::table('metrics')->increment(...)` or `Redis::hincrby(...)` directly.

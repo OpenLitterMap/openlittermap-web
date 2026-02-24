@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-602 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated).
+605 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated).
 
 ## Key Files
 
@@ -224,3 +224,4 @@ DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --c
 - **Missing `city_id` in photo factory.** The default PhotoFactory doesn't include `city_id`. Add `'city_id' => City::factory()` when testing location-dependent features.
 - **Testing auth guards with `actingAs()`.** This bypasses middleware. It doesn't verify that `auth:api` vs `auth:web` actually works.
 - **Expecting `geom` in JSON responses.** `Photo::$hidden = ['geom']` — binary spatial data is excluded from serialization.
+- **Using `assertNull` for `Redis::zScore()` on missing members.** PHP Redis returns `false` (not `null`) when a ZSET member doesn't exist. Use `assertFalse(Redis::zScore($key, $member))`.

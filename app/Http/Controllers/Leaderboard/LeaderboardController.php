@@ -122,6 +122,7 @@ class LeaderboardController extends Controller
         $rows = $query
             ->where('xp', '>', 0)
             ->orderByDesc('xp')
+            ->orderBy('user_id')
             ->offset($start)
             ->limit(self::PER_PAGE)
             ->select('user_id', 'xp')
@@ -206,6 +207,10 @@ class LeaderboardController extends Controller
         };
     }
 
+    /**
+     * Get current user's rank from Redis ZSET.
+     * ZREVRANK returns 0-indexed, so we add 1 to make it 1-indexed for display.
+     */
     private function getCurrentUserRank(string $key): ?int
     {
         if (!auth()->check()) {
@@ -214,7 +219,8 @@ class LeaderboardController extends Controller
 
         $rank = Redis::zRevRank($key, (string) auth()->id());
 
-        return $rank !== null ? $rank + 1 : null;
+        // ZREVRANK is 0-indexed; convert to 1-indexed for display
+        return $rank !== null ? (int) $rank + 1 : null;
     }
 
     private function formatUserData($ranked, int $start): array

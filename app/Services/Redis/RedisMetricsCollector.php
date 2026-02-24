@@ -64,8 +64,10 @@ final class RedisMetricsCollector
                         // Decrement contributor ranking (HLL cannot be decremented)
                         $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, (string)$userId);
 
-                        // XP leaderboard ranking
+                        // XP leaderboard ranking — decrement then prune members at ≤ 0
+                        // to keep Redis consistent with MySQL (which filters xp > 0)
                         $pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), (string)$userId);
+                        $pipe->zRemRangeByScore(RedisKeys::xpRanking($scope), '-inf', '0');
                     }
 
                     // Update tag counts and rankings

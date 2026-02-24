@@ -108,7 +108,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment: school/community types, student identity masking, school approval pipeline, school_manager role, leaderboard system. 602 tests passing.
+Teams v5 deployment: school/community types, student identity masking, school approval pipeline, school_manager role, leaderboard system. 605 tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -138,7 +138,7 @@ Built by a single developer over 17 years.
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 602 tests passing (0 failures). All steps complete:
+Fully deployed. 605 tests passing (0 failures). All steps complete:
 - VerificationStatus enum + Photo model cast (step 10)
 - `is_public=true` filtering on all public-facing queries (step 9)
 - Frontend: Pinia stores, 12 Vue components, router updated (steps 11-12)
