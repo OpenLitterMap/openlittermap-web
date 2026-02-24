@@ -6,26 +6,10 @@ use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class ListLeaderboardsTest extends TestCase
 {
-    public static function routeDataProvider(): array
-    {
-        return [
-            ['/teams/leaderboard', 'web'],
-            ['/api/teams/leaderboard', 'api'],
-        ];
-    }
-
-    /**
-     * @param $route
-     * @param $guard
-     * @dataProvider routeDataProvider
-     * @return void
-     */
-    public function test_it_can_list_the_global_teams_leaderboards($route, $guard)
+    public function test_it_can_list_the_global_teams_leaderboards()
     {
         /** @var User $user */
         $user = User::factory()->create();
@@ -37,8 +21,8 @@ class ListLeaderboardsTest extends TestCase
         )->create();
 
         $result = $this
-            ->actingAs($user, $guard)
-            ->getJson($route)
+            ->actingAs($user, 'api')
+            ->getJson('/api/teams/leaderboard')
             ->assertOk()
             ->assertJsonCount(3)
             ->assertJson(function (AssertableJson $json) {
@@ -52,13 +36,7 @@ class ListLeaderboardsTest extends TestCase
         $this->assertEquals([3, 2, 1], array_column($result, 'total_litter'));
     }
 
-    /**
-     * @param $route
-     * @param $guard
-     * @dataProvider routeDataProvider
-     * @return void
-     */
-    public function test_it_does_not_include_teams_that_dont_want_to_be_in_leaderboards($route, $guard)
+    public function test_it_does_not_include_teams_that_dont_want_to_be_in_leaderboards()
     {
         /** @var User $user */
         $user = User::factory()->create();
@@ -70,8 +48,8 @@ class ListLeaderboardsTest extends TestCase
         )->create();
 
         $result = $this
-            ->actingAs($user, $guard)
-            ->getJson($route)
+            ->actingAs($user, 'api')
+            ->getJson('/api/teams/leaderboard')
             ->assertOk()
             ->assertJsonCount(2)
             ->json();

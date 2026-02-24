@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Actions\CalculateTagsDifferenceAction;
@@ -39,7 +40,7 @@ class UpdateTagsController extends Controller
     {
         $photo = Photo::find($request->photoId);
         $photo->verification = 1;
-        $photo->verified = 2;
+        $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
         $photo->total_litter = 0;
         $photo->save();
 

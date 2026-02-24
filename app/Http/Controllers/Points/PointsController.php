@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Points;
 
+use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Points\PointsRequest;
 use App\Models\Photo;
@@ -26,10 +27,11 @@ class PointsController extends Controller
      */
     public function show(int $id)
     {
-        $photo = Photo::with([
-            'user:id,name,username,show_username_maps,show_name_maps,settings',
-            'team:id,name',
-        ])->findOrFail($id);
+        $photo = Photo::where('is_public', true)
+            ->with([
+                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'team:id,name',
+            ])->findOrFail($id);
 
         return [
             'id' => $photo->id,
@@ -159,6 +161,7 @@ class PointsController extends Controller
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'team:id,name'
             ])
+            ->where('is_public', true)
             ->whereNotNull('lat')
             ->whereNotNull('lon');
 
@@ -412,7 +415,7 @@ class PointsController extends Controller
     private function getFilename($photo)
     {
         // Only show actual filename if photo is verified (level 2 or higher)
-        if ($photo->verified >= 2) {
+        if ($photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) {
             return $photo->filename;
         }
 

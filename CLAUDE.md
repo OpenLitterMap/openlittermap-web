@@ -108,7 +108,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment: school/community types, student identity masking, school approval pipeline, school_manager role. 516 tests passing.
+Teams v5 deployment: school/community types, student identity masking, school approval pipeline, school_manager role, leaderboard system. 602 tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -138,12 +138,13 @@ Built by a single developer over 17 years.
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 516 tests passing (0 failures). All steps complete:
+Fully deployed. 602 tests passing (0 failures). All steps complete:
 - VerificationStatus enum + Photo model cast (step 10)
 - `is_public=true` filtering on all public-facing queries (step 9)
 - Frontend: Pinia stores, 12 Vue components, router updated (steps 11-12)
 - Tests: 7 test files, 4 factories, all passing (steps 13-14)
 - Production code fixes: PhotoObserver, TeamPhotosController, TeamsDataController, Photo model
+- Leaderboard system: Redis ZSETs for all-time, MySQL per-user metrics for time-filtered
 
 Reference files: `~/Code/teams-v5-files/`
 
@@ -153,6 +154,7 @@ Reference files: `~/Code/teams-v5-files/`
 - Do not rename files unless asked
 
 ## Domain Documentation (read the relevant file before working in that area)
+- `readme/Leaderboards.md` — Leaderboard system (Redis ZSETs + MySQL per-user metrics)
 - `readme/Locations.md` — Location and geography system
 - `readme/Metrics.md` — Metrics pipeline and aggregation
 - `readme/Migration.md` — Database migration notes

@@ -21,7 +21,7 @@ class HomeController extends Controller
         // If the user is viewing the global map and loading a photo,
         // we need to load the original latLon coordinates from the photoId
         if (request()->path() === 'global' && request()->has('photo')) {
-            $latLon = Photo::where('id', request('photo'))->first(['lat', 'lon']);
+            $latLon = Photo::where('id', request('photo'))->where('is_public', true)->first(['lat', 'lon']);
 
             // Replace the latLon in the URL with the original photo coordinates
             if ($latLon) {

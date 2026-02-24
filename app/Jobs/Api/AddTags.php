@@ -2,11 +2,11 @@
 
 namespace App\Jobs\Api;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\AddCustomTagsToPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Events\TagsVerifiedByAdmin;
 
@@ -71,10 +71,6 @@ class AddTags implements ShouldQueue
             $customTagsTotals = $addCustomTagsAction->run($photo, $customTags);
         }
 
-        // This will also update XP on redis
-        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
-
         $photo->total_litter = $litterTotals['litter'];
 
         if (!$user->is_trusted)
@@ -87,7 +83,7 @@ class AddTags implements ShouldQueue
         else // the user is trusted. Dispatch event to update OLM.
         {
             $photo->verification = 1;
-            $photo->verified = 2;
+            $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
             event(new TagsVerifiedByAdmin($photo->id));
         }
 

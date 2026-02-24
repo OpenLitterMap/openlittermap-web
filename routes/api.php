@@ -219,23 +219,37 @@ Route::post('/settings/delete-account', 'API\DeleteAccountController')->middlewa
 */
 
 Route::prefix('/teams')->group(function () {
-    Route::get('/members', 'API\TeamsController@members');
-    Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index')->middleware('auth:api');
-    Route::get('/list', 'API\TeamsController@list');
+    // Public — no auth required
     Route::get('/types', 'API\TeamsController@types');
-    Route::get('/data', 'Teams\TeamsDataController@index'); // moved from web.php
-    Route::get('/clusters/{team}', 'Teams\TeamsClusterController@clusters'); // moved from web.php
-    Route::get('/points/{team}', 'Teams\TeamsClusterController@points'); // moved from web.php
-    Route::get('/joined', 'Teams\TeamsController@joined'); // moved from web.php
-    Route::patch('/update/{team}', 'API\TeamsController@update');
-    Route::post('/active', 'API\TeamsController@setActiveTeam');
-    Route::post('/create', 'API\TeamsController@create');
-    Route::post('/download', 'API\TeamsController@download');
-    Route::post('/inactivate', 'API\TeamsController@inactivateTeams');
-    Route::post('/join', 'API\TeamsController@join');
-    Route::post('/leave', 'API\TeamsController@leave');
-    Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle')->middleware('auth:api');
-    Route::post('/settings', 'Teams\TeamsSettingsController@index')->middleware('auth:api'); // moved from web.php
+
+    // Authenticated — SPA (session) + mobile (Passport)
+    Route::middleware('auth:api,web')->group(function () {
+        Route::get('/members', 'API\TeamsController@members');
+        Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
+        Route::get('/list', 'API\TeamsController@list');
+        Route::get('/data', 'Teams\TeamsDataController@index');
+        Route::get('/clusters/{team}', 'Teams\TeamsClusterController@clusters');
+        Route::get('/points/{team}', 'Teams\TeamsClusterController@points');
+        Route::get('/joined', 'Teams\TeamsController@joined');
+        Route::patch('/update/{team}', 'API\TeamsController@update');
+        Route::post('/active', 'API\TeamsController@setActiveTeam');
+        Route::post('/create', 'API\TeamsController@create');
+        Route::post('/download', 'API\TeamsController@download');
+        Route::post('/inactivate', 'API\TeamsController@inactivateTeams');
+        Route::post('/join', 'API\TeamsController@join');
+        Route::post('/leave', 'API\TeamsController@leave');
+        Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle');
+        Route::post('/settings', 'Teams\TeamsSettingsController@index');
+
+        // Team Photos — CRUD + approval (school teams)
+        Route::prefix('/photos')->group(function () {
+            Route::get('/', 'Teams\TeamPhotosController@index');
+            Route::get('/map', 'Teams\TeamPhotosController@mapPoints');
+            Route::get('/{photo}', 'Teams\TeamPhotosController@show');
+            Route::patch('/{photo}/tags', 'Teams\TeamPhotosController@updateTags');
+            Route::post('/approve', 'Teams\TeamPhotosController@approve');
+        });
+    });
 });
 
 /*

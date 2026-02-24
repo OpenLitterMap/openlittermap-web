@@ -42,6 +42,9 @@ final class RedisMetricsCollector
                         // Contributor ranking
                         $pipe->zIncrBy(RedisKeys::contributorRanking($scope), 1, (string)$userId);
 
+                        // XP leaderboard ranking
+                        $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
+
                     } elseif ($operation === 'update') {
                         // Apply deltas only
                         if (isset($metrics['litter']) && $metrics['litter'] !== 0) {
@@ -49,6 +52,7 @@ final class RedisMetricsCollector
                         }
                         if (isset($metrics['xp']) && $metrics['xp'] !== 0) {
                             $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', $metrics['xp']);
+                            $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
                         }
 
                     } elseif ($operation === 'delete') {
@@ -59,6 +63,9 @@ final class RedisMetricsCollector
 
                         // Decrement contributor ranking (HLL cannot be decremented)
                         $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, (string)$userId);
+
+                        // XP leaderboard ranking
+                        $pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), (string)$userId);
                     }
 
                     // Update tag counts and rankings

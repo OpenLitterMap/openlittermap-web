@@ -9,10 +9,16 @@ class UpdateTeamAction
 
     public function run(Team $team, array $data): Team
     {
-        $team->update([
+        $updateData = [
             'name' => $data['name'],
-            'identifier' => $data['identifier']
-        ]);
+            'identifier' => $data['identifier'],
+        ];
+
+        if (array_key_exists('safeguarding', $data)) {
+            $updateData['safeguarding'] = $data['safeguarding'];
+        }
+
+        $team->update($updateData);
 
         return $team;
     }

@@ -7,7 +7,10 @@
             <!-- Team Type -->
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Team type</label>
-                <select v-model="teamType" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
+                <select
+                    v-model="teamType"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                >
                     <option v-for="t in types" :key="t.id" :value="t.id">{{ t.team }}</option>
                 </select>
             </div>

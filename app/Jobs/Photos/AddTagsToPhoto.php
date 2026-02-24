@@ -4,7 +4,7 @@ namespace App\Jobs\Photos;
 
 use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\Users\User;
@@ -57,7 +57,7 @@ class AddTagsToPhoto implements ShouldQueue
         /** @var User $user */
         $user = User::find($photo->user_id);
 
-        if (! $photo || $photo->verified > 0) return;
+        if (! $photo || $photo->verified->value > VerificationStatus::UNVERIFIED->value) return;
 
         /** @var AddCustomTagsToPhotoAction $addCustomTagsAction */
         $addCustomTagsAction = app(AddCustomTagsToPhotoAction::class);
@@ -69,10 +69,6 @@ class AddTagsToPhoto implements ShouldQueue
 
         $user->xp += $litterTotals['all'] + $customTagsTotals;
         $user->save();
-
-        /** @var UpdateLeaderboardsForLocationAction $updateLeaderboardsAction */
-        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotals);
 
         $photo->remaining = !$this->pickedUp;
         $photo->total_litter = $litterTotals['litter'];
@@ -86,7 +82,7 @@ class AddTagsToPhoto implements ShouldQueue
         else // the user is trusted. Dispatch event to update OLM.
         {
             $photo->verification = 1;
-            $photo->verified = 2;
+            $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
             event(new TagsVerifiedByAdmin($photo->id));
         }
 

@@ -17,16 +17,13 @@ use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
+use App\Traits\MasksStudentIdentity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class TeamsController extends Controller
 {
-
-    public function __construct()
-    {
-        $this->middleware('auth:api')->except('types');
-    }
+    use MasksStudentIdentity;
 
     /**
      * Array of teams the user has joined
@@ -53,8 +50,8 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->remaining_teams === 0) {
-            return $this->fail('max-teams-created');
+        if ($user->remaining_teams == 0) {
+            return ['success' => false, 'msg' => 'max-created'];
         }
 
         $team = $action->run($user, $request->all());
@@ -73,7 +70,7 @@ class TeamsController extends Controller
     public function update(UpdateTeamRequest $request, UpdateTeamAction $action, Team $team)
     {
         if (Auth::id() != $team->leader) {
-            return $this->fail('member-not-allowed');
+            return response()->json(['success' => false, 'message' => 'member-not-allowed'], 403);
         }
 
         $team = $action->run($team, $request->all());
@@ -97,7 +94,7 @@ class TeamsController extends Controller
 
         // Check the user is not already in the team
         if ($user->isMemberOfTeam($team->id)) {
-            return $this->fail('already-a-member');
+            return ['success' => false, 'msg' => 'already-joined'];
         }
 
         $action->run($user, $team);
@@ -123,11 +120,11 @@ class TeamsController extends Controller
         $team = Team::find($request->team_id);
 
         if (!$user->isMemberOfTeam($request->team_id)) {
-            return $this->fail('not-a-member');
+            return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
         if ($team->users()->count() <= 1) {
-            return $this->fail('you-are-last-member');
+            return response()->json(['success' => false, 'message' => 'you-are-last-member'], 403);
         }
 
         $action->run($user, $team);
@@ -194,6 +191,7 @@ class TeamsController extends Controller
         }
 
         $result = $action->run($team);
+        $result = $this->applySafeguarding($result, $team, $user);
 
         return $this->success(['result' => $result]);
     }
@@ -229,7 +227,7 @@ class TeamsController extends Controller
     public function types()
     {
         return $this->success([
-            'types' => TeamType::select('id', 'team')->get()
+            'types' => TeamType::select('id', 'team')->orderBy('id', 'desc')->get()
         ]);
     }
 

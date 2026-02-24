@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Enums\VerificationStatus;
 use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
 use App\Jobs\EmailUserExportCompleted;
@@ -96,8 +97,8 @@ class ProfileController extends Controller
             $name = $photo->user->show_name_maps ? $photo->user->name : null;
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
-            $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
-            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+            $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) ? $photo->filename : '/assets/images/waiting.png';
+            $resultString = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->result_string : null;
 
             $features[] = [
                 'type' => 'Feature',
@@ -148,9 +149,9 @@ class ProfileController extends Controller
         $usersPosition = $user->position;
 
         // Todo - Store this metadata in Redis
-        $totalPhotosAllUsers = Photo::count();
+        $totalPhotosAllUsers = Photo::where('is_public', true)->count();
         // Todo - Store this metadata in Redis
-        $totalTagsAllUsers = Photo::sum('total_litter') + CustomTag::count(); // this doesn't include brands
+        $totalTagsAllUsers = Photo::where('is_public', true)->sum('total_litter') + CustomTag::count(); // this doesn't include brands
 
         $usersTotalTags = $user->total_tags;
 

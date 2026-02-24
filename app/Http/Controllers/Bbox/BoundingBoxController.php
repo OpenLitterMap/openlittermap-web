@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Bbox;
 
 use App\Actions\CalculateTagsDifferenceAction;
+use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
 use App\Litterrata;
 use App\Models\AI\Annotation;
@@ -86,7 +87,7 @@ class BoundingBoxController extends Controller
             }
         }
 
-        $photo->verified = 3;
+        $photo->verified = VerificationStatus::BBOX_APPLIED->value;
         $photo->save();
 
         return ['success' => true];

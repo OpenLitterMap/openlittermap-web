@@ -10,7 +10,7 @@ use GeoHash;
 use Carbon\Carbon;
 use App\Models\Photo;
 
-use App\Jobs\Api\AddTags;
+use App\Actions\Tags\ConvertV4TagsAction;
 
 use App\Events\ImageDeleted;
 use App\Events\ImageUploaded;
@@ -228,15 +228,25 @@ class ApiPhotosController extends Controller
             ];
         }
 
-        // Old mobile tag format — dispatches to AddTags job
-        // TODO: convert old tag format to v5 PhotoTag format
+        // Convert old v4 tags to v5 PhotoTags via migration pipeline
         if ($request->tags || $request->custom_tags) {
-            dispatch(new AddTags(
+            $v4Tags = $request->tags ?? [];
+            if (is_string($v4Tags)) {
+                $v4Tags = json_decode($v4Tags, true) ?? [];
+            }
+
+            $customTags = $request->custom_tags ?? [];
+            if (is_string($customTags)) {
+                $customTags = json_decode($customTags, true) ?? [];
+            }
+
+            app(ConvertV4TagsAction::class)->run(
                 auth()->id(),
                 $photo->id,
-                $request->tags,
-                $request->custom_tags
-            ));
+                $v4Tags,
+                ! $photo->remaining,
+                $customTags
+            );
         }
 
         return [

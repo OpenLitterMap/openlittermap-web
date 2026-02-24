@@ -37,7 +37,8 @@ class GlobalMapController extends Controller
             )
             ->where([
                 ['verified', '>=', 2],
-                ['art_id', '!=', null]
+                ['art_id', '!=', null],
+                ['is_public', true],
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
@@ -72,6 +73,7 @@ class GlobalMapController extends Controller
                 'datetime'
             )
             ->where('user_id', '!=', 5292) // temp
+            ->where('is_public', true)
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',

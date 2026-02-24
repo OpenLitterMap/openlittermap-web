@@ -13,14 +13,6 @@ use App\Models\Users\User;
 use Carbon\Carbon;
 use Tests\TestCase;
 
-/**
- * @group deprecated
- * @deprecated Needs rewrite for v5 — admin routes moved to /api/admin/*,
- *             setUp uses dead routes (/submit, /add-tags)
- */
-use PHPUnit\Framework\Attributes\Group;
-
-#[Group('deprecated')]
 class IncreaseTeamTotalPhotosTest extends TestCase
 {
     /**

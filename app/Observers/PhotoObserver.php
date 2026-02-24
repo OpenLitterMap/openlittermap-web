@@ -2,7 +2,9 @@
 
 namespace App\Observers;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
+use App\Models\Teams\Team;
 use App\Services\Clustering\ClusteringService;
 
 class PhotoObserver
@@ -15,13 +17,30 @@ class PhotoObserver
     }
 
     /**
+     * When a photo is created, check if it belongs to a school team.
+     * If so, mark it as private until the teacher approves.
+     */
+    public function creating(Photo $photo): void
+    {
+        if (! $photo->team_id) {
+            return;
+        }
+
+        $team = Team::find($photo->team_id);
+
+        if ($team && $team->isSchool()) {
+            $photo->is_public = false;
+        }
+    }
+
+    /**
      * Handle the Photo "saving" event.
      * Update tile_key BEFORE save if coordinates changed or photo becomes verified
      */
     public function saving(Photo $photo): void
     {
         // Skip unverified photos entirely
-        if ($photo->verified != 2) {
+        if ($photo->verified !== VerificationStatus::ADMIN_APPROVED) {
             return;
         }
 
@@ -46,7 +65,7 @@ class PhotoObserver
         }
 
         // Handle case where photo becomes verified but coordinates haven't changed
-        if ($photo->isDirty('verified') && $photo->verified == 2 && !$photo->tile_key) {
+        if ($photo->isDirty('verified') && $photo->verified === VerificationStatus::ADMIN_APPROVED && !$photo->tile_key) {
             $photo->tile_key = $this->clustering->computeTileKey($photo->lat, $photo->lon);
         }
     }
@@ -58,7 +77,7 @@ class PhotoObserver
     public function saved(Photo $photo): void
     {
         // Skip unverified photos entirely
-        if ($photo->verified != 2) {
+        if ($photo->verified !== VerificationStatus::ADMIN_APPROVED) {
             return;
         }
 
@@ -77,7 +96,7 @@ class PhotoObserver
      */
     public function deleting(Photo $photo): void
     {
-        if ($photo->verified == 2 && $photo->tile_key) {
+        if ($photo->verified === VerificationStatus::ADMIN_APPROVED && $photo->tile_key) {
             $this->clustering->markTileDirty($photo->tile_key);
         }
     }

@@ -36,7 +36,8 @@ class GetPaginatedHistoryController extends Controller
             ->when($mobileAppUser, function ($q) use ($mobileAppUser) {
                 $q->where('user_id', $mobileAppUser->id);
             }, function ($q) {
-                $q->where('verified', '>=', 2);
+                $q->where('verified', '>=', 2)
+                    ->where('is_public', true);
             })
 
             ->when($request->filterCountry !== 'all', function ($q) use ($request) {

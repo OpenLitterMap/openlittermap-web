@@ -14,12 +14,13 @@ use App\Services\Tags\UpdateTagsService;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Database\Seeders\{AchievementsSeeder, Tags\GenerateBrandsSeeder, Tags\GenerateTagsSeeder};
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\{Artisan, DB, Log, Schema};
+use Illuminate\Support\Facades\{Artisan, DB, Log, Redis, Schema};
 
 class MigrationScript extends Command
 {
     protected $signature = 'olm:v5
         {--skip-locations : Skip the locations cleanup step}
+        {--skip-redis-flush : Skip the Redis FLUSHDB step (useful when resuming a partial migration)}
         {--user= : Specific user ID to migrate}
         {--batch=500 : Number of photos per batch}';
 
@@ -52,6 +53,12 @@ class MigrationScript extends Command
         $this->seedReferenceTables();
         TagKeyCache::preloadAll();
         DB::disableQueryLog();
+
+        if (! $this->option('skip-redis-flush')) {
+            if (! $this->flushRedis()) {
+                return self::FAILURE;
+            }
+        }
 
         // Run migration
         $this->runMigration();
@@ -313,7 +320,7 @@ class MigrationScript extends Command
             'processed_at' => 'TIMESTAMP',
             'processed_fp' => 'VARCHAR(32)',
             'processed_tags' => 'TEXT',
-            'processed_xp' => 'TINYINT(1)'
+            'processed_xp' => 'INT UNSIGNED'
         ];
 
         foreach ($columns as $column => $type) {
@@ -353,6 +360,31 @@ class MigrationScript extends Command
         }
 
         $this->newLine();
+    }
+
+    /**
+     * Flush all Redis data before migration.
+     *
+     * The migration rebuilds Redis via MetricsService → RedisMetricsCollector per photo.
+     * Old keys combined with incremental ops would produce wrong totals, so we nuke everything first.
+     */
+    private function flushRedis(): bool
+    {
+        $this->warn('The migration will flush ALL Redis data before processing.');
+        $this->warn('MetricsService will rebuild Redis as each photo is processed.');
+
+        if (! $this->confirm('This will delete ALL Redis data. Continue?')) {
+            $this->info('Aborted. Use --skip-redis-flush to skip this step.');
+            return false;
+        }
+
+        Redis::command('FLUSHDB');
+
+        $this->info('Redis FLUSHDB complete — all keys cleared.');
+        Log::info('olm:v5 migration: Redis FLUSHDB executed before migration run.');
+        $this->newLine();
+
+        return true;
     }
 
     private function formatDuration(int $seconds): string

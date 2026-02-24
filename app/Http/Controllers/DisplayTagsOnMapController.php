@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class DisplayTagsOnMapController extends Controller
      */
     public function show (Request $request)
     {
-        $photos = Photo::query();
+        $photos = Photo::query()->where('is_public', true);
 
         if ($request->has('custom_tag'))
         {
@@ -58,8 +59,8 @@ class DisplayTagsOnMapController extends Controller
             $name = $photo->user->show_name_maps ? $photo->user->name : null;
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
-            $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
-            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+            $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) ? $photo->filename : '/assets/images/waiting.png';
+            $resultString = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->result_string : null;
 
             $features[] = [
                 'type' => 'Feature',

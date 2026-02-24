@@ -6,7 +6,6 @@ use Faker\Factory;
 use App\Models\Photo;
 use Illuminate\Database\Seeder;
 use App\Models\Location\Country;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use Illuminate\Support\Facades\DB;
 
 class PhotosSeeder extends Seeder
@@ -14,8 +13,6 @@ class PhotosSeeder extends Seeder
     public function run(): void
     {
         $faker = Factory::create();
-
-        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
 
         for ($i = 0; $i < 1000; $i++)
         {
@@ -27,9 +24,6 @@ class PhotosSeeder extends Seeder
             // 3. Create the Photo with a random userId
             $userId = DB::table('users')->orderByRaw('RAND()')->first()->id;
             $photo = $this->createPhoto($faker, $country, $userId);
-
-            // 4. Award XP & Update Leaderboards
-            $updateLeaderboardsAction->run($photo, $userId);
         }
     }
 

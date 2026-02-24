@@ -91,6 +91,11 @@ final class RedisKeys
     }
 
     // Rankings (sorted sets)
+    public static function xpRanking(string $scope): string
+    {
+        return "$scope:lb:xp";
+    }
+
     public static function ranking(string $scope, string $dimension): string
     {
         return "$scope:rank:$dimension";

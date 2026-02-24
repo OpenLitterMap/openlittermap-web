@@ -6,9 +6,6 @@ use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Tests\TestCase;
 
-use PHPUnit\Framework\Attributes\Group;
-
-#[Group('deprecated')]
 class UserTest extends TestCase
 {
     public function test_a_user_has_an_is_trusted_attribute()

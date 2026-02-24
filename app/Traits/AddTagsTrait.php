@@ -2,7 +2,6 @@
 
 namespace App\Traits;
 
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
@@ -55,10 +54,6 @@ trait AddTagsTrait
         $photo->total_litter = $litterTotals['litter'];
         $photo->result_string = null; // Updated on PhotoVerifiedByAdmin only. Must be reset if we are applying new tags.
         $photo->save();
-
-        // Update the Leaderboards
-        $updateLeaderboardsAction = app(UpdateLeaderboardsForLocationAction::class);
-        $updateLeaderboardsAction->run($photo, $user->id, -$tagUpdates['removedUserXp']);
 
         return $tagUpdates;
     }

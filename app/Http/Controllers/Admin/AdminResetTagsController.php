@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\CalculateTagsDifferenceAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Enums\VerificationStatus;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Http\Controllers\Controller;
@@ -17,15 +17,9 @@ class AdminResetTagsController extends Controller
 {
     /**
      * Apply IsAdmin middleware to all of these routes
-     *
-     * @param DeleteTagsFromPhotoAction $deleteTagsAction
-     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
-        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
         DeletePhotoAction $deletePhotoAction,
         CalculateTagsDifferenceAction $calculateTagsDiffAction
     )
@@ -33,7 +27,6 @@ class AdminResetTagsController extends Controller
         $this->middleware('admin');
 
         $this->deleteTagsAction = $deleteTagsAction;
-        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
         $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
 
@@ -51,10 +44,10 @@ class AdminResetTagsController extends Controller
 
         // This function should only be run when the image is not verified already
         // Only superadmins should be able to reset tags on a verified photo
-        if ($photo->verified < 2)
+        if ($photo->verified->value < VerificationStatus::ADMIN_APPROVED->value)
         {
             $photo->verification = 0;
-            $photo->verified = 0;
+            $photo->verified = VerificationStatus::UNVERIFIED->value;
             $photo->total_litter = 0;
             $photo->result_string = null;
             $photo->save();
@@ -72,8 +65,6 @@ class AdminResetTagsController extends Controller
                 $this->deleteTagsAction->run($photo);
 
                 $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
-
-                $this->updateLeaderboardsAction->run($photo, $user->id, - $tagUpdates['removedUserXp']);
 
                 logAdminAction($photo, 'reset-tags', $tagUpdates);
             }

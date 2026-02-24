@@ -8,7 +8,9 @@
                 v-for="item in navItems"
                 :key="item.key"
                 class="flex items-center gap-3 w-full px-3 py-2 rounded-lg mb-1 text-left transition-colors"
-                :class="activeView === item.key ? 'bg-slate-700 text-white' : 'hover:bg-slate-700/50'"
+                :class="activeView === item.key
+                    ? 'bg-slate-700 text-white'
+                    : 'hover:bg-slate-700/50'"
                 @click="activeView = item.key"
             >
                 <i :class="item.icon" class="w-5 text-center" />
@@ -22,7 +24,11 @@
                 v-model="activeView"
                 class="w-full border-b border-slate-200 px-4 py-3 text-sm bg-slate-800 text-white"
             >
-                <option v-for="item in navItems" :key="item.key" :value="item.key">
+                <option
+                    v-for="item in navItems"
+                    :key="item.key"
+                    :value="item.key"
+                >
                     {{ item.label }}
                 </option>
             </select>

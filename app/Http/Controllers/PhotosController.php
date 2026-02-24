@@ -15,7 +15,6 @@ use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\AddTagsToPhotoAction;
 use App\Actions\Photos\AddCustomTagsToPhotoAction;
 use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Services\Metrics\MetricsService;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +26,6 @@ class PhotosController extends Controller
     protected UploadHelper $uploadHelper;
     private AddTagsToPhotoAction $addTagsAction;
     private DeletePhotoAction $deletePhotoAction;
-    private UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
 
     /**
      * PhotosController constructor
@@ -36,13 +34,11 @@ class PhotosController extends Controller
     public function __construct(
         UploadHelper $uploadHelper,
         AddTagsToPhotoAction $addTagsAction,
-        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
         DeletePhotoAction $deletePhotoAction
     )
     {
         $this->uploadHelper = $uploadHelper;
         $this->addTagsAction = $addTagsAction;
-        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
         $this->deletePhotoAction = $deletePhotoAction;
 
         $this->middleware('auth');
@@ -69,8 +65,6 @@ class PhotosController extends Controller
         $user->xp = $user->xp > 0 ? $user->xp - 1 : 0;
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
-
-        $this->updateLeaderboardsAction->run($photo, $user->id, -1);
 
         event(new ImageDeleted(
             $user,
@@ -108,8 +102,6 @@ class PhotosController extends Controller
 
         $user->xp += $litterTotals['all'] + $customTagsTotal;
         $user->save();
-
-        $this->updateLeaderboardsAction->run($photo, $user->id, $litterTotals['all'] + $customTagsTotal);
 
         $photo->remaining = !$request->picked_up;
         $photo->total_litter = $litterTotals['litter'];

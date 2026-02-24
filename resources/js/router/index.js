@@ -23,6 +23,8 @@ import Uploads from '../views/User/Uploads/Uploads.vue';
 import Changelog from '../views/General/Changelog.vue';
 import AddTags from '../views/General/Tagging/v2/AddTags.vue';
 import Locations from '../views/Locations/Locations.vue';
+import TeamsLayout from '../views/Teams/TeamsLayout.vue';
+import TeamDashboard from '../views/Teams/TeamDashboard.vue';
 
 const routes = [
     // Public routes
@@ -130,6 +132,22 @@ const routes = [
         path: '/uploads',
         name: 'Uploads',
         component: Uploads,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/teams',
+        name: 'Teams',
+        component: TeamsLayout,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/teams/:id',
+        name: 'TeamDashboard',
+        component: TeamDashboard,
         meta: {
             middleware: [auth],
         },

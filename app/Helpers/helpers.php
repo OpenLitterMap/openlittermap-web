@@ -3,7 +3,8 @@
 use Carbon\Carbon;
 use App\Models\Photo;
 use App\Actions\LogAdminVerificationAction;
-use App\Actions\Locations\UpdateLeaderboardsXpAction;
+use App\Services\Redis\RedisKeys;
+use Illuminate\Support\Facades\Redis;
 
 if (!function_exists('array_diff_assoc_recursive'))
 {
@@ -75,8 +76,13 @@ if (!function_exists('rewardXpToAdmin'))
     {
         auth()->user()->increment('xp', $xp);
 
-        $action = app(UpdateLeaderboardsXpAction::class);
-        $action->run(auth()->id(), $xp);
+        $userId = (string) auth()->id();
+        $userScope = RedisKeys::user(auth()->id());
+
+        Redis::pipeline(function ($pipe) use ($xp, $userId, $userScope) {
+            $pipe->zIncrBy(RedisKeys::xpRanking(RedisKeys::global()), $xp, $userId);
+            $pipe->hIncrBy(RedisKeys::stats($userScope), 'xp', $xp);
+        });
     }
 }
 

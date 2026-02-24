@@ -42,7 +42,7 @@ trait HasPhotoUploads
         "suburb" => "unknown",
     ];
 
-    private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, USA';
+    private string $imageDisplayName = '10735, Carlisle Pike, Latimore Township, Adams County, Pennsylvania, 17324, United States of America, us, unknown';
 
     public function getImageAndAttributes($mimeType = 'jpg', $withAddress = []): array
     {

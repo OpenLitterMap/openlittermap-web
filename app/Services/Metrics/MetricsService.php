@@ -277,7 +277,11 @@ final class MetricsService
         foreach ($locations as [$locationType, $locationId]) {
             // All timescales: 0=all-time, 1=daily, 2=weekly, 3=monthly, 4=yearly
             foreach ([0, 1, 2, 3, 4] as $timescale) {
+                // Aggregate row (user_id=0)
                 $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta);
+
+                // Per-user row (user_id>0) for leaderboard queries
+                $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta, $photo->user_id);
             }
         }
 
@@ -293,13 +297,14 @@ final class MetricsService
         int $locationId,
         $timestamp,
         array $metrics,
-        int $uploadsDelta
+        int $uploadsDelta,
+        int $userId = 0
     ): array {
         $base = [
             'timescale' => $timescale,
             'location_type' => $locationType->value,
             'location_id' => $locationId,
-            'user_id' => 0,
+            'user_id' => $userId,
             'uploads' => $uploadsDelta,
             'tags' => $metrics['tags_count'] ?? 0,
             'brands' => $metrics['brands_count'] ?? 0,

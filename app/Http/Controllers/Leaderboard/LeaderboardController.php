@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Leaderboard;
 
+use App\Enums\LocationType;
 use App\Http\Controllers\Controller;
 use App\Models\Users\User;
-use Illuminate\Support\Facades\Redis;
+use App\Services\Redis\RedisKeys;
+use Illuminate\Support\Facades\{DB, Redis};
 
 class LeaderboardController extends Controller
 {
@@ -28,143 +30,196 @@ class LeaderboardController extends Controller
             ];
         }
 
-        // Get user IDs based on location filter
-        $userIds = $this->getUserIdsForScope($locationType, $locationId);
+        // Resolve scope
+        $scope = $this->resolveScope($locationType, $locationId);
+        $enumType = $locationType ? LocationType::fromString($locationType) : LocationType::Global;
 
-        // Get XP data for all users
-        $userData = $this->getUserXpData($userIds, $timeFilter);
+        if ($locationType && !$enumType) {
+            return ['success' => false, 'msg' => 'Invalid locationType'];
+        }
 
-        // Sort by XP descending
-        $sorted = collect($userData)
-            ->filter(fn($data) => $data['xp'] > 0)
-            ->sortByDesc('xp')
-            ->values();
+        if ($timeFilter === 'all-time') {
+            return $this->allTimeLeaderboard($scope, $enumType, (int) ($locationId ?? 0), $start, $end);
+        }
 
-        // Paginate
-        $paginated = $sorted->slice($start, self::PER_PAGE);
+        return $this->timeFilteredLeaderboard($timeFilter, $enumType, (int) ($locationId ?? 0), $start, $end);
+    }
 
-        // Get user details
-        $users = $this->formatUserData($paginated, $start);
+    private function resolveScope(?string $locationType, ?string $locationId): string
+    {
+        if (!$locationType || !$locationId) {
+            return RedisKeys::global();
+        }
+
+        return match ($locationType) {
+            'country' => RedisKeys::country((int) $locationId),
+            'state' => RedisKeys::state((int) $locationId),
+            'city' => RedisKeys::city((int) $locationId),
+            default => RedisKeys::global(),
+        };
+    }
+
+    private function allTimeLeaderboard(string $scope, LocationType $enumType, int $locationId, int $start, int $end): array
+    {
+        $key = RedisKeys::xpRanking($scope);
+
+        // O(log N + M) — fast sorted set range
+        $results = Redis::zRevRange($key, $start, $end, ['WITHSCORES' => true]);
+        $total = (int) Redis::zCard($key);
+
+        if (empty($results)) {
+            return [
+                'success' => true,
+                'users' => [],
+                'hasNextPage' => false,
+                'total' => 0,
+                'currentUserRank' => null,
+            ];
+        }
+
+        $ranked = collect($results)->map(function ($xp, $userId) {
+            return ['id' => (int) $userId, 'xp' => (float) $xp];
+        })->values();
+
+        $users = $this->formatUserData($ranked, $start);
+        $currentUserRank = $this->getCurrentUserRank($key);
 
         return [
             'success' => true,
             'users' => $users,
-            'hasNextPage' => $sorted->count() > $end + 1
+            'hasNextPage' => $total > $end + 1,
+            'total' => $total,
+            'currentUserRank' => $currentUserRank,
         ];
     }
 
-    private function getUserIdsForScope(?string $locationType, ?string $locationId): array
+    /**
+     * Time-filtered leaderboard using per-user rows in the metrics table.
+     * Works for all scopes (global, country, state, city).
+     */
+    private function timeFilteredLeaderboard(string $timeFilter, LocationType $enumType, int $locationId, int $start, int $end): array
     {
-        if (!$locationType || !$locationId) {
-            // Global scope - get all users with stats
-            $keys = Redis::keys('{u:*}:stats');
-            return array_map(fn($key) => (int) preg_replace('/^\{u:(\d+)\}:stats$/', '$1', $key), $keys);
+        $params = $this->resolveTimeParams($timeFilter);
+
+        if (!$params) {
+            return ['success' => false, 'msg' => 'Invalid time filter'];
         }
 
-        // Location scope - get users from location
-        $column = match($locationType) {
-            'country' => 'country_id',
-            'state' => 'state_id',
-            'city' => 'city_id',
-            default => null
-        };
+        $query = DB::table('metrics')
+            ->where('timescale', $params['timescale'])
+            ->where('location_type', $enumType->value)
+            ->where('location_id', $locationId)
+            ->where('user_id', '>', 0)
+            ->where('year', $params['year'])
+            ->where('month', $params['month']);
 
-        if (!$column) {
-            return [];
+        if (isset($params['bucket_date'])) {
+            $query->where('bucket_date', $params['bucket_date']);
         }
 
-        return User::where($column, $locationId)
-            ->pluck('id')
-            ->toArray();
-    }
+        $total = (clone $query)->where('xp', '>', 0)->count();
 
-    private function getUserXpData(array $userIds, string $timeFilter): array
-    {
-        if (empty($userIds)) {
-            return [];
-        }
-
-        $userData = [];
-
-        // For all-time, just get from stats hash
-        if ($timeFilter === 'all-time') {
-            $pipeline = Redis::pipeline(function($pipe) use ($userIds) {
-                foreach ($userIds as $userId) {
-                    $pipe->hGet("{u:$userId}:stats", 'xp');
-                }
-            });
-
-            foreach ($userIds as $i => $userId) {
-                $xp = (float) ($pipeline[$i] ?? 0);
-                if ($xp > 0) {
-                    $userData[$userId] = ['id' => $userId, 'xp' => $xp];
-                }
-            }
-
-            return $userData;
-        }
-
-        // For time-filtered queries, we need to calculate from photos
-        // This is a limitation of the new structure - you'll need to query photos
-        $dateRange = $this->getDateRange($timeFilter);
-
-        if (!$dateRange) {
-            return [];
-        }
-
-        // Get photos for users in date range and calculate XP
-        $photos = \App\Models\Photo::whereIn('user_id', $userIds)
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+        $rows = $query
+            ->where('xp', '>', 0)
+            ->orderByDesc('xp')
+            ->offset($start)
+            ->limit(self::PER_PAGE)
             ->select('user_id', 'xp')
             ->get();
 
-        foreach ($photos as $photo) {
-            $userId = $photo->user_id;
-            if (!isset($userData[$userId])) {
-                $userData[$userId] = ['id' => $userId, 'xp' => 0];
+        $ranked = $rows->map(function ($row) {
+            return ['id' => (int) $row->user_id, 'xp' => (float) $row->xp];
+        });
+
+        $users = $this->formatUserData($ranked, $start);
+
+        // Get current user's rank in this time period
+        $currentUserRank = null;
+        if (auth()->check()) {
+            $baseQuery = DB::table('metrics')
+                ->where('timescale', $params['timescale'])
+                ->where('location_type', $enumType->value)
+                ->where('location_id', $locationId)
+                ->where('year', $params['year'])
+                ->where('month', $params['month']);
+
+            if (isset($params['bucket_date'])) {
+                $baseQuery->where('bucket_date', $params['bucket_date']);
             }
-            $userData[$userId]['xp'] += (float) $photo->xp;
+
+            $userRow = (clone $baseQuery)->where('user_id', auth()->id())->first();
+            if ($userRow && $userRow->xp > 0) {
+                $currentUserRank = (clone $baseQuery)
+                    ->where('user_id', '>', 0)
+                    ->where('xp', '>', $userRow->xp)
+                    ->count() + 1;
+            }
         }
 
-        return $userData;
+        return [
+            'success' => true,
+            'users' => $users,
+            'hasNextPage' => $total > $end + 1,
+            'total' => $total,
+            'currentUserRank' => $currentUserRank,
+        ];
     }
 
-    private function getDateRange(string $timeFilter): ?array
+    private function resolveTimeParams(string $timeFilter): ?array
     {
-        $now = now();
+        $now = now()->utc();
 
-        return match($timeFilter) {
+        return match ($timeFilter) {
             'today' => [
-                'start' => $now->copy()->startOfDay(),
-                'end' => $now->copy()->endOfDay()
+                'timescale' => 1,
+                'year' => $now->year,
+                'month' => $now->month,
+                'bucket_date' => $now->toDateString(),
             ],
             'yesterday' => [
-                'start' => $now->copy()->subDay()->startOfDay(),
-                'end' => $now->copy()->subDay()->endOfDay()
+                'timescale' => 1,
+                'year' => $now->copy()->subDay()->year,
+                'month' => $now->copy()->subDay()->month,
+                'bucket_date' => $now->copy()->subDay()->toDateString(),
             ],
             'this-month' => [
-                'start' => $now->copy()->startOfMonth(),
-                'end' => $now->copy()->endOfMonth()
+                'timescale' => 3,
+                'year' => $now->year,
+                'month' => $now->month,
             ],
             'last-month' => [
-                'start' => $now->copy()->subMonth()->startOfMonth(),
-                'end' => $now->copy()->subMonth()->endOfMonth()
+                'timescale' => 3,
+                'year' => $now->copy()->subMonth()->year,
+                'month' => $now->copy()->subMonth()->month,
             ],
             'this-year' => [
-                'start' => $now->copy()->startOfYear(),
-                'end' => $now->copy()->endOfYear()
+                'timescale' => 4,
+                'year' => $now->year,
+                'month' => 0,
             ],
             'last-year' => [
-                'start' => $now->copy()->subYear()->startOfYear(),
-                'end' => $now->copy()->subYear()->endOfYear()
+                'timescale' => 4,
+                'year' => $now->year - 1,
+                'month' => 0,
             ],
-            default => null
+            default => null,
         };
     }
 
-    private function formatUserData($paginated, int $start): array
+    private function getCurrentUserRank(string $key): ?int
     {
-        $userIds = $paginated->pluck('id')->toArray();
+        if (!auth()->check()) {
+            return null;
+        }
+
+        $rank = Redis::zRevRank($key, (string) auth()->id());
+
+        return $rank !== null ? $rank + 1 : null;
+    }
+
+    private function formatUserData($ranked, int $start): array
+    {
+        $userIds = $ranked->pluck('id')->toArray();
 
         if (empty($userIds)) {
             return [];
@@ -176,7 +231,7 @@ class LeaderboardController extends Controller
             ->get()
             ->keyBy('id');
 
-        return $paginated->map(function ($data, $index) use ($users, $start) {
+        return $ranked->map(function ($data, $index) use ($users, $start) {
             $user = $users->get($data['id']);
 
             if (!$user) {

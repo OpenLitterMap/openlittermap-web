@@ -36,10 +36,8 @@
                             <span class="text-sm">Show my username</span>
                         </label>
 
-                        <p
-                            v-if="!privacy.show_name_maps && !privacy.show_username_maps"
-                            class="text-xs text-red-500 mb-3"
-                        >
+                        <p v-if="!privacy.show_name_maps && !privacy.show_username_maps"
+                           class="text-xs text-red-500 mb-3">
                             You won't appear on the team map.
                         </p>
 
@@ -78,7 +76,9 @@
             <section v-if="teamsLed.length" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div>
                     <h2 class="text-lg font-semibold text-slate-700 mb-2">Edit Team</h2>
-                    <p class="text-sm text-slate-500">Update the name or identifier for teams you lead.</p>
+                    <p class="text-sm text-slate-500">
+                        Update the name or identifier for teams you lead.
+                    </p>
                 </div>
 
                 <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm">
@@ -158,22 +158,20 @@ export default {
         const hasTeams = computed(() => teamsStore.hasTeams);
         const errors = computed(() => teamsStore.errors);
 
-        const privacyTeam = computed(() => teams.value.find((t) => t.id === privacyTeamId.value));
+        const privacyTeam = computed(() =>
+            teams.value.find((t) => t.id === privacyTeamId.value)
+        );
 
         // Sync privacy checkboxes when selected team changes
-        watch(
-            privacyTeamId,
-            () => {
-                const pivot = privacyTeam.value?.pivot;
-                if (pivot) {
-                    privacy.show_name_maps = !!pivot.show_name_maps;
-                    privacy.show_username_maps = !!pivot.show_username_maps;
-                    privacy.show_name_leaderboards = !!pivot.show_name_leaderboards;
-                    privacy.show_username_leaderboards = !!pivot.show_username_leaderboards;
-                }
-            },
-            { immediate: true }
-        );
+        watch(privacyTeamId, () => {
+            const pivot = privacyTeam.value?.pivot;
+            if (pivot) {
+                privacy.show_name_maps = !!pivot.show_name_maps;
+                privacy.show_username_maps = !!pivot.show_username_maps;
+                privacy.show_name_leaderboards = !!pivot.show_name_leaderboards;
+                privacy.show_username_leaderboards = !!pivot.show_username_leaderboards;
+            }
+        }, { immediate: true });
 
         const savePrivacy = async (all) => {
             privacySaving.value = true;
@@ -231,21 +229,9 @@ export default {
         });
 
         return {
-            teams,
-            hasTeams,
-            errors,
-            teamsStore,
-            privacyTeamId,
-            privacyTeam,
-            privacy,
-            privacySaving,
-            savePrivacy,
-            editTeamId,
-            editName,
-            editIdentifier,
-            updating,
-            teamsLed,
-            submitUpdate,
+            teams, hasTeams, errors, teamsStore,
+            privacyTeamId, privacyTeam, privacy, privacySaving, savePrivacy,
+            editTeamId, editName, editIdentifier, updating, teamsLed, submitUpdate,
         };
     },
 };

@@ -16,9 +16,12 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    <tr v-for="(team, i) in leaderboard" :key="team.id" class="hover:bg-slate-50">
-                        <td
-                            class="px-4 py-3 text-center font-medium"
+                    <tr
+                        v-for="(team, i) in leaderboard"
+                        :key="team.id"
+                        class="hover:bg-slate-50"
+                    >
+                        <td class="px-4 py-3 text-center font-medium"
                             :class="{
                                 'text-yellow-500': i === 0,
                                 'text-slate-400': i === 1,
@@ -38,7 +41,9 @@
                 </tbody>
             </table>
 
-            <p v-if="!leaderboard.length" class="p-6 text-center text-slate-400">No teams on the leaderboard yet.</p>
+            <p v-if="!leaderboard.length" class="p-6 text-center text-slate-400">
+                No teams on the leaderboard yet.
+            </p>
         </div>
     </div>
 </template>

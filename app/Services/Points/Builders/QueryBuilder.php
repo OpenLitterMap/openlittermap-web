@@ -12,7 +12,7 @@ class QueryBuilder
      */
     public function build(array $params): Builder
     {
-        $query = DB::table('photos')->where('verified', '>=', 2);
+        $query = DB::table('photos')->where('verified', '>=', 2)->where('is_public', true);
 
         $this->applyDateFilters($query, $params);
         $this->applyUserFilter($query, $params);

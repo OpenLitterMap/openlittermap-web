@@ -37,7 +37,7 @@ class ListTeamsTest extends TestCase
             ->assertOk()
             ->json('types');
 
-        $this->assertCount(1, $response);
+        $this->assertCount(2, $response);
         $this->assertEquals($teamType->id, $response[0]['id']);
     }
 }

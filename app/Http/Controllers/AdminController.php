@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\CalculateTagsDifferenceAction;
 use App\Actions\Photos\DeleteTagsFromPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
 
 use App\Events\ImageDeleted;
 use App\Models\Littercoin;
 use App\Models\Photo;
 use App\Models\Users\User;
 
+use App\Enums\VerificationStatus;
 use App\Traits\AddTagsTrait;
 
 use Carbon\Carbon;
@@ -30,21 +30,14 @@ class AdminController extends Controller
     use AddTagsTrait;
 
     protected DeleteTagsFromPhotoAction $deleteTagsAction;
-    protected UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
     protected DeletePhotoAction $deletePhotoAction;
     protected CalculateTagsDifferenceAction $calculateTagsDiffAction;
 
     /**
      * Apply IsAdmin middleware to all of these routes
-     *
-     * @param DeleteTagsFromPhotoAction $deleteTagsAction
-     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
      */
     public function __construct (
         DeleteTagsFromPhotoAction $deleteTagsAction,
-        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
         DeletePhotoAction $deletePhotoAction,
         CalculateTagsDifferenceAction $calculateTagsDiffAction
     )
@@ -52,7 +45,6 @@ class AdminController extends Controller
         $this->middleware('admin');
 
         $this->deleteTagsAction = $deleteTagsAction;
-        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
         $this->deletePhotoAction = $deletePhotoAction;
         $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
@@ -111,7 +103,7 @@ class AdminController extends Controller
         $this->deletePhotoAction->run($photo);
 
         $photo->verification = 1;
-        $photo->verified = 2;
+        $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
         $photo->filename = '/assets/verified.jpg';
         $photo->save();
 
@@ -161,9 +153,6 @@ class AdminController extends Controller
         $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
         $user->save();
 
-        // This will also update the users XP
-        $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
-
         rewardXpToAdmin();
 
         event(new ImageDeleted(
@@ -191,7 +180,7 @@ class AdminController extends Controller
         $photo->filename = '/assets/verified.jpg';
 
         $photo->verification = 1;
-        $photo->verified = 2;
+        $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
         $photo->total_litter = 0;
         $photo->save();
 

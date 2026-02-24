@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class AddCustomTagsToPhotoTest extends TestCase
 {
     use HasPhotoUploads;
@@ -48,7 +46,6 @@ class AddCustomTagsToPhotoTest extends TestCase
         $this->post('/api/photos/submit', $this->getApiImageAttributes($this->imageAndAttributes));
 
         $photo = $user->fresh()->photos->last();
-        $this->assertEquals(1, $user->fresh()->xp_redis);
 
         $this->post('/api/add-tags', [
             'photo_id' => $photo->id,
@@ -56,7 +53,6 @@ class AddCustomTagsToPhotoTest extends TestCase
         ])->assertOk();
 
         $this->assertEquals(['tag1', 'tag2', 'tag3'], $photo->fresh()->customTags->pluck('tag')->toArray());
-        $this->assertEquals(4, $user->fresh()->xp_redis); // 1 + 3
     }
 
     /**

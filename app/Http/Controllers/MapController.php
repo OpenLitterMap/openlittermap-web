@@ -86,6 +86,7 @@ class MapController extends Controller
             ])->where([
                 ['city_id', $cityId],
                 ['verified', '>', 0],
+                ['is_public', true],
                 ['datetime', '>=', $minTime],
                 ['datetime', '<=', $maxTime]
             ])->orderBy('datetime', 'asc')->get();
@@ -114,7 +115,8 @@ class MapController extends Controller
                 'user'
             ])->where([
                 ['city_id', $cityId],
-                ['verified', '>', 0]
+                ['verified', '>', 0],
+                ['is_public', true],
             ])->orderBy('datetime', 'asc')->get();
 
 			$this->getInitialPhotoLatLon($photoData[0]);

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Actions\Tags\ConvertV4TagsAction;
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
-use App\Jobs\Api\AddTags;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
@@ -22,7 +23,7 @@ class AddTagsToUploadedImageController extends Controller
         $user = auth()->user();
         $photo = Photo::find($request->photo_id);
 
-        if ($photo->user_id !== $user->id || $photo->verified > 0)
+        if ($photo->user_id !== $user->id || $photo->verified->value > VerificationStatus::UNVERIFIED->value)
         {
             abort(403, 'Forbidden');
         }
@@ -32,23 +33,31 @@ class AddTagsToUploadedImageController extends Controller
             'request' => $request->all()
         ]);
 
-        dispatch (new AddTags(
+        $v4Tags = ($request->litter ?? $request->tags) ?? [];
+        if (is_string($v4Tags)) {
+            $v4Tags = json_decode($v4Tags, true) ?? [];
+        }
+
+        $customTags = $request->custom_tags ?? [];
+        if (is_string($customTags)) {
+            $customTags = json_decode($customTags, true) ?? [];
+        }
+
+        $pickedUp = (isset($request->picked_up) && ! is_null($request->picked_up))
+            ? (bool) $request->picked_up
+            : ! $user->items_remaining;
+
+        app(ConvertV4TagsAction::class)->run(
             $user->id,
             $photo->id,
-            ($request->litter ?? $request->tags) ?? [],
-            $request->custom_tags ?? []
-        ));
-
-        $pickedUp = (isset($request->picked_up) && !is_null($request->picked_up))
-            ? $request->picked_up
-            : !$user->items_remaining;
-
-        $photo->remaining = !$pickedUp;
-        $photo->save();
+            $v4Tags,
+            $pickedUp,
+            $customTags
+        );
 
         return response()->json([
             'success' => true,
-            'msg' => 'dispatched'
+            'msg' => 'tags-added'
         ]);
     }
 }

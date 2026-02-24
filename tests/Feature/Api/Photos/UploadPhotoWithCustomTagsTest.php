@@ -6,9 +6,7 @@ use App\Models\Users\User;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class UploadPhotoWithCustomTagsTest extends TestCase
 {
     use HasPhotoUploads;
@@ -52,7 +50,6 @@ class UploadPhotoWithCustomTagsTest extends TestCase
             ['tag1', 'tag2', 'tag3'],
             $user->fresh()->photos->last()->customTags->pluck('tag')->toArray()
         );
-        $this->assertEquals(4, $user->fresh()->xp_redis); // 1 + 3
     }
 
 //    public function test_an_api_user_can_upload_a_photo_with_custom_tags()

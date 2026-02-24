@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use App\Mail\Admin\AccountUpgraded;
 use App\Events\TagsVerifiedByAdmin;
@@ -38,7 +39,7 @@ class VerifyImageWithTagsController extends Controller
     {
         // Update the photo as verified
         $photo = Photo::findOrFail($request->photoId);
-        $photo->verified = 2;
+        $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
         $photo->verification = 1;
         $photo->save();
 
@@ -104,7 +105,7 @@ class VerifyImageWithTagsController extends Controller
                 foreach ($photos as $photo)
                 {
                     $photo->verification = 1;
-                    $photo->verified = 2;
+                    $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
                     $photo->save();
 
                     event(new TagsVerifiedByAdmin($photo->id));

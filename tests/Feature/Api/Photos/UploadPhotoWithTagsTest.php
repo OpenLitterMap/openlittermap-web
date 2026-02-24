@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api\Photos;
 
 use App\Events\ImageUploaded;
-use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
@@ -13,9 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class UploadPhotoWithTagsTest extends TestCase
 {
     use HasPhotoUploads;
@@ -32,7 +29,7 @@ class UploadPhotoWithTagsTest extends TestCase
         Storage::fake('s3');
         Storage::fake('bbox');
 
-        Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
+        Event::fake([ImageUploaded::class]);
 
         Carbon::setTestNow(now());
 
@@ -70,7 +67,6 @@ class UploadPhotoWithTagsTest extends TestCase
         $this->assertEquals(3, $photo->smoking->butts);
 
         Event::assertDispatched(ImageUploaded::class);
-        Event::assertDispatched(IncrementPhotoMonth::class);
     }
 
     public function test_a_photo_can_be_marked_as_picked_up_or_not()

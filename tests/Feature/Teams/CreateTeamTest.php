@@ -8,6 +8,7 @@ use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class CreateTeamTest extends TestCase
@@ -21,6 +22,9 @@ class CreateTeamTest extends TestCase
     {
         parent::setUp();
 
+        // Reset Spatie's cached permissions between tests
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
         $this->communityTypeId = TeamType::create([
             'team' => 'community', 'price' => 0, 'description' => 'Community',
         ])->id;
@@ -29,16 +33,16 @@ class CreateTeamTest extends TestCase
             'team' => 'school', 'price' => 0, 'description' => 'School',
         ])->id;
 
-        // Create school_manager role + permissions
+        // Create school_manager role + permissions (web guard — matches User model default)
         $permissions = collect([
             'create school team',
             'manage school team',
             'toggle safeguarding',
             'view student identities',
-        ])->map(fn ($name) => Permission::create(['name' => $name, 'guard_name' => 'api']));
+        ])->map(fn ($name) => Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']));
 
-        Role::create(['name' => 'school_manager', 'guard_name' => 'api'])
-            ->givePermissionTo($permissions);
+        $role = Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
+        $role->syncPermissions($permissions);
     }
 
     // ── Community Teams ──
@@ -75,12 +79,18 @@ class CreateTeamTest extends TestCase
     {
         $user = User::factory()->create(['remaining_teams' => 0]);
 
-        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        // Ensure the value is actually 0 (not null or unset)
+        $this->assertEquals(0, $user->fresh()->remaining_teams);
+
+        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
             'name' => 'No Quota',
             'identifier' => 'NoQuota1',
             'teamType' => $this->communityTypeId,
-        ])
-            ->assertOk()
+        ]);
+
+        // NOTE: If this fails, the controller's strict === 0 comparison
+        // needs changing to == 0, or User model needs: 'remaining_teams' => 'integer' in $casts
+        $response->assertOk()
             ->assertJsonPath('success', false)
             ->assertJsonPath('msg', 'max-created');
     }

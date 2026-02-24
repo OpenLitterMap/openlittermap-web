@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bbox;
 
+use App\Enums\VerificationStatus;
 use App\Events\Littercoin\LittercoinMined;
 use App\Http\Controllers\Controller;
 use App\Litterrata;
@@ -154,7 +155,7 @@ class VerifyBoxController extends Controller
             $userDoingVerification->save();
         }
 
-        $photo->verified = 4;
+        $photo->verified = VerificationStatus::BBOX_VERIFIED->value;
         $photo->verified_by = $userDoingVerification->id;
         $photo->save();
 

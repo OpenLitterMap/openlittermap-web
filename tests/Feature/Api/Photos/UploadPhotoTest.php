@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\Photos;
 
 use App\Actions\Photos\DeletePhotoAction;
 use App\Events\ImageUploaded;
-use App\Events\Photo\IncrementPhotoMonth;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
@@ -18,9 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class UploadPhotoTest extends TestCase
 {
     use HasPhotoUploads;
@@ -41,7 +38,7 @@ class UploadPhotoTest extends TestCase
         Storage::fake('s3');
         Storage::fake('bbox');
 
-        Event::fake([ImageUploaded::class, IncrementPhotoMonth::class]);
+        Event::fake([ImageUploaded::class]);
 
         $user = User::factory()->create([
             'verified' => true,
@@ -85,12 +82,7 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals($imageAttributes['latitude'], $photo->lat);
         $this->assertEquals($imageAttributes['longitude'], $photo->lon);
         $this->assertEquals($imageAttributes['displayName'], $photo->display_name);
-        $this->assertEquals($imageAttributes['address']['house_number'], $photo->location);
-        $this->assertEquals($imageAttributes['address']['road'], $photo->road);
-        $this->assertEquals($imageAttributes['address']['city'], $photo->city);
-        $this->assertEquals($imageAttributes['address']['state'], $photo->county);
-        $this->assertEquals($imageAttributes['address']['country'], $photo->country);
-        $this->assertEquals($imageAttributes['address']['country_code'], $photo->country_code);
+        $this->assertEquals($imageAttributes['address'], $photo->address_array);
         $this->assertEquals('test model', $photo->model);
         $this->assertEquals(0, $photo->remaining);
         $this->assertEquals($location['country_id'], $photo->country_id);
@@ -108,24 +100,13 @@ class UploadPhotoTest extends TestCase
                     $e->state === $imageAttributes['address']['state'] &&
                     $e->country === $imageAttributes['address']['country'] &&
                     $e->countryCode === $imageAttributes['address']['country_code'] &&
-                    $e->teamName === $user->team->name &&
                     $e->userId === $user->id &&
                     $e->countryId === $location['country_id'] &&
                     $e->stateId === $location['state_id'] &&
-                    $e->cityId === $location['city_id'] &&
-                    $e->isUserVerified === !$user->verification_required;
+                    $e->cityId === $location['city_id'];
             }
         );
 
-        Event::assertDispatched(
-            IncrementPhotoMonth::class,
-            function (IncrementPhotoMonth $e) use ($imageAttributes, $location) {
-                return $e->country_id === $location['country_id'] &&
-                    $e->state_id === $location['state_id'] &&
-                    $e->city_id === $location['city_id'] &&
-                    $imageAttributes['dateTime']->is($e->created_at);
-            }
-        );
     }
 
     public function test_an_api_user_can_upload_a_photo_on_a_real_storage()
@@ -176,29 +157,25 @@ class UploadPhotoTest extends TestCase
         $deletePhotoAction->run($photo);
     }
 
-    public function test_a_users_info_is_updated_when_they_upload_a_photo(): void
+    public function test_photo_is_associated_with_user_after_upload(): void
     {
         Storage::fake('s3');
         Storage::fake('bbox');
 
         $user = User::factory()->create();
-        $this->assertEquals(0, $user->has_uploaded);
-        $this->assertEquals(0, $user->xp_redis);
-        $this->assertEquals(0, $user->total_images);
+        $this->assertCount(0, $user->photos);
 
         $this->actingAs($user, 'api')->post('/api/photos/submit',
             $this->getApiImageAttributes($this->getImageAndAttributes())
         );
 
-        // User info gets updated
+        // v5: Upload creates the photo association; XP/metrics update on tag verification
         $user->refresh();
 
-        $this->assertEquals(1, $user->has_uploaded);
-        $this->assertEquals(1, $user->xp_redis);
-        $this->assertEquals(1, $user->total_images);
+        $this->assertCount(1, $user->photos);
     }
 
-    public function test_a_users_xp_by_location_is_updated_when_they_upload_a_photo()
+    public function test_upload_does_not_set_xp_until_tags_are_verified()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
@@ -214,32 +191,25 @@ class UploadPhotoTest extends TestCase
 
         Redis::del("xp.users");
         Redis::del("xp.country.$countryId");
-        Redis::del("xp.country.$countryId.state.$stateId");
-        Redis::del("xp.country.$countryId.state.$stateId.city.$cityId");
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$countryId", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
 
         $this->actingAs($user, 'api')->post('/api/photos/submit',
             $this->getApiImageAttributes($imageAttributes)
         );
 
-        $this->assertEquals(1, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.$countryId", $user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId", $user->id));
-        $this->assertEquals(1, Redis::zscore("xp.country.$countryId.state.$stateId.city.$cityId", $user->id));
+        // v5: XP is not set on upload — it's set when tags are verified
+        $this->assertFalse(Redis::zscore("xp.users", $user->id));
+        $this->assertFalse(Redis::zscore("xp.country.$countryId", $user->id));
     }
 
     public function test_unauthenticated_users_cannot_upload_photos()
     {
         $imageAttributes = $this->getImageAndAttributes();
 
-        $response = $this->post('/api/photos/submit',
+        $response = $this->postJson('/api/photos/submit',
             $this->getApiImageAttributes($imageAttributes)
         );
 
-        $response->assertRedirect('login');
+        $response->assertUnauthorized();
     }
 
 

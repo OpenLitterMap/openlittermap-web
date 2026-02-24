@@ -30,6 +30,7 @@ class CommunityController extends Controller
     private function getPhotosPerMonth(): int
     {
         return Photo::query()
+            ->where('is_public', true)
             ->where('created_at', '>', now()->subDays(30)->endOfDay())
             ->count();
     }
@@ -37,6 +38,7 @@ class CommunityController extends Controller
     private function getLitterTagsPerMonth(): int
     {
         return Photo::query()
+            ->where('is_public', true)
             ->where('created_at', '>', now()->subDays(30)->endOfDay())
             ->sum('total_litter');
     }
@@ -52,6 +54,7 @@ class CommunityController extends Controller
     {
         // Not using models to avoid appended extra queries
         $photos = DB::table('photos')
+            ->where('is_public', true)
             ->selectRaw("
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period

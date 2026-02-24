@@ -1,0 +1,364 @@
+<?php
+
+namespace App\Http\Controllers\Teams;
+
+use App\Enums\VerificationStatus;
+use App\Events\SchoolDataApproved;
+use App\Events\TagsVerifiedByAdmin;
+use App\Http\Controllers\Controller;
+use App\Models\Photo;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Teams\Team;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class TeamPhotosController extends Controller
+{
+    /**
+     * List photos for a team (private view — members only).
+     *
+     * GET /api/teams/photos?team_id=X&status=pending|approved|all&page=1
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $request->validate([
+            'team_id' => 'required|exists:teams,id',
+            'status' => 'nullable|in:pending,approved,all',
+        ]);
+
+        $user = auth()->user();
+        $team = Team::findOrFail($request->team_id);
+
+        if (! $user->teams()->where('team_id', $team->id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
+        }
+
+        $query = Photo::with(['photoTags', 'user:id,name,username'])
+            ->where('team_id', $team->id)
+            ->orderByDesc('created_at');
+
+        $status = $request->input('status', 'all');
+
+        if ($status === 'pending') {
+            $query->where('is_public', false)->whereNull('team_approved_at');
+        } elseif ($status === 'approved') {
+            $query->whereNotNull('team_approved_at');
+        }
+
+        $photos = $query->paginate(20);
+
+        // Safeguarding — mask student names at API level
+        if ($team->safeguarding && ! $team->isLeader($user->id) && ! $user->can('view student identities')) {
+            $this->applySafeguarding($photos->getCollection(), $team);
+        }
+
+        return response()->json([
+            'success' => true,
+            'photos' => $photos,
+            'stats' => $this->teamPhotoStats($team->id),
+        ]);
+    }
+
+    /**
+     * Get a single photo with its tags (for editing).
+     *
+     * GET /api/teams/photos/{photo}
+     */
+    public function show(Photo $photo): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (! $photo->team_id) {
+            return response()->json(['success' => false, 'message' => 'not-a-team-photo'], 404);
+        }
+
+        if (! $user->teams()->where('team_id', $photo->team_id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
+        }
+
+        $photo->load(['photoTags', 'user:id,name,username']);
+
+        return response()->json([
+            'success' => true,
+            'photo' => $photo,
+        ]);
+    }
+
+    /**
+     * Update tags on a team photo (teacher edit before approval).
+     *
+     * PATCH /api/teams/photos/{photo}/tags
+     *
+     * Only the team leader (teacher) or users with 'manage school team' permission.
+     * Wraps in transaction. Regenerates summary + XP so MetricsService has fresh data.
+     */
+    public function updateTags(Request $request, Photo $photo): JsonResponse
+    {
+        $user = auth()->user();
+        $team = Team::findOrFail($photo->team_id);
+
+        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
+            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        }
+
+        $request->validate([
+            'tags' => 'required|array|min:1',
+            'tags.*.id' => 'nullable|exists:photo_tags,id',
+            'tags.*.category' => 'required|string',
+            'tags.*.object' => 'required|string',
+            'tags.*.quantity' => 'required|integer|min:1',
+            'tags.*.picked_up' => 'nullable|boolean',
+        ]);
+
+        DB::transaction(function () use ($request, $photo) {
+            // Delete existing tags
+            PhotoTag::where('photo_id', $photo->id)->delete();
+
+            // Re-create from edited data
+            $totalTags = 0;
+
+            foreach ($request->tags as $tag) {
+                $category = Category::where('key', $tag['category'])->first();
+                $object = LitterObject::where('key', $tag['object'])->first();
+
+                PhotoTag::create([
+                    'photo_id' => $photo->id,
+                    'category_id' => $category?->id,
+                    'litter_object_id' => $object?->id,
+                    'quantity' => $tag['quantity'],
+                    'picked_up' => $tag['picked_up'] ?? false,
+                ]);
+                $totalTags += $tag['quantity'];
+            }
+
+            // Update photo — keep as VERIFIED (not yet approved)
+            $photo->update([
+                'total_tags' => $totalTags,
+                'verified' => VerificationStatus::VERIFIED->value,
+            ]);
+
+            // Regenerate summary + XP.
+            // CRITICAL: MetricsService reads the summary JSON to extract tag data.
+            // If summary is null/stale when TagsVerifiedByAdmin fires, metrics
+            // will extract zero and the photo counts for nothing.
+            if (method_exists($photo, 'generateSummary')) {
+                $photo->generateSummary();
+            }
+        });
+
+        $photo->load('photoTags');
+
+        return response()->json([
+            'success' => true,
+            'photo' => $photo,
+        ]);
+    }
+
+    /**
+     * Approve photos — makes them public, fires metrics, notifies team.
+     *
+     * POST /api/teams/photos/approve
+     *
+     * Body: { photo_ids: [1, 2, 3] } or { team_id: X, approve_all: true }
+     *
+     * IDEMPOTENT: approving already-approved photos is a no-op.
+     *   The WHERE clause includes is_public = 0, so re-approving does nothing.
+     *
+     * ATOMIC: all DB updates happen in a single UPDATE statement inside a
+     *   transaction. Concurrent requests by two teachers won't double-process
+     *   because the WHERE is_public = 0 condition eliminates already-flipped rows.
+     *
+     * SUMMARY REQUIREMENT: Each photo MUST have a non-null summary JSON
+     *   before approval. The summary is generated by AddTagsToPhotoAction
+     *   when the student tags the photo (regardless of trust level).
+     *   If summary is null, MetricsService will extract zero metrics.
+     *   We log a warning but still approve — the photo appears on the map,
+     *   and the summary can be backfilled later.
+     */
+    public function approve(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'photo_ids' => 'required_without:approve_all|array',
+            'photo_ids.*' => 'exists:photos,id',
+            'team_id' => 'required|exists:teams,id',
+            'approve_all' => 'nullable|boolean',
+        ]);
+
+        $team = Team::findOrFail($request->team_id);
+
+        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
+            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        }
+
+        // Build query for unapproved photos only (idempotent)
+        $query = Photo::where('team_id', $team->id)
+            ->where('is_public', false);
+
+        if ($request->approve_all) {
+            $query->where('verified', '>=', VerificationStatus::VERIFIED->value);
+        } else {
+            $query->whereIn('id', $request->photo_ids);
+        }
+
+        $approvedIds = $query->pluck('id')->toArray();
+
+        if (empty($approvedIds)) {
+            return response()->json([
+                'success' => true,
+                'approved_count' => 0,
+                'message' => 'No photos to approve.',
+            ]);
+        }
+
+        // Single atomic update — WHERE is_public = 0 prevents double-processing
+        $affectedRows = DB::transaction(function () use ($approvedIds, $user) {
+            return Photo::whereIn('id', $approvedIds)
+                ->where('is_public', false)
+                ->update([
+                    'is_public' => true,
+                    'verified' => VerificationStatus::ADMIN_APPROVED->value,
+                    'team_approved_at' => now(),
+                    'team_approved_by' => $user->id,
+                ]);
+        });
+
+        // Dispatch events only for actually-updated photos
+        if ($affectedRows > 0) {
+            $approvedPhotos = Photo::whereIn('id', $approvedIds)
+                ->where('is_public', true)
+                ->get();
+
+            foreach ($approvedPhotos as $photo) {
+                // Warn if summary is missing — metrics will extract zero
+                if (empty($photo->summary)) {
+                    Log::warning("Approving photo {$photo->id} with null summary — metrics will be incomplete");
+                }
+
+                // Teacher approval IS the verification event for school photos.
+                // This triggers MetricsService through the existing
+                // ProcessPhotoMetrics listener pipeline.
+                event(new TagsVerifiedByAdmin(
+                    photo_id: $photo->id,
+                    user_id: $photo->user_id,
+                    country_id: $photo->country_id,
+                    state_id: $photo->state_id,
+                    city_id: $photo->city_id,
+                    team_id: $photo->team_id,
+                ));
+            }
+
+            event(new SchoolDataApproved(
+                team: $team,
+                approvedBy: $user,
+                photoCount: $affectedRows,
+            ));
+        }
+
+        return response()->json([
+            'success' => true,
+            'approved_count' => $affectedRows,
+            'message' => "{$affectedRows} photos approved and published.",
+        ]);
+    }
+
+    /**
+     * Team map data — private points for team members.
+     *
+     * GET /api/teams/photos/map?team_id=X
+     */
+    public function mapPoints(Request $request): JsonResponse
+    {
+        $request->validate([
+            'team_id' => 'required|exists:teams,id',
+        ]);
+
+        $user = auth()->user();
+        $team = Team::findOrFail($request->team_id);
+
+        if (! $user->teams()->where('team_id', $team->id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
+        }
+
+        $points = Photo::where('team_id', $team->id)
+            ->whereNotNull('lat')
+            ->whereNotNull('lon')
+            ->select(['id', 'lat', 'lon', 'verified', 'is_public', 'total_tags', 'created_at'])
+            ->orderByDesc('created_at')
+            ->limit(5000)
+            ->get()
+            ->map(fn ($photo) => [
+                'id' => $photo->id,
+                'lat' => $photo->lat,
+                'lng' => $photo->lon,
+                'tags' => $photo->total_tags,
+                'verified' => $photo->verified->value,
+                'is_public' => $photo->is_public,
+                'date' => $photo->created_at->toDateString(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'points' => $points,
+        ]);
+    }
+
+    // ─── Helpers ──────────────────────────────────────
+
+    /**
+     * Photo stats for a team — single query, no N+1.
+     */
+    protected function teamPhotoStats(int $teamId): array
+    {
+        $stats = DB::table('photos')
+            ->where('team_id', $teamId)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN is_public = 0 AND team_approved_at IS NULL THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN team_approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved
+            ')
+            ->first();
+
+        return [
+            'total' => (int) $stats->total,
+            'pending' => (int) $stats->pending,
+            'approved' => (int) $stats->approved,
+        ];
+    }
+
+    /**
+     * Mask student identities for safeguarded teams.
+     *
+     * Uses deterministic pseudonyms based on team_user.id ordering —
+     * "Student 3" is always the same person across requests and pages.
+     * Stable because we order by pivot row ID (creation order), not by
+     * photo data or pagination position.
+     */
+    protected function applySafeguarding($photos, Team $team): void
+    {
+        // Build stable mapping: user_id → "Student N"
+        // Ordered by pivot row creation (team_user.id), so numbering is
+        // deterministic regardless of which photos are on which page.
+        $memberOrder = DB::table('team_user')
+            ->where('team_id', $team->id)
+            ->where('user_id', '!=', $team->leader)
+            ->orderBy('id')
+            ->pluck('user_id')
+            ->flip()
+            ->map(fn ($index) => 'Student ' . ($index + 1))
+            ->toArray();
+
+        $photos->transform(function ($photo) use ($memberOrder, $team) {
+            if ($photo->user && $photo->user_id !== $team->leader) {
+                $photo->user->name = $memberOrder[$photo->user_id] ?? 'Student';
+                $photo->user->username = null;
+            }
+            return $photo;
+        });
+    }
+}

@@ -3,18 +3,18 @@
         <h1 class="text-2xl font-bold text-slate-800 mb-4">My Teams</h1>
 
         <!-- Active team status -->
-        <div
-            class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-xl p-4 shadow-sm mb-6"
-        >
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-xl p-4 shadow-sm mb-6">
             <div>
                 <p v-if="activeTeam" class="text-slate-700">
-                    Contributing to <strong>{{ activeTeam.name }}</strong
-                    >. All uploads will be attributed to this team.
+                    Contributing to <strong>{{ activeTeam.name }}</strong>.
+                    All uploads will be attributed to this team.
                 </p>
                 <p v-else-if="hasTeams" class="text-amber-600">
                     No active team — uploads won't be attributed to any team.
                 </p>
-                <p v-else class="text-slate-500">You haven't joined any teams yet.</p>
+                <p v-else class="text-slate-500">
+                    You haven't joined any teams yet.
+                </p>
             </div>
 
             <button
@@ -36,7 +36,11 @@
                         class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
                         @change="loadMembers"
                     >
-                        <option v-for="team in teams" :key="team.id" :value="team.id">
+                        <option
+                            v-for="team in teams"
+                            :key="team.id"
+                            :value="team.id"
+                        >
                             {{ team.name }}
                         </option>
                     </select>
@@ -56,7 +60,11 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            <tr v-for="(member, i) in members.data" :key="member.id" class="hover:bg-slate-50">
+                            <tr
+                                v-for="(member, i) in members.data"
+                                :key="member.id"
+                                class="hover:bg-slate-50"
+                            >
                                 <td class="px-4 py-3 text-center text-slate-500">
                                     {{ rank(i) }}
                                 </td>
@@ -65,11 +73,9 @@
                                 <td class="px-4 py-3 text-center">
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full"
-                                        :class="
-                                            member.active_team === viewTeamId
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-slate-100 text-slate-500'
-                                        "
+                                        :class="member.active_team === viewTeamId
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-slate-100 text-slate-500'"
                                     >
                                         {{ member.active_team === viewTeamId ? 'Active' : 'Inactive' }}
                                     </span>
@@ -140,9 +146,7 @@
                                         <button
                                             :disabled="team.id === activeTeamId"
                                             class="p-1.5 rounded text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                                            :title="
-                                                team.id === activeTeamId ? 'Currently active' : 'Set as active team'
-                                            "
+                                            :title="team.id === activeTeamId ? 'Currently active' : 'Set as active team'"
                                             @click="activate(team.id)"
                                         >
                                             <i class="fa fa-star" />
@@ -171,9 +175,7 @@
                                         <button
                                             v-if="team.leader === userId"
                                             class="p-1.5 rounded text-amber-600 hover:bg-amber-50"
-                                            :title="
-                                                team.leaderboards ? 'Hide from leaderboards' : 'Show on leaderboards'
-                                            "
+                                            :title="team.leaderboards ? 'Hide from leaderboards' : 'Show on leaderboards'"
                                             @click="teamsStore.toggleLeaderboardVisibility(team.id)"
                                         >
                                             <i class="fa" :class="team.leaderboards ? 'fa-eye-slash' : 'fa-eye'" />
@@ -260,21 +262,9 @@ export default {
         });
 
         return {
-            teams,
-            hasTeams,
-            members,
-            activeTeam,
-            activeTeamId,
-            userId,
-            viewTeamId,
-            loadMembers,
-            changePage,
-            rank,
-            activate,
-            deactivate,
-            leave,
-            download,
-            formatDate,
+            teams, hasTeams, members, activeTeam, activeTeamId, userId,
+            viewTeamId, loadMembers, changePage, rank,
+            activate, deactivate, leave, download, formatDate,
             teamsStore,
         };
     },

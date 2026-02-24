@@ -22,7 +22,7 @@ return new class extends Migration
                 ->comment('JSON of tags structure at last processing');
 
             // Add processed XP for correct delta calculation
-            $table->integer('processed_xp')->nullable()->after('processed_tags')
+            $table->unsignedInteger('processed_xp')->nullable()->after('processed_tags')
                 ->comment('XP value at last processing for delta calculation');
 
             // Add index for finding unprocessed photos efficiently

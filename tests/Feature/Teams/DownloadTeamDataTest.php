@@ -9,23 +9,10 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class DownloadTeamDataTest extends TestCase
 {
-    public static function routeDataProvider(): array
-    {
-        return [
-            ['guard' => 'web', 'route' => 'teams/download'],
-            ['guard' => 'api', 'route' => 'api/teams/download'],
-        ];
-    }
-
-    /**
-     * @dataProvider routeDataProvider
-     */
-    public function test_a_member_can_download_a_teams_data($guard, $route)
+    public function test_a_member_can_download_a_teams_data()
     {
         Mail::fake();
         Storage::fake('s3');
@@ -36,7 +23,7 @@ class DownloadTeamDataTest extends TestCase
         $team = Team::factory()->create();
         $member->teams()->attach($team);
 
-        $response = $this->actingAs($member, $guard)->postJson($route . "?team_id=$team->id");
+        $response = $this->actingAs($member, 'api')->postJson("api/teams/download?team_id=$team->id");
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
@@ -48,10 +35,7 @@ class DownloadTeamDataTest extends TestCase
         });
     }
 
-    /**
-     * @dataProvider routeDataProvider
-     */
-    public function test_only_a_member_can_download_a_teams_data($guard, $route)
+    public function test_only_a_member_can_download_a_teams_data()
     {
         Mail::fake();
         Storage::fake('s3');
@@ -60,11 +44,10 @@ class DownloadTeamDataTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create();
 
-        $response = $this->actingAs($nonMember, $guard)->postJson($route . "?team_id=$team->id");
+        $response = $this->actingAs($nonMember, 'api')->postJson("api/teams/download?team_id=$team->id");
 
         $response->assertOk();
         $response->assertJsonFragment(['success' => false, 'message' => 'not-a-member']);
         Mail::assertNothingSent();
     }
-
 }

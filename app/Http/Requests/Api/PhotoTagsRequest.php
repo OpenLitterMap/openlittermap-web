@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,7 +23,7 @@ class PhotoTagsRequest extends FormRequest
         }
 
         // Already verified check (403)
-        if ($photo->verified >= 1) {
+        if ($photo->verified->value >= VerificationStatus::VERIFIED->value) {
             return false;
         }
 

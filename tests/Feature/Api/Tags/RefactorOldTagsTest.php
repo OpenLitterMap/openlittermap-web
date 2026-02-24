@@ -2,18 +2,17 @@
 
 namespace Tests\Feature\Api\Tags;
 
+use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Photo;
 use App\Models\Users\User;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Group;
 
-#[Group('deprecated')]
 class RefactorOldTagsTest extends TestCase
 {
     use HasPhotoUploads;
@@ -28,6 +27,7 @@ class RefactorOldTagsTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
+        $this->seed(GenerateTagsSeeder::class);
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
     }
@@ -55,9 +55,9 @@ class RefactorOldTagsTest extends TestCase
             ]
         ])
         ->assertOk()
-        ->assertJson(['success' => true, 'msg' => 'dispatched']);
+        ->assertJson(['success' => true, 'msg' => 'tags-added']);
 
-        // Assert tags are stored correctly
+        // Assert v4 category data is stored (step 1 of ConvertV4TagsAction)
         $photo->refresh();
 
         $this->assertNotNull($photo->smoking_id);
@@ -78,7 +78,7 @@ class RefactorOldTagsTest extends TestCase
 
         $photo = $user->fresh()->photos->last();
 
-        $photo->update(['verified' => 1]);
+        $photo->update(['verified' => VerificationStatus::VERIFIED->value]);
 
         // User adds tags to the verified photo -------------------
         $response = $this->postJson('/api/add-tags', [
@@ -153,16 +153,16 @@ class RefactorOldTagsTest extends TestCase
         ->assertJsonValidationErrors(['tags']);
     }
 
-    public function test_user_and_photo_info_are_updated_when_a_user_adds_tags_to_a_photo()
+    public function test_photo_info_is_updated_when_an_untrusted_user_adds_tags()
     {
+        Event::fake(TagsVerifiedByAdmin::class);
+
         // User uploads an image -------------------------
         $user = User::factory()->create([
             'verification_required' => true
         ]);
 
         $this->actingAs($user, 'api');
-
-        Redis::del("xp.users", $user->id);
 
         $this->post('/api/photos/submit',
             $this->getApiImageAttributes($this->imageAndAttributes)
@@ -180,65 +180,72 @@ class RefactorOldTagsTest extends TestCase
                 'alcohol' => [
                     'beerBottle' => 5
                 ],
-                'brands' => [
-                    'aldi' => 1
-                ]
             ]
         ])->assertOk();
 
-        // Assert user and photo info are updated correctly ------------
-        $user->refresh();
+        // v5: photo gets summary + XP from UpdateTagsService
         $photo->refresh();
 
-        $this->assertEquals(10, $user->xp_redis); // 1 xp from uploading, + 8xp from total litter + 1xp from brand
-        $this->assertEquals(8, $photo->total_litter);
+        $this->assertNotNull($photo->summary);
+        $this->assertGreaterThan(0, $photo->xp);
         $this->assertEquals(0.1, $photo->verification);
+
+        // v5: untrusted user does NOT trigger metrics processing
+        Event::assertNotDispatched(TagsVerifiedByAdmin::class);
     }
 
     public function test_a_photo_can_be_marked_as_picked_up_or_not()
     {
-        // User uploads an image -------------------------
-        $user = User::factory()->create();
+        $user = User::factory()->create(['verification_required' => true]);
         $this->actingAs($user, 'api');
+
+        // Photo 1: explicitly picked up -------------------
         $this->post('/api/photos/submit',
             $this->getApiImageAttributes($this->imageAndAttributes)
         );
-        $photo = $user->fresh()->photos->last();
+        $photo1 = $user->photos()->orderByDesc('id')->first();
 
-        // User marks the litter as picked up -------------------
         $this->post('/api/add-tags', [
-            'photo_id' => $photo->id,
+            'photo_id' => $photo1->id,
             'picked_up' => true,
             'tags' => ['smoking' => ['butts' => 3]]
-        ]);
+        ])->assertOk();
 
-        $photo->refresh();
-        $this->assertTrue($photo->picked_up);
+        $this->assertTrue($photo1->fresh()->picked_up);
 
-        // User marks the litter as not picked up -------------------
+        // Photo 2: explicitly not picked up -------------------
+        $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->imageAndAttributes)
+        );
+        $photo2 = $user->photos()->orderByDesc('id')->first();
+
         $this->post('/api/add-tags', [
-            'photo_id' => $photo->id,
+            'photo_id' => $photo2->id,
             'picked_up' => false,
             'tags' => ['smoking' => ['butts' => 3]]
-        ]);
+        ])->assertOk();
 
-        $photo->refresh();
-        $this->assertFalse($photo->picked_up);
+        $this->assertFalse($photo2->fresh()->picked_up);
 
-        // User doesn't indicate whether litter is picked up -------------------
-        // So it should default to user's predefined settings
+        // Photo 3: no picked_up sent — defaults to user's items_remaining
         $user->items_remaining = false;
         $user->save();
-        $this->post('/api/add-tags', [
-            'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]]
-        ]);
 
-        $photo->refresh();
-        $this->assertTrue($photo->picked_up);
+        $this->post('/api/photos/submit',
+            $this->getApiImageAttributes($this->imageAndAttributes)
+        );
+        $photo3 = $user->photos()->orderByDesc('id')->first();
+
+        $this->post('/api/add-tags', [
+            'photo_id' => $photo3->id,
+            'tags' => ['smoking' => ['butts' => 3]]
+        ])->assertOk();
+
+        // items_remaining=false means pickedUp=true
+        $this->assertTrue($photo3->fresh()->picked_up);
     }
 
-    public function test_it_fires_tags_verified_by_admin_event_when_a_verified_user_adds_tags_to_a_photo()
+    public function test_it_fires_tags_verified_by_admin_event_when_a_trusted_user_adds_tags()
     {
         Event::fake(TagsVerifiedByAdmin::class);
 
@@ -265,11 +272,11 @@ class RefactorOldTagsTest extends TestCase
             ]
         ])->assertOk();
 
-        // Assert event is fired ------------
+        // Assert event is fired and photo is verified
         $photo->refresh();
 
         $this->assertEquals(1, $photo->verification);
-        $this->assertEquals(2, $photo->verified);
+        $this->assertEquals(VerificationStatus::ADMIN_APPROVED, $photo->verified);
 
         Event::assertDispatched(
             TagsVerifiedByAdmin::class,
@@ -277,35 +284,5 @@ class RefactorOldTagsTest extends TestCase
                 return $e->photo_id === $photo->id;
             }
         );
-    }
-
-    public function test_leaderboards_are_updated_when_a_user_adds_tags_to_a_photo()
-    {
-        // User uploads an image -------------------------
-        $user = User::factory()->create();
-        $this->actingAs($user, 'api');
-        $this->post('/api/photos/submit', $this->getApiImageAttributes($this->imageAndAttributes));
-        $photo = $user->fresh()->photos->last();
-        Redis::del("xp.users");
-        Redis::del("xp.country.$photo->country_id");
-        Redis::del("xp.country.$photo->country_id.state.$photo->state_id");
-        Redis::del("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id");
-        $this->assertEquals(0, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
-        $this->assertEquals(0, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
-
-        // User adds tags to an image -------------------
-        $this->post('/api/add-tags', [
-            'photo_id' => $photo->id,
-            'tags' => ['smoking' => ['butts' => 3]]
-        ])->assertOk();
-
-        // Assert leaderboards are updated ------------
-        // 3xp from tags
-        $this->assertEquals(3, Redis::zscore("xp.users", $user->id));
-        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id", $user->id));
-        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id", $user->id));
-        $this->assertEquals(3, Redis::zscore("xp.country.$photo->country_id.state.$photo->state_id.city.$photo->city_id", $user->id));
     }
 }
