@@ -145,10 +145,11 @@ App\Listeners\UpdateTimes\IncrementCityMonth
 ### Actions
 
 ```
-App\Actions\Locations\UpdateLeaderboardsForLocationAction
-App\Actions\Locations\UpdateLeaderboardsXpAction
+App\Actions\Locations\UpdateLeaderboardsForLocationAction  — ALREADY DELETED (Session 5)
+App\Actions\Locations\UpdateLeaderboardsXpAction           — ALREADY DELETED (Session 5)
 App\Actions\Locations\AddContributorForLocationAction
 App\Actions\Locations\UpdateTotalPhotosForLocationAction
+App\Actions\Locations\RemoveContributorForLocationAction   — ALREADY DELETED (Session 3)
 ```
 
 ### Events
@@ -178,7 +179,8 @@ Redis::del(Redis::keys('country:*'));  // old total_photos hashes
 Redis::del(Redis::keys('state:*'));
 Redis::del(Redis::keys('city:*'));
 
-// Old leaderboard keys (from UpdateLeaderboardsForLocationAction)
+// Old leaderboard keys (from UpdateLeaderboardsForLocationAction — ALREADY DELETED)
+// These are replaced by {scope}:lb:xp ZSETs populated by RedisMetricsCollector
 Redis::del(Redis::keys('xp.country.*'));
 Redis::del(Redis::keys('leaderboard:country:*'));
 Redis::del(Redis::keys('leaderboard:state:*'));

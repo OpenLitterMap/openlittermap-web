@@ -26,9 +26,9 @@ processPhoto($photo)
 └── If processed_at exists → doUpdate()
 ```
 
-### `deletePhoto($photo)` — Reverse (deferred)
+### `deletePhoto($photo)` — Reverse
 
-Called before a photo is removed. Calculates negative deltas from stored `processed_tags` and reverses all metrics.
+Called before a photo is soft-deleted. Calculates negative deltas from stored `processed_tags` and reverses all metrics.
 
 ```
 deletePhoto($photo)
@@ -40,7 +40,7 @@ deletePhoto($photo)
 └── Update Redis (decrements)
 ```
 
-**Status:** Code exists but delete flow is deferred. Current controller hard-deletes the photo before this can run. See Strategy.md #4.
+**Status:** Active. The `Photo` model uses `SoftDeletes`. Controllers call `MetricsService::deletePhoto()` before `$photo->delete()`, which preserves the row for metric reversal. The `Photo::public()` scope automatically excludes soft-deleted records.
 
 ---
 
@@ -68,7 +68,7 @@ This means `processPhoto()` is safe to call multiple times on the same photo. Th
 | `processed_at` | TIMESTAMP | When metrics were last written. NULL = never processed. |
 | `processed_fp` | VARCHAR(32) | xxh128 fingerprint of normalized tags at last processing. |
 | `processed_tags` | TEXT | JSON snapshot of tags at last processing. Used for delta calculation. |
-| `processed_xp` | TINYINT | XP value at last processing. Compared alongside fingerprint. |
+| `processed_xp` | INT UNSIGNED | XP value at last processing. Compared alongside fingerprint. |
 
 ---
 
@@ -167,7 +167,7 @@ Every photo writes to up to 4 location scopes:
 
 ### Rows per photo
 
-5 timescales × 4 location scopes = **up to 20 rows** per `processPhoto()` call.
+5 timescales × 4 location scopes × 2 (aggregate + per-user) = **up to 40 rows** per `processPhoto()` call.
 
 ### Upload delta logic
 
@@ -223,6 +223,7 @@ Redis is a derived cache — rebuildable from the `metrics` table at any time vi
 | `{scope}:rank:objects` | ZSET | ZINCRBY object_id by count |
 | `{scope}:rank:materials` | ZSET | ZINCRBY material_id by count |
 | `{scope}:rank:brands` | ZSET | ZINCRBY brand_id by count |
+| `{scope}:lb:xp` | ZSET | ZINCRBY user_id by XP (leaderboard ranking) |
 | `user:{id}:stats` | HASH | HINCRBY uploads, xp, litter |
 | `user:{id}:tags` | HASH | HINCRBY per-tag breakdown |
 | `user:{id}:bitmap` | BITMAP | SETBIT for streak tracking |
@@ -252,9 +253,9 @@ This prevents two concurrent requests (e.g., admin verify + queue retry) from bo
 
 ## Code Review Notes
 
-1. **`processed_xp` is TINYINT(1)** — this only stores 0-127 (signed) or 0-255 (unsigned). Most photos will have XP > 255. This should be `UNSIGNED INT` or `SMALLINT UNSIGNED` at minimum. Currently the migration script adds it via raw SQL: `ALTER TABLE photos ADD COLUMN processed_xp TINYINT(1) NULL`. **This is a bug — XP values will overflow.**
+1. **`processed_xp` is INT UNSIGNED** — fixed. Migration and MigrationScript both use `INT UNSIGNED` (0–4,294,967,295). No overflow risk.
 
-2. **`user_id` is always 0 in metrics rows** — `buildSingleRow()` hardcodes `'user_id' => 0`. The composite unique key includes `user_id`, so per-user time-series breakdowns are structurally supported but not yet used. Per-user metrics go through Redis only (`user:{id}:stats`).
+2. **Per-user metrics rows** — `buildTimeSeriesRows()` produces TWO rows per timescale × location: aggregate (`user_id=0`) and per-user (`user_id=$photo->user_id`). Per-user rows power time-filtered leaderboards (see `readme/Leaderboards.md`).
 
 3. **`getRedisScopes()` method exists but is unused** — the `updateRedis()` method passes the photo to `RedisMetricsCollector` which computes scopes internally. Dead code, can be removed.
 
@@ -273,4 +274,5 @@ This prevents two concurrent requests (e.g., admin verify + queue retry) from bo
 | **Upload.md** | When MetricsService runs (pipeline), EventServiceProvider, Redis key alignment, location model |
 | **Tags.md** | Summary JSON structure, XP calculation, tag hierarchy |
 | **MigrationScript.md** | How the migration script calls MetricsService per photo |
-| **Strategy.md** | Overall status, delete flow blocker, post-deploy monitoring |
+| **Leaderboards.md** | Redis ZSETs for all-time rankings, MySQL per-user metrics for time-filtered |
+| **Strategy.md** | Overall status, post-deploy monitoring |

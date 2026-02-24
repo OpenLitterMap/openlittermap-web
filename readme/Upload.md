@@ -64,6 +64,7 @@ TagsVerifiedByAdmin
 - `{prefix}:contributor_ranking` → contributor ZSET (ZINCRBY)
 - `{prefix}:categories` / `objects` / `materials` / `brands` / `custom_tags` → tag hashes (HINCRBY)
 - `{prefix}:rank:{dimension}` → tag ranking ZSETs (ZINCRBY)
+- `{prefix}:lb:xp` → leaderboard ranking ZSET (ZINCRBY user_id by XP)
 - `user:{id}:stats` → per-user uploads, xp, litter
 - `user:{id}:tags` → per-user tag breakdown
 - `user:{id}:bitmap` → streak tracking
@@ -81,27 +82,29 @@ TagsVerifiedByAdmin
 | `UpdateUserTimeSeries` | **Removed** — replaced by metrics table |
 | `UpdateUserIdLastUpdatedLocation` | **Removed** — column dropped |
 
-**Open issue:** `TagsVerifiedByAdmin` constructor changed to `($photo_id, $user_id, $country_id, $state_id, $city_id, $team_id)`. The caller(s) that dispatch this event haven't been updated yet.
+**Note:** `TagsVerifiedByAdmin` constructor takes `($photo_id, $user_id, $country_id, $state_id, $city_id, $team_id)`. It is dispatched from two places:
+1. `AddTagsToPhotoAction::updateVerification()` — for trusted users/teams (immediate verification)
+2. `TeamPhotosController::approve()` — for school teams (teacher approval triggers metrics)
+
+See **SchoolPipeline.md** for the full school approval flow.
 
 ---
 
-## Phase 3: Delete (deferred)
+## Phase 3: Delete (active)
 
 ```
 MetricsService::deletePhoto()
 ├── MySQL: negative deltas across all timescales + locations
-├── Redis: decrements stats, tags, rankings
+├── Redis: decrements stats, tags, rankings, leaderboard ZSETs
 ├── Clears processed_at/fp/tags/xp on photo
-└── (S3 cleanup via queued job)
+└── Photo::delete() soft-deletes (row preserved, excluded by Photo::public() scope)
 ```
 
-`DeletePhotoMetrics` listener exists but is **parked**. Problem: `ImageDeleted` doesn't carry `photo_id`, and `MetricsService::deletePhoto()` needs the photo row to still exist. The current `ApiPhotosController::deleteImage()` hard-deletes the photo before dispatching the event.
-
-Options: call MetricsService directly in the controller before delete, or implement soft-deletes.
+The `Photo` model uses `SoftDeletes`. Controllers call `MetricsService::deletePhoto()` **before** `$photo->delete()`. This preserves the row for metric reversal (reads `processed_tags` JSON, applies negative deltas), then soft-deletes.
 
 ### `ImageDeleted` listeners (v5 — current state)
 
-All location listeners removed. `ImageDeleted` now has **zero listeners**. Delete flow needs redesign before `DeletePhotoMetrics` can be activated.
+All location listeners removed. `ImageDeleted` now has **zero listeners**. Metric reversal happens synchronously in the controller via `MetricsService::deletePhoto()`, not through event listeners.
 
 ---
 
@@ -161,7 +164,7 @@ protected $listen = [
     ],
 
     // ImageUploaded: zero listeners (broadcast via ShouldBroadcast on event)
-    // ImageDeleted: zero listeners (delete flow deferred)
+    // ImageDeleted: zero listeners (metrics reversal is synchronous in controller)
 
     TagsVerifiedByAdmin::class => [
         ProcessPhotoMetrics::class,
@@ -194,6 +197,7 @@ protected $listen = [
 
 ## Related Docs
 
+- **Leaderboards.md** — Leaderboard system (Redis ZSETs + MySQL per-user metrics)
+- **Metrics.md** — MetricsService internals, fingerprinting, Redis key patterns
 - **PostMigrationCleanup.md** — full list of files to delete, tables to drop, Redis keys to flush
 - **Locations.md** — `ResolveLocationAction`, location schema, upload controller code
-- **Strategy.md** — overall status, blockers, and what's next

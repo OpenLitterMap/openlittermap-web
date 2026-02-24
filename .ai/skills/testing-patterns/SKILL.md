@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-516 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. Deprecated tests (40 files) excluded via `#[Group('deprecated')]` in phpunit.xml.
+602 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated).
 
 ## Key Files
 
@@ -181,6 +181,37 @@ php artisan test --compact tests/Feature/Teams/               # Directory
 php artisan test --compact tests/Feature/Photos/AddTagsToPhotoTest.php  # Single file
 php artisan test --compact --filter=test_method_name          # Single test
 php artisan test --compact --group=deprecated                 # Deprecated only
+```
+
+### Leaderboard test patterns
+
+```php
+// Leaderboard route uses auth:sanctum — use actingAs() with NO guard argument
+$this->actingAs($user)->getJson('/api/leaderboard?locationType=global');
+
+// Seed Redis ZSETs for leaderboard tests
+Redis::zadd(RedisKeys::xpRanking(RedisKeys::global()), $xp, (string)$user->id);
+
+// Seed per-user metrics rows for time-filtered tests
+DB::table('metrics')->insert([
+    'timescale' => 3, // monthly
+    'location_type' => 0, // global
+    'location_id' => 0,
+    'user_id' => $user->id, // > 0 for per-user
+    'year' => now()->year,
+    'month' => now()->month,
+    'xp' => 100,
+    // ... other counters
+]);
+```
+
+### Test DB restoration (if all tests fail with "table doesn't exist")
+
+```bash
+# PointsTest's internal migrate:fresh can corrupt olm_test
+DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan migrate:fresh --no-interaction
+DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --class=GenerateTagsSeeder --no-interaction
+DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --class=GenerateBrandsSeeder --no-interaction
 ```
 
 ## Common Mistakes

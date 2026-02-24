@@ -54,7 +54,7 @@ DB::transaction(function () use ($photo) {
 
 ### MySQL upsert across timescales and locations
 
-Each photo writes up to **20 rows**: 5 timescales (all-time, daily, weekly, monthly, yearly) x 4 location scopes (global, country, state, city).
+Each photo writes up to **40 rows**: 5 timescales (all-time, daily, weekly, monthly, yearly) x 4 location scopes (global, country, state, city) x 2 (aggregate user_id=0 + per-user user_id>0).
 
 ```php
 DB::table('metrics')->upsert($rows,
@@ -93,6 +93,7 @@ RedisKeys::stats($scope)             // $scope:stats (HASH: uploads, tags, litte
 RedisKeys::hll($scope)               // $scope:hll (HyperLogLog for contributor count)
 RedisKeys::objects($scope)            // $scope:obj (HASH: object_id => count)
 RedisKeys::ranking($scope, $dim)      // $scope:rank:$dim (ZSET)
+RedisKeys::xpRanking($scope)         // $scope:lb:xp (ZSET: user_id => xp, for leaderboards)
 RedisKeys::userBitmap($userId)        // {u:$userId}:bitmap (activity bitmap)
 ```
 

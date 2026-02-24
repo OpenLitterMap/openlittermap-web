@@ -305,29 +305,40 @@ city:{id}           → LocationType::City
 
 ### Key patterns managed by `RedisMetricsCollector`
 
+All keys use `RedisKeys::*` builders (single source of truth). See `app/Services/Redis/RedisKeys.php`.
+
 ```
 # Aggregate counters (HINCRBY on hash keys)
-metrics:{scope}:totals          → { uploads, tags, litter, xp, brands, materials, custom_tags }
+{scope}:stats                   → HASH { uploads, tags, litter, xp, brands, materials, custom_tags }
 
-# Contributors (SADD on set keys)  
-metrics:{scope}:contributors    → SET of user IDs
+# Contributors (PFADD on HyperLogLog)
+{scope}:hll                     → HyperLogLog of user IDs (~0.81% error, O(1) reads)
 
 # Per-tag counters
-metrics:{scope}:objects         → HASH { object_id: count }
-metrics:{scope}:materials       → HASH { material_id: count }
-metrics:{scope}:brands          → HASH { brand_id: count }
-metrics:{scope}:categories      → HASH { category_id: count }
+{scope}:obj                     → HASH { object_id: count }
+{scope}:mat                     → HASH { material_id: count }
+{scope}:brand                   → HASH { brand_id: count }
+{scope}:cat                     → HASH { category_id: count }
+
+# Tag rankings (ZINCRBY on sorted sets)
+{scope}:rank:objects             → ZSET { object_id: count }
+{scope}:rank:materials           → ZSET { material_id: count }
+{scope}:rank:brands              → ZSET { brand_id: count }
 
 # Leaderboards (ZINCRBY on sorted sets)
-metrics:{scope}:leaderboard     → ZSET { user_id: xp }
+{scope}:lb:xp                   → ZSET { user_id: xp }
+
+# Per-user
+{u:$userId}:stats               → HASH { uploads, xp, litter }
+{u:$userId}:bitmap               → BITMAP (activity streak tracking)
 ```
 
 ### Deprecated Redis keys (to remove)
 
 ```
-# Old leaderboard format — replaced by metrics:{scope}:leaderboard
+# Old leaderboard format — replaced by {scope}:lb:xp ZSETs
 xp.country.{id}
-xp.country.{id}.state.{id}  
+xp.country.{id}.state.{id}
 xp.country.{id}.state.{id}.city.{id}
 leaderboard:country:{id}:total
 leaderboard:state:{id}:total
@@ -341,6 +352,11 @@ leaderboard:city:{id}:{year}:{month}
 leaderboard:country:{id}:{year}
 leaderboard:state:{id}:{year}
 leaderboard:city:{id}:{year}
+
+# Old location format — replaced by {scope}:stats, {scope}:hll
+country:*:user_ids
+state:*:user_ids
+city:*:user_ids
 ```
 
 ---
@@ -737,6 +753,6 @@ All location aggregate data is served from Redis (fast) with MySQL metrics table
 | `GET /api/countries/{country}` | DB + Redis appends | Single country with full data |
 | `GET /api/countries/{country}/states` | DB + Redis appends | States within country |
 | `GET /api/states/{state}/cities` | DB + Redis appends | Cities within state |
-| `GET /api/leaderboard/{scope}` | Redis sorted sets | `metrics:{scope}:leaderboard` |
+| `GET /api/leaderboard` | Redis sorted sets | `{scope}:lb:xp` (see `readme/Leaderboards.md`) |
 
 The `$appends` on location models (`total_litter_redis`, `total_photos_redis`, etc.) read directly from Redis hashes, making these endpoints fast without any MySQL aggregate queries.

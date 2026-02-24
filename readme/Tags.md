@@ -33,7 +33,7 @@ photos
 ├── processed_at (TIMESTAMP) - When metrics were processed
 ├── processed_fp (VARCHAR) - Fingerprint for idempotency
 ├── processed_tags (TEXT) - Cached tags for metrics
-├── processed_xp (TINYINT) - XP processing flag
+├── processed_xp (INT UNSIGNED) - XP value at last metrics processing
 └── migrated_at (TIMESTAMP) - v5 migration timestamp
 
 photo_tags
