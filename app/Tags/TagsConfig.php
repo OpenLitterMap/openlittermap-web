@@ -5,49 +5,83 @@ namespace App\Tags;
 class TagsConfig
 {
     /**
-     * Get the complete tags configuration
+     * Get the complete tags configuration.
      *
-     * @return array
+     * Canonical objects per category. All keys are snake_case.
+     * Types represent "what was in the container" (beer, water, soda, etc.)
      */
     public static function get(): array
     {
         return [
+            'smoking' => [
+                'butts' => [
+                    'materials' => ['plastic', 'paper'],
+                ],
+                'lighters' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'cigarette_box' => [
+                    'materials' => ['cardboard'],
+                ],
+                'tobacco_pouch' => [
+                    'materials' => ['plastic'],
+                ],
+                'rolling_papers' => [
+                    'materials' => ['paper'],
+                ],
+                'packaging' => [
+                    'materials' => ['plastic', 'foil'],
+                ],
+                'cigarette_filter' => [
+                    'materials' => ['plastic'],
+                ],
+                'vape_pen' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'vape_cartridge' => [
+                    'materials' => ['plastic', 'glass'],
+                ],
+                'match_box' => [
+                    'materials' => ['cardboard'],
+                ],
+                'ashtray' => [
+                    'materials' => ['glass', 'ceramic', 'metal'],
+                ],
+                'other' => [],
+            ],
+
             'alcohol' => [
-                'beer_bottle' => [
-                    'materials' => ['glass'],
-                ],
-                'cider_bottle' => [
+                'bottle' => [
                     'materials' => ['glass', 'plastic'],
+                    'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown'],
                 ],
-                'spirits_bottle' => [
-                    'materials' => ['glass'],
-                ],
-                'wine_bottle' => [
-                    'materials' => ['glass'],
-                ],
-                'beer_can' => [
+                'can' => [
                     'materials' => ['aluminium'],
-                ],
-                'spirits_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'cider_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'wine_glass' => [
-                    'materials' => ['glass'],
+                    'types' => ['beer', 'cider', 'spirits', 'unknown'],
                 ],
                 'pint_glass' => [
                     'materials' => ['glass'],
+                    'types' => ['beer', 'cider', 'unknown'],
+                ],
+                'wine_glass' => [
+                    'materials' => ['glass'],
+                    'types' => ['wine', 'unknown'],
                 ],
                 'shot_glass' => [
                     'materials' => ['glass'],
+                    'types' => ['spirits', 'unknown'],
                 ],
-                'bottleTop' => [
+                'broken_glass' => [
+                    'materials' => ['glass'],
+                ],
+                'bottle_cap' => [
                     'materials' => ['metal', 'plastic', 'cork'],
                 ],
-                'brokenGlass' => [
-                    'materials' => ['glass'],
+                'pull_ring' => [
+                    'materials' => ['aluminium'],
+                ],
+                'six_pack_rings' => [
+                    'materials' => ['plastic'],
                 ],
                 'cup' => [
                     'materials' => ['plastic'],
@@ -55,163 +89,51 @@ class TagsConfig
                 'packaging' => [
                     'materials' => ['cardboard', 'paper', 'plastic'],
                 ],
-                'pull_ring' => [
-                    'materials' => ['aluminium'],
-                ],
-                'straw' => [
-                    'materials' => ['plastic', 'paper', 'metal'],
-                ],
-                'sixPackRings' => [
-                    'materials' => ['plastic'],
-                ],
                 'other' => [],
             ],
 
-            'automobile' => [
-                'car_part' => [
-                    'materials' => ['metal', 'plastic', 'rubber', 'glass'],
-                ],
-                'battery' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'alloy' => [
-                    'materials' => ['metal'],
-                ],
-                'bumper' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'exhaust' => [
-                    'materials' => ['metal'],
-                ],
-                'engine' => [
-                    'materials' => ['metal'],
-                ],
-                'mirror' => [
-                    'materials' => ['glass', 'plastic'],
-                ],
-                'light' => [
-                    'materials' => ['glass', 'plastic'],
-                ],
-                'license_plate' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'oil_can' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'tyre' => [
-                    'materials' => ['rubber'],
-                ],
-                'wheel' => [
-                    'materials' => ['metal'],
-                ],
-                'other' => [],
-            ],
-
-            'coastal' => [
-                'bag' => [
-                    'materials' => ['plastic'],
-                    'states' => ['degraded'],
-                ],
+            'beverages' => [
                 'bottle' => [
-                    'materials' => ['plastic'],
-                    'states' => ['degraded'],
+                    'materials' => ['plastic', 'glass'],
+                    'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown'],
                 ],
-                'buoys' => [
-                    'materials' => ['plastic'],
+                'can' => [
+                    'materials' => ['aluminium'],
+                    'types' => ['soda', 'energy', 'juice', 'iced_tea', 'sparkling_water', 'unknown'],
                 ],
-                'plastics' => [
-                    'materials' => ['plastic'],
-                    'sizes' => ['micro', 'macro'],
-                    'states' => ['degraded']
+                'carton' => [
+                    'materials' => ['cardboard', 'foil', 'plastic'],
+                    'types' => ['juice', 'milk', 'iced_tea', 'plant_milk', 'unknown'],
                 ],
-                'rope' => [
-                    'materials' => ['rope', 'plastic'],
-                    'sizes' => ['small', 'medium', 'large'],
-                ],
-                'fishing_nets' => [
-                    'materials' => ['rope', 'plastic'],
-                ],
-                // These are already in softdrinks
-                'straws' => [
-                    'materials' => ['plastic'],
-                    'states' => ['degraded'],
-                ],
-                // already in smoking
-                'lighters' => [
-                    'materials' => ['plastic'],
-                    'states' => ['degraded'],
-                ],
-                // already in other
-                'balloons' => [
-                    'materials' => ['plastic', 'latex'],
-                ],
-                // toy
-                'lego' => [
-                    'materials' => ['plastic'],
-                ],
-                // other
-                'shotgun_cartridges' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                // industrial?
-                'styrofoam' => [
-                    'materials' => ['styrofoam'],
-                    'sizes' => ['small', 'medium', 'large'],
-                ],
-                'other' => [],
-            ],
-
-            'coffee' => [
                 'cup' => [
                     'materials' => ['paper', 'plastic', 'foam', 'ceramic', 'metal'],
+                    'types' => ['coffee', 'tea', 'soda', 'smoothie', 'unknown'],
                 ],
                 'lid' => [
-                    'materials' => ['plastic', 'paper', 'bioplastic', 'plantFiber'],
+                    'materials' => ['plastic', 'paper', 'bioplastic'],
                 ],
-                'stirrer' => [
-                    'materials' => ['wood', 'plastic', 'metal', 'bamboo'],
+                'straw' => [
+                    'materials' => ['plastic', 'paper', 'metal', 'bamboo'],
                 ],
-                'packaging' => [
-                    'materials' => ['plastic', 'foil', 'paper'],
+                'straw_wrapper' => [
+                    'materials' => ['paper', 'plastic'],
                 ],
-                'pod' => [
+                'juice_pouch' => [
+                    'materials' => ['plastic', 'foil'],
+                ],
+                'coffee_pod' => [
                     'materials' => ['plastic', 'aluminium'],
                 ],
-                'sleeves' => [
-                    'materials' => ['cardboard', 'silicone'],
+                'label' => [
+                    'materials' => ['paper', 'plastic'],
+                ],
+                'broken_glass' => [
+                    'materials' => ['glass'],
+                ],
+                'packaging' => [
+                    'materials' => ['cardboard', 'plastic', 'foil'],
                 ],
                 'other' => [],
-            ],
-
-            'electronics' => [
-                'battery' => [
-                    'materials' => ['metal'],
-                ],
-                'cable' => [
-                    'materials' => ['plastic', 'copper'],
-                ],
-                'mobilePhone' => [
-                    'materials' => ['metal', 'plastic', 'glass'],
-                ],
-                'laptop' => [
-                    'materials' => ['metal', 'plastic', 'glass'],
-                ],
-                'tablet' => [
-                    'materials' => ['metal', 'plastic', 'glass'],
-                ],
-                'charger' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'headphones' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'other' => [],
-            ],
-
-            'dumping' => [
-                'dumping' => [
-                    'sizes' => ['small', 'medium', 'large'],
-                ],
             ],
 
             'food' => [
@@ -224,9 +146,8 @@ class TagsConfig
                 'can' => [
                     'materials' => ['aluminium', 'steel'],
                 ],
-                'crisps' => [
+                'crisp_packet' => [
                     'materials' => ['foil'],
-                    'sizes' => ['small', 'medium', 'large'],
                 ],
                 'cutlery' => [
                     'materials' => ['plastic', 'wood', 'bioplastic', 'bamboo', 'metal'],
@@ -253,7 +174,7 @@ class TagsConfig
                     'materials' => ['cardboard'],
                 ],
                 'napkins' => [
-                    'materials' => ['paper', 'cloth', 'biodegradable'],
+                    'materials' => ['paper', 'cloth'],
                 ],
                 'tinfoil' => [
                     'materials' => ['aluminium'],
@@ -264,18 +185,83 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'industrial' => [
-                'oil' => [
-                    'materials' => ['oil'],
+            'personal_care' => [
+                'wipes' => [
+                    'materials' => ['polyester', 'plastic'],
                 ],
-                'oilDrum' => [
+                'nappies' => [
+                    'materials' => ['plastic', 'cloth'],
+                ],
+                'ear_swabs' => [
+                    'materials' => ['plastic', 'cotton'],
+                ],
+                'toothbrush' => [
+                    'materials' => ['plastic', 'nylon', 'bamboo', 'wood'],
+                ],
+                'toothpaste_tube' => [
+                    'materials' => ['plastic', 'aluminium'],
+                ],
+                'dental_floss' => [
+                    'materials' => ['nylon', 'plastic'],
+                ],
+                'deodorant_can' => [
+                    'materials' => ['aluminium'],
+                ],
+                'sanitary_pad' => [
+                    'materials' => ['cotton', 'plastic'],
+                ],
+                'tampon' => [
+                    'materials' => ['plastic'],
+                ],
+                'menstrual_cup' => [
+                    'materials' => ['plastic'],
+                ],
+                'condom' => [
+                    'materials' => ['latex'],
+                ],
+                'condom_wrapper' => [
+                    'materials' => ['plastic', 'foil'],
+                ],
+                'other' => [],
+            ],
+
+            'medical' => [
+                'syringe' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'pill_pack' => [
+                    'materials' => ['plastic', 'aluminium'],
+                ],
+                'medicine_bottle' => [
+                    'materials' => ['plastic', 'glass'],
+                ],
+                'bandage' => [
+                    'materials' => ['cotton', 'elastic'],
+                ],
+                'plaster' => [
+                    'materials' => ['plastic'],
+                ],
+                'gloves' => [
+                    'materials' => ['latex', 'rubber', 'plastic'],
+                ],
+                'face_mask' => [
+                    'materials' => ['cotton', 'polyester', 'paper'],
+                ],
+                'sanitiser' => [
+                    'materials' => ['plastic'],
+                ],
+                'other' => [],
+            ],
+
+            'industrial' => [
+                'oil_container' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'oil_drum' => [
                     'materials' => ['metal', 'plastic'],
                 ],
-                'chemical' => [
-                    'materials' => ['chemical'],
-                ],
-                'plastic' => [
-                    'materials' => ['plastic'],
+                'chemical_container' => [
+                    'materials' => ['plastic', 'metal', 'glass'],
                 ],
                 'construction' => [
                     'materials' => ['clay', 'concrete', 'plastic', 'metal', 'fiberglass', 'foam', 'asphalt', 'ceramic', 'stone'],
@@ -284,7 +270,7 @@ class TagsConfig
                     'materials' => ['clay', 'concrete', 'stone'],
                 ],
                 'tape' => [
-                    'materials' => ['plastic', 'adhesive'],
+                    'materials' => ['plastic'],
                 ],
                 'pallet' => [
                     'materials' => ['wood', 'plastic'],
@@ -298,273 +284,96 @@ class TagsConfig
                 'container' => [
                     'materials' => ['metal', 'plastic'],
                 ],
+                'dumping_small' => [],
+                'dumping_medium' => [],
+                'dumping_large' => [],
                 'other' => [],
             ],
 
-            'other' => [
-                'clothing' => [],
-                'randomLitter' => [],
-                'bagsLitter' => [],
-                'overflowingBins' => [],
-                'plastic' => [],
-                'trafficCone' => [],
-                'metal' => [],
-                'plasticBags' => [],
-                'paper' => [
-                    'materials' => ['paper'],
+            'vehicles' => [
+                'car_part' => [
+                    'materials' => ['metal', 'plastic', 'rubber', 'glass'],
                 ],
-                'posters' => [],
-                'cableTie' => [],
-                'washingUp' => [],
-                'balloons' => [],
-                'life_buoy' => [],
-                'furniture' => [],
-                'mattress' => [],
-                'appliance' => [],
-                'paintCan' => [],
+                'battery' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'bumper' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'tyre' => [
+                    'materials' => ['rubber'],
+                ],
+                'wheel' => [
+                    'materials' => ['metal'],
+                ],
+                'light' => [
+                    'materials' => ['glass', 'plastic'],
+                ],
+                'mirror' => [
+                    'materials' => ['glass', 'plastic'],
+                ],
+                'license_plate' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
                 'other' => [],
-                'graffiti' => [],
-                'umbrella' => [
-                    'materials' => ['plastic', 'metal', 'cloth'],
+            ],
+
+            'marine' => [
+                'fishing_net' => [
+                    'materials' => ['nylon', 'plastic'],
                 ],
+                'rope' => [
+                    'materials' => ['nylon', 'plastic'],
+                ],
+                'buoy' => [
+                    'materials' => ['plastic'],
+                ],
+                'crate' => [
+                    'materials' => ['plastic'],
+                ],
+                'microplastics' => [
+                    'materials' => ['plastic'],
+                ],
+                'macroplastics' => [
+                    'materials' => ['plastic'],
+                ],
+                'styrofoam' => [
+                    'materials' => ['polystyrene'],
+                ],
+                'shotgun_cartridge' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'other' => [],
+            ],
+
+            'electronics' => [
+                'battery' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'cable' => [
+                    'materials' => ['plastic', 'copper'],
+                ],
+                'phone' => [
+                    'materials' => ['metal', 'plastic', 'glass'],
+                ],
+                'charger' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'headphones' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'other' => [],
             ],
 
             'pets' => [
-                'dogshit' => [],
-                'dogshit_in_bag' => [
+                'dog_waste' => [],
+                'dog_waste_in_bag' => [
                     'materials' => ['plastic'],
-                ],
-            ],
-
-            'sanitary' => [
-                'gloves' => [
-                    'materials' => ['latex', 'rubber', 'plastic'],
-                ],
-                'facemask' => [
-                    'materials' => ['cotton', 'polyester', 'paper'],
-                ],
-                'condoms' => [
-                    'materials' => ['latex'],
-                ],
-                'condom_wrapper' => [
-                    'materials' => ['plastic', 'foil'],
-                ],
-                'nappies' => [
-                    'materials' => ['plastic', 'cloth', 'biodegradable'],
-                ],
-                'sanitaryPad' => [
-                    'materials' => ['cotton', 'plastic'],
-                ],
-                'tampon' => [
-                    'materials' => ['plastic'],
-                ],
-                'deodorant_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'menstrual' => [
-                    'materials' => ['plastic'],
-                ],
-                'earSwabs' => [
-                    'materials' => ['plastic', 'cotton'],
-                ],
-                'toothbrush' => [
-                    'materials' => ['plastic', 'nylon', 'bamboo', 'wood'],
-                ],
-                'toothpasteTube' => [
-                    'materials' => ['plastic', 'aluminium'],
-                ],
-                'toothpasteBox' => [
-                    'materials' => ['cardboard'],
-                ],
-                'dentalFloss' => [
-                    'materials' => ['nylon', 'plastic'],
-                ],
-                'mouthwashBottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'wipes' => [
-                    'materials' => ['fabric', 'plastic', 'biodegradable'],
-                ],
-                'sanitiser' => [
-                    'materials' => ['plastic'],
-                ],
-                'syringe' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'bandage' => [
-                    'materials' => ['cotton', 'elastic'],
-                ],
-                'plaster' => [
-                    'materials' => ['plastic', 'adhesive'],
-                ],
-                'medicineBottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'pillPack' => [
-                    'materials' => ['plastic', 'aluminium'],
                 ],
                 'other' => [],
             ],
 
-            'smoking' => [
-                'butts' => [
-                    'materials' => ['plastic', 'paper'],
-                ],
-                'lighters' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'cigarette_box' => [
-                    'materials' => ['cardboard'],
-                ],
-                'match_box' => [
-                    'materials' => ['cardboard'],
-                ],
-                'tobaccoPouch' => [
-                    'materials' => ['plastic'],
-                ],
-                'rollingPapers' => [
-                    'materials' => ['paper'],
-                ],
-                'packaging' => [
-                    'materials' => ['cellophane', 'foil'],
-                ],
-                'filters' => [
-                    'materials' => ['plastic', 'biodegradable'],
-                ],
-                'vapePen' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'vapeOil' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'pipe' => [
-                    'materials' => ['glass', 'metal', 'ceramic'],
-                ],
-                'bong' => [
-                    'materials' => ['glass', 'metal', 'ceramic'],
-                ],
-                'grinder' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'ashtray' => [
-                    'materials' => ['glass', 'ceramic', 'metal'],
-                ],
-                'other' => [],
-            ],
-
-            'softdrinks' => [
-                'water_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'fizzy_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'juice_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'energy_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'sports_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'iceTea_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'milk_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'smoothie_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'soda_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'energy_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'juice_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'icedTea_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'sparklingWater_can' => [
-                    'materials' => ['aluminium'],
-                ],
-                'juice_carton' => [
-                    'materials' => ['cardboard', 'foil', 'plastic'],
-                ],
-                'milk_carton' => [
-                    'materials' => ['cardboard', 'foil', 'plastic'],
-                ],
-                'icedTea_carton' => [
-                    'materials' => ['cardboard', 'foil', 'plastic'],
-                ],
-                'plantMilk_carton' => [
-                    'materials' => ['cardboard', 'foil', 'plastic'],
-                ],
-                'cup' => [
-                    'materials' => ['plastic', 'paper', 'foam'],
-                ],
-                'drinkingGlass' => [
-                    'materials' => ['glass'],
-                ],
-                'brokenGlass' => [
-                    'materials' => ['glass'],
-                ],
-                'lid' => [
-                    'materials' => ['plastic'],
-                ],
-                'label' => [
-                    'materials' => ['paper', 'plastic'],
-                ],
-                'pullRing' => [
-                    'materials' => ['aluminium'],
-                ],
-                'packaging' => [
-                    'materials' => ['cardboard', 'plastic', 'foil'],
-                ],
-                'straw' => [
-                    'materials' => ['plastic', 'paper', 'metal', 'bamboo'],
-                ],
-                'straw_packaging' => [
-                    'materials' => ['paper', 'plastic'],
-                ],
-                'juice_pouch' => [
-                    'materials' => ['plastic', 'foil'],
-                ],
-                'other' => [],
-            ],
-
-            'stationery' => [
-                'book' => [
-                    'materials' => ['paper'],
-                ],
-                'pen' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'pencil' => [
-                    'materials' => ['wood', 'graphite'],
-                ],
-                'magazine' => [
-                    'materials' => ['paper', 'plastic'],
-                ],
-                'marker' => [
-                    'materials' => ['plastic'],
-                ],
-                'notebook' => [
-                    'materials' => ['paper'],
-                ],
-                'stapler' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'paperClip' => [
-                    'materials' => ['metal'],
-                ],
-                'rubberBand' => [
-                    'materials' => ['rubber'],
-                ],
+            'unclassified' => [
                 'other' => [],
             ],
         ];

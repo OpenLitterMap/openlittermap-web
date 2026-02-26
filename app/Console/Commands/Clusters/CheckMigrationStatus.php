@@ -61,7 +61,7 @@ class CheckMigrationStatus extends Command
         $pkInfo = $this->getPrimaryKeyInfo('clusters');
         $this->info('  Primary key   : ' . ($pkInfo ?: '— missing —'));
         if ($pkInfo === 'id') {
-            $this->warn("  ⚠️  Still using surrogate id PK → run clustering:complete-pk-migration");
+            $this->warn("  ⚠️  Still using surrogate id PK — composite PK migration has not been applied");
         }
 
         // legacy columns lingering?
@@ -99,7 +99,7 @@ class CheckMigrationStatus extends Command
             $this->warn('  → Some clusters are inconsistent – investigate back-fill');
         }
         if ($pkInfo === 'id') {
-            $this->warn('  → Run  php artisan clustering:complete-pk-migration');
+            $this->warn('  → Apply the composite PK migration to replace surrogate id');
         }
         if (!$photosWithoutTileKey && !$nullClusters && $pkInfo !== 'id') {
             $this->info('  ✅ Migration looks good!');

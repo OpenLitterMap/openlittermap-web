@@ -30,12 +30,9 @@ class AchievementsController extends Controller
         $user = $request->user();
         $userId = $user->id;
 
-        // \Log::info('User counts from Redis', RedisMetricsCollector::getUserCounts($userId));
-
         // Get cached data
         $unlockedIds = $this->repository->getUnlockedAchievementIds($userId);
-        // $counts = RedisMetricsCollector::getUserCounts($userId);
-        $counts = 0;
+        $counts = RedisMetricsCollector::getUserMetrics($userId);
 
         // Build hierarchical response
         $response = [

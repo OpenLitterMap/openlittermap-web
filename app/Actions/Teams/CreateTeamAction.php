@@ -9,8 +9,20 @@ use App\Models\Users\User;
 
 class CreateTeamAction
 {
-    public function run(User $user, array $data): Team
+    /**
+     * @return Team|array Team on success, error array on failure.
+     */
+    public function run(User $user, array $data): Team|array
     {
+        // Hard limit: 1 team per school manager
+        if (Team::where('created_by', $user->id)->count() >= 1) {
+            return ['success' => false, 'msg' => 'max-created'];
+        }
+
+        if ($user->remaining_teams <= 0) {
+            return ['success' => false, 'msg' => 'max-created'];
+        }
+
         $isSchool = $this->isSchoolType($data['teamType'] ?? null);
 
         $team = Team::create([

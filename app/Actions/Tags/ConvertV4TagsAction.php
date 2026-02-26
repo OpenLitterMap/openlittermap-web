@@ -2,37 +2,30 @@
 
 namespace App\Actions\Tags;
 
-use App\Actions\Photos\AddCustomTagsToPhotoAction;
-use App\Actions\Photos\AddTagsToPhotoAction as OldAddTagsToPhotoAction;
-use App\Enums\VerificationStatus;
-use App\Events\TagsVerifiedByAdmin;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
-use App\Models\Teams\Team;
-use App\Models\Users\User;
-use App\Services\Tags\UpdateTagsService;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Converts v4 mobile tag payloads directly to v5 PhotoTags.
+ *
+ * Maps v4 format {categoryKey: {objectKey: quantity}} directly to CLO ids
+ * and delegates to the v5 AddTagsToPhotoAction (summary, XP, verification).
+ */
 class ConvertV4TagsAction
 {
     public function __construct(
-        private OldAddTagsToPhotoAction $oldAddTagsAction,
-        private AddCustomTagsToPhotoAction $oldAddCustomTagsAction,
-        private UpdateTagsService $updateTagsService,
+        private AddTagsToPhotoAction $addTagsAction,
     ) {}
 
     /**
-     * Convert v4 mobile tag payload to v5 PhotoTags.
-     *
-     * Reuses the migration pipeline:
-     * 1. Old action writes v4 data to category columns
-     * 2. UpdateTagsService reads it back, creates v5 PhotoTags + summary + XP
-     * 3. Handle verification (trusted → TagsVerifiedByAdmin)
-     *
      * @param int   $userId
      * @param int   $photoId
      * @param array $v4Tags     v4 format {categoryKey: {objectKey: quantity}}
      * @param bool  $pickedUp
-     * @param array $customTags Optional custom tags
+     * @param array $customTags Optional custom tag strings
      */
     public function run(int $userId, int $photoId, array $v4Tags, bool $pickedUp, array $customTags = []): void
     {
@@ -44,8 +37,8 @@ class ConvertV4TagsAction
             return;
         }
 
-        // Idempotency: skip if already converted to v5
-        if ($photo->migrated_at !== null || $photo->photoTags()->exists()) {
+        // Idempotency: skip if already has v5 tags
+        if ($photo->photoTags()->exists()) {
             return;
         }
 
@@ -53,67 +46,91 @@ class ConvertV4TagsAction
         $photo->remaining = ! $pickedUp;
         $photo->save();
 
-        // Filter to known categories (old action requires matching Photo relationship)
-        $knownCategories = array_flip($photo->categories());
-        $filteredTags = [];
+        // Convert v4 → v5 format
+        $v5Tags = $this->convertToV5Format($v4Tags, $customTags, $pickedUp);
 
-        foreach ($v4Tags as $categoryKey => $items) {
-            if (isset($knownCategories[$categoryKey])) {
-                $filteredTags[$categoryKey] = $items;
-            } else {
-                Log::warning("ConvertV4TagsAction: unknown category '{$categoryKey}', skipping");
-            }
+        if (empty($v5Tags)) {
+            Log::warning('ConvertV4TagsAction: no valid tags after conversion', [
+                'photo_id' => $photoId,
+                'v4_tags' => $v4Tags,
+            ]);
+
+            return;
         }
 
-        // Step 1: Write v4 data to category columns
-        if (! empty($filteredTags)) {
-            $this->oldAddTagsAction->run($photo, $filteredTags);
-        }
-
-        if (! empty($customTags)) {
-            $this->oldAddCustomTagsAction->run($photo, $customTags);
-        }
-
-        // Step 2: Convert to v5 (PhotoTags + summary + XP) via migration pipeline
-        $photo->refresh();
-        $this->updateTagsService->updateTags($photo);
-
-        // Step 3: Handle verification
-        $photo->refresh();
-        $this->updateVerification($userId, $photo);
+        // AddTagsToPhotoAction handles: PhotoTag creation, summary, XP, verification
+        $this->addTagsAction->run($userId, $photoId, $v5Tags);
     }
 
     /**
-     * Set verification status and dispatch event if user is trusted.
+     * Convert v4 tag format to v5 tag array suitable for AddTagsToPhotoAction.
      */
-    protected function updateVerification(int $userId, Photo $photo): void
+    private function convertToV5Format(array $v4Tags, array $customTags, bool $pickedUp): array
     {
-        $user = User::find($userId);
+        $tags = [];
 
-        if ($user->verification_required) {
-            $photo->verification = 0.1;
-
-            if ($photo->team_id) {
-                $team = Team::find($photo->team_id);
-
-                if ($team && $team->isSchool()) {
-                    $photo->verified = VerificationStatus::VERIFIED->value;
-                }
+        foreach ($v4Tags as $categoryKey => $items) {
+            if (! is_array($items)) {
+                continue;
             }
-        } else {
-            $photo->verification = 1;
-            $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
 
-            event(new TagsVerifiedByAdmin(
-                $photo->id,
-                $photo->user_id,
-                $photo->country_id,
-                $photo->state_id,
-                $photo->city_id,
-                $photo->team_id
-            ));
+            $category = Category::where('key', $categoryKey)->first();
+            if (! $category) {
+                Log::warning("ConvertV4TagsAction: unknown category '{$categoryKey}', skipping");
+
+                continue;
+            }
+
+            foreach ($items as $objectKey => $quantity) {
+                $qty = (int) $quantity;
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $object = LitterObject::where('key', $objectKey)->first();
+                if (! $object) {
+                    Log::warning("ConvertV4TagsAction: unknown object '{$objectKey}' in '{$categoryKey}', skipping");
+
+                    continue;
+                }
+
+                $clo = CategoryObject::where('category_id', $category->id)
+                    ->where('litter_object_id', $object->id)
+                    ->first();
+
+                if (! $clo) {
+                    Log::warning("ConvertV4TagsAction: no CLO for {$categoryKey}.{$objectKey}, skipping");
+
+                    continue;
+                }
+
+                $tags[] = [
+                    'category_litter_object_id' => $clo->id,
+                    'quantity' => $qty,
+                    'picked_up' => $pickedUp ?: null,
+                ];
+            }
         }
 
-        $photo->save();
+        // Custom tags — each becomes a separate tag on unclassified.other
+        if (! empty($customTags)) {
+            $unclassifiedClo = CategoryObject::query()
+                ->whereHas('category', fn ($q) => $q->where('key', 'unclassified'))
+                ->whereHas('litterObject', fn ($q) => $q->where('key', 'other'))
+                ->first();
+
+            if ($unclassifiedClo) {
+                foreach ($customTags as $customTag) {
+                    $tags[] = [
+                        'category_litter_object_id' => $unclassifiedClo->id,
+                        'quantity' => 1,
+                        'picked_up' => $pickedUp ?: null,
+                        'custom_tags' => [$customTag],
+                    ];
+                }
+            }
+        }
+
+        return $tags;
     }
 }

@@ -1,29 +1,84 @@
 <template>
-    <div>
-        <!-- Desktop Filters -->
-        <div class="md:flex justify-evenly max-w-3xl mx-auto pb-4">
-            <p
-                v-for="option in options"
-                :key="option"
-                class="border border-gray-300 px-4 py-2 rounded cursor-pointer text-black font-normal"
-                :class="option === selected ? 'bg-green-500 ' : 'bg-white'"
-                @click="changeOption(option)"
-            >{{ getNameForOption(option) }}</p>
+    <div class="space-y-3">
+        <!-- Time Filter Row -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Desktop pills (hidden on mobile) -->
+            <button
+                v-for="option in timeOptions"
+                :key="option.value"
+                class="hidden sm:inline-block px-3 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer"
+                :class="
+                    option.value === selectedTime
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/[0.08] hover:text-white/80'
+                "
+                @click="changeTimeFilter(option.value)"
+            >
+                {{ option.label }}
+            </button>
+
+            <!-- Mobile select (hidden on desktop) -->
+            <select
+                v-model="selectedTime"
+                class="sm:hidden w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
+                @change="changeTimeFilter(selectedTime)"
+            >
+                <option v-for="option in timeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                </option>
+            </select>
         </div>
 
-        <!-- Mobile Filters -->
-        <div class="block md:hidden">
+        <!-- Location Filter Row -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Location type selector -->
             <select
-                v-model="selected"
-                class="w-full border border-gray-300 px-4 py-2 rounded mb-4"
-                @change="optionChanged"
+                v-model="selectedLocationType"
+                class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
+                @change="changeLocationType"
             >
-                <option
-                    v-for="option in options"
-                    :key="option"
-                    :value="option"
-                >
-                    {{ getNameForOption(option) }}
+                <option value="global">Global</option>
+                <option value="country">Country</option>
+                <option value="state">State</option>
+                <option value="city">City</option>
+            </select>
+
+            <!-- Country dropdown -->
+            <select
+                v-if="selectedLocationType !== 'global'"
+                v-model="selectedCountryId"
+                class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
+                @change="changeCountry"
+            >
+                <option :value="null" disabled>Select country</option>
+                <option v-for="country in store.countries" :key="country.id" :value="country.id">
+                    {{ country.name }}
+                </option>
+            </select>
+
+            <!-- State dropdown -->
+            <select
+                v-if="showStateDropdown"
+                v-model="selectedStateId"
+                class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
+                @change="changeState"
+            >
+                <option :value="null" disabled>Select state</option>
+                <option v-for="state in store.states" :key="state.id" :value="state.id">
+                    {{ state.name }}
+                </option>
+            </select>
+
+            <!-- City dropdown -->
+            <select
+                v-if="showCityDropdown"
+                v-model="selectedCityId"
+                class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
+                @change="changeCity"
+            >
+                <option :value="null" disabled>Select city</option>
+                <option v-for="city in store.cities" :key="city.id" :value="city.id">
+                    {{ city.name }}
                 </option>
             </select>
         </div>
@@ -31,83 +86,105 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useLeaderboardStore } from '../../../../stores/leaderboard/index.js';
 
-const leaderboardStore = useLeaderboardStore();
-const selected = ref('today');
-const processing = ref(false);
+const emit = defineEmits(['change']);
+const store = useLeaderboardStore();
 
-const options = [
-    'all-time',
-    'today',
-    'yesterday',
-    'this-month',
-    'last-month',
-    'this-year',
+const selectedTime = ref('all-time');
+const selectedLocationType = ref('global');
+const selectedCountryId = ref(null);
+const selectedStateId = ref(null);
+const selectedCityId = ref(null);
+
+const timeOptions = [
+    { value: 'all-time', label: 'All Time' },
+    { value: 'today', label: 'Today' },
+    { value: 'yesterday', label: 'Yesterday' },
+    { value: 'this-month', label: 'This Month' },
+    { value: 'last-month', label: 'Last Month' },
+    { value: 'this-year', label: 'This Year' },
+    { value: 'last-year', label: 'Last Year' },
 ];
 
-const props = defineProps({
-    locationType: {
-        type: String,
-        default: null,
-        required: false
-    },
-    locationId: {
-        type: Number,
-        default: null,
-        required: false
-    },
+const showStateDropdown = computed(() => {
+    return (selectedLocationType.value === 'state' || selectedLocationType.value === 'city') &&
+        selectedCountryId.value !== null;
 });
 
-/**
- * Change option logic
- */
-const changeOption = async (option) => {
+const showCityDropdown = computed(() => {
+    return selectedLocationType.value === 'city' && selectedStateId.value !== null;
+});
 
-    console.log({ option });
-    selected.value = option;
+onMounted(() => {
+    store.FETCH_COUNTRIES();
+});
 
-    processing.value = true;
+const changeTimeFilter = (value) => {
+    selectedTime.value = value;
+    emitChange();
+};
 
-    if (props.locationId && props.locationType) {
-        await leaderboardStore.GET_USERS_FOR_LOCATION_LEADERBOARD({
-            timeFilter: option,
-            locationId: props.locationId,
-            locationType: props.locationType,
-        });
-    } else {
-        await leaderboardStore.GET_USERS_FOR_GLOBAL_LEADERBOARD(option);
+const changeLocationType = () => {
+    selectedCountryId.value = null;
+    selectedStateId.value = null;
+    selectedCityId.value = null;
+    store.states = [];
+    store.cities = [];
+
+    if (selectedLocationType.value === 'global') {
+        emitChange();
+    }
+};
+
+const changeCountry = () => {
+    selectedStateId.value = null;
+    selectedCityId.value = null;
+    store.states = [];
+    store.cities = [];
+
+    if (selectedLocationType.value === 'country') {
+        emitChange();
+    } else if (selectedCountryId.value) {
+        store.FETCH_STATES(selectedCountryId.value);
+    }
+};
+
+const changeState = () => {
+    selectedCityId.value = null;
+    store.cities = [];
+
+    if (selectedLocationType.value === 'state') {
+        emitChange();
+    } else if (selectedStateId.value) {
+        store.FETCH_CITIES(selectedStateId.value);
+    }
+};
+
+const changeCity = () => {
+    emitChange();
+};
+
+const emitChange = () => {
+    let locationType = null;
+    let locationId = null;
+
+    if (selectedLocationType.value === 'country' && selectedCountryId.value) {
+        locationType = 'country';
+        locationId = selectedCountryId.value;
+    } else if (selectedLocationType.value === 'state' && selectedStateId.value) {
+        locationType = 'state';
+        locationId = selectedStateId.value;
+    } else if (selectedLocationType.value === 'city' && selectedCityId.value) {
+        locationType = 'city';
+        locationId = selectedCityId.value;
     }
 
-    processing.value = false;
-};
-
-/**
- * Get name for option
- *
- * Needs Translation
- */
-const getNameForOption = (option) => {
-    const mapping = {
-        'today': 'Today',
-        'yesterday': 'Yesterday',
-        'this-month': 'This Month',
-        'last-month': 'Last Month',
-        'this-year': 'This Year',
-        'all-time': 'All Time',
-    };
-    return mapping[option] || '';
-};
-
-/**
- * Handle mobile view option change
- */
-const optionChanged = async () => {
-    processing.value = true;
-
-    // await leaderboardStore.GET_GLOBAL_LEADERBOARD(selected.value);
-
-    processing.value = false;
+    emit('change', {
+        timeFilter: selectedTime.value,
+        locationType,
+        locationId,
+    });
 };
 </script>

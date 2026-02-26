@@ -33,10 +33,11 @@ class TagSummaryServiceTest extends TestCase
     {
         $photo = Photo::factory()->create();
         $category = Category::firstWhere('key', 'alcohol');
-        $object = LitterObject::firstWhere('key', 'beer_can');
+        $object = LitterObject::firstWhere('key', 'can');
 
         PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $object->id),
             'category_id' => $category->id,
             'litter_object_id' => $object->id,
             'quantity' => 2,
@@ -54,11 +55,12 @@ class TagSummaryServiceTest extends TestCase
     public function it_counts_brands_and_materials_correctly()
     {
         $photo = Photo::factory()->create();
-        $category = Category::firstWhere('key', 'softdrinks');
-        $object = LitterObject::firstWhere('key', 'soda_can');
+        $category = Category::firstWhere('key', 'beverages');
+        $object = LitterObject::firstWhere('key', 'can');
 
         $tag = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $object->id),
             'category_id' => $category->id,
             'litter_object_id' => $object->id,
             'quantity' => 1,
@@ -95,6 +97,7 @@ class TagSummaryServiceTest extends TestCase
 
         $photoTag = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getUnclassifiedOtherCloId(),
             'category_id' => null,
             'litter_object_id' => null,
             'quantity' => 1,
@@ -146,19 +149,19 @@ class TagSummaryServiceTest extends TestCase
     {
         $photo = Photo::factory()->create();
         $category = Category::firstWhere('key', 'alcohol');
-        $can = LitterObject::firstWhere('key', 'beer_can');
-        $bottle = LitterObject::firstWhere('key', 'wine_bottle');
+        $can = LitterObject::firstWhere('key', 'can');
+        $bottle = LitterObject::firstWhere('key', 'bottle');
 
-        PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $can->id, 'quantity' => 2]);
-        PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $bottle->id, 'quantity' => 1]);
+        PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $this->getCloId($category->id, $can->id), 'category_id' => $category->id, 'litter_object_id' => $can->id, 'quantity' => 2]);
+        PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $this->getCloId($category->id, $bottle->id), 'category_id' => $category->id, 'litter_object_id' => $bottle->id, 'quantity' => 1]);
 
         $this->service->generateTagSummary($photo);
         $summary = $photo->fresh()->summary;
 
         $this->assertEquals(3, $summary['totals']['tags']);
         $this->assertEquals(3, $summary['totals']['objects']);
-        $this->assertEquals(2, $summary['totals']['categories']['alcohol']['beer_can']);
-        $this->assertEquals(1, $summary['totals']['categories']['alcohol']['wine_bottle']);
+        $this->assertEquals(2, $summary['totals']['categories']['alcohol']['can']);
+        $this->assertEquals(1, $summary['totals']['categories']['alcohol']['bottle']);
     }
 
     /** @test */
@@ -167,17 +170,17 @@ class TagSummaryServiceTest extends TestCase
         $photo = Photo::factory()->create();
         $alcohol = Category::firstWhere('key', 'alcohol');
         $smoking = Category::firstWhere('key', 'smoking');
-        $beer = LitterObject::firstWhere('key', 'beer_can');
+        $can = LitterObject::firstWhere('key', 'can');
         $butts = LitterObject::firstWhere('key', 'butts');
 
-        PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $alcohol->id, 'litter_object_id' => $beer->id, 'quantity' => 1]);
-        PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $smoking->id, 'litter_object_id' => $butts->id, 'quantity' => 2]);
+        PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $this->getCloId($alcohol->id, $can->id), 'category_id' => $alcohol->id, 'litter_object_id' => $can->id, 'quantity' => 1]);
+        PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id), 'category_id' => $smoking->id, 'litter_object_id' => $butts->id, 'quantity' => 2]);
 
         $this->service->generateTagSummary($photo);
         $summary = $photo->fresh()->summary;
 
         $this->assertEquals(3, $summary['totals']['tags']);
-        $this->assertEquals(1, $summary['totals']['categories']['alcohol']['beer_can']);
+        $this->assertEquals(1, $summary['totals']['categories']['alcohol']['can']);
         $this->assertEquals(2, $summary['totals']['categories']['smoking']['butts']);
     }
 
@@ -199,17 +202,18 @@ class TagSummaryServiceTest extends TestCase
     {
         $photo = Photo::factory()->create();
         $category = Category::firstWhere('key', 'alcohol');
-        $object = LitterObject::firstWhere('key', 'beer_can');
+        $object = LitterObject::firstWhere('key', 'can');
 
         $tag = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $object->id),
             'category_id' => $category->id,
             'litter_object_id' => $object->id,
             'quantity' => 1,
         ]);
 
-        PhotoTagExtraTags::create(['photo_tag_id' => $tag->id, 'tag_type' => 'brand', 'tag_type_id' => 999, 'quantity' => 1, 'index' => 0]);
-        PhotoTagExtraTags::create(['photo_tag_id' => $tag->id, 'tag_type' => 'brand', 'tag_type_id' => 999, 'quantity' => 2, 'index' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $tag->id, 'tag_type' => 'brand', 'tag_type_id' => 999, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $tag->id, 'tag_type' => 'brand', 'tag_type_id' => 999, 'quantity' => 2]);
 
         $this->service->generateTagSummary($photo);
         $summary = $photo->fresh()->summary;

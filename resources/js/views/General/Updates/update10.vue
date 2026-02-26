@@ -6,9 +6,7 @@
             <li>
                 <strong
                     >If you have used OpenLitterMap recently, you might need to delete cookies on your device if the
-                    "add data" component is missing.</strong
-                > is missing.</strong
-                >
+                    "add data" component is missing.</strong>
                 <p>To delete cookies (if necessary):</p>
                 <p><strong>On iPhone:</strong></p>
                 <ol>
@@ -32,7 +30,9 @@
             </li>
             <li>
                 This means that <strong>other languages will be really easy to add in.</strong> What language would you
-                like            <li>Several performace upgrades and legacy code refactors.</li>rs.</li>
+                like to see next?
+            </li>
+            <li>Several performance upgrades and legacy code refactors.</li>
             <li>
                 2 New Blogs coming incl "The Smartest Cities Will Embace Open Data on Plastic Pollution" in the North
                 American Public Sector Digest.
@@ -41,10 +41,12 @@
                 OpenLitterMap was rejected by yet another grant holder (making that 5 or 6 unsuccessful grant
                 applications in a row). There is not much support for open data on plastic pollution.
             </li>
-                         Added a Progress Bar to the global page (<a href="openlittermap.com/maps">openlittermap.com/maps</a>) to
-                determine how far away we are from meeting our next open data target     </ul>
-
+            <li>
+                Added a Progress Bar to the global page (<a href="openlittermap.com/maps">openlittermap.com/maps</a>) to
+                determine how far away we are from meeting our next open data target.
+            </li>
             <li>Removed the url to the annoying navigation section but its still there if you want @ /navigation</li>
+        </ul>
         <div class="milestone">
             <strong>¡Hablamos Español!</strong> OpenLitterMap is now available in Spanish, making internationalization
             easy for future languages!
@@ -76,16 +78,22 @@
                 you want to tell.
             </li>
             <li>
-                If you                If you can't count what's in the photo, you can use Large/Random Dump in the Other category and rank it
-                from 1-100.         <li>
+                If you can't count what's in the photo, you can use Large/Random Dump in the Other category and rank it
+                from 1-100.
+            </li>
+            <li>
                 You are not just mapping litter, you are creating open data. Feel the Knowledge!! You can download your
                 data too. Anyone can!
             </li>
             <li>
-                Please                Please don't include children in the photos, but feel welcome to take a picture of your dog and join our
-                community of Trash Dog owners! Feature your cute pup on theef="https://openlittermap.com/global">global map</a> under the trash dog category!
+                Please don't include children in the photos, but feel welcome to take a picture of your dog and join our
+                community of Trash Dog owners! Feature your cute puppy on the
+                <a href="https://openlittermap.com/global">global map</a> under the trash dog category!
             </li>
-            <li>Sit ba            <li>Sit back and expect more updates!</li>apping-<br />Seán Lynch @ OpenLitterMap.com</p>
+            <li>Sit back and expect more updates!</li>
+        </ul>
+
+        <p class="signature">Happy Mapping-<br />Seán Lynch @ OpenLitterMap.com</p>
     </div>
 </template>
 

@@ -108,7 +108,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment: school/community types, student identity masking, school approval pipeline, school_manager role, leaderboard system. 605 tests passing.
+Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, 4 bug fixes. 710 tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -128,6 +128,12 @@ Built by a single developer over 17 years.
 - `ConvertV4TagsAction` is BUILT and deployed — mobile v4 tags convert to v5 PhotoTags via migration pipeline
 - `Photo` model uses `SoftDeletes` — `$photo->delete()` soft-deletes, `Photo::public()` auto-excludes
 - Locations API uses `locations`/`location_type` keys (not `children`/`children_type`)
+- `UsersUploadsController` returns tags under key `'new_tags'` (frontend reads `photo.new_tags`)
+- Untagged photo filter uses `WHERE verified = 0`, NOT `doesntHave('photoTags')`
+- `clustering:update --all` flushes `clusters:v5:*` cache keys after regeneration
+- Map cluster layer MUST be added to Leaflet map unconditionally (not gated on initial feature count)
+- Points API returns `page` (not `current_page`) at root level — frontend normalizes to `current_page`
+- Nav.vue `isAdmin` check includes `'superadmin'` role (not just `'admin'` and `'helper'`)
 
 ## Verification Pipeline
 - 0 UNVERIFIED: uploaded, no tags
@@ -138,7 +144,7 @@ Built by a single developer over 17 years.
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 605 tests passing (0 failures). All steps complete:
+Fully deployed. 710 tests passing (0 failures). All steps complete:
 - VerificationStatus enum + Photo model cast (step 10)
 - `is_public=true` filtering on all public-facing queries (step 9)
 - Frontend: Pinia stores, 12 Vue components, router updated (steps 11-12)
@@ -154,6 +160,9 @@ Reference files: `~/Code/teams-v5-files/`
 - Do not rename files unless asked
 
 ## Domain Documentation (read the relevant file before working in that area)
+- `readme/Achievements-Audit.md` — Achievements system audit and architecture
+- `readme/ArtisanCommands.md` — All custom artisan commands and scheduler config
+- `readme/Clustering.md` — Map clustering system (tile keys, zoom levels, dirty tiles, GeoJSON API)
 - `readme/Leaderboards.md` — Leaderboard system (Redis ZSETs + MySQL per-user metrics)
 - `readme/Locations.md` — Location and geography system
 - `readme/Metrics.md` — Metrics pipeline and aggregation
@@ -198,6 +207,8 @@ This application is a Laravel application and its main Laravel ecosystems packag
 This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
 - `tailwindcss-development` — Styles applications using Tailwind CSS v3 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
+- `achievements-system` — AchievementEngine, AchievementRepository, milestone checkers, AchievementsSeeder, user_achievements pivot, AchievementsController API, and achievement evaluation flow.
+- `clustering-system` — ClusteringService, tile keys, dirty tiles/teams, clustering commands, ClusterController GeoJSON API, PhotoObserver dirty marking, and map cluster rendering.
 - `location-system` — Countries, states, cities, ResolveLocationAction, Location base model, LocationType enum, geocoding, and location-level Redis data.
 - `metrics-pipeline` — MetricsService, RedisMetricsCollector, ProcessPhotoMetrics, metrics table, Redis stats, leaderboards, XP processing, and photo processing state (processed_at/fp/tags/xp).
 - `mobile-shim` — Mobile API endpoints, v4 tag format conversion, AddTagsToUploadedImageController, old mobile tagging routes, and ConvertV4TagsAction shim design.

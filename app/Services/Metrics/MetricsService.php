@@ -188,71 +188,89 @@ final class MetricsService
     }
 
     /**
-     * Extract metrics from photo summary
+     * Extract metrics from photo summary.
+     * Supports both flat array (v5.1) and nested dict (v5.0) formats.
      */
     private function extractMetricsFromPhoto(Photo $photo): array
     {
         $summary = $photo->summary ?? [];
-        $tags = ['categories' => [], 'objects' => [], 'materials' => [], 'brands' => [], 'custom_tags' => []];
+        $summaryTags = $summary['tags'] ?? [];
+
+        // Detect format: flat array (list) vs nested dict (associative)
+        if (is_array($summaryTags) && array_is_list($summaryTags)) {
+            return $this->extractFromFlatSummary($summaryTags, $photo);
+        }
+
+        return $this->extractFromNestedSummary($summaryTags, $photo);
+    }
+
+    /**
+     * Extract metrics from flat array summary format (v5.1).
+     */
+    private function extractFromFlatSummary(array $summaryTags, Photo $photo): array
+    {
+        $tags = ['categories' => [], 'objects' => [], 'materials' => [], 'brands' => [], 'custom_tags' => [], 'types' => []];
         $totalLitter = 0;
         $totalBrands = 0;
         $totalMaterials = 0;
         $totalCustom = 0;
 
-        foreach ($summary['tags'] ?? [] as $categoryKey => $objects) {
-            if (!is_array($objects)) continue;
-
-            $categoryTotal = 0;
-            foreach ($objects as $objectKey => $data) {
-                if (!is_array($data)) continue;
-
-                $quantity = (int)($data['quantity'] ?? 0);
-                if ($quantity <= 0) continue;
-
-                // Objects
-                $objectId = is_numeric($objectKey) ? (int)$objectKey : $objectKey;
-                $tags['objects'][$objectId] = ($tags['objects'][$objectId] ?? 0) + $quantity;
-                $categoryTotal += $quantity;
-                $totalLitter += $quantity;
-
-                // Materials
-                foreach ($data['materials'] ?? [] as $key => $count) {
-                    $id = is_numeric($key) ? (int)$key : $key;
-                    $qty = (int)$count;
-                    $tags['materials'][$id] = ($tags['materials'][$id] ?? 0) + $qty;
-                    $totalMaterials += $qty;
-                }
-
-                // Brands
-                foreach ($data['brands'] ?? [] as $key => $count) {
-                    $id = is_numeric($key) ? (int)$key : $key;
-                    $qty = (int)$count;
-                    $tags['brands'][$id] = ($tags['brands'][$id] ?? 0) + $qty;
-                    $totalBrands += $qty;
-                }
-
-                // Custom tags
-                foreach ($data['custom_tags'] ?? [] as $key => $count) {
-                    $id = is_numeric($key) ? (int)$key : $key;
-                    $qty = (int)$count;
-                    $tags['custom_tags'][$id] = ($tags['custom_tags'][$id] ?? 0) + $qty;
-                    $totalCustom += $qty;
-                }
+        foreach ($summaryTags as $tag) {
+            $quantity = (int) ($tag['quantity'] ?? 0);
+            if ($quantity <= 0) {
+                continue;
             }
 
-            // Category totals (not included in tags_count to avoid double-counting)
-            if ($categoryTotal > 0) {
-                $categoryId = is_numeric($categoryKey) ? (int)$categoryKey : $categoryKey;
-                $tags['categories'][$categoryId] = $categoryTotal;
+            $categoryId = (int) ($tag['category_id'] ?? 0);
+            $objectId = (int) ($tag['object_id'] ?? 0);
+            $typeId = $tag['type_id'] ?? null;
+
+            // Categories
+            if ($categoryId > 0) {
+                $tags['categories'][$categoryId] = ($tags['categories'][$categoryId] ?? 0) + $quantity;
+            }
+
+            // Objects
+            if ($objectId > 0) {
+                $tags['objects'][$objectId] = ($tags['objects'][$objectId] ?? 0) + $quantity;
+            }
+
+            $totalLitter += $quantity;
+
+            // Types
+            if ($typeId) {
+                $tags['types'][$typeId] = ($tags['types'][$typeId] ?? 0) + $quantity;
+            }
+
+            // Materials — set membership, weighted by parent tag quantity
+            foreach ($tag['materials'] ?? [] as $materialId) {
+                $tags['materials'][$materialId] = ($tags['materials'][$materialId] ?? 0) + $quantity;
+                $totalMaterials += $quantity;
+            }
+
+            // Brands — independent quantities
+            foreach ((array) ($tag['brands'] ?? []) as $brandId => $brandQty) {
+                $brandQty = (int) $brandQty;
+                $tags['brands'][$brandId] = ($tags['brands'][$brandId] ?? 0) + $brandQty;
+                $totalBrands += $brandQty;
+            }
+
+            // Custom tags — set membership, weighted by parent tag quantity
+            foreach ($tag['custom_tags'] ?? [] as $customTagId) {
+                $tags['custom_tags'][$customTagId] = ($tags['custom_tags'][$customTagId] ?? 0) + $quantity;
+                $totalCustom += $quantity;
             }
         }
 
-        // Tags count excludes categories to avoid double-counting
-        $tagsCount = array_sum($tags['objects']) +
-            array_sum($tags['materials']) +
-            array_sum($tags['brands']) +
-            array_sum($tags['custom_tags']);
-        ;
+        // Remove empty types dimension to avoid unnecessary delta computation
+        if (empty($tags['types'])) {
+            unset($tags['types']);
+        }
+
+        $tagsCount = array_sum($tags['objects'] ?? []) +
+            array_sum($tags['materials'] ?? []) +
+            array_sum($tags['brands'] ?? []) +
+            array_sum($tags['custom_tags'] ?? []);
 
         return [
             'tags' => $tags,
@@ -261,7 +279,83 @@ final class MetricsService
             'materials_count' => $totalMaterials,
             'custom_tags_count' => $totalCustom,
             'litter' => $totalLitter,
-            'xp' => (int)($photo->xp ?? 0),
+            'xp' => (int) ($photo->xp ?? 0),
+        ];
+    }
+
+    /**
+     * Extract metrics from nested dict summary format (v5.0 legacy).
+     */
+    private function extractFromNestedSummary(array $summaryTags, Photo $photo): array
+    {
+        $tags = ['categories' => [], 'objects' => [], 'materials' => [], 'brands' => [], 'custom_tags' => []];
+        $totalLitter = 0;
+        $totalBrands = 0;
+        $totalMaterials = 0;
+        $totalCustom = 0;
+
+        foreach ($summaryTags as $categoryKey => $objects) {
+            if (!is_array($objects)) {
+                continue;
+            }
+
+            $categoryTotal = 0;
+            foreach ($objects as $objectKey => $data) {
+                if (!is_array($data)) {
+                    continue;
+                }
+
+                $quantity = (int) ($data['quantity'] ?? 0);
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $objectId = is_numeric($objectKey) ? (int) $objectKey : $objectKey;
+                $tags['objects'][$objectId] = ($tags['objects'][$objectId] ?? 0) + $quantity;
+                $categoryTotal += $quantity;
+                $totalLitter += $quantity;
+
+                foreach ($data['materials'] ?? [] as $key => $count) {
+                    $id = is_numeric($key) ? (int) $key : $key;
+                    $qty = (int) $count;
+                    $tags['materials'][$id] = ($tags['materials'][$id] ?? 0) + $qty;
+                    $totalMaterials += $qty;
+                }
+
+                foreach ($data['brands'] ?? [] as $key => $count) {
+                    $id = is_numeric($key) ? (int) $key : $key;
+                    $qty = (int) $count;
+                    $tags['brands'][$id] = ($tags['brands'][$id] ?? 0) + $qty;
+                    $totalBrands += $qty;
+                }
+
+                foreach ($data['custom_tags'] ?? [] as $key => $count) {
+                    $id = is_numeric($key) ? (int) $key : $key;
+                    $qty = (int) $count;
+                    $tags['custom_tags'][$id] = ($tags['custom_tags'][$id] ?? 0) + $qty;
+                    $totalCustom += $qty;
+                }
+            }
+
+            if ($categoryTotal > 0) {
+                $categoryId = is_numeric($categoryKey) ? (int) $categoryKey : $categoryKey;
+                $tags['categories'][$categoryId] = $categoryTotal;
+            }
+        }
+
+        $tagsCount = array_sum($tags['objects']) +
+            array_sum($tags['materials']) +
+            array_sum($tags['brands']) +
+            array_sum($tags['custom_tags']);
+
+        return [
+            'tags' => $tags,
+            'tags_count' => $tagsCount,
+            'brands_count' => $totalBrands,
+            'materials_count' => $totalMaterials,
+            'custom_tags_count' => $totalCustom,
+            'litter' => $totalLitter,
+            'xp' => (int) ($photo->xp ?? 0),
         ];
     }
 
@@ -430,7 +524,7 @@ final class MetricsService
     {
         $deltas = [];
 
-        foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags'] as $dimension) {
+        foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags', 'types'] as $dimension) {
             $old = $oldTags[$dimension] ?? [];
             $new = $newTags[$dimension] ?? [];
             $allKeys = array_unique(array_merge(array_keys($old), array_keys($new)));
@@ -457,25 +551,5 @@ final class MetricsService
             }
         }
         return true;
-    }
-
-    /**
-     * Get Redis scopes using LocationType enum
-     */
-    private function getRedisScopes(Photo $photo): array
-    {
-        $scopes = [LocationType::Global->scopePrefix()];
-
-        if ($photo->country_id) {
-            $scopes[] = LocationType::Country->scopePrefix($photo->country_id);
-        }
-        if ($photo->state_id) {
-            $scopes[] = LocationType::State->scopePrefix($photo->state_id);
-        }
-        if ($photo->city_id) {
-            $scopes[] = LocationType::City->scopePrefix($photo->city_id);
-        }
-
-        return $scopes;
     }
 }

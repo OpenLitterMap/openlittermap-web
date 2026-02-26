@@ -25,7 +25,7 @@ class ContributorAggregator
                 users.username,
                 users.name,
                 COUNT(DISTINCT photos.id) as photo_count,
-                COALESCE(SUM(photos.total_litter), 0) as total_litter,
+                COALESCE(SUM(photos.total_tags), 0) as total_litter,
                 MIN(photos.datetime) as first_contribution,
                 MAX(photos.datetime) as last_contribution
             ')

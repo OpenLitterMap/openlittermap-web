@@ -150,10 +150,11 @@ const stats = computed(() => {
 
     // Use summary totals if available
     if (props.photo.summary?.totals) {
-        result.totalTags = props.photo.summary.totals.total_tags || 0;
-        result.totalObjects = props.photo.summary.totals.total_objects || 0;
-        result.totalMaterials = props.photo.summary.totals.materials || 0;
-        result.totalBrands = props.photo.summary.totals.brands || 0;
+        const t = props.photo.summary.totals;
+        result.totalObjects = t.litter || t.total_objects || 0;
+        result.totalMaterials = t.materials || 0;
+        result.totalBrands = t.brands || 0;
+        result.totalTags = result.totalObjects + result.totalMaterials + result.totalBrands + (t.custom_tags || 0);
     } else if (props.photo.new_tags) {
         // Calculate from new_tags
         props.photo.new_tags.forEach((tag) => {

@@ -8,6 +8,9 @@ use App\Models\API\APIPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @deprecated
+ */
 class WebPhotosController extends Controller
 {
     /**

@@ -8,6 +8,7 @@ use App\Events\TagsVerifiedByAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
@@ -125,10 +126,26 @@ class TeamPhotosController extends Controller
                 $category = Category::where('key', $tag['category'])->first();
                 $object = LitterObject::where('key', $tag['object'])->first();
 
+                $cloId = null;
+                if ($category && $object) {
+                    $clo = CategoryObject::where('category_id', $category->id)
+                        ->where('litter_object_id', $object->id)
+                        ->first();
+                    $cloId = $clo?->id;
+                }
+
+                if (! $cloId) {
+                    $cloId = CategoryObject::query()
+                        ->whereHas('category', fn($q) => $q->where('key', 'unclassified'))
+                        ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
+                        ->value('id');
+                }
+
                 PhotoTag::create([
                     'photo_id' => $photo->id,
                     'category_id' => $category?->id,
                     'litter_object_id' => $object?->id,
+                    'category_litter_object_id' => $cloId,
                     'quantity' => $tag['quantity'],
                     'picked_up' => $tag['picked_up'] ?? false,
                 ]);

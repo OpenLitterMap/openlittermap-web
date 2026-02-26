@@ -6,6 +6,9 @@ use App\Http\Requests\ContactRequest;
 use App\Mail\ContactMail;
 use Illuminate\Support\Facades\Mail;
 
+/**
+ * @deprecated Route commented out. Contact form disabled.
+ */
 class ContactUsController extends Controller
 {
 

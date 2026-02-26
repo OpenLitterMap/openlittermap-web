@@ -6,6 +6,9 @@ use App\Helpers\Twitter;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated No route exists. Orphaned code.
+ */
 class PublicLittercoinController extends Controller
 {
     /**

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Photos;
 
 use App\Models\Users\User;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -18,6 +19,7 @@ class UploadPhotoWithCustomTagsTest extends TestCase
         Storage::fake('s3');
         Storage::fake('bbox');
         $this->setImagePath();
+        $this->seed(GenerateTagsSeeder::class);
     }
 
 //    public function validationDataProvider(): array
@@ -46,10 +48,16 @@ class UploadPhotoWithCustomTagsTest extends TestCase
 
         $response->assertOk()->assertJson(['success' => true]);
 
-        $this->assertEquals(
-            ['tag1', 'tag2', 'tag3'],
-            $user->fresh()->photos->last()->customTags->pluck('tag')->toArray()
-        );
+        // v5: custom tags stored as extra_tags on photo_tags
+        $photo = $user->fresh()->photos->last();
+        $customTagKeys = $photo->photoTags
+            ->flatMap(fn ($pt) => $pt->extraTags->where('tag_type', 'custom_tag'))
+            ->map(fn ($extra) => $extra->extraTag?->key)
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $this->assertEquals(['tag1', 'tag2', 'tag3'], $customTagKeys);
     }
 
 //    public function test_an_api_user_can_upload_a_photo_with_custom_tags()

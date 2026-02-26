@@ -30,9 +30,14 @@ class PhotoTag extends Model
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
     }
 
-    public function primaryCustomTag(): BelongsTo
+    public function categoryObject(): BelongsTo
     {
-        return $this->belongsTo(CustomTagNew::class, 'custom_tag_primary_id');
+        return $this->belongsTo(CategoryObject::class, 'category_litter_object_id');
+    }
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(LitterObjectType::class, 'litter_object_type_id');
     }
 
     public function extraTags(): HasMany
@@ -40,21 +45,18 @@ class PhotoTag extends Model
         return $this->hasMany(PhotoTagExtraTags::class);
     }
 
-    public function brand(): BelongsTo
-    {
-        return $this->belongsTo(BrandList::class, 'brand_id');
-    }
-
-    public function attachExtraTags(array $extras, string $type, int $index): void
+    public function attachExtraTags(array $extras, string $type): void
     {
         if (empty($extras)) {
             return;
         }
 
+        // Materials and custom_tags are set membership — always qty=1
+        $forceQtyOne = in_array($type, ['material', 'custom_tag']);
+
         $rows = [];
 
-        foreach ($extras as $tag)
-        {
+        foreach ($extras as $tag) {
             if (empty($tag['id'])) {
                 Log::warning("Skipping extra tag with missing ID for type {$type}");
                 continue;
@@ -64,8 +66,7 @@ class PhotoTag extends Model
                 'photo_tag_id' => $this->id,
                 'tag_type'     => $type,
                 'tag_type_id'  => $tag['id'],
-                'index'        => $index,
-                'quantity'     => $tag['quantity'] ?? 1,
+                'quantity'     => $forceQtyOne ? 1 : ($tag['quantity'] ?? 1),
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ];
@@ -74,7 +75,7 @@ class PhotoTag extends Model
         if (!empty($rows)) {
             PhotoTagExtraTags::upsert(
                 $rows,
-                ['photo_tag_id', 'tag_type', 'tag_type_id', 'index'],
+                ['photo_tag_id', 'tag_type', 'tag_type_id'],
                 ['quantity', 'updated_at']
             );
         }

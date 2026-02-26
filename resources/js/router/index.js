@@ -17,6 +17,7 @@ import Upload from '../views/Upload/Upload.vue';
 import Welcome from '../views/Welcome/Welcome.vue';
 import Achievements from '../views/Achievements/Achievements.vue';
 import Redis from '../views/Admin/Redis.vue';
+import AdminQueue from '../views/Admin/AdminQueue.vue';
 import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
@@ -25,6 +26,7 @@ import AddTags from '../views/General/Tagging/v2/AddTags.vue';
 import Locations from '../views/Locations/Locations.vue';
 import TeamsLayout from '../views/Teams/TeamsLayout.vue';
 import TeamDashboard from '../views/Teams/TeamDashboard.vue';
+import Profile from '../views/Profile/Profile.vue';
 
 const routes = [
     // Public routes
@@ -153,6 +155,18 @@ const routes = [
         },
     },
     {
+        path: '/profile',
+        name: 'Profile',
+        component: Profile,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/settings',
+        redirect: '/profile?tab=settings',
+    },
+    {
         path: '/achievements',
         name: 'Achievements',
         component: Achievements,
@@ -165,7 +179,15 @@ const routes = [
         name: 'AdminRedis',
         component: Redis,
         meta: {
-            middleware: [auth], // admin
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/admin/queue',
+        name: 'AdminQueue',
+        component: AdminQueue,
+        meta: {
+            middleware: [auth],
         },
     },
 ];

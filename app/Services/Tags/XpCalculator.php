@@ -57,21 +57,70 @@ final class XpCalculator
     }
 
     /**
-     * Deprecated?
-     * Calculate XP from photo summary structure
-     * This version can access the keys mapping from the summary
+     * Calculate XP from photo summary structure.
+     * Supports both flat array (v5.1) and nested dict (v5.0) formats.
      */
     public static function calculateFromSummary(array $summary): int
     {
-        $xp = XpScore::Upload->xp(); // Base XP: 5
-
+        $tags = $summary['tags'] ?? [];
         $objectKeys = $summary['keys']['objects'] ?? [];
 
-        foreach ($summary['tags'] ?? [] as $categoryId => $objects) {
+        // Detect format: flat array (list) vs nested dict (associative)
+        if (array_is_list($tags)) {
+            return self::calculateFromFlatSummary($tags, $objectKeys);
+        }
+
+        return self::calculateFromNestedSummary($tags, $objectKeys);
+    }
+
+    /**
+     * Calculate XP from flat array summary format (v5.1).
+     */
+    private static function calculateFromFlatSummary(array $tags, array $objectKeys): int
+    {
+        $xp = XpScore::Upload->xp();
+
+        foreach ($tags as $tag) {
+            $quantity = $tag['quantity'] ?? 0;
+            $objectId = $tag['object_id'] ?? 0;
+
+            $objectKey = $objectKeys[$objectId] ?? null;
+            if ($objectKey) {
+                $xp += $quantity * XpScore::getObjectXp($objectKey);
+            } else {
+                $xp += $quantity * XpScore::Object->xp();
+            }
+
+            // Materials: set membership, weighted by parent qty → each material contributes qty * Material XP
+            foreach ($tag['materials'] ?? [] as $materialId) {
+                $xp += $quantity * XpScore::Material->xp();
+            }
+
+            // Brands: independent quantities
+            foreach ((array) ($tag['brands'] ?? []) as $brandId => $brandQty) {
+                $xp += $brandQty * XpScore::Brand->xp();
+            }
+
+            // Custom tags: set membership, weighted by parent qty
+            foreach ($tag['custom_tags'] ?? [] as $customId) {
+                $xp += $quantity * XpScore::CustomTag->xp();
+            }
+        }
+
+        return $xp;
+    }
+
+    /**
+     * Calculate XP from nested dict summary format (v5.0 legacy).
+     */
+    private static function calculateFromNestedSummary(array $tags, array $objectKeys): int
+    {
+        $xp = XpScore::Upload->xp();
+
+        foreach ($tags as $categoryId => $objects) {
             foreach ($objects as $objectId => $data) {
                 $quantity = $data['quantity'] ?? 0;
 
-                // Check if this is a special object
                 $objectKey = $objectKeys[$objectId] ?? null;
                 if ($objectKey) {
                     $xp += $quantity * XpScore::getObjectXp($objectKey);
@@ -79,17 +128,14 @@ final class XpCalculator
                     $xp += $quantity * XpScore::Object->xp();
                 }
 
-                // Materials: 2 XP each
                 foreach ($data['materials'] ?? [] as $materialId => $qty) {
                     $xp += $qty * XpScore::Material->xp();
                 }
 
-                // Brands: 3 XP each
                 foreach ($data['brands'] ?? [] as $brandId => $qty) {
                     $xp += $qty * XpScore::Brand->xp();
                 }
 
-                // Custom tags: 1 XP each
                 foreach ($data['custom_tags'] ?? [] as $customId => $qty) {
                     $xp += $qty * XpScore::CustomTag->xp();
                 }

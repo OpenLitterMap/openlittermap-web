@@ -2,6 +2,9 @@
 
 namespace App\Traits;
 
+/**
+ * @deprecated
+ */
 trait GeohashTrait
 {
     private $bitss = [16, 8, 4, 2, 1];

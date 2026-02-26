@@ -8,6 +8,7 @@
             :tags="activeTags"
             :xp-preview="calculateXP"
             :submitting="isSubmitting"
+            :has-unresolved-tags="hasUnresolvedTags"
             @navigate="handleNavigation"
             @skip="skipPhoto"
             @clear="clearAllTags"
@@ -80,11 +81,12 @@
                             <div class="flex flex-wrap gap-2 mt-1">
                                 <button
                                     v-for="tag in recentTags"
-                                    :key="tag.key"
+                                    :key="tag.id"
                                     @click="quickAddTag(tag)"
                                     class="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
                                 >
-                                    {{ tag.key }}
+                                    {{ formatKey(tag.key) }}
+                                    <span v-if="tag.categoryKey" class="text-gray-500">· {{ formatKey(tag.categoryKey) }}</span>
                                 </button>
                             </div>
                         </div>
@@ -98,6 +100,7 @@
                             :materials="materialsList"
                             @update-quantity="updateTagQuantity"
                             @set-picked-up="setPickedUp"
+                            @set-type="setTagType"
                             @add-detail="addTagDetail"
                             @remove-tag="removeTag"
                             @remove-detail="removeTagDetail"
@@ -123,6 +126,12 @@ import ActiveTagsList from './components/ActiveTagsList.vue';
 const photosStore = usePhotosStore();
 const tagsStore = useTagsStore();
 
+// Helpers
+const formatKey = (key) => {
+    if (!key) return '';
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
 // State
 const currentPhotoIndex = ref(0);
 const searchQuery = ref('');
@@ -145,16 +154,65 @@ const activeTags = computed(() => {
 });
 
 // Create searchable tags index combining all tag types
+// One entry per (object, category) pair to disambiguate objects that appear in multiple categories
 const searchableTags = computed(() => {
     const tags = [];
 
+    // Objects: one entry per (object, category) pair
     tagsStore.objects.forEach((obj) => {
+        if (obj.categories?.length) {
+            obj.categories.forEach((cat) => {
+                const cloId = tagsStore.getCloId(cat.id, obj.id);
+                tags.push({
+                    id: `obj-${obj.id}-cat-${cat.id}`,
+                    key: obj.key,
+                    lowerKey: obj.key.toLowerCase(),
+                    text: obj.key,
+                    type: 'object',
+                    categoryId: cat.id,
+                    categoryKey: cat.key,
+                    cloId: cloId,
+                    raw: obj,
+                });
+            });
+        } else {
+            tags.push({
+                id: `obj-${obj.id}`,
+                key: obj.key,
+                lowerKey: obj.key.toLowerCase(),
+                text: obj.key,
+                type: 'object',
+                categoryId: null,
+                categoryKey: null,
+                cloId: null,
+                raw: obj,
+            });
+        }
+    });
+
+    // Types: one entry per category_object_type, with parent object context
+    tagsStore.categoryObjectTypes.forEach((cot) => {
+        const typeObj = tagsStore.types.find((t) => t.id === cot.litter_object_type_id);
+        if (!typeObj) return;
+
+        const clo = tagsStore.categoryObjects.find((co) => co.id === cot.category_litter_object_id);
+        if (!clo) return;
+
+        const obj = tagsStore.objects.find((o) => o.id === clo.litter_object_id);
+        const cat = tagsStore.categories.find((c) => c.id === clo.category_id);
+        if (!obj || !cat) return;
+
         tags.push({
-            id: `obj-${obj.id}`,
-            key: obj.key,
-            text: obj.key,
-            type: 'object',
-            raw: obj,
+            id: `type-${cot.category_litter_object_id}-${cot.litter_object_type_id}`,
+            key: typeObj.key,
+            lowerKey: typeObj.key.toLowerCase(),
+            text: typeObj.key,
+            type: 'type',
+            cloId: clo.id,
+            typeId: typeObj.id,
+            objectKey: obj.key,
+            categoryKey: cat.key,
+            raw: { type: typeObj, object: obj, category: cat, clo: clo },
         });
     });
 
@@ -162,6 +220,7 @@ const searchableTags = computed(() => {
         tags.push({
             id: `brand-${brand.id}`,
             key: brand.key,
+            lowerKey: brand.key.toLowerCase(),
             text: brand.key,
             type: 'brand',
             raw: brand,
@@ -172,6 +231,7 @@ const searchableTags = computed(() => {
         tags.push({
             id: `mat-${material.id}`,
             key: material.key,
+            lowerKey: material.key.toLowerCase(),
             text: material.key,
             type: 'material',
             raw: material,
@@ -196,6 +256,11 @@ const calculateXP = computed(() => {
     return xp;
 });
 
+// Validation: check if any object tag is missing its CLO id
+const hasUnresolvedTags = computed(() => {
+    return activeTags.value.some((tag) => tag.object && !tag.cloId);
+});
+
 // Helper to ensure photo has an array in tagsByPhoto
 const ensurePhotoTags = () => {
     const photoId = currentPhoto.value?.id;
@@ -216,7 +281,10 @@ onMounted(async () => {
 
     const stored = localStorage.getItem('recentTags');
     if (stored) {
-        recentTags.value = JSON.parse(stored).slice(0, 5);
+        // Filter out stale entries from before category disambiguation was added
+        const parsed = JSON.parse(stored).filter((t) => t.type !== 'object' || t.cloId);
+        recentTags.value = parsed.slice(0, 5);
+        localStorage.setItem('recentTags', JSON.stringify(recentTags.value));
     }
 
     const hideHelp = localStorage.getItem('hideTaggingHelp');
@@ -233,16 +301,23 @@ onUnmounted(() => {
 
 // Keyboard shortcuts
 const handleKeyDown = (event) => {
+    // Ctrl/Cmd+Enter: always works (even in inputs), but check for unresolved tags
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
-        if (activeTags.value.length > 0) {
+        if (activeTags.value.length > 0 && !hasUnresolvedTags.value) {
             submitTags();
         }
+        return;
+    }
+
+    // All other shortcuts: skip if user is typing in a form field
+    const target = event.target;
+    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') {
+        return;
     }
 
     if (event.key >= '1' && event.key <= '9' && !event.ctrlKey && !event.metaKey) {
-        const target = event.target;
-        if (target.tagName !== 'INPUT' && activeTags.value.length > 0) {
+        if (activeTags.value.length > 0) {
             const photoId = currentPhoto.value?.id;
             if (photoId && tagsByPhoto.value[photoId]?.length > 0) {
                 tagsByPhoto.value[photoId][tagsByPhoto.value[photoId].length - 1].quantity = parseInt(event.key);
@@ -289,9 +364,30 @@ const handleTagSelection = (selected) => {
     const tagId = Math.random().toString(16).slice(2);
 
     if (selected.type === 'object') {
+        // Use pre-resolved cloId and categoryKey from the search index entry
         tagsByPhoto.value[photoId].push({
             id: tagId,
             object: selected.raw,
+            cloId: selected.cloId || null,
+            categoryId: selected.categoryId || null,
+            categoryKey: selected.categoryKey || null,
+            typeId: null,
+            quantity: 1,
+            pickedUp: true,
+            brands: [],
+            materials: [],
+            customTags: [],
+        });
+    } else if (selected.type === 'type') {
+        // Type selection: pre-fill both CLO and type, use parent object from raw
+        const parentObject = selected.raw?.object;
+        tagsByPhoto.value[photoId].push({
+            id: tagId,
+            object: parentObject,
+            cloId: selected.cloId,
+            categoryId: selected.raw?.category?.id || null,
+            categoryKey: selected.raw?.category?.key || null,
+            typeId: selected.typeId,
             quantity: 1,
             pickedUp: true,
             brands: [],
@@ -338,7 +434,7 @@ const quickAddTag = (tag) => {
 };
 
 const updateRecentTags = (tag) => {
-    const filtered = recentTags.value.filter((t) => t.key !== tag.key);
+    const filtered = recentTags.value.filter((t) => t.id !== tag.id);
     recentTags.value = [tag, ...filtered].slice(0, 5);
     localStorage.setItem('recentTags', JSON.stringify(recentTags.value));
 };
@@ -352,6 +448,11 @@ const updateTagQuantity = (tagId, quantity) => {
 const setPickedUp = (tagId, value) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
     if (tag) tag.pickedUp = value;
+};
+
+const setTagType = (tagId, typeId) => {
+    const tag = activeTags.value.find((t) => t.id === tagId);
+    if (tag) tag.typeId = typeId;
 };
 
 const addTagDetail = (tagId, detail) => {
@@ -411,12 +512,26 @@ const clearAllTags = () => {
 
 // Submit tags
 const submitTags = async () => {
-    if (activeTags.value.length === 0) return;
+    if (activeTags.value.length === 0 || hasUnresolvedTags.value) return;
 
     isSubmitting.value = true;
     const photoId = currentPhoto.value.id;
 
     const tagsForUpload = activeTags.value.map((tag) => {
+        // Use CLO-based payload when we have a CLO id
+        if (tag.cloId) {
+            return {
+                category_litter_object_id: tag.cloId,
+                litter_object_type_id: tag.typeId || null,
+                quantity: tag.quantity,
+                picked_up: tag.pickedUp,
+                materials: tag.materials?.map((m) => m.id) || [],
+                brands: tag.brands?.map((b) => ({ id: b.id, quantity: b.quantity || 1 })) || [],
+                custom_tags: tag.customTags || [],
+            };
+        }
+
+        // Legacy format fallback for brand-only, material-only, custom-only
         if (tag.custom) {
             return {
                 custom: true,

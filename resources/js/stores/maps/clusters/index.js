@@ -54,7 +54,7 @@ export const useClustersStore = defineStore('clusters', {
         /**
          * Get clusters for the global map
          */
-        async GET_CLUSTERS({ zoom, year, bbox = null }) {
+        async GET_CLUSTERS({ zoom, year, bbox = null, signal = null }) {
             this.loading = true;
             this.error = null;
 
@@ -65,7 +65,10 @@ export const useClustersStore = defineStore('clusters', {
                 if (year) params.year = year;
                 if (bbox) params.bbox = bbox;
 
-                const response = await axios.get('/api/clusters', { params });
+                const config = { params };
+                if (signal) config.signal = signal;
+
+                const response = await axios.get('/api/clusters', config);
 
                 console.log('GET_CLUSTERS response:', {
                     status: response.status,

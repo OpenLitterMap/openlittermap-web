@@ -14,23 +14,33 @@ class ProcessDirtyTiles extends Command
      * @var string
      */
     protected $signature = 'clustering:process-dirty
-        {--limit=100 : Maximum number of tiles to process}';
+        {--limit=100 : Maximum number of tiles to process}
+        {--team-limit=20 : Maximum number of teams to process}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Process tiles marked as dirty';
+    protected $description = 'Process tiles and teams marked as dirty';
 
     /**
      * Execute the console command.
      */
     public function handle(ClusteringService $service): int
     {
+        $hadFailures = false;
+
+        $hadFailures = $this->processDirtyTiles($service) || $hadFailures;
+        $hadFailures = $this->processDirtyTeams($service) || $hadFailures;
+
+        return $hadFailures ? 1 : 0;
+    }
+
+    private function processDirtyTiles(ClusteringService $service): bool
+    {
         $limit = (int) $this->option('limit');
 
-        // Get dirty tiles
         $tiles = DB::table('dirty_tiles')
             ->orderBy('changed_at')
             ->limit($limit)
@@ -38,7 +48,7 @@ class ProcessDirtyTiles extends Command
 
         if ($tiles->isEmpty()) {
             $this->info('No dirty tiles to process.');
-            return 0;
+            return false;
         }
 
         $this->info("Processing {$tiles->count()} dirty tiles...");
@@ -51,7 +61,6 @@ class ProcessDirtyTiles extends Command
             try {
                 $service->clusterTile($tileKey);
 
-                // Remove from dirty tiles
                 DB::table('dirty_tiles')
                     ->where('tile_key', $tileKey)
                     ->delete();
@@ -61,7 +70,6 @@ class ProcessDirtyTiles extends Command
                 $failed++;
                 $this->error("\nFailed to process tile $tileKey: " . $e->getMessage());
 
-                // Mark with backoff
                 $service->markTileDirty($tileKey, true);
             }
 
@@ -71,12 +79,11 @@ class ProcessDirtyTiles extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("✓ Processed: $processed tiles");
+        $this->info("Tiles — Processed: $processed");
         if ($failed > 0) {
-            $this->warn("✗ Failed: $failed tiles (will retry with backoff)");
+            $this->warn("Tiles — Failed: $failed (will retry with backoff)");
         }
 
-        // Show remaining
         $remaining = DB::table('dirty_tiles')->count();
         if ($remaining > 0) {
             $this->info("Remaining dirty tiles: $remaining");
@@ -88,6 +95,61 @@ class ProcessDirtyTiles extends Command
             ->where('changed_at', '<', now()->subHours($ttl))
             ->delete();
 
-        return $failed > 0 ? 1 : 0;
+        return $failed > 0;
+    }
+
+    private function processDirtyTeams(ClusteringService $service): bool
+    {
+        $limit = (int) $this->option('team-limit');
+
+        $teams = DB::table('dirty_teams')
+            ->orderBy('changed_at')
+            ->limit($limit)
+            ->pluck('team_id');
+
+        if ($teams->isEmpty()) {
+            $this->info('No dirty teams to process.');
+            return false;
+        }
+
+        $this->info("Processing {$teams->count()} dirty teams...");
+
+        $processed = 0;
+        $failed = 0;
+
+        foreach ($teams as $teamId) {
+            try {
+                $service->clusterTeam($teamId);
+
+                DB::table('dirty_teams')
+                    ->where('team_id', $teamId)
+                    ->delete();
+
+                $processed++;
+            } catch (\Exception $e) {
+                $failed++;
+                $this->error("Failed to process team $teamId: " . $e->getMessage());
+
+                $service->markTeamDirty($teamId, true);
+            }
+        }
+
+        $this->info("Teams — Processed: $processed");
+        if ($failed > 0) {
+            $this->warn("Teams — Failed: $failed (will retry with backoff)");
+        }
+
+        $remaining = DB::table('dirty_teams')->count();
+        if ($remaining > 0) {
+            $this->info("Remaining dirty teams: $remaining");
+        }
+
+        $ttl = config('clustering.dirty_tile_ttl', 24);
+        DB::table('dirty_teams')
+            ->where('attempts', '>=', 3)
+            ->where('changed_at', '<', now()->subHours($ttl))
+            ->delete();
+
+        return $failed > 0;
     }
 }

@@ -8,6 +8,9 @@ use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class TeamsTest extends TestCase
@@ -22,9 +25,19 @@ class TeamsTest extends TestCase
     {
         parent::setUp();
 
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
         $this->communityType = TeamType::create([
             'team' => 'community', 'price' => 0, 'description' => 'Community',
         ]);
+
+        // Create school_manager role + permissions for team creation
+        $permissions = collect([
+            'create school team', 'manage school team',
+            'toggle safeguarding', 'view student identities',
+        ])->map(fn ($name) => Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']));
+        $role = Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
+        $role->syncPermissions($permissions);
 
         $this->leader = User::factory()->create(['remaining_teams' => 3]);
 
@@ -47,7 +60,8 @@ class TeamsTest extends TestCase
     {
         Event::fake([TeamCreated::class]);
 
-        $user = User::factory()->create(['remaining_teams' => 3]);
+        $user = User::factory()->create(['remaining_teams' => 1]);
+        $user->assignRole('school_manager');
 
         $this->actingAs($user, 'api')->postJson('/api/teams/create', [
             'name' => 'Event Team',

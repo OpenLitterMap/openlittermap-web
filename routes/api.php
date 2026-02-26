@@ -112,7 +112,7 @@ Route::get('/user', function (Request $request) {
     $littercoin = Littercoin::where('user_id', $user->id)->count();
     $user['littercoin_count'] = $littercoin;
     return $user;
-});
+})->middleware('auth:api');
 
 // Moved from web.php
 Route::get('/current-user', 'UsersController@getAuthUser');
@@ -138,7 +138,8 @@ Route::post('/photos/upload/with-or-without-tags', [ApiPhotosController::class, 
 Route::get('/check-web-photos', [ApiPhotosController::class, 'check'])
     ->middleware('auth:api');
 
-Route::delete('/photos/delete', [ApiPhotosController::class, 'deleteImage']);
+Route::delete('/photos/delete', [ApiPhotosController::class, 'deleteImage'])
+    ->middleware('auth:api');
 
 // Legacy — also existed at top level in api.php
 Route::post('/upload', UploadPhotoController::class)
@@ -166,7 +167,7 @@ Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile/index', 'User\ProfileController@index');
     Route::get('/user/profile/map', 'User\ProfileController@geojson');
     Route::get('/user/profile/download', 'User\ProfileController@download');
@@ -189,8 +190,8 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware('auth:api')->group(function () {
     Route::post('/settings/details', 'UsersController@details');
     Route::patch('/settings/details/password', 'UsersController@changePassword');
-    Route::post('/settings/delete', 'UsersController@destroy');
-    Route::post('/settings/security', 'UsersController@updateSecurity');
+    // Route removed: /settings/delete — had no relationship cleanup. Use /settings/delete-account.
+    // Route removed: /settings/security — wrote to non-existent columns.
     Route::post('/settings/privacy/update', 'UsersController@togglePrivacy');
     Route::post('/settings/phone/submit', 'UsersController@phone');
     Route::post('/settings/phone/remove', 'UsersController@removePhone');
@@ -201,16 +202,18 @@ Route::middleware('auth:api')->group(function () {
     Route::patch('/settings', 'SettingsController@update');
 });
 
-// These were already in api.php (mobile settings)
-Route::post('/settings/privacy/maps/name', 'ApiSettingsController@mapsName')->middleware('auth:api');
-Route::post('/settings/privacy/maps/username', 'ApiSettingsController@mapsUsername')->middleware('auth:api');
-Route::post('/settings/privacy/leaderboard/name', 'ApiSettingsController@leaderboardName')->middleware('auth:api');
-Route::post('/settings/privacy/leaderboard/username', 'ApiSettingsController@leaderboardUsername')->middleware('auth:api');
-Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdByName')->middleware('auth:api');
-Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername')->middleware('auth:api');
-Route::post('/settings/update', 'ApiSettingsController@update')->middleware('auth:api');
-Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags')->middleware('auth:api');
-Route::post('/settings/delete-account', 'API\DeleteAccountController')->middleware('auth:api');
+// Settings — auth:sanctum supports both session (SPA) and token (mobile) auth
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/settings/privacy/maps/name', 'ApiSettingsController@mapsName');
+    Route::post('/settings/privacy/maps/username', 'ApiSettingsController@mapsUsername');
+    Route::post('/settings/privacy/leaderboard/name', 'ApiSettingsController@leaderboardName');
+    Route::post('/settings/privacy/leaderboard/username', 'ApiSettingsController@leaderboardUsername');
+    Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdByName');
+    Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername');
+    Route::post('/settings/update', 'ApiSettingsController@update');
+    Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags');
+    Route::post('/settings/delete-account', 'API\DeleteAccountController');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -389,6 +392,7 @@ Route::post('/littercoin/merchants', 'Merchants\BecomeAMerchantController');
 */
 
 Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
+    Route::get('/photos', 'Admin\AdminQueueController');
     Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
     Route::get('/get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
     Route::get('/get-countries-with-photos', 'AdminController@getCountriesWithPhotos');

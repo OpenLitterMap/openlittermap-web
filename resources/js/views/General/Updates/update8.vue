@@ -11,7 +11,6 @@
                 <strong
                     >Lynch, S., (2018)., OpenLitterMap.com - Open Data on Plastic Pollution with Blockchain Rewards
                     (Littercoin)., Open Geospatial Data, Software, and Standards., 3:6</strong
-                >atial Data, Software, and Standards., 3:6</strong
                 >
             </a>
         </p>
@@ -39,8 +38,11 @@
             unfold.
         </p>
 
-        <h3>Finally, here are som                Make sure each litter item is clearly identifiable. You are the one who has to process them later! This
-                will get easier with machine learning soon ;-)This
+        <h3>Finally, here are some tips for using OpenLitterMap</h3>
+
+        <ul>
+            <li>
+                Make sure each litter item is clearly identifiable. You are the one who has to process them later! This
                 will get easier with machine learning soon ;-)
             </li>
             <li>

@@ -137,12 +137,12 @@ export const mapLifecycleHelper = {
             onEachFeature: (feature, layer) => clustersHelper.onEachFeature(feature, layer, mapInstance),
         });
 
-        // Add initial cluster data if available
+        // Always add clusters layer to the map so subsequent loads render
         const clustersData = clustersHelper.getClustersData(clustersStore);
         if (clustersData?.features?.length > 0) {
             clustersHelper.addClustersToMap(clusters, clustersData);
-            mapInstance.addLayer(clusters);
         }
+        mapInstance.addLayer(clusters);
 
         // Register for WebGL monitoring if Glify will be used
         mapInstance.on('layeradd', (e) => {

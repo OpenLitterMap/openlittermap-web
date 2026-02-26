@@ -3,12 +3,20 @@ import axios from 'axios';
 // points/requests.js
 export const requests = {
     // Get points for a specific bounding box and zoom level
-    async GET_POINTS({ zoom, bbox }) {
+    async GET_POINTS({
+        zoom,
+        bbox,
+        year = null,
+        fromDate = null,
+        toDate = null,
+        username = null,
+        page = 1,
+        signal = null,
+    }) {
         try {
             this.setLoading(true);
             this.setError(null);
 
-            // Use bracket notation as shown in the working component
             const params = {
                 zoom: Math.round(zoom),
                 'bbox[left]': bbox.left,
@@ -17,34 +25,28 @@ export const requests = {
                 'bbox[top]': bbox.top,
             };
 
-            console.log('Sending params with bracket notation:', params);
+            if (page > 1) params.page = page;
+            if (year) params.year = year;
+            if (fromDate) params.from = fromDate;
+            if (toDate) params.to = toDate;
+            if (username) params.username = username;
 
-            const response = await axios.get('/api/points', {
-                params: params,
-            });
+            const config = { params };
+            if (signal) config.signal = signal;
 
-            console.log('GET_POINTS response:', response.data);
-            console.log('Response status:', response.status);
-            console.log('Features count:', response.data?.features?.length || 0);
+            const response = await axios.get('/api/points', config);
 
-            // Store the response data in the expected format
             this.setPointsGeojson(response.data);
             this.setLoading(false);
 
             return response.data;
         } catch (error) {
-            console.error('Failed to load points:', error);
-            console.error('Error response:', error.response?.data);
-            console.error('Error status:', error.response?.status);
-
-            // Log the actual error details
-            if (error.response?.data?.errors) {
-                console.error('Validation errors:', error.response.data.errors);
-                Object.keys(error.response.data.errors).forEach((key) => {
-                    console.error(`  ${key}:`, error.response.data.errors[key]);
-                });
+            if (error.name === 'AbortError' || axios.isCancel(error)) {
+                this.setLoading(false);
+                return null;
             }
 
+            console.error('Failed to load points:', error);
             this.setError(error.response?.data?.message || error.message);
             this.setLoading(false);
             this.setPointsGeojson(null);
@@ -54,13 +56,10 @@ export const requests = {
 
     // Get points with category filtering (for smoking data, etc.)
     async GET_POINTS_BY_CATEGORY({ zoom, bbox, category = null, placeId = null }) {
-        console.log('GET_POINTS_BY_CATEGORY called with:', { zoom, bbox, category, placeId });
-
         try {
             this.setLoading(true);
             this.setError(null);
 
-            // Use bracket notation for bbox parameters
             const params = {
                 zoom: Math.round(zoom),
                 'bbox[left]': bbox.left,
@@ -69,32 +68,12 @@ export const requests = {
                 'bbox[top]': bbox.top,
             };
 
-            // Handle category filtering - backend expects categories array
             if (category) {
-                // Map simple category names to the backend's expected format
-                const categoryMappings = {
-                    smoking: 'smoking',
-                    alcohol: 'alcohol',
-                    food: 'food',
-                    coffee: 'coffee',
-                    brands: 'brands',
-                };
-
-                const mappedCategory = categoryMappings[category] || category;
-                params['categories[0]'] = mappedCategory;
+                params['categories[0]'] = category;
             }
 
-            console.log('Sending params with category:', params);
+            const response = await axios.get('/api/points', { params });
 
-            const response = await axios.get('/api/points', {
-                params: params,
-            });
-
-            console.log('GET_POINTS_BY_CATEGORY response:', response.data);
-            console.log('Response status:', response.status);
-            console.log('Features count:', response.data?.features?.length || 0);
-
-            // Store the response data with category+placeId key for better isolation
             const storageKey = placeId ? `${category || 'all'}:${placeId}` : category || 'all';
             this.categoryData[storageKey] = response.data;
             this.setLoading(false);
@@ -102,17 +81,6 @@ export const requests = {
             return response.data;
         } catch (error) {
             console.error(`Failed to load ${category} points:`, error);
-            console.error('Error response:', error.response?.data);
-            console.error('Error status:', error.response?.status);
-
-            // Log validation errors if present
-            if (error.response?.data?.errors) {
-                console.error('Validation errors:', error.response.data.errors);
-                Object.keys(error.response.data.errors).forEach((key) => {
-                    console.error(`  ${key}:`, error.response.data.errors[key]);
-                });
-            }
-
             this.setError(error.response?.data?.message || error.message);
             this.setLoading(false);
             throw error;

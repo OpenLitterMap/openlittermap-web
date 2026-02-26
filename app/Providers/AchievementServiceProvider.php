@@ -12,7 +12,9 @@ use App\Services\Achievements\Checkers\{
     ObjectsChecker,
     CategoriesChecker,
     MaterialsChecker,
-    BrandsChecker
+    BrandsChecker,
+    CustomTagChecker,
+    TypesChecker
 };
 
 class AchievementServiceProvider extends ServiceProvider
@@ -26,6 +28,8 @@ class AchievementServiceProvider extends ServiceProvider
         $this->app->singleton(CategoriesChecker::class);
         $this->app->singleton(MaterialsChecker::class);
         $this->app->singleton(BrandsChecker::class);
+        $this->app->singleton(CustomTagChecker::class);
+        $this->app->singleton(TypesChecker::class);
 
         $this->app->tag([
             UploadsChecker::class,
@@ -33,6 +37,8 @@ class AchievementServiceProvider extends ServiceProvider
             CategoriesChecker::class,
             MaterialsChecker::class,
             BrandsChecker::class,
+            CustomTagChecker::class,
+            TypesChecker::class,
         ], 'achievement.checker');
 
         // ── engine gets injected with an iterable of tagged checkers ─────

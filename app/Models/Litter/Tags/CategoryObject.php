@@ -3,6 +3,7 @@
 namespace App\Models\Litter\Tags;
 
 use App\Traits\ManagesTaggables;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,19 @@ class CategoryObject extends Pivot
     public function litterObject(): BelongsTo
     {
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
+    }
+
+    /**
+     * Litter object types valid for this category-object combination
+     */
+    public function types(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            LitterObjectType::class,
+            'category_object_types',
+            'category_litter_object_id',
+            'litter_object_type_id'
+        );
     }
 
     /**

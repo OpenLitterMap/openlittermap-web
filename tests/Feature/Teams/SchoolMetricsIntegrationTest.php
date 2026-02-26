@@ -75,6 +75,7 @@ class SchoolMetricsIntegrationTest extends TestCase
 
         PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($smokingCategory->id, $buttsObject->id),
             'category_id' => $smokingCategory->id,
             'litter_object_id' => $buttsObject->id,
             'quantity' => 5,

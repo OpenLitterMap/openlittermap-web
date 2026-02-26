@@ -9,6 +9,7 @@ enum Dimension: string
     case MATERIAL = 'material';
     case BRAND = 'brand';
     case CUSTOM_TAG = 'custom_tag';
+    case TYPE = 'type';
 
     public function table(): string
     {
@@ -18,6 +19,7 @@ enum Dimension: string
             self::MATERIAL => 'materials',
             self::BRAND => 'brandslist',
             self::CUSTOM_TAG => 'custom_tags_new',
+            self::TYPE => 'litter_object_types',
         };
     }
 
@@ -29,6 +31,7 @@ enum Dimension: string
             'materials' => self::MATERIAL,
             'brandslist' => self::BRAND,
             'custom_tags_new', 'custom_tags' => self::CUSTOM_TAG,
+            'litter_object_types' => self::TYPE,
             default => null,
         };
     }

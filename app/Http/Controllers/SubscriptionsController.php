@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 // use Stripe\Customer;
 // use App\Http\Requests\RegistrationForm;
 
+/**
+ * @deprecated Routes commented out. Stripe subscriptions removed.
+ */
 class SubscriptionsController extends Controller
 {
 

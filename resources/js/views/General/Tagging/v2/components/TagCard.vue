@@ -1,10 +1,18 @@
 <template>
-    <div class="bg-gray-700 rounded-lg p-3">
+    <div :class="['rounded-lg p-3', tag.object && !tag.cloId ? 'bg-red-900/30 border border-red-500/50' : 'bg-gray-700']">
         <!-- Line 1: Tag name, quantity, actions -->
         <div class="flex items-center gap-3">
             <!-- Tag name (truncated) -->
             <span class="text-white font-medium truncate max-w-[200px]" :title="tagDisplay">
                 {{ tagDisplay }}
+            </span>
+
+            <!-- Type badge (when type is selected) -->
+            <span
+                v-if="selectedTypeName"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-indigo-600/30 text-indigo-200 flex-shrink-0"
+            >
+                {{ selectedTypeName }}
             </span>
 
             <!-- Quantity controls -->
@@ -73,6 +81,23 @@
                     <option :value="false" class="bg-gray-800 text-white">✗ Not picked</option>
                 </select>
 
+                <!-- Type pills (only for objects with valid types) -->
+                <div v-if="props.availableTypes.length > 0" class="flex items-center gap-1 flex-shrink-0">
+                    <button
+                        v-for="t in props.availableTypes"
+                        :key="t.id"
+                        @click="setType(tag.typeId === t.id ? null : t.id)"
+                        :class="[
+                            'px-2 py-1 rounded text-xs font-medium transition-colors',
+                            tag.typeId === t.id
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/40',
+                        ]"
+                    >
+                        {{ formatKey(t.key) }}
+                    </button>
+                </div>
+
                 <!-- Remove button -->
                 <button
                     @click="$emit('remove')"
@@ -104,7 +129,7 @@
                     :key="'b-' + brand.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/40 text-purple-200 rounded text-xs"
                 >
-                    {{ brand.key }}
+                    {{ formatKey(brand.key) }}
                     <button
                         @click="removeBrand(brand)"
                         aria-label="Remove brand"
@@ -121,7 +146,7 @@
                     :key="'m-' + material.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-600/40 text-teal-200 rounded text-xs"
                 >
-                    {{ material.key }}
+                    {{ formatKey(material.key) }}
                     <button
                         @click="removeMaterial(material)"
                         aria-label="Remove material"
@@ -138,7 +163,7 @@
                     :key="'o-' + obj.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded text-xs"
                 >
-                    {{ obj.key }}
+                    {{ formatKey(obj.key) }}
                     <button
                         @click="removeObject(obj)"
                         aria-label="Remove object"
@@ -181,7 +206,7 @@
                     :key="'b-' + brand.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/40 text-purple-200 rounded text-xs"
                 >
-                    {{ brand.key }}
+                    {{ formatKey(brand.key) }}
                     <button
                         @click="removeBrand(brand)"
                         aria-label="Remove brand"
@@ -195,7 +220,7 @@
                     :key="'m-' + material.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-600/40 text-teal-200 rounded text-xs"
                 >
-                    {{ material.key }}
+                    {{ formatKey(material.key) }}
                     <button
                         @click="removeMaterial(material)"
                         aria-label="Remove material"
@@ -209,7 +234,7 @@
                     :key="'o-' + obj.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded text-xs"
                 >
-                    {{ obj.key }}
+                    {{ formatKey(obj.key) }}
                     <button
                         @click="removeObject(obj)"
                         aria-label="Remove object"
@@ -307,9 +332,13 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    availableTypes: {
+        type: Array,
+        default: () => [],
+    },
 });
 
-const emit = defineEmits(['update-quantity', 'set-picked-up', 'add-detail', 'remove-detail', 'remove']);
+const emit = defineEmits(['update-quantity', 'set-picked-up', 'set-type', 'add-detail', 'remove-detail', 'remove']);
 
 const showDetails = ref(false);
 const brandQuery = ref('');
@@ -357,6 +386,11 @@ const setPickedUp = (value) => {
     emit('set-picked-up', parsed);
 };
 
+// Type pill handler
+const setType = (value) => {
+    emit('set-type', value ?? null);
+};
+
 // Convert brands array to format expected by UnifiedTagSearch
 const brandsForSelect = computed(() =>
     props.brands.map((b) => ({
@@ -377,20 +411,42 @@ const materialsForSelect = computed(() =>
     }))
 );
 
-// Filter objects from searchable tags
-const objectsForSelect = computed(() => props.searchableTags.filter((t) => t.type === 'object'));
+// Filter objects from searchable tags (deduplicate — detail panel doesn't need per-category entries)
+const objectsForSelect = computed(() => {
+    const seen = new Set();
+    return props.searchableTags.filter((t) => {
+        if (t.type !== 'object') return false;
+        const objId = t.raw?.id;
+        if (seen.has(objId)) return false;
+        seen.add(objId);
+        return true;
+    });
+});
+
+const formatKey = (key) => {
+    if (!key) return '';
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+};
 
 const tagDisplay = computed(() => {
     if (props.tag.custom) {
         return props.tag.key;
     } else if (props.tag.type === 'brand-only') {
-        return `Brand: ${props.tag.brand.key}`;
+        return `Brand: ${formatKey(props.tag.brand.key)}`;
     } else if (props.tag.type === 'material-only') {
-        return `Material: ${props.tag.material.key}`;
+        return `Material: ${formatKey(props.tag.material.key)}`;
     } else if (props.tag.object) {
-        return props.tag.object.key;
+        const objName = formatKey(props.tag.object.key);
+        const catName = props.tag.categoryKey ? formatKey(props.tag.categoryKey) : null;
+        return catName ? `${objName} \u00B7 ${catName}` : objName;
     }
     return 'Unknown tag';
+});
+
+const selectedTypeName = computed(() => {
+    if (!props.tag.typeId) return null;
+    const t = props.availableTypes.find((t) => t.id === props.tag.typeId);
+    return t ? formatKey(t.key) : null;
 });
 
 const hasDetails = computed(() => {

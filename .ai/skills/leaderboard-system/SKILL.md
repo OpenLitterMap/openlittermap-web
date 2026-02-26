@@ -14,7 +14,7 @@ Rankings by XP across time and location scopes. Two backends: Redis ZSETs for al
 - `app/Services/Redis/RedisMetricsCollector.php` — ZINCRBY in pipeline for create/update/delete
 - `app/Services/Metrics/MetricsService.php` — Builds per-user rows (user_id > 0) alongside aggregates
 - `app/Helpers/helpers.php` — `rewardXpToAdmin()` increments ZSET + user stats hash
-- `tests/Feature/Leaderboard/LeaderboardTest.php` — 12 tests covering all paths
+- `tests/Feature/Leaderboard/LeaderboardTest.php` — 14 tests covering all paths (global, country, state, city scopes)
 
 ## Invariants
 
@@ -96,3 +96,36 @@ RedisKeys::xpRanking(RedisKeys::city($id))       // {ci:$id}:lb:xp
 - **Not pruning zero-XP members from ZSETs.** After delete, `ZREMRANGEBYSCORE` must run to remove ≤ 0 scores. Without it, ghost entries persist in Redis.
 - **Missing `orderBy('user_id')` for tie-breaking.** Without secondary sort, tied-XP users get non-deterministic pagination order.
 - **Expecting `Redis::zScore()` to return `null` for missing members.** PHP Redis returns `false`, not `null`. Use `assertFalse()` in tests.
+
+## Frontend
+
+### Pinia Store
+
+| File | Purpose |
+|------|---------|
+| `resources/js/stores/leaderboard/index.js` | State: `leaderboard`, `currentPage`, `hasNextPage`, `total`, `currentUserRank`, `loading`, `error`, `currentFilters`, `countries`, `states`, `cities` |
+| `resources/js/stores/leaderboard/requests.js` | `FETCH_LEADERBOARD()` (unified), `FETCH_COUNTRIES()`, `FETCH_STATES(countryId)`, `FETCH_CITIES(stateId)`, backward-compat wrappers |
+
+`FETCH_LEADERBOARD({ timeFilter, locationType, locationId, page })` is the single entry point. Sets `loading`/`error`, stores `total`/`currentUserRank` from response.
+
+### Vue Components
+
+| File | Purpose |
+|------|---------|
+| `Leaderboard.vue` | Page wrapper — dark gradient bg, auth gate, stats bar (rank/total), filters, list, pagination |
+| `LeaderboardFilters.vue` | Time pills (desktop) / select (mobile) + cascading location selectors (type → country → state → city). Emits `change` event. |
+| `LeaderboardList.vue` | Dark glass user cards — medal, flag, name, xp. Props: `leaders` array only. |
+
+### Design
+
+Matches Locations page dark glass theme (bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900). Cards use `bg-white/5 border border-white/10 rounded-xl`. Active time pill: `bg-emerald-500/20 text-emerald-400`.
+
+### Data Flow
+
+1. `Leaderboard.vue` calls `FETCH_LEADERBOARD()` on mount
+2. `LeaderboardFilters.vue` emits `change` with `{ timeFilter, locationType, locationId }`
+3. `Leaderboard.vue` calls `FETCH_LEADERBOARD()` with emitted params
+4. Pagination calls `FETCH_LEADERBOARD()` with `...currentFilters + page`
+5. Country list loaded via `FETCH_COUNTRIES()` from `/api/v1/locations`
+6. State list loaded via `FETCH_STATES(countryId)` from `/api/v1/locations/country/{id}`
+7. City list loaded via `FETCH_CITIES(stateId)` from `/api/v1/locations/state/{id}`

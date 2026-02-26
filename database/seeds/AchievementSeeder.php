@@ -9,6 +9,7 @@ use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
 
 class AchievementsSeeder extends Seeder
@@ -42,6 +43,7 @@ class AchievementsSeeder extends Seeder
             'categories',
             'materials',
             'brands',
+            'types',
             'streak',
         ];
 
@@ -86,6 +88,10 @@ class AchievementsSeeder extends Seeder
             ],
             'customTag' => [
                 'model' => CustomTagNew::class,
+                'name_field' => 'key',
+            ],
+            'type' => [
+                'model' => LitterObjectType::class,
                 'name_field' => 'key',
             ],
         ];

@@ -4,6 +4,9 @@ namespace App\Actions\Photos;
 
 use App\Models\Photo;
 
+/**
+ * @deprecated
+ */
 class AddTagsToPhotoAction
 {
     /**

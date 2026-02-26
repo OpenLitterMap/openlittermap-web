@@ -5,6 +5,9 @@ namespace App\Actions\Photos;
 use App\Models\Photo;
 use Illuminate\Support\Collection;
 
+/**
+ * @deprecated
+ */
 class DeleteTagsFromPhotoAction
 {
     /**

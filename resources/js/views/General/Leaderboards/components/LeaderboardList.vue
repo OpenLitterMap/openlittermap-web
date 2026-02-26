@@ -1,75 +1,75 @@
 <template>
-    <div class="w-[800px] mx-auto px-4 py-8">
-        <LeaderboardFilters :location-id="locationId" :location-type="locationType" />
-
-        <!-- Empty Leaderboard Message. Needs translation -->
-        <p v-if="leaders.length === 0" class="text-white font-semibold text-3xl text-center mt-4">
+    <div class="w-full max-w-3xl mx-auto">
+        <!-- Empty State -->
+        <p v-if="leaders.length === 0" class="text-white/50 text-center py-12 text-lg">
             {{ t('Nobody has uploaded yet!') }}
         </p>
 
-        <!-- Leaderboard List -->
+        <!-- Leaderboard Cards -->
         <div
-            v-else
             v-for="(leader, index) in leaders"
             :key="index"
-            class="relative bg-white rounded-lg shadow-md px-2 py-4 mb-4 flex items-center text-[#011638] text-sm md:text-base transition-transform duration-150 hover:scale-105"
+            class="relative bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-3 flex items-center gap-3 transition-all duration-150 hover:bg-white/[0.08] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
         >
             <!-- Medal -->
-            <div class="medal absolute top-[-12px] left-[-12px] w-8">
+            <div class="absolute -top-2.5 -left-2.5 w-7">
                 <img v-if="leader.rank === 1" :src="goldMedal" alt="Gold medal" />
                 <img v-else-if="leader.rank === 2" :src="silverMedal" alt="Silver medal" />
                 <img v-else-if="leader.rank === 3" :src="bronzeMedal" alt="Bronze medal" />
             </div>
 
             <!-- Rank -->
-            <div class="flex items-center text-center w-[96px]">
-                <span class="w-[48px] font-normal">{{ getPosition(leader.rank || index + 1) }}</span>
-                <div class="w-[48px] flag mt-2">
-                    <img
-                        v-if="leader.global_flag"
-                        :src="getCountryFlag(leader.global_flag)"
-                        :alt="leader.global_flag"
-                        class="w-8 h-8 rounded-full object-cover"
-                    />
-                </div>
+            <div class="shrink-0 w-12 text-center text-white/40 text-sm font-medium">
+                {{ getPosition(leader.rank || index + 1) }}
             </div>
 
-            <!-- User & Team -->
-            <div class="details flex-1 ml-4">
-                <div class="name font-medium">
+            <!-- Flag -->
+            <div class="shrink-0 w-8">
+                <img
+                    v-if="leader.global_flag"
+                    :src="getCountryFlag(leader.global_flag)"
+                    :alt="leader.global_flag"
+                    class="w-7 h-7 rounded-full object-cover border border-white/10"
+                />
+            </div>
+
+            <!-- Name & Team -->
+            <div class="min-w-0 flex-1">
+                <div class="text-white font-medium truncate">
                     {{ leader.name || leader.username || t('Anonymous') }}
                 </div>
-                <div v-if="leader.team" class="text-sm text-gray-500">{{ t('Team') }} {{ leader.team }}</div>
+                <div v-if="leader.team" class="text-white/40 text-xs truncate">
+                    {{ t('Team') }} {{ leader.team }}
+                </div>
             </div>
 
-            <!-- Social Icons -->
-            <div v-if="leader.social" class="flex flex-wrap gap-4 mx-6">
+            <!-- Social Icons (hidden on mobile) -->
+            <div v-if="leader.social" class="hidden sm:flex gap-3 shrink-0">
                 <a
                     v-for="(link, type) in leader.social"
                     :key="type"
                     :href="link"
                     target="_blank"
-                    class="text-blue-500 hover:scale-110 transition-transform"
+                    class="text-white/40 hover:text-white transition-colors"
                 >
                     <i :class="type === 'personal' ? 'fa fa-link' : `fa fa-${type}`"></i>
                 </a>
             </div>
 
             <!-- XP -->
-            <div class="flex justify-evenly items-center w-[100px]">
-                <div class="font-medium">{{ leader.xp }}</div>
-                <div class="font-normal">XP</div>
+            <div class="shrink-0 text-right">
+                <span class="text-white font-bold tabular-nums">{{ leader.xp }}</span>
+                <span class="text-white/40 text-xs ml-1">XP</span>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
 import { useI18n } from 'vue-i18n';
-import LeaderboardFilters from './LeaderboardFilters.vue';
 
 const { t } = useI18n();
+
 import goldMedal from '@/assets/icons/medals/gold-medal-2.png';
 import silverMedal from '@/assets/icons/medals/silver-medal-2.png';
 import bronzeMedal from '@/assets/icons/medals/bronze-medal-2.png';
@@ -79,28 +79,12 @@ defineProps({
         type: Array,
         required: true,
     },
-    locationId: {
-        type: [String, Number],
-        required: false,
-        default: 0,
-    },
-    locationType: {
-        type: String,
-        required: false,
-        default: '',
-    },
 });
 
-/**
- * Get the country flag URL
- */
 const getCountryFlag = (country) => {
     return country ? `/assets/icons/flags/${country.toLowerCase()}.png` : '';
 };
 
-/**
- * Get the ordinal position
- */
 const getPosition = (rank) => {
     const suffixes = ['th', 'st', 'nd', 'rd'];
     const value = rank % 100;

@@ -155,7 +155,7 @@ class PointsTest extends TestCase
 
         // Get litter objects from seeded data
         $cigarettes = LitterObject::where('key', 'butts')->first();
-        $bottles = LitterObject::where('key', 'beer_bottle')->first();
+        $bottles = LitterObject::where('key', 'bottle')->first();
 
         // Create photos with tags
         $photoSmoking = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
@@ -167,6 +167,7 @@ class PointsTest extends TestCase
             'photo_id' => $photoSmoking->id,
             'category_id' => $smoking->id,
             'litter_object_id' => $cigarettes->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $cigarettes->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -175,6 +176,7 @@ class PointsTest extends TestCase
             'photo_id' => $photoAlcohol->id,
             'category_id' => $alcohol->id,
             'litter_object_id' => $bottles->id,
+            'category_litter_object_id' => $this->getCloId($alcohol->id, $bottles->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -686,7 +688,7 @@ class PointsTest extends TestCase
         // Get categories and objects from seeded data
         $smoking = Category::where('key', 'smoking')->first();
         $cigarettes = LitterObject::where('key', 'butts')->first();
-        $bottles = LitterObject::where('key', 'beer_bottle')->first();
+        $bottles = LitterObject::where('key', 'bottle')->first();
 
         // Create photos
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
@@ -697,6 +699,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo1->id,
             'category_id' => $smoking->id,
             'litter_object_id' => $cigarettes->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $cigarettes->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -705,6 +708,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo2->id,
             'category_id' => Category::where('key', 'alcohol')->first()->id,
             'litter_object_id' => $bottles->id,
+            'category_litter_object_id' => $this->getCloId(Category::where('key', 'alcohol')->first()->id, $bottles->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -726,8 +730,8 @@ class PointsTest extends TestCase
     public function it_filters_photos_by_brands()
     {
         // Get data from seeded database
-        $category = Category::where('key', 'softdrinks')->first();
-        $bottle = LitterObject::where('key', 'water_bottle')->first();
+        $category = Category::where('key', 'beverages')->first();
+        $bottle = LitterObject::where('key', 'bottle')->first();
 
         // Create photos
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
@@ -738,6 +742,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo1->id,
             'category_id' => $category->id,
             'litter_object_id' => $bottle->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $bottle->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -750,7 +755,6 @@ class PointsTest extends TestCase
             'photo_tag_id' => $photoTag1->id,
             'tag_type' => 'brand',
             'tag_type_id' => $cocaCola->id,
-            'index' => 0,
             'quantity' => 1
         ]);
 
@@ -759,6 +763,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo2->id,
             'category_id' => $category->id,
             'litter_object_id' => $bottle->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $bottle->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -787,20 +792,33 @@ class PointsTest extends TestCase
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
         $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
 
-        // Create PhotoTag with primary custom tag
-        PhotoTag::create([
+        // Create PhotoTag with custom tag via extra_tags
+        $unclassifiedCloId = $this->getUnclassifiedOtherCloId();
+        $photoTag1 = PhotoTag::create([
             'photo_id' => $photo1->id,
-            'custom_tag_primary_id' => $tag1->id,
+            'category_litter_object_id' => $unclassifiedCloId,
             'quantity' => 1,
             'picked_up' => false
         ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'custom_tag',
+            'tag_type_id' => $tag1->id,
+            'quantity' => 1
+        ]);
 
-        // Create PhotoTag with different custom tag
-        PhotoTag::create([
+        // Create PhotoTag with different custom tag via extra_tags
+        $photoTag2 = PhotoTag::create([
             'photo_id' => $photo2->id,
-            'custom_tag_primary_id' => $tag2->id,
+            'category_litter_object_id' => $unclassifiedCloId,
             'quantity' => 1,
             'picked_up' => false
+        ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag2->id,
+            'tag_type' => 'custom_tag',
+            'tag_type_id' => $tag2->id,
+            'quantity' => 1
         ]);
 
         $response = $this->getJson($this->endpoint . '?' . http_build_query([
@@ -820,8 +838,8 @@ class PointsTest extends TestCase
     public function it_filters_photos_by_materials()
     {
         // Get data from seeded database
-        $category = Category::where('key', 'softdrinks')->first();
-        $bottle = LitterObject::where('key', 'water_bottle')->first();
+        $category = Category::where('key', 'beverages')->first();
+        $bottle = LitterObject::where('key', 'bottle')->first();
         $plastic = Materials::where('key', 'plastic')->first();
         $glass = Materials::where('key', 'glass')->first();
 
@@ -834,6 +852,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo1->id,
             'category_id' => $category->id,
             'litter_object_id' => $bottle->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $bottle->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -843,7 +862,6 @@ class PointsTest extends TestCase
             'photo_tag_id' => $photoTag1->id,
             'tag_type' => 'material',
             'tag_type_id' => $plastic->id,
-            'index' => 0,
             'quantity' => 1
         ]);
 
@@ -852,6 +870,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo2->id,
             'category_id' => $category->id,
             'litter_object_id' => $bottle->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $bottle->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -861,7 +880,6 @@ class PointsTest extends TestCase
             'photo_tag_id' => $photoTag2->id,
             'tag_type' => 'material',
             'tag_type_id' => $glass->id,
-            'index' => 0,
             'quantity' => 1
         ]);
 
@@ -892,6 +910,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo->id,
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -939,18 +958,31 @@ class PointsTest extends TestCase
         $photo1 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
         $photo2 = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.421, 'datetime' => now()]);
 
-        PhotoTag::create([
+        $unclassifiedCloId = $this->getUnclassifiedOtherCloId();
+        $photoTag1 = PhotoTag::create([
             'photo_id' => $photo1->id,
-            'custom_tag_primary_id' => $unapprovedTag->id,
+            'category_litter_object_id' => $unclassifiedCloId,
             'quantity' => 1,
             'picked_up' => false
         ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'custom_tag',
+            'tag_type_id' => $unapprovedTag->id,
+            'quantity' => 1
+        ]);
 
-        PhotoTag::create([
+        $photoTag2 = PhotoTag::create([
             'photo_id' => $photo2->id,
-            'custom_tag_primary_id' => $approvedTag->id,
+            'category_litter_object_id' => $unclassifiedCloId,
             'quantity' => 1,
             'picked_up' => false
+        ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag2->id,
+            'tag_type' => 'custom_tag',
+            'tag_type_id' => $approvedTag->id,
+            'quantity' => 1
         ]);
 
         // Filter by unapproved tag
@@ -1092,6 +1124,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo1->id,
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -1099,7 +1132,6 @@ class PointsTest extends TestCase
             'photo_tag_id' => $tag1->id,
             'tag_type' => 'material',
             'tag_type_id' => $plastic->id,
-            'index' => 0,
             'quantity' => 1
         ]);
 
@@ -1109,6 +1141,7 @@ class PointsTest extends TestCase
             'photo_id' => $photo2->id,
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'quantity' => 1,
             'picked_up' => false
         ]);

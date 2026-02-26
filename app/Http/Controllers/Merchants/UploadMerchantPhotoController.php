@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @deprecated Route commented out. Merchant photo upload disabled.
+ */
 class UploadMerchantPhotoController extends Controller
 {
     public function __invoke (Request $request)

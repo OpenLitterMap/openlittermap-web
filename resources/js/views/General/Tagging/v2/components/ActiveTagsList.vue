@@ -30,11 +30,13 @@
                 :brands="brands"
                 :materials="materials"
                 :searchable-tags="searchableTags"
+                :available-types="getTypesForTag(tag)"
                 @update-quantity="(q) => $emit('update-quantity', tag.id, q)"
                 @toggle-picked-up="() => $emit('toggle-picked-up', tag.id)"
                 @add-detail="(detail) => $emit('add-detail', tag.id, detail)"
                 @remove="() => $emit('remove-tag', tag.id)"
                 @set-picked-up="(val) => $emit('set-picked-up', tag.id, val)"
+                @set-type="(val) => $emit('set-type', tag.id, val)"
                 @remove-detail="(detail) => $emit('remove-detail', tag.id, detail)"
             />
         </div>
@@ -43,6 +45,9 @@
 
 <script setup>
 import TagCard from './TagCard.vue';
+import { useTagsStore } from '@stores/tags/index.js';
+
+const tagsStore = useTagsStore();
 
 defineProps({
     tags: {
@@ -63,5 +68,10 @@ defineProps({
     },
 });
 
-defineEmits(['update-quantity', 'set-picked-up', 'add-detail', 'remove-detail', 'remove-tag']);
+defineEmits(['update-quantity', 'set-picked-up', 'set-type', 'add-detail', 'remove-detail', 'remove-tag']);
+
+const getTypesForTag = (tag) => {
+    if (!tag.cloId) return [];
+    return tagsStore.getTypesForClo(tag.cloId);
+};
 </script>

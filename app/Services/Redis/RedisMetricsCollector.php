@@ -92,7 +92,7 @@ final class RedisMetricsCollector
      */
     private static function updateTags($pipe, string $scope, array $tags, string $operation): void
     {
-        foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags'] as $dimension) {
+        foreach (['categories', 'objects', 'materials', 'brands', 'custom_tags', 'types'] as $dimension) {
             $items = $tags[$dimension] ?? [];
             if (empty($items)) continue;
 
@@ -102,6 +102,7 @@ final class RedisMetricsCollector
                 'materials' => RedisKeys::materials($scope),
                 'brands' => RedisKeys::brands($scope),
                 'custom_tags' => RedisKeys::customTags($scope),
+                'types' => RedisKeys::types($scope),
             };
 
             $rankKey = RedisKeys::ranking($scope, $dimension);
@@ -161,6 +162,7 @@ final class RedisMetricsCollector
                     'materials' => "mat:$id",
                     'brands' => "brand:$id",
                     'custom_tags' => "custom:$id",
+                    'types' => "type:$id",
                     default => null,
                 };
 
@@ -210,7 +212,8 @@ final class RedisMetricsCollector
             'objects' => [],
             'materials' => [],
             'brands' => [],
-            'custom_tags' => []
+            'custom_tags' => [],
+            'types' => [],
         ];
 
         foreach ($tags as $key => $count) {
@@ -233,6 +236,9 @@ final class RedisMetricsCollector
                 case 'custom':
                     $dimensions['custom_tags'][$id] = $count;
                     break;
+                case 'type':
+                    $dimensions['types'][$id] = $count;
+                    break;
             }
         }
 
@@ -246,6 +252,7 @@ final class RedisMetricsCollector
             'materials' => $dimensions['materials'],
             'brands' => $dimensions['brands'],
             'custom_tags' => $dimensions['custom_tags'],
+            'types' => $dimensions['types'],
         ];
     }
 
@@ -289,6 +296,7 @@ final class RedisMetricsCollector
             'materials' => [],
             'brands' => [],
             'custom_tags' => [],
+            'types' => [],
         ];
     }
 }

@@ -121,6 +121,7 @@ class User extends Authenticatable
         'verified' => 'boolean',
         'show_name' => 'boolean',
         'show_username' => 'boolean',
+        'public_profile' => 'boolean',
         'verification_required' => 'boolean',
         'prevent_others_tagging_my_photos' => 'boolean',
         'settings' => 'array',
@@ -444,63 +445,85 @@ class User extends Authenticatable
     }
 
     /**
-     * Has Many Through relationships
+     * @deprecated
      */
     public function customTags (): HasManyThrough
     {
         return $this->hasManyThrough(CustomTag::class, Photo::class);
     }
-
+    /**
+     * @deprecated
+     */
     public function smoking ()
     {
         return $this->hasManyThrough('App\Smoking', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function alcohol ()
     {
         return $this->hasManyThrough('App\Alcohol', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function coffee ()
     {
         return $this->hasManyThrough('App\Coffee', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function food ()
     {
         return $this->hasManyThrough('App\Food', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function softdrinks ()
     {
         return $this->hasManyThrough('App\SoftDrinks', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function drugs ()
     {
         return $this->hasManyThrough('App\Drugs', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function sanitary ()
     {
         return $this->hasManyThrough('App\Sanitary', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function other ()
     {
         return $this->hasManyThrough('App\Other', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function coastal ()
     {
         return $this->hasManyThrough('App\Coastal', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function pathway ()
     {
         return $this->hasManyThrough('App\Pathway', 'App\Models\Photo');
     }
-
+    /**
+     * @deprecated
+     */
     public function art ()
     {
         return $this->hasManyThrough('App\Art', 'App\Models\Photo');
@@ -597,6 +620,9 @@ class User extends Authenticatable
         ]);
     }
 
+    /**
+     * @deprecated
+     */
     public function analyzePhotoSummaries($limit = 100)
     {
         $photos = $this->photos()

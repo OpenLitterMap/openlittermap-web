@@ -118,8 +118,8 @@ class ClusteringService
         $min = $this->minPointsForZoom($zoom);
         $globalTileKey = config('clustering.global_tile_key');
 
-        // Delete existing clusters for this zoom
-        DB::table('clusters')->where('zoom', $zoom)->delete();
+        // Delete existing global clusters for this zoom (team_id=0)
+        DB::table('clusters')->where('zoom', $zoom)->where('team_id', 0)->delete();
 
         // Insert new clusters
         // Note: We use the grouped columns in the outer SELECT to comply with ONLY_FULL_GROUP_BY
@@ -140,7 +140,7 @@ class ClusteringService
                 FLOOR((lon + 180)/?) AS cell_x,
                 FLOOR((lat + 90)/?) AS cell_y
                 FROM photos USE INDEX (idx_photos_fast_cluster)
-              WHERE verified = 2
+              WHERE verified >= 2
             ) AS grouped_photos
             GROUP BY cell_x, cell_y
             HAVING COUNT(*) >= ?
@@ -168,9 +168,10 @@ class ClusteringService
         $gridSize = $this->gridSizeForZoom($zoom);
         $globalTileKey = config('clustering.global_tile_key');
 
-        // Delete existing clusters for this zoom (except global ones)
+        // Delete existing global tile clusters for this zoom (team_id=0, exclude global sentinel)
         DB::table('clusters')
             ->where('zoom', $zoom)
+            ->where('team_id', 0)
             ->where('tile_key', '!=', $globalTileKey)
             ->delete();
 
@@ -191,7 +192,7 @@ class ClusteringService
             FLOOR(cell_x / ?) AS cluster_x,
             FLOOR(cell_y / ?) AS cluster_y
           FROM photos USE INDEX (idx_photos_fast_cluster)
-          WHERE verified = 2
+          WHERE verified >= 2
             AND tile_key IS NOT NULL
         ) AS grouped_photos
         GROUP BY tile_key, cluster_x, cluster_y
@@ -268,6 +269,24 @@ class ClusteringService
     }
 
     /**
+     * Mark a team as needing reclustering
+     */
+    public function markTeamDirty(int $teamId, bool $withBackoff = false): void
+    {
+        $changedAt = $withBackoff
+            ? now()->addMinutes(1)
+            : now();
+
+        DB::statement('
+            INSERT INTO dirty_teams (team_id, changed_at, attempts)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                changed_at = IF(attempts < 3, VALUES(changed_at), changed_at + INTERVAL 5 MINUTE),
+                attempts = attempts + 1
+        ', [$teamId, $changedAt, $withBackoff ? 1 : 0]);
+    }
+
+    /**
      * Get clustering statistics
      */
     public function getStats(): array
@@ -275,10 +294,10 @@ class ClusteringService
         return [
             'photos_total' => DB::table('photos')->count(),
             'photos_with_tiles' => DB::table('photos')->whereNotNull('tile_key')->count(),
-            'photos_verified' => DB::table('photos')->where('verified', 2)->count(),
+            'photos_verified' => DB::table('photos')->where('verified', '>=', 2)->count(),
             'unique_tiles' => DB::table('photos')
                 ->whereNotNull('tile_key')
-                ->where('verified', 2)
+                ->where('verified', '>=', 2)
                 ->distinct('tile_key')
                 ->count('tile_key'),
             'clusters_total' => DB::table('clusters')->count(),
@@ -297,7 +316,7 @@ class ClusteringService
     {
         $photos = DB::table('photos')
             ->where('tile_key', $tileKey)
-            ->where('verified', 2)
+            ->where('verified', '>=', 2)
             ->count();
 
         $clusters = DB::table('clusters')
@@ -313,7 +332,94 @@ class ClusteringService
         ];
     }
 
-    // Add this method to your ClusteringService class:
+    /**
+     * Cluster all photos for a specific team across all zoom levels
+     *
+     * @return int Total clusters created
+     */
+    public function clusterTeam(int $teamId): int
+    {
+        $globalZooms = config('clustering.zoom_levels.global', [0, 2, 4, 6]);
+        $tileZooms = config('clustering.zoom_levels.tile', [8, 10, 12, 14, 16]);
+        $globalTileKey = config('clustering.global_tile_key');
+        $min = $this->minPointsForZoom(0);
+        $totalClusters = 0;
+
+        // Delete existing clusters for this team
+        DB::table('clusters')->where('team_id', $teamId)->delete();
+
+        // Global zoom levels — compute cells from lat/lon
+        foreach ($globalZooms as $zoom) {
+            $g = $this->gridSizeForZoom($zoom);
+
+            DB::statement("
+                INSERT INTO clusters
+                  (team_id, tile_key, zoom, year, cell_x, cell_y,
+                   lat, lon, point_count, grid_size)
+                SELECT
+                  ?, ? AS tile_key, ?, 0,
+                  cell_x, cell_y,
+                  AVG(lat), AVG(lon),
+                  COUNT(*),
+                  ?
+                FROM (
+                  SELECT
+                    lat, lon,
+                    FLOOR((lon + 180)/?) AS cell_x,
+                    FLOOR((lat + 90)/?) AS cell_y
+                  FROM photos
+                  WHERE team_id = ?
+                    AND verified >= 1
+                    AND lat BETWEEN -90 AND 90
+                    AND lon BETWEEN -180 AND 180
+                ) AS grouped_photos
+                GROUP BY cell_x, cell_y
+                HAVING COUNT(*) >= ?
+            ", [$teamId, $globalTileKey, $zoom, $g, $g, $g, $teamId, $min]);
+
+            $totalClusters += DB::table('clusters')
+                ->where('team_id', $teamId)
+                ->where('zoom', $zoom)
+                ->count();
+        }
+
+        // Tile zoom levels — use generated cell columns
+        foreach ($tileZooms as $zoom) {
+            $factor = $this->getCellFactor($zoom);
+            $gridSize = $this->gridSizeForZoom($zoom);
+
+            DB::statement("
+                INSERT INTO clusters
+                  (team_id, tile_key, zoom, year, cell_x, cell_y,
+                   lat, lon, point_count, grid_size)
+                SELECT
+                  ?, tile_key, ?, 0,
+                  cluster_x, cluster_y,
+                  AVG(lat), AVG(lon),
+                  COUNT(*),
+                  ?
+                FROM (
+                  SELECT
+                    tile_key, lat, lon,
+                    FLOOR(cell_x / ?) AS cluster_x,
+                    FLOOR(cell_y / ?) AS cluster_y
+                  FROM photos
+                  WHERE team_id = ?
+                    AND verified >= 1
+                    AND tile_key IS NOT NULL
+                ) AS grouped_photos
+                GROUP BY tile_key, cluster_x, cluster_y
+                HAVING COUNT(*) >= ?
+            ", [$teamId, $zoom, $gridSize, $factor, $factor, $teamId, $min]);
+
+            $totalClusters += DB::table('clusters')
+                ->where('team_id', $teamId)
+                ->where('zoom', $zoom)
+                ->count();
+        }
+
+        return $totalClusters;
+    }
 
     /**
      * Cluster a specific tile across all zoom levels
@@ -335,9 +441,10 @@ class ClusteringService
             $factor = $this->getCellFactor($zoom);
             $gridSize = $this->gridSizeForZoom($zoom);
 
-            // Delete existing clusters for this tile at this zoom
+            // Delete existing global clusters for this tile at this zoom (team_id=0)
             DB::table('clusters')
                 ->where('zoom', $zoom)
+                ->where('team_id', 0)
                 ->where('tile_key', $tileKey)
                 ->delete();
 
@@ -358,7 +465,7 @@ class ClusteringService
                 FLOOR(cell_x / ?) AS cluster_x,
                 FLOOR(cell_y / ?) AS cluster_y
                 FROM photos USE INDEX (idx_photos_fast_cluster)
-              WHERE verified = 2
+              WHERE verified >= 2
                 AND tile_key = ?
             ) AS grouped_photos
             GROUP BY tile_key, cluster_x, cluster_y

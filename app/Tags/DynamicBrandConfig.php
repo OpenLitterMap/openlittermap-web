@@ -4,7 +4,6 @@ namespace App\Tags;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Dynamic brand configuration using database instead of hard-coded file

@@ -95,6 +95,7 @@ class PointsStatsTest extends TestCase
         // Create photo tag with quantity 5
         $photoTag = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
             'quantity' => 5
@@ -111,7 +112,7 @@ class PointsStatsTest extends TestCase
 
         // Update photo totals
         $photo->update([
-            'total_litter' => 5,
+            'total_tags' => 5,
             'total_tags' => 8  // 5 objects + 3 materials
         ]);
 
@@ -157,8 +158,10 @@ class PointsStatsTest extends TestCase
         ]);
 
         // Create two photo tags
+        $cloId = $this->getCloId($alcohol->id, $beerCan->id);
         $photoTag1 = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $cloId,
             'category_id' => $alcohol->id,
             'litter_object_id' => $beerCan->id,
             'quantity' => 2
@@ -166,6 +169,7 @@ class PointsStatsTest extends TestCase
 
         $photoTag2 = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $cloId,
             'category_id' => $alcohol->id,
             'litter_object_id' => $beerCan->id,
             'quantity' => 3
@@ -213,20 +217,22 @@ class PointsStatsTest extends TestCase
         // Photo 1: smoking + butts
         PhotoTag::create([
             'photo_id' => $photo1->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
             'quantity' => 10
         ]);
-        $photo1->update(['total_litter' => 10]);
+        $photo1->update(['total_tags' => 10]);
 
         // Photo 2: food + wrapper
         PhotoTag::create([
             'photo_id' => $photo2->id,
+            'category_litter_object_id' => $this->getCloId($food->id, $wrapper->id),
             'category_id' => $food->id,
             'litter_object_id' => $wrapper->id,
             'quantity' => 5
         ]);
-        $photo2->update(['total_litter' => 5]);
+        $photo2->update(['total_tags' => 5]);
 
         // Act - Filter for smoking category
         $stats = $this->service->getStats([
@@ -275,17 +281,17 @@ class PointsStatsTest extends TestCase
         // Create photos across different dates
         $this->createPhotoWithLocation($user, 0.0, 51.5, [
             'datetime' => '2024-06-01 10:00:00',
-            'total_litter' => 5
+            'total_tags' => 5
         ]);
 
         $this->createPhotoWithLocation($user, 0.0, 51.5, [
             'datetime' => '2024-06-01 14:00:00',
-            'total_litter' => 3
+            'total_tags' => 3
         ]);
 
         $this->createPhotoWithLocation($user, 0.0, 51.5, [
             'datetime' => '2024-06-02 12:00:00',
-            'total_litter' => 2
+            'total_tags' => 2
         ]);
 
         // Act
@@ -377,13 +383,13 @@ class PointsStatsTest extends TestCase
 
         $photoTag = PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $object->id),
             'category_id' => $category->id,
             'litter_object_id' => $object->id,
             'quantity' => 1,
-            'custom_tag_primary_id' => $customTag
         ]);
 
-        // Also add as extra tag
+        // Add custom tag as extra tag
         PhotoTagExtraTags::create([
             'photo_tag_id' => $photoTag->id,
             'tag_type' => 'custom_tag',
@@ -462,6 +468,7 @@ class PointsStatsTest extends TestCase
 
         PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($category->id, $object->id),
             'category_id' => $category->id,
             'litter_object_id' => $object->id,
             'quantity' => $quantity
@@ -479,7 +486,7 @@ class PointsStatsTest extends TestCase
             'datetime' => now(),
             'remaining' => true,
             'verified' => 2,
-            'total_litter' => 0,
+            'total_tags' => 0,
             'total_tags' => 0,
         ], $attributes));
     }
@@ -545,7 +552,6 @@ class PointsStatsTest extends TestCase
                 $table->unsignedBigInteger('photo_id');
                 $table->unsignedBigInteger('category_id')->nullable();
                 $table->unsignedBigInteger('litter_object_id')->nullable();
-                $table->unsignedBigInteger('custom_tag_primary_id')->nullable();
                 $table->integer('quantity')->default(1);
                 $table->timestamps();
             });

@@ -4,9 +4,10 @@ namespace Tests\Feature\Api\Tags;
 
 use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Litter\Categories\Smoking;
+use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
 use App\Models\Users\User;
+use Database\Seeders\Tags\GenerateBrandsSeeder;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +28,10 @@ class RefactorOldTagsTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
-        $this->seed(GenerateTagsSeeder::class);
+        $this->seed([
+            GenerateTagsSeeder::class,
+            GenerateBrandsSeeder::class,
+        ]);
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
     }
@@ -57,12 +61,13 @@ class RefactorOldTagsTest extends TestCase
         ->assertOk()
         ->assertJson(['success' => true, 'msg' => 'tags-added']);
 
-        // Assert v4 category data is stored (step 1 of ConvertV4TagsAction)
+        // Assert v5 PhotoTags are created
         $photo->refresh();
 
-        $this->assertNotNull($photo->smoking_id);
-        $this->assertInstanceOf(Smoking::class, $photo->smoking);
-        $this->assertEquals(3, $photo->smoking->butts);
+        $this->assertTrue($photo->photoTags()->exists());
+        $photoTag = $photo->photoTags()->first();
+        $this->assertNotNull($photoTag->category_litter_object_id);
+        $this->assertNotNull($photoTag->summary ?? $photo->summary);
     }
 
     public function test_it_forbids_adding_tags_to_a_verified_photo()
@@ -91,7 +96,7 @@ class RefactorOldTagsTest extends TestCase
         ]);
 
         $response->assertForbidden();
-        $this->assertNull($photo->fresh()->smoking_id);
+        $this->assertCount(0, PhotoTag::where('photo_id', $photo->id)->get());
     }
 
     public function test_request_photo_id_is_validated()
@@ -188,7 +193,7 @@ class RefactorOldTagsTest extends TestCase
 
         $this->assertNotNull($photo->summary);
         $this->assertGreaterThan(0, $photo->xp);
-        $this->assertEquals(0.1, $photo->verification);
+        // v5: verification float no longer written (deprecated)
 
         // v5: untrusted user does NOT trigger metrics processing
         Event::assertNotDispatched(TagsVerifiedByAdmin::class);
@@ -275,7 +280,7 @@ class RefactorOldTagsTest extends TestCase
         // Assert event is fired and photo is verified
         $photo->refresh();
 
-        $this->assertEquals(1, $photo->verification);
+        // v5: verification float no longer written (deprecated)
         $this->assertEquals(VerificationStatus::ADMIN_APPROVED, $photo->verified);
 
         Event::assertDispatched(

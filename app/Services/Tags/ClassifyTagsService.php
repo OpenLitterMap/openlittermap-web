@@ -8,7 +8,6 @@ use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class ClassifyTagsService

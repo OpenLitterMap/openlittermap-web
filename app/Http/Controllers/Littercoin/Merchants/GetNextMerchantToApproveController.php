@@ -7,6 +7,9 @@ use App\Models\Merchant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @deprecated Route commented out. Merchant approval disabled.
+ */
 class GetNextMerchantToApproveController extends Controller
 {
     /**

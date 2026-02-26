@@ -18,6 +18,7 @@ use App\Actions\Locations\ResolveLocationAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadPhotoRequest;
 
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -50,7 +51,7 @@ class UploadPhotoController extends Controller
         $imageAndExif = $this->makeImageAction->run($file);
         $image = $imageAndExif['image'];
         $exif = $imageAndExif['exif'];
-        $dateTime = getDateTimeForPhoto($exif);
+        $dateTime = getDateTimeForPhoto($exif) ?? Carbon::now();
 
         // 2. Upload full image + bbox thumbnail to S3
         $imageName = $this->uploadPhotoAction->run(

@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @deprecated Route commented out. Merchant creation disabled.
+ */
 class CreateMerchantController extends Controller
 {
     /**

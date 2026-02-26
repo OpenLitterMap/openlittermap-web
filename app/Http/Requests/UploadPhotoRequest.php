@@ -12,7 +12,7 @@ class UploadPhotoRequest extends FormRequest
 
     protected string $gpsError1 = "Sorry, no GPS on this one.";
 
-    protected string $gpsError2 = "Error: Your Images have GeoTags, but they have values of zero.
+    protected string $gpsError2 = "Error: Could not read GPS coordinates from this image.
         You may have lost the geotags when transferring images across devices
         or you might need to enable another setting to make them available.";
 
@@ -56,18 +56,23 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // Duplicate photo check based on EXIF datetime
+                // DateTime validation
                 $dateTime = getDateTimeForPhoto($exif);
-                if ($dateTime) {
-                    $photoExists = Photo::where([
-                        'user_id' => auth()->id(),
-                        'datetime' => $dateTime
-                    ])->exists();
 
-                    if ($photoExists) {
-                        $validator->errors()->add('photo', 'You have already uploaded this photo');
-                        return;
-                    }
+                if (!$dateTime) {
+                    $validator->errors()->add('photo', 'The image does not contain a date. Please check your camera settings.');
+                    return;
+                }
+
+                // Duplicate photo check
+                $photoExists = Photo::where([
+                    'user_id' => auth()->id(),
+                    'datetime' => $dateTime
+                ])->exists();
+
+                if ($photoExists) {
+                    $validator->errors()->add('photo', 'You have already uploaded this photo');
+                    return;
                 }
 
                 // GPS validation
@@ -82,27 +87,16 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // Check if GPS coords are "0/0"
-                if (
-                    $exif["GPSLatitude"][0] === "0/0" &&
-                    $exif["GPSLongitude"][0] === "0/0"
-                ) {
-                    $validator->errors()->add('photo', $this->gpsError2);
-                    return;
-                }
-
-                // Convert GPS to coordinates
+                // Convert GPS to coordinates (dmsToDec returns null on malformed data)
                 $coordinates = getCoordinatesFromPhoto($exif);
                 $lat = $coordinates[0] ?? null;
                 $lon = $coordinates[1] ?? null;
 
-                if (
-                    ($lat === 0 && $lon === 0) ||
-                    ($lat === '0' && $lon === '0') ||
-                    $lat === null || $lon === null
-                ) {
+                if ($lat === null || $lon === null) {
                     $validator->errors()->add('photo', $this->gpsError2);
                 }
+
+                // Note: 0,0 coordinates are accepted. Future feature: manual coordinate assignment.
             }
         ];
     }

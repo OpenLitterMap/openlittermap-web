@@ -6,6 +6,9 @@ use App\Subscriber;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
+/**
+ * @deprecated Route commented out. Mailing list subscribe removed.
+ */
 class SubscribersController extends Controller
 {
     /**

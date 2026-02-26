@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Api\Photos;
 
-use App\Events\ImageDeleted;
 use App\Models\Users\User;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
 use Tests\TestCase;
@@ -81,38 +79,26 @@ class DeletePhotoTest extends TestCase
         $this->assertNull($deletedPhoto->processed_tags);
     }
 
-    public function test_it_fires_image_deleted_event()
+    public function test_unprocessed_photo_skips_metrics_reversal()
     {
-        Event::fake(ImageDeleted::class);
-
-        // User uploads a photo
+        // User uploads a photo (no tags, not processed)
         $user = User::factory()->create();
 
         $this->actingAs($user, 'api');
 
-        $imageAttributes = $this->getImageAndAttributes();
-
         $this->post('/api/photos/submit',
-            $this->getApiImageAttributes($imageAttributes)
+            $this->getApiImageAttributes($this->getImageAndAttributes())
         );
 
         $photo = $user->fresh()->photos->last();
+        $this->assertNull($photo->processed_at);
 
-        // User then deletes the photo
+        // Delete should succeed without calling MetricsService
         $this->delete('/api/photos/delete', [
-            'photoId' => $photo->id
-        ]);
+            'photoId' => $photo->id,
+        ])->assertOk();
 
-        Event::assertDispatched(
-            ImageDeleted::class,
-            function (ImageDeleted $e) use ($user, $photo) {
-                return
-                    $user->is($e->user) &&
-                    $photo->country_id === $e->countryId &&
-                    $photo->state_id === $e->stateId &&
-                    $photo->city_id === $e->cityId;
-            }
-        );
+        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
     }
 
     public function test_unauthorized_users_cannot_delete_photos()

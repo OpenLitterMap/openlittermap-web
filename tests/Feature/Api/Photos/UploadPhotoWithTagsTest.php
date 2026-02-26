@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api\Photos;
 
 use App\Events\ImageUploaded;
-use App\Models\Litter\Categories\Smoking;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
@@ -22,6 +21,7 @@ class UploadPhotoWithTagsTest extends TestCase
         parent::setUp();
 
         $this->setImagePath();
+        $this->seed(\Database\Seeders\Tags\GenerateTagsSeeder::class);
     }
 
     public function test_an_api_user_can_upload_a_photo_with_tags()
@@ -62,9 +62,9 @@ class UploadPhotoWithTagsTest extends TestCase
             $imageAttributes['dateTime']->format('Y-m-d H:i:s'),
             $photo->datetime->format('Y-m-d H:i:s')
         );
-        $this->assertNotNull($photo->smoking_id);
-        $this->assertInstanceOf(Smoking::class, $photo->smoking);
-        $this->assertEquals(3, $photo->smoking->butts);
+        // v5: tags stored as PhotoTags (not v4 category columns)
+        $this->assertTrue($photo->photoTags()->exists());
+        $this->assertNotNull($photo->summary);
 
         Event::assertDispatched(ImageUploaded::class);
     }

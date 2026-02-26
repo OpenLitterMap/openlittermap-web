@@ -56,6 +56,8 @@ export const requests = {
             if (error?.response?.status === 422) {
                 this.errorLogin =
                     error.response.data.errors?.identifier?.[0] || error.response.data.message || 'Invalid credentials';
+            } else if (error?.response?.status === 429) {
+                this.errorLogin = 'Too many requests. Please try again later.';
             } else {
                 this.errorLogin = 'Something went wrong. Please try again.';
             }

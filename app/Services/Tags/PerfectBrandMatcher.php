@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 
 /**
+ * @deprecated
  * Perfect Brand Matching
  *
  * ONLY attaches brands to objects when there's an exact relationship defined.

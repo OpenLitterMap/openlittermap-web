@@ -17,12 +17,10 @@
             <!-- Links -->
             <div :class="['md:space-x-6', mobileNavOpen ? 'md:block' : 'hidden md:flex items-center']">
                 <router-link to="/about" class="nav-item">{{ t('About') }}</router-link>
-                <router-link to="/changelog" class="nav-item">{{ t('Changelog') }}</router-link>
                 <!--                <router-link to="/cleanups" class="nav-item">Cleanups</router-link>-->
                 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
                 <router-link to="/leaderboard" class="nav-item">{{ t('Leaderboard') }}</router-link>
                 <router-link to="/global" class="nav-item">{{ t('Global Map') }}</router-link>
-                <router-link to="/references" class="nav-item">{{ t('References') }}</router-link>
                 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->
                 <router-link to="/locations" class="nav-item">{{ t('Locations') }}</router-link>
 
@@ -55,17 +53,18 @@
                         @mouseleave="webDropdownOpen = false"
                         class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 group-hover:block"
                     >
-                        <router-link
-                            to="/admin/redis"
-                            class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >Admin - Redis</router-link
-                        >
-
-                        <!--                        <router-link-->
-                        <!--                            to="/admin/users"-->
-                        <!--                            class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"-->
-                        <!--                            >Admin - Users</router-link-->
-                        <!--                        >-->
+                        <template v-if="isAdmin">
+                            <router-link
+                                to="/admin/queue"
+                                class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                                >Admin - Queue</router-link
+                            >
+                            <router-link
+                                to="/admin/redis"
+                                class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                                >Admin - Redis</router-link
+                            >
+                        </template>
 
                         <router-link to="/tag" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >Add Tags</router-link
@@ -87,10 +86,6 @@
 
                         <router-link to="/teams" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >Teams</router-link
-                        >
-
-                        <router-link to="/settings" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >Settings</router-link
                         >
                     </div>
                 </div>
@@ -114,10 +109,11 @@ const userStore = useUserStore();
 const mobileNavOpen = ref(false);
 const webDropdownOpen = ref(false);
 const auth = computed(() => userStore.auth);
-
-const toggleOpen = () => {
-    open.value = !open.value;
-};
+const isAdmin = computed(() => {
+    if (userStore.admin) return true;
+    const roles = userStore.user?.roles || [];
+    return roles.some((r) => ['admin', 'helper', 'superadmin'].includes(r.name));
+});
 
 const login = () => {
     modalStore.showModal({

@@ -393,20 +393,20 @@ export const pointsHelper = {
             return pointsStore.pagination;
         }
 
-        // Check in geojson meta
-        if (pointsStore.pointsGeojson?.meta) {
+        // Check in geojson meta (API returns 'page' not 'current_page')
+        if (pointsStore.pointsGeojson?.meta?.page !== undefined) {
             return {
-                current_page: pointsStore.pointsGeojson.meta.current_page || 1,
+                current_page: pointsStore.pointsGeojson.meta.page || 1,
                 last_page: pointsStore.pointsGeojson.meta.last_page || 1,
                 per_page: pointsStore.pointsGeojson.meta.per_page || 300,
                 total: pointsStore.pointsGeojson.meta.total || 0,
             };
         }
 
-        // Check if pagination is at root of pointsGeojson
-        if (pointsStore.pointsGeojson?.current_page !== undefined) {
+        // Check if pagination is at root of pointsGeojson (API returns 'page' not 'current_page')
+        if (pointsStore.pointsGeojson?.page !== undefined) {
             return {
-                current_page: pointsStore.pointsGeojson.current_page || 1,
+                current_page: pointsStore.pointsGeojson.page || 1,
                 last_page: pointsStore.pointsGeojson.last_page || 1,
                 per_page: pointsStore.pointsGeojson.per_page || 300,
                 total: pointsStore.pointsGeojson.total || 0,

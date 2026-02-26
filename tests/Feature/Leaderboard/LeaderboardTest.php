@@ -3,6 +3,7 @@
 namespace Tests\Feature\Leaderboard;
 
 use App\Enums\LocationType;
+use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
@@ -331,6 +332,50 @@ class LeaderboardTest extends TestCase
         $this->assertFalse(Redis::zScore($globalKey, (string) $user->id));
         $this->assertFalse(Redis::zScore($countryKey, (string) $user->id));
         $this->assertEquals(0, Redis::zCard($globalKey));
+    }
+
+    public function test_state_filtered_leaderboard(): void
+    {
+        $state = State::factory()->create();
+        $users = User::factory(2)->create();
+
+        $stateKey = RedisKeys::xpRanking(RedisKeys::state($state->id));
+        Redis::zAdd($stateKey, 80, (string) $users[0]->id);
+        Redis::zAdd($stateKey, 120, (string) $users[1]->id);
+
+        $response = $this
+            ->actingAs($users[0])
+            ->getJson("/api/leaderboard?locationType=state&locationId={$state->id}")
+            ->assertOk()
+            ->json();
+
+        $this->assertTrue($response['success']);
+        $this->assertCount(2, $response['users']);
+        $this->assertEquals('120', $response['users'][0]['xp']);
+        $this->assertEquals('80', $response['users'][1]['xp']);
+        $this->assertEquals(2, $response['total']);
+    }
+
+    public function test_city_filtered_leaderboard(): void
+    {
+        $city = City::factory()->create();
+        $users = User::factory(2)->create();
+
+        $cityKey = RedisKeys::xpRanking(RedisKeys::city($city->id));
+        Redis::zAdd($cityKey, 200, (string) $users[0]->id);
+        Redis::zAdd($cityKey, 75, (string) $users[1]->id);
+
+        $response = $this
+            ->actingAs($users[0])
+            ->getJson("/api/leaderboard?locationType=city&locationId={$city->id}")
+            ->assertOk()
+            ->json();
+
+        $this->assertTrue($response['success']);
+        $this->assertCount(2, $response['users']);
+        $this->assertEquals('200', $response['users'][0]['xp']);
+        $this->assertEquals('75', $response['users'][1]['xp']);
+        $this->assertEquals(2, $response['total']);
     }
 
     public function test_tied_xp_users_have_deterministic_order(): void

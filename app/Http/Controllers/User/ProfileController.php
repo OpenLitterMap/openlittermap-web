@@ -6,24 +6,20 @@ use App\Enums\VerificationStatus;
 use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
 use App\Jobs\EmailUserExportCompleted;
-use App\Level;
 use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Services\LevelService;
+use App\Services\Redis\RedisKeys;
+use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class ProfileController extends Controller
 {
-    /**
-     * Apply middleware to all of these routes
-     */
-    public function __construct ()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Dispatch a request to download the users data
      *
@@ -76,10 +72,8 @@ class ProfileController extends Controller
     public function geojson ()
     {
         $photos = Photo::query()
-            ->where([
-                ['user_id', auth()->user()->id],
-                'verified' => 2
-            ])
+            ->where('user_id', auth()->user()->id)
+            ->where('verified', '>=', VerificationStatus::ADMIN_APPROVED->value)
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
@@ -98,7 +92,7 @@ class ProfileController extends Controller
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
             $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) ? $photo->filename : '/assets/images/waiting.png';
-            $resultString = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->result_string : null;
+            $summary = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->summary : null;
 
             $features[] = [
                 'type' => 'Feature',
@@ -108,7 +102,7 @@ class ProfileController extends Controller
                 ],
                 'properties' => [
                     'photo_id' => $photo->id,
-                    'result_string' => $resultString,
+                    'summary' => $summary,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,
                     'time' => $photo->datetime,
@@ -133,48 +127,121 @@ class ProfileController extends Controller
     }
 
     /**
-     * Get the total number of users, and the current users position
-     * To get the current position, we need to count how many users have more XP than current users
-     *
-     * @return array
+     * Get comprehensive profile data for the authenticated user.
      */
-    public function index ()
+    public function index(): array
     {
         /** @var User $user */
-        $user = Auth::user()->append('xp_redis');
+        $user = Auth::user();
+        $userId = $user->id;
 
-        // Todo - Store this metadata in another table
-        $totalUsers = User::count();
+        // Stats from Redis, with MySQL fallback for pre-v5 users
+        $metrics = RedisMetricsCollector::getUserMetrics($userId);
 
-        $usersPosition = $user->position;
+        $uploads = $metrics['uploads'] ?: (int) $user->total_images;
+        $litter = $metrics['litter'] ?: (int) $user->total_litter;
+        $xp = $metrics['xp'] ?: (int) $user->xp;
 
-        // Todo - Store this metadata in Redis
-        $totalPhotosAllUsers = Photo::where('is_public', true)->count();
-        // Todo - Store this metadata in Redis
-        $totalTagsAllUsers = Photo::where('is_public', true)->sum('total_litter') + CustomTag::count(); // this doesn't include brands
+        // Level
+        $levelInfo = LevelService::getUserLevel($xp);
 
-        $usersTotalTags = $user->total_tags;
-
-        $photoPercent = ($user->total_images && $totalPhotosAllUsers) ? ($user->total_images / $totalPhotosAllUsers) : 0;
-        $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
-
-        // XP needed to reach the next level
-        $nextLevel = Level::where('xp', '>', $user->xp_redis)->first();
-        $requiredXp = $nextLevel->xp - $user->xp_redis;
-        $currentLevel = $nextLevel->level - 1;
-
-        // Update the user's current level if needed
-        if ($user->level != $currentLevel) {
-            $user->level = $currentLevel;
+        if ($user->level != $levelInfo['level']) {
+            $user->level = $levelInfo['level'];
             $user->save();
         }
 
+        // Rank from Redis ZSET, with MySQL fallback
+        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
+        $rank = Redis::zRevRank($globalXpKey, (string) $userId);
+        $totalRanked = (int) Redis::zCard($globalXpKey);
+
+        if ($rank !== false) {
+            $globalPosition = $rank + 1;
+        } else {
+            // Fallback: count users with more XP in MySQL
+            $globalPosition = User::where('xp', '>', $xp)->count() + 1;
+            $totalRanked = $totalRanked ?: User::where('xp', '>', 0)->count();
+        }
+
+        $percentile = $totalRanked > 0
+            ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
+            : 0;
+
+        // Global stats from Redis, with MySQL fallback
+        $globalStats = Redis::hGetAll(RedisKeys::stats(RedisKeys::global()));
+        $globalPhotos = (int) ($globalStats['photos'] ?? 0);
+        $globalLitter = (int) ($globalStats['litter'] ?? 0);
+
+        if ($globalPhotos === 0) {
+            $globalPhotos = (int) Photo::where('is_public', true)->count();
+            $globalLitter = (int) Photo::where('is_public', true)->sum('total_tags');
+        }
+
+        // Achievements
+        $unlockedCount = DB::table('user_achievements')
+            ->where('user_id', $userId)
+            ->count();
+        $totalAchievements = DB::table('achievements')->count();
+
+        // Location counts from user's photos
+        $locationCounts = Photo::where('user_id', $userId)
+            ->whereNotNull('country_id')
+            ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
+            ->first();
+
+        // Percentage of global contribution
+        $photoPercent = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
+        $tagPercent = ($litter && $globalLitter) ? round($litter / $globalLitter * 100, 2) : 0;
+
+        // Active team
+        $team = null;
+        if ($user->active_team) {
+            $teamModel = $user->team;
+            if ($teamModel) {
+                $team = ['id' => $teamModel->id, 'name' => $teamModel->name];
+            }
+        }
+
         return [
-            'totalUsers' => $totalUsers,
-            'usersPosition' => $usersPosition,
-            'tagPercent' => $tagPercent,
-            'photoPercent' => $photoPercent,
-            'requiredXp' => $requiredXp
+            'user' => [
+                'id' => $userId,
+                'name' => $user->name,
+                'username' => $user->username,
+                'avatar' => $user->avatar,
+                'created_at' => $user->created_at->toIso8601String(),
+                'member_since' => $user->created_at->format('F Y'),
+                'global_flag' => $user->global_flag,
+                'public_profile' => (bool) $user->public_profile,
+            ],
+            'stats' => [
+                'uploads' => $uploads,
+                'litter' => $litter,
+                'xp' => $xp,
+                'streak' => $metrics['streak'],
+                'littercoin' => (int) ($user->total_littercoin ?? 0),
+                'photo_percent' => $photoPercent,
+                'tag_percent' => $tagPercent,
+            ],
+            'level' => $levelInfo,
+            'rank' => [
+                'global_position' => $globalPosition,
+                'global_total' => $totalRanked,
+                'percentile' => $percentile,
+            ],
+            'global_stats' => [
+                'total_photos' => $globalPhotos,
+                'total_litter' => $globalLitter,
+            ],
+            'achievements' => [
+                'unlocked' => $unlockedCount,
+                'total' => $totalAchievements,
+            ],
+            'locations' => [
+                'countries' => (int) ($locationCounts->countries ?? 0),
+                'states' => (int) ($locationCounts->states ?? 0),
+                'cities' => (int) ($locationCounts->cities ?? 0),
+            ],
+            'team' => $team,
         ];
     }
 

@@ -39,13 +39,12 @@ class PointsController extends Controller
             'lon' => $photo->lon,
             'datetime' => $photo->datetime,
             'verified' => $photo->verified,
-            'total_litter' => $photo->total_litter,
             'filename' => $photo->filename,
             'username' => $photo->user && $photo->user->show_username_maps ? $photo->user->username : null,
             'name' => $photo->user && $photo->user->show_name_maps ? $photo->user->name : null,
             'social' => $photo->user?->social_links,
             'team' => $photo->team?->name,
-            'summary' => $photo->summary, // Contains all v5 tags structure
+            'summary' => $photo->summary,
         ];
     }
 
@@ -155,7 +154,7 @@ class PointsController extends Controller
                 'photos.lon',
                 'photos.datetime',
                 'photos.remaining',
-                'photos.total_litter',
+                'photos.summary',
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
@@ -280,8 +279,11 @@ class PointsController extends Controller
                 }
 
                 if (!empty($params['custom_tags'])) {
-                    $row->whereHas('primaryCustomTag', function ($q) use ($params) {
-                        $q->whereIn('key', $params['custom_tags'])->where('approved', true);
+                    $row->whereHas('extraTags', function ($q) use ($params) {
+                        $q->where('tag_type', 'custom_tag')
+                            ->whereHas('extraTag', function ($inner) use ($params) {
+                                $inner->whereIn('key', $params['custom_tags'])->where('approved', true);
+                            });
                     });
                 }
             });
@@ -356,7 +358,7 @@ class PointsController extends Controller
                 'datetime' => $photo->datetime,
                 'verified' => $photo->verified,
                 'picked_up' => $photo->remaining !== null ? !$photo->remaining : null,
-                'total_litter' => $photo->total_litter,
+                'summary' => $photo->summary,
                 'filename' => $this->getFilename($photo),
                 'username' => $photo->user && $photo->user->show_username_maps
                     ? $photo->user->username : null,

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\API\Tags;
 use App\Http\Controllers\Controller;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\Materials;
-use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\CategoryObject;
-use Illuminate\Support\Collection;
+use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\LitterObjectType;
+use App\Models\Litter\Tags\Materials;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class GetTagsController extends Controller
 {
@@ -38,8 +40,12 @@ class GetTagsController extends Controller
      *
      * Ordered alphabetically.
      */
-    public function getAllTags (): JsonResponse {
-        $categories = Category::select('id', 'key')->orderBy('key')->get();
+    public function getAllTags(): JsonResponse
+    {
+        $categories = Category::select('id', 'key')
+            ->where('key', '!=', 'unclassified')
+            ->orderBy('key')
+            ->get();
 
         $litterObjects = LitterObject::with(['categories:id,key'])
             ->select('id', 'key')
@@ -50,11 +56,22 @@ class GetTagsController extends Controller
 
         $brands = BrandList::select('id', 'key')->orderBy('key')->get();
 
+        $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
+
+        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')->get();
+
+        $categoryObjectTypes = DB::table('category_object_types')
+            ->select('category_litter_object_id', 'litter_object_type_id')
+            ->get();
+
         return response()->json([
             'categories' => $categories,
             'objects' => $litterObjects,
             'materials' => $materials,
-            'brands' => $brands
+            'brands' => $brands,
+            'types' => $types,
+            'category_objects' => $categoryObjects,
+            'category_object_types' => $categoryObjectTypes,
         ]);
     }
 

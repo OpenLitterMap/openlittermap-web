@@ -8,6 +8,9 @@ use App\Models\Littercoin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @deprecated Routes commented out. Littercoin on-chain ops disabled.
+ */
 class LittercoinController extends Controller {
 
     /**

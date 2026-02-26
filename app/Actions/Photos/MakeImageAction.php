@@ -7,6 +7,9 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Intervention\Image\Facades\Image;
 
+/**
+ * @deprecated - find another way to convert HEIC
+ */
 class MakeImageAction
 {
     private const TEMP_HEIC_STORAGE_DIR = 'app/heic_images/';

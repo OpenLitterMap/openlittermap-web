@@ -4,8 +4,10 @@ namespace Tests\Unit\Exports;
 
 use App\Exports\CreateCSVExport;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Photo;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Tests\TestCase;
@@ -47,6 +49,9 @@ class CreateCSVExportTest extends TestCase
         $obj1 = $objects[0];
         $obj2 = $objects[1];
 
+        $cloId1 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj1->id)->value('id');
+        $cloId2 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj2->id)->value('id');
+
         $photo = Photo::factory()->create([
             'verified' => 2,
             'model' => 'Redmi Note 8 pro',
@@ -58,12 +63,10 @@ class CreateCSVExportTest extends TestCase
             'total_litter' => 15,
             'summary' => [
                 'tags' => [
-                    $category->id => [
-                        $obj1->id => ['quantity' => 5, 'materials' => [], 'brands' => [], 'custom_tags' => []],
-                        $obj2->id => ['quantity' => 10, 'materials' => [], 'brands' => [], 'custom_tags' => []],
-                    ],
+                    ['clo_id' => $cloId1, 'category_id' => $category->id, 'object_id' => $obj1->id, 'quantity' => 5, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],
+                    ['clo_id' => $cloId2, 'category_id' => $category->id, 'object_id' => $obj2->id, 'quantity' => 10, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],
                 ],
-                'totals' => ['total_tags' => 15, 'total_objects' => 15],
+                'totals' => ['litter' => 15, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0],
             ],
         ]);
 
@@ -71,9 +74,13 @@ class CreateCSVExportTest extends TestCase
         $customTag1 = CustomTagNew::firstOrCreate(['key' => 'my_custom_1']);
         $customTag2 = CustomTagNew::firstOrCreate(['key' => 'my_custom_2']);
         $customTag3 = CustomTagNew::firstOrCreate(['key' => 'my_custom_3']);
-        PhotoTag::create(['photo_id' => $photo->id, 'custom_tag_primary_id' => $customTag1->id, 'quantity' => 1]);
-        PhotoTag::create(['photo_id' => $photo->id, 'custom_tag_primary_id' => $customTag2->id, 'quantity' => 1]);
-        PhotoTag::create(['photo_id' => $photo->id, 'custom_tag_primary_id' => $customTag3->id, 'quantity' => 1]);
+        $unclassifiedCloId = $this->getUnclassifiedOtherCloId();
+        $pt1 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt1->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag1->id, 'quantity' => 1]);
+        $pt2 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt2->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag2->id, 'quantity' => 1]);
+        $pt3 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt3->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag3->id, 'quantity' => 1]);
 
         $this->assertDatabaseCount('photos', 1);
 
@@ -126,7 +133,7 @@ class CreateCSVExportTest extends TestCase
             'address_array' => ['road' => '12345 Street', 'country' => 'Ireland'],
             'summary' => [
                 'tags' => [],
-                'totals' => ['total_tags' => 0, 'total_objects' => 0],
+                'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0],
             ],
         ]);
 

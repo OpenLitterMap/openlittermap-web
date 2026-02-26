@@ -2,7 +2,7 @@
     <GlobalMapNotification color="littercoin">
         <template #image>
             <div class="flex items-center h-full">
-                <img src="../../../../../old_js/assets/icons/mining.png" class="w-8" alt="Mining"/>
+                <img src="@/assets/icons/mining.png" class="w-8" alt="Mining"/>
             </div>
         </template>
         <template #content>

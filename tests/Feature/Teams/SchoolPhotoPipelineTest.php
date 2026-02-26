@@ -132,10 +132,13 @@ class SchoolPhotoPipelineTest extends TestCase
         ];
 
         foreach ($tags as $tag) {
+            $catId = $categoryMap[$tag['category']];
+            $objId = $objectMap[$tag['object']];
             PhotoTag::create([
                 'photo_id' => $photo->id,
-                'category_id' => $categoryMap[$tag['category']],
-                'litter_object_id' => $objectMap[$tag['object']],
+                'category_litter_object_id' => $this->getCloId($catId, $objId),
+                'category_id' => $catId,
+                'litter_object_id' => $objId,
                 'quantity' => $tag['quantity'],
                 'picked_up' => $tag['picked_up'],
             ]);

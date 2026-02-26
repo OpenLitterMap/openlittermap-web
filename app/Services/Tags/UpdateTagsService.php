@@ -4,6 +4,7 @@ namespace App\Services\Tags;
 
 use App\Enums\Dimension;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
 use App\Services\Achievements\Tags\TagKeyCache;
@@ -12,9 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * This is for our migration script, not for real-world tagging.
- *
- * We might also use this for old mobile app versions...
+ * Used in Migration Script and to convert old Mobile Tags to v5 format
  */
 class UpdateTagsService
 {
@@ -255,12 +254,15 @@ class UpdateTagsService
                 $hasObjects = true;
 
                 foreach ($objects as $object) {
+                    $cloId = $this->resolveCloId($categoryId, $object['id']);
+
                     $photoTag = PhotoTag::create([
-                        'photo_id'         => $photo->id,
-                        'category_id'      => $categoryId,
-                        'litter_object_id' => $object['id'],
-                        'quantity'         => $object['quantity'],
-                        'picked_up'        => !$photo->remaining,
+                        'photo_id'                   => $photo->id,
+                        'category_litter_object_id'  => $cloId,
+                        'category_id'                => $categoryId,
+                        'litter_object_id'           => $object['id'],
+                        'quantity'                   => $object['quantity'],
+                        'picked_up'                  => !$photo->remaining,
                     ]);
 
                     $createdPhotoTags[] = [
@@ -285,7 +287,7 @@ class UpdateTagsService
                         }
 
                         if (!empty($materialsToAttach)) {
-                            $photoTag->attachExtraTags($materialsToAttach, Dimension::MATERIAL->value, 0);
+                            $photoTag->attachExtraTags($materialsToAttach, Dimension::MATERIAL->value);
                         }
                     }
                 }
@@ -334,14 +336,17 @@ class UpdateTagsService
             'count' => count($brands)
         ]);
 
+        $unclassifiedOtherCloId = $this->getUnclassifiedOtherCloId();
+
         $photoTag = PhotoTag::create([
-            'photo_id'    => $photo->id,
-            'category_id' => Category::where('key', 'brands')->value('id'),
-            'quantity'    => array_sum(array_column($brands, 'quantity')),
-            'picked_up'   => !$photo->remaining,
+            'photo_id'                  => $photo->id,
+            'category_litter_object_id' => $unclassifiedOtherCloId,
+            'category_id'               => Category::where('key', 'brands')->value('id'),
+            'quantity'                  => array_sum(array_column($brands, 'quantity')),
+            'picked_up'                 => !$photo->remaining,
         ]);
 
-        $photoTag->attachExtraTags($brands, Dimension::BRAND->value, 0);
+        $photoTag->attachExtraTags($brands, Dimension::BRAND->value);
     }
 
     private function createCustomOnlyTag(Photo $photo, array $customTags): void
@@ -361,17 +366,22 @@ class UpdateTagsService
             return;
         }
 
+        $unclassifiedOtherCloId = $this->getUnclassifiedOtherCloId();
+
         $photoTag = PhotoTag::create([
-            'photo_id'              => $photo->id,
-            'custom_tag_primary_id' => $primary['id'],
-            'quantity'              => $primary['quantity'] ?? 1,
-            'picked_up'             => !$photo->remaining,
+            'photo_id'                  => $photo->id,
+            'category_litter_object_id' => $unclassifiedOtherCloId,
+            'quantity'                  => $primary['quantity'] ?? 1,
+            'picked_up'                 => !$photo->remaining,
         ]);
 
+        // Attach primary custom tag as extra tag
+        $photoTag->attachExtraTags([['id' => $primary['id']]], Dimension::CUSTOM_TAG->value);
+
         // Attach any additional custom tags as extra tags
-        foreach ($customTags as $idx => $extra) {
+        foreach ($customTags as $extra) {
             if (isset($extra['id']) && $extra['id']) {
-                $photoTag->attachExtraTags([$extra], Dimension::CUSTOM_TAG->value, $idx);
+                $photoTag->attachExtraTags([$extra], Dimension::CUSTOM_TAG->value);
             }
         }
     }
@@ -383,7 +393,37 @@ class UpdateTagsService
             return;
         }
         foreach ($customTags as $idx => $extra) {
-            $last->attachExtraTags([$extra], Dimension::CUSTOM_TAG->value, $idx);
+            $last->attachExtraTags([$extra], Dimension::CUSTOM_TAG->value);
         }
+    }
+
+    private function resolveCloId(?int $categoryId, ?int $objectId): int
+    {
+        if ($categoryId && $objectId) {
+            $cloId = DB::table('category_litter_object')
+                ->where('category_id', $categoryId)
+                ->where('litter_object_id', $objectId)
+                ->value('id');
+
+            if ($cloId) {
+                return $cloId;
+            }
+        }
+
+        return $this->getUnclassifiedOtherCloId();
+    }
+
+    private function getUnclassifiedOtherCloId(): int
+    {
+        $clo = CategoryObject::query()
+            ->whereHas('category', fn($q) => $q->where('key', 'unclassified'))
+            ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
+            ->first();
+
+        if (!$clo) {
+            throw new \RuntimeException('Missing unclassified.other CLO record');
+        }
+
+        return $clo->id;
     }
 }

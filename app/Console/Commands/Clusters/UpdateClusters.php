@@ -5,12 +5,15 @@ namespace App\Console\Commands\Clusters;
 use App\Services\Clustering\ClusteringService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class UpdateClusters extends Command
 {
     protected $signature = 'clustering:update
         {--populate : Populate missing tile keys}
         {--all : Recluster all tiles}
+        {--team= : Cluster a specific team by ID}
+        {--all-teams : Cluster all teams with photos}
         {--stats : Show statistics only}
         {--explain : Show query execution plans}';
 
@@ -40,6 +43,15 @@ class UpdateClusters extends Command
         // Process clusters
         if ($this->option('all')) {
             $this->clusterAll();
+        }
+
+        // Team clustering
+        if ($teamId = $this->option('team')) {
+            $this->clusterTeam((int) $teamId);
+        }
+
+        if ($this->option('all-teams')) {
+            $this->clusterAllTeams();
         }
 
         return 0;
@@ -121,6 +133,10 @@ class UpdateClusters extends Command
         }
 
         $totalTime = microtime(true) - $startTime;
+
+        // Flush stale cluster API cache
+        $this->flushClusterCache();
+
         $this->newLine();
         $this->info(sprintf("✓ Clustering complete in %.2fs", $totalTime));
 
@@ -140,7 +156,7 @@ class UpdateClusters extends Command
               FLOOR(cell_y / 20) AS cluster_y,
               COUNT(*)
             FROM photos USE INDEX (idx_photos_fast_cluster)
-            WHERE verified = 2
+            WHERE verified >= 2
               AND tile_key IS NOT NULL
             GROUP BY tile_key, cluster_x, cluster_y
             LIMIT 1
@@ -171,6 +187,62 @@ class UpdateClusters extends Command
         }
     }
 
+    private function clusterTeam(int $teamId): void
+    {
+        $this->info("Clustering team $teamId...");
+
+        $start = microtime(true);
+        $count = $this->service->clusterTeam($teamId);
+        $time = microtime(true) - $start;
+
+        $this->line(sprintf("✓ Team %d: %d clusters (%.2fs)", $teamId, $count, $time));
+    }
+
+    private function clusterAllTeams(): void
+    {
+        $teams = DB::table('teams')
+            ->where('total_images', '>', 0)
+            ->pluck('id', 'name');
+
+        if ($teams->isEmpty()) {
+            $this->info('No teams with photos found.');
+            return;
+        }
+
+        $this->info(sprintf('Clustering %d teams...', $teams->count()));
+        $startTime = microtime(true);
+        $totalClusters = 0;
+
+        foreach ($teams as $name => $id) {
+            $start = microtime(true);
+            $count = $this->service->clusterTeam($id);
+            $time = microtime(true) - $start;
+            $totalClusters += $count;
+
+            $this->line(sprintf("✓ %s (id=%d): %d clusters (%.2fs)", $name, $id, $count, $time));
+        }
+
+        $totalTime = microtime(true) - $startTime;
+        $this->flushClusterCache();
+        $this->newLine();
+        $this->info(sprintf("✓ All teams complete: %d clusters in %.2fs", $totalClusters, $totalTime));
+    }
+
+    private function flushClusterCache(): void
+    {
+        $connection = config('cache.stores.redis.connection', 'cache');
+        $prefix = config('cache.prefix', 'laravel_cache');
+        $pattern = $prefix . 'clusters:v5:*';
+        $redis = Redis::connection($connection);
+
+        $keys = $redis->keys($pattern);
+
+        if (!empty($keys)) {
+            $redis->del(...$keys);
+            $this->line(sprintf('✓ Flushed %d cached cluster responses', count($keys)));
+        }
+    }
+
     private function showStats(): void
     {
         $stats = $this->service->getStats();
@@ -195,7 +267,7 @@ class UpdateClusters extends Command
         // Verify data integrity
         $this->newLine();
         $this->info('Data Integrity Check:');
-        $verifiedPhotos = DB::table('photos')->where('verified', 2)->count();
+        $verifiedPhotos = DB::table('photos')->where('verified', '>=', 2)->count();
         $z16Points = DB::table('clusters')->where('zoom', 16)->sum('point_count');
 
         if ($verifiedPhotos == $z16Points) {

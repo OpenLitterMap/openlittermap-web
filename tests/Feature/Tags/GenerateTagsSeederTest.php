@@ -14,7 +14,6 @@ class GenerateTagsSeederTest extends TestCase
     /** @test */
     public function test_it_seeds_categories(): void
     {
-        // Run the seeder
         $this->seed(GenerateTagsSeeder::class);
 
         $categories = Category::all();
@@ -22,15 +21,16 @@ class GenerateTagsSeederTest extends TestCase
         $minCategories = [
             'smoking',
             'food',
-            'alcohol'
+            'alcohol',
+            'beverages',
+            'personal_care',
+            'medical',
         ];
 
-        // Assert that categories are created
         foreach ($minCategories as $categoryKey) {
             $this->assertDatabaseHas('categories', ['key' => $categoryKey]);
         }
 
-        // Assert the total number of categories
         $this->assertGreaterThan(10, count($categories));
     }
 
@@ -39,12 +39,14 @@ class GenerateTagsSeederTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        // Check a specific LitterObject
-        $this->assertDatabaseHas('litter_objects', ['key' => 'water_bottle']);
+        // Check canonical objects exist
+        $this->assertDatabaseHas('litter_objects', ['key' => 'bottle']);
+        $this->assertDatabaseHas('litter_objects', ['key' => 'can']);
+        $this->assertDatabaseHas('litter_objects', ['key' => 'butts']);
 
         // Assert that 'bottle' is associated with the 'alcohol' category
         $alcoholCategory = Category::where('key', 'alcohol')->first();
-        $bottleObject = LitterObject::where('key', 'beer_bottle')->first();
+        $bottleObject = LitterObject::where('key', 'bottle')->first();
         $this->assertTrue($alcoholCategory->litterObjects->contains($bottleObject));
 
         // Check the butts object is not in the alcohol category
@@ -63,36 +65,27 @@ class GenerateTagsSeederTest extends TestCase
             $this->assertDatabaseHas('materials', ['key' => $material]);
         }
 
-        $beerObject = LitterObject::where('key', 'beer_bottle')->first();
-        $this->assertNotNull($beerObject, "Beer bottle object not found.");
+        // Bottle in alcohol category should have glass material
+        $bottleObject = LitterObject::where('key', 'bottle')->first();
+        $this->assertNotNull($bottleObject, "Bottle object not found.");
 
-        $aggregatedMaterials = $beerObject->categories->flatMap(function ($category) {
-            return $category->pivot->materials()->get();
-        });
+        $alcoholCategory = Category::where('key', 'alcohol')->first();
+        $clo = CategoryObject::where('category_id', $alcoholCategory->id)
+            ->where('litter_object_id', $bottleObject->id)
+            ->first();
 
-        // Check that glass is associated with the beer bottle.
         $glassMaterial = Materials::where('key', 'glass')->first();
-        $this->assertNotNull($glassMaterial, "Glass material record not found.");
-        $this->assertTrue(
-            $aggregatedMaterials->contains(function ($item) use ($glassMaterial) {
-                return $item->id === $glassMaterial->id;
-            }),
-            "Failed asserting that beer bottle is associated with glass."
-        );
+        $this->assertNotNull($glassMaterial);
+        $this->assertTrue($clo->materials->contains($glassMaterial));
 
-        // Check that beer bottle does not have rubber material.
+        // Bottle should not have rubber material
         $rubberMaterial = Materials::where('key', 'rubber')->first();
         if ($rubberMaterial) {
-            $this->assertFalse(
-                $aggregatedMaterials->contains(function ($item) use ($rubberMaterial) {
-                    return $item->id === $rubberMaterial->id;
-                }),
-                "Failed asserting that beer bottle is not associated with rubber."
-            );
+            $this->assertFalse($clo->materials->contains($rubberMaterial));
         }
 
-        // Assert that unexpected material keys do not exist in the materials table.
-        $notMaterials = ['butts', 'beer_bottle', 'bottle'];
+        // Assert that object keys are not in materials table
+        $notMaterials = ['butts', 'bottle', 'can'];
         foreach ($notMaterials as $notMaterialKey) {
             $this->assertDatabaseMissing('materials', ['key' => $notMaterialKey]);
         }
@@ -103,7 +96,6 @@ class GenerateTagsSeederTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        // Verify that 'butts' LitterObject is associated with 'smoking' Category
         $smokingCategory = Category::where('key', 'smoking')->first();
         $buttsObject = LitterObject::where('key', 'butts')->first();
 
@@ -112,7 +104,6 @@ class GenerateTagsSeederTest extends TestCase
             'litter_object_id' => $buttsObject->id
         ])->first();
 
-        // Verify that 'butts' LitterObject has associated Materials
         $plasticMaterial = Materials::where('key', 'plastic')->first();
         $this->assertTrue($categoryLitterObject->materials->contains($plasticMaterial));
 
@@ -125,18 +116,16 @@ class GenerateTagsSeederTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        // Cup is used across 3 categories.
+        // Cup is used across multiple categories (alcohol, beverages)
         $cupObject = LitterObject::where('key', 'cup')->first();
 
         $expectedMaterials = ['ceramic', 'foam', 'paper', 'plastic', 'metal'];
         $notExpectedMaterials = ['cotton', 'nylon'];
 
-        // Aggregate all materials from the pivot records of the associated categories.
         $aggregatedMaterials = $cupObject->categories->flatMap(function ($category) {
             return $category->pivot->materials()->get();
         });
 
-        // Assert that each expected material is associated.
         foreach ($expectedMaterials as $materialKey) {
             $materialModel = Materials::where('key', $materialKey)->first();
             $this->assertNotNull($materialModel, "Material record for key '{$materialKey}' not found.");
@@ -148,7 +137,6 @@ class GenerateTagsSeederTest extends TestCase
             );
         }
 
-        // Assert that each not-expected material is not associated.
         foreach ($notExpectedMaterials as $materialKey) {
             $materialModel = Materials::where('key', $materialKey)->first();
             if ($materialModel) {
@@ -165,11 +153,9 @@ class GenerateTagsSeederTest extends TestCase
     /** @test */
     public function it_does_not_duplicate_entries()
     {
-        // Run the seeder multiple times
         $this->seed(GenerateTagsSeeder::class);
         $this->seed(GenerateTagsSeeder::class);
 
-        // Ensure that entries are not duplicated
         $categoryCount = Category::count();
         $uniqueCategories = Category::distinct('key')->count('key');
         $this->assertEquals($categoryCount, $uniqueCategories);

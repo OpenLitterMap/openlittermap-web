@@ -7,6 +7,9 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * @deprecated
+ */
 trait FilterPhotosByGeoHashTrait
 {
     use GeohashTrait;
@@ -78,7 +81,7 @@ trait FilterPhotosByGeoHashTrait
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
             $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) ? $photo->filename : '/assets/images/waiting.png';
-            $resultString = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->result_string : null;
+            $summary = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->summary : null;
             $admin = isset($photo->adminVerificationLog->admin)
                 ? $this->getDataForAdmin($photo->adminVerificationLog)
                 : null;
@@ -91,7 +94,7 @@ trait FilterPhotosByGeoHashTrait
                 ],
                 'properties' => [
                     'photo_id' => $photo->id,
-                    'result_string' => $resultString,
+                    'summary' => $summary,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,
                     'cluster' => false,

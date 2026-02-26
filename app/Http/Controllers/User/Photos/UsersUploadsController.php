@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User\Photos;
 
+use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use App\Services\Redis\RedisMetricsCollector;
@@ -28,8 +29,8 @@ class UsersUploadsController extends Controller
             $tagged = $request->boolean('tagged');
 
             $tagged
-                ? $query->has('photoTags')
-                : $query->doesntHave('photoTags');
+                ? $query->where('verified', '>=', VerificationStatus::VERIFIED->value)
+                : $query->where('verified', VerificationStatus::UNVERIFIED->value);
         }
 
         // ID filter
@@ -66,15 +67,9 @@ class UsersUploadsController extends Controller
         $photos = $query
             ->with([
                 'team',
-                // Old relationships
-                'smoking', 'food', 'coffee', 'alcohol', 'softdrinks',
-                'sanitary', 'coastal', 'dumping', 'industrial', 'brands',
-                'dogshit', 'art', 'material', 'other', 'customTags',
-                // New relationships
                 'photoTags.category',
                 'photoTags.object',
-                'photoTags.primaryCustomTag',
-                'photoTags.extraTags.extraTag'
+                'photoTags.extraTags.extraTag',
             ])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
@@ -92,23 +87,12 @@ class UsersUploadsController extends Controller
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,
-                'total_litter' => $photo->total_litter,
-                'migrated_at' => $photo->migrated_at,
                 'created_at' => $photo->created_at,
 
-                // Old tags structure
-                'old_tags' => $photo->tags(),
-
-                // New tags structure
                 'new_tags' => $this->getNewTags($photo),
-
-                // Summary if exists
                 'summary' => $photo->summary,
                 'xp' => $photo->xp,
                 'total_tags' => $photo->total_tags,
-
-                // Migration status
-                'is_migrated' => !is_null($photo->migrated_at),
             ];
         });
 
@@ -139,13 +123,9 @@ class UsersUploadsController extends Controller
             ->where('id', $photoId)
             ->with([
                 'team',
-                'smoking', 'food', 'coffee', 'alcohol', 'softdrinks',
-                'sanitary', 'coastal', 'dumping', 'industrial', 'brands',
-                'dogshit', 'art', 'material', 'other', 'customTags',
                 'photoTags.category',
                 'photoTags.object',
-                'photoTags.primaryCustomTag',
-                'photoTags.extraTags.extraTag'
+                'photoTags.extraTags.extraTag',
             ])
             ->firstOrFail();
 
@@ -161,15 +141,11 @@ class UsersUploadsController extends Controller
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,
-                'total_litter' => $photo->total_litter,
-                'migrated_at' => $photo->migrated_at,
-                'old_tags' => $photo->tags(),
                 'new_tags' => $this->getNewTags($photo),
                 'summary' => $photo->summary,
                 'xp' => $photo->xp,
                 'total_tags' => $photo->total_tags,
-                'is_migrated' => !is_null($photo->migrated_at),
-            ]
+            ],
         ]);
     }
 
@@ -185,7 +161,7 @@ class UsersUploadsController extends Controller
 
         // Untagged photos count
         $leftToTag = Photo::where('user_id', $user->id)
-            ->doesntHave('photoTags')
+            ->where('verified', VerificationStatus::UNVERIFIED->value)
             ->count();
 
         // Get tag counts from Redis
@@ -243,21 +219,12 @@ class UsersUploadsController extends Controller
                 ];
             }
 
-            // Add primary custom tag
-            if ($photoTag->primaryCustomTag) {
-                $tag['primary_custom_tag'] = [
-                    'id' => $photoTag->primaryCustomTag->id,
-                    'key' => $photoTag->primaryCustomTag->key,
-                ];
-            }
-
             // Add extra tags
             $extraTags = [];
             foreach ($photoTag->extraTags as $extra) {
                 $extraTag = [
                     'type' => $extra->tag_type,
                     'quantity' => $extra->quantity,
-                    'index' => $extra->index,
                 ];
 
                 if ($extra->extraTag) {

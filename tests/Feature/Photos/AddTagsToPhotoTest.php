@@ -134,7 +134,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $materialExtras = $photoTag->extraTags()->where('tag_type', 'material')->get();
         $this->assertCount(1, $materialExtras);
-        $this->assertEquals(2, $materialExtras->first()->quantity);
+        // Materials are set membership (qty forced to 1)
+        $this->assertEquals(1, $materialExtras->first()->quantity);
     }
 
     // ─── Picked up ───
@@ -437,9 +438,10 @@ class AddTagsToPhotoTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
-        $this->assertNotNull($photoTag->custom_tag_primary_id);
 
-        $customTag = CustomTagNew::find($photoTag->custom_tag_primary_id);
+        $customTagExtra = $photoTag->extraTags()->where('tag_type', 'custom_tag')->first();
+        $this->assertNotNull($customTagExtra);
+        $customTag = CustomTagNew::find($customTagExtra->tag_type_id);
         $this->assertEquals('dirty-bench', $customTag->key);
         $this->assertEquals($user->id, $customTag->created_by);
     }
@@ -469,8 +471,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
-        $this->assertNull($photoTag->category_id);
-        $this->assertNull($photoTag->litter_object_id);
+        // Brand-only uses unclassified.other CLO — denorm fields are set
+        $this->assertNotNull($photoTag->category_litter_object_id);
 
         $brandExtra = $photoTag->extraTags()->where('tag_type', 'brand')->first();
         $this->assertNotNull($brandExtra, 'Brand should be attached as extra tag');
@@ -502,8 +504,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
-        $this->assertNull($photoTag->category_id);
-        $this->assertNull($photoTag->litter_object_id);
+        // Material-only uses unclassified.other CLO — denorm fields are set
+        $this->assertNotNull($photoTag->category_litter_object_id);
 
         $materialExtra = $photoTag->extraTags()->where('tag_type', 'material')->first();
         $this->assertNotNull($materialExtra, 'Material should be attached as extra tag');

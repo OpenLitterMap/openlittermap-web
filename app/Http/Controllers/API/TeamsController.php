@@ -21,6 +21,9 @@ use App\Traits\MasksStudentIdentity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @deprecated
+ */
 class TeamsController extends Controller
 {
     use MasksStudentIdentity;
@@ -50,13 +53,13 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->remaining_teams == 0) {
-            return ['success' => false, 'msg' => 'max-created'];
+        $result = $action->run($user, $request->all());
+
+        if (is_array($result)) {
+            return $result;
         }
 
-        $team = $action->run($user, $request->all());
-
-        return $this->success(['team' => $team]);
+        return $this->success(['team' => $result]);
     }
 
     /**

@@ -101,26 +101,32 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->lon,
             $row->remaining ? 'No' : 'Yes',
             $row->display_name,
-            $row->summary['totals']['total_objects'] ?? $row->total_litter,
+            $row->summary['totals']['litter'] ?? $row->total_litter,
         ];
 
         $tags = $row->summary['tags'] ?? [];
 
+        // Build lookup: category_id → object_id → quantity (from flat tags array)
+        $tagLookup = [];
+        foreach ($tags as $tag) {
+            $catId = $tag['category_id'] ?? 0;
+            $objId = $tag['object_id'] ?? 0;
+            $tagLookup[$catId][$objId] = ($tagLookup[$catId][$objId] ?? 0) + ($tag['quantity'] ?? 0);
+        }
+
         foreach ($this->categoryObjects as $category) {
             $result[] = null; // category separator column
-            $categoryTags = $tags[$category['id']] ?? [];
 
             foreach ($category['objects'] as $object) {
-                $objectData = $categoryTags[$object['id']] ?? null;
-                $result[] = $objectData['quantity'] ?? null;
+                $result[] = $tagLookup[$category['id']][$object['id']] ?? null;
             }
         }
 
-        // Custom tags from v5 photo_tags (eager-loaded in query())
+        // Custom tags from extra_tags (eager-loaded in query())
         $customTagNames = $row->photoTags
-            ->filter(fn ($pt) => $pt->custom_tag_primary_id !== null)
+            ->flatMap(fn ($pt) => $pt->extraTags->where('tag_type', 'custom_tag'))
             ->take(3)
-            ->map(fn ($pt) => $pt->primaryCustomTag?->key)
+            ->map(fn ($extra) => $extra->extraTag?->key)
             ->values()
             ->toArray();
 
@@ -132,9 +138,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query()
     {
-        $query = Photo::with(['photoTags' => function ($q) {
-            $q->whereNotNull('custom_tag_primary_id')->with('primaryCustomTag');
-        }]);
+        $query = Photo::with(['photoTags.extraTags.extraTag']);
 
         if (!empty($this->dateFilter)) {
             $query->whereBetween(

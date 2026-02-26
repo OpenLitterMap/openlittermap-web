@@ -12,7 +12,6 @@ use App\Models\Photo;
 
 use App\Actions\Tags\ConvertV4TagsAction;
 
-use App\Events\ImageDeleted;
 use App\Events\ImageUploaded;
 
 use App\Actions\Photos\MakeImageAction;
@@ -85,10 +84,12 @@ class ApiPhotosController extends Controller
         $lat = $request['lat'];
         $lon = $request['lon'];
 
-        if (($lat === 0 && $lon === 0) || ($lat === '0' && $lon === '0')) {
-            Log::info("invalid coordinates found for userId $user->id");
+        if ($lat === null || $lon === null) {
+            Log::info("null coordinates found for userId $user->id");
             throw new InvalidCoordinates();
         }
+
+        // Note: 0,0 coordinates are accepted. Future feature: manual coordinate assignment.
 
         $date = str_contains($request['date'], ':')
             ? $request['date']
@@ -271,7 +272,7 @@ class ApiPhotosController extends Controller
     }
 
     /**
-     * Delete an image
+     * Delete a photo — reverses metrics, removes S3 files, soft-deletes the row.
      */
     public function deleteImage(Request $request)
     {
@@ -289,19 +290,16 @@ class ApiPhotosController extends Controller
             ], 403);
         }
 
-        app(MetricsService::class)->deletePhoto($photo);
+        // Reverse metrics before soft delete (if photo was processed)
+        if ($photo->processed_at !== null) {
+            app(MetricsService::class)->deletePhoto($photo);
+        }
 
+        // Delete S3 files
         $this->deletePhotoAction->run($photo);
 
+        // Soft delete
         $photo->delete();
-
-        event(new ImageDeleted(
-            $user,
-            $photo->country_id,
-            $photo->state_id,
-            $photo->city_id,
-            $photo->team_id
-        ));
 
         return response()->json(['success' => true]);
     }

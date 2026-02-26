@@ -45,6 +45,7 @@ class PointsControllerStatsTest extends TestCase
 
         PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
             'quantity' => 5
@@ -139,6 +140,7 @@ class PointsControllerStatsTest extends TestCase
         // Photo 1: smoking
         PhotoTag::create([
             'photo_id' => $photo1->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
             'category_id' => $smoking->id,
             'litter_object_id' => $butts->id,
             'quantity' => 10
@@ -147,6 +149,7 @@ class PointsControllerStatsTest extends TestCase
         // Photo 2: food
         PhotoTag::create([
             'photo_id' => $photo2->id,
+            'category_litter_object_id' => $this->getCloId($food->id, $wrapper->id),
             'category_id' => $food->id,
             'litter_object_id' => $wrapper->id,
             'quantity' => 5

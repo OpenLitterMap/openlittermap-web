@@ -4,6 +4,9 @@ namespace App\Services\Tags;
 
 use App\Models\Litter\Tags\PhotoTag;
 
+/**
+ * @deprecated
+ */
 class PhotoTagService
 {
     public function createTag(array $data): PhotoTag

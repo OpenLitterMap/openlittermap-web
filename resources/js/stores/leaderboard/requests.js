@@ -1,121 +1,101 @@
 export const requests = {
     /**
-     * Get a paginated array of global leaders x100
+     * Unified leaderboard fetch with optional location filtering
      */
-    async GET_USERS_FOR_GLOBAL_LEADERBOARD(timeFilter = 'all-time') {
-        // Store current filter for pagination
-        this.currentFilters = {
-            timeFilter,
-            locationType: null,
-            locationId: null,
-        };
-        this.currentPage = 1;
+    async FETCH_LEADERBOARD({ timeFilter = 'all-time', locationType = null, locationId = null, page = 1 } = {}) {
+        this.currentFilters = { timeFilter, locationType, locationId };
+        this.currentPage = page;
+        this.loading = true;
+        this.error = null;
 
-        await axios
-            .get('/api/leaderboard', {
-                params: {
-                    timeFilter,
-                    page: 1,
-                },
-            })
-            .then((response) => {
-                console.log('get_users_for_global_leaderboard', response);
+        try {
+            const params = { timeFilter, page };
 
-                this.leaderboard = response.data.users;
-                this.hasNextPage = response.data.hasNextPage;
-            })
-            .catch((error) => {
-                console.error('get_users_for_global_leaderboard', error);
-            });
+            if (locationType && locationId) {
+                params.locationType = locationType;
+                params.locationId = locationId;
+            }
+
+            const { data } = await axios.get('/api/leaderboard', { params });
+
+            this.leaderboard = data.users;
+            this.hasNextPage = data.hasNextPage;
+            this.total = data.total ?? 0;
+            this.currentUserRank = data.currentUserRank ?? null;
+        } catch (e) {
+            this.error = e.response?.status === 401 ? 'unauthenticated' : 'Failed to load leaderboard';
+        } finally {
+            this.loading = false;
+        }
     },
 
     /**
-     * Get the users for one of the Location Leaderboards
+     * Load country list for location filter dropdown
      */
+    async FETCH_COUNTRIES() {
+        if (this.countries.length > 0) return;
+
+        try {
+            const { data } = await axios.get('/api/v1/locations');
+            this.countries = (data.locations || []).map((c) => ({ id: c.id, name: c.name }));
+        } catch (e) {
+            // Non-critical — silently fail
+        }
+    },
+
+    /**
+     * Load states for a given country
+     */
+    async FETCH_STATES(countryId) {
+        this.states = [];
+        this.cities = [];
+
+        try {
+            const { data } = await axios.get(`/api/v1/locations/country/${countryId}`);
+            this.states = (data.locations || []).map((s) => ({ id: s.id, name: s.name }));
+        } catch (e) {
+            // Non-critical — silently fail
+        }
+    },
+
+    /**
+     * Load cities for a given state
+     */
+    async FETCH_CITIES(stateId) {
+        this.cities = [];
+
+        try {
+            const { data } = await axios.get(`/api/v1/locations/state/${stateId}`);
+            this.cities = (data.locations || []).map((c) => ({ id: c.id, name: c.name }));
+        } catch (e) {
+            // Non-critical — silently fail
+        }
+    },
+
+    // Backward-compatible wrappers
+    async GET_USERS_FOR_GLOBAL_LEADERBOARD(timeFilter = 'all-time') {
+        await this.FETCH_LEADERBOARD({ timeFilter });
+    },
+
     async GET_USERS_FOR_LOCATION_LEADERBOARD(payload) {
-        // Store current filters for pagination
-        this.currentFilters = {
+        await this.FETCH_LEADERBOARD({
             timeFilter: payload?.timeFilter || 'all-time',
             locationType: payload?.locationType,
             locationId: payload?.locationId,
-        };
-        this.currentPage = 1;
-
-        await axios
-            .get('/api/leaderboard', {
-                params: {
-                    timeFilter: payload?.timeFilter,
-                    locationType: payload?.locationType,
-                    locationId: payload?.locationId,
-                    page: 1,
-                },
-            })
-            .then((response) => {
-                console.log('get_users_for_location_leaderboard', response);
-
-                this.leaderboard = response.data.users;
-                this.hasNextPage = response.data.hasNextPage;
-
-                // Store location-specific data if needed
-                if (payload.locationType && payload.locationId) {
-                    this[payload.locationType][payload.locationId] = response.data.users;
-                }
-
-                this.selectedLocationId = payload.locationId;
-                this.locationTabKey++;
-            })
-            .catch((error) => {
-                console.error('get_users_for_location_leaderboard', error);
-            });
+        });
     },
 
-    /**
-     * Get the next page of Users for the Leaderboard
-     */
     async GET_NEXT_LEADERBOARD_PAGE() {
-        this.currentPage++;
-
-        await axios
-            .get('/api/leaderboard', {
-                params: {
-                    ...this.currentFilters,
-                    page: this.currentPage,
-                },
-            })
-            .then((response) => {
-                console.log('get_next_leaderboard_page', response);
-
-                this.leaderboard = response.data.users;
-                this.hasNextPage = response.data.hasNextPage;
-            })
-            .catch((error) => {
-                console.error('get_next_leaderboard_page', error);
-                this.currentPage--; // Revert on error
-            });
+        await this.FETCH_LEADERBOARD({
+            ...this.currentFilters,
+            page: this.currentPage + 1,
+        });
     },
 
-    /**
-     * Get the previous page of Users for the Leaderboard
-     */
     async GET_PREVIOUS_LEADERBOARD_PAGE() {
-        this.currentPage--;
-
-        await axios
-            .get('/api/leaderboard', {
-                params: {
-                    ...this.currentFilters,
-                    page: this.currentPage,
-                },
-            })
-            .then((response) => {
-                console.log('get_previous_leaderboard_page', response);
-
-                this.leaderboard = response.data.users;
-                this.hasNextPage = response.data.hasNextPage;
-            })
-            .catch((error) => {
-                console.error('get_previous_leaderboard_page', error);
-                this.currentPage++; // Revert on error
-            });
+        await this.FETCH_LEADERBOARD({
+            ...this.currentFilters,
+            page: this.currentPage - 1,
+        });
     },
 };

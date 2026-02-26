@@ -126,7 +126,7 @@ class UpdateTagsServiceTest extends TestCase
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
 
         $this->assertNotNull($photoTag);
-        $this->assertNotNull($photoTag->custom_tag_primary_id);
+        $this->assertTrue($photoTag->extraTags()->where('tag_type', 'custom_tag')->exists());
         $this->assertDatabaseHas('custom_tags_new', ['key' => 'illegal_dumping']);
     }
 
@@ -148,7 +148,6 @@ class UpdateTagsServiceTest extends TestCase
             'tag_type' => 'custom_tag',
         ]);
 
-        $this->assertNull($photoTag->custom_tag_primary_id);
         $this->assertEquals(1, $photoTag->extraTags()->where('tag_type', 'custom_tag')->count());
     }
 
@@ -246,8 +245,7 @@ class UpdateTagsServiceTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
-        $this->assertNotNull($photoTag->custom_tag_primary_id);
-        $this->assertEquals(0, $photoTag->extraTags()->count());
+        $this->assertTrue($photoTag->extraTags()->where('tag_type', 'custom_tag')->exists());
     }
 
 //    /** @test */
@@ -487,6 +485,9 @@ class UpdateTagsServiceTest extends TestCase
     /** @test */
     public function it_creates_one_plastic_tag_for_each_water_bottle_quantity(): void
     {
+        // Ensure old category exists for v4 migration
+        Category::firstOrCreate(['key' => 'softdrinks']);
+
         $softdrinks = Softdrinks::create([
             'waterBottle' => 2,   // two plastic items
             'tinCan'      => 1,   // one aluminium item
@@ -516,7 +517,7 @@ class UpdateTagsServiceTest extends TestCase
 
         $this->assertEquals(1, $materialExtras->count());
 
-        // …and its stored quantity must equal the number of bottles (2)
-        $this->assertEquals(2, $materialExtras->value('quantity'));
+        // Materials are set membership — quantity is always 1
+        $this->assertEquals(1, $materialExtras->value('quantity'));
     }
 }

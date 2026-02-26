@@ -103,10 +103,11 @@ class ClusterController extends Controller
         $etag = Cache::remember($etagCacheKey, $ttl, function () use ($zoom) {
             $stats = DB::table('clusters')
                 ->where('zoom', $zoom)
-                ->selectRaw('MAX(updated_at) as latest, COUNT(*) as cnt')
+                ->where('team_id', 0)
+                ->selectRaw('COUNT(*) as cnt, COALESCE(SUM(point_count), 0) as total_points')
                 ->first();
 
-            return '"' . md5(($stats->latest ?? '') . '|' . ($stats->cnt ?? 0)) . '"';
+            return '"' . md5(($stats->cnt ?? 0) . '|' . ($stats->total_points ?? 0)) . '"';
         });
 
         if ($request->header('If-None-Match') === $etag) {
@@ -124,6 +125,7 @@ class ClusterController extends Controller
             $query = DB::table('clusters')
                 ->select('lon', 'lat', 'point_count as count')
                 ->where('zoom', $zoom)
+                ->where('team_id', 0)
                 ->whereBetween('lat', [$south, $north])
                 ->limit($limit);
 

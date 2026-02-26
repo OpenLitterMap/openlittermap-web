@@ -369,6 +369,7 @@ class SchoolApprovalPipelineTest extends TestCase
         // Create the actual tag records
         PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($this->smokingCategory->id, $this->cigaretteButt->id),
             'category_id' => $this->smokingCategory->id,
             'litter_object_id' => $this->cigaretteButt->id,
             'quantity' => 3,
@@ -377,6 +378,7 @@ class SchoolApprovalPipelineTest extends TestCase
 
         PhotoTag::create([
             'photo_id' => $photo->id,
+            'category_litter_object_id' => $this->getCloId($this->foodCategory->id, $this->wrapper->id),
             'category_id' => $this->foodCategory->id,
             'litter_object_id' => $this->wrapper->id,
             'quantity' => 2,

@@ -47,7 +47,7 @@ class UpdateStatsForTeam extends Command
         {
             $query =  Photo::where(['user_id' => $user->id, 'team_id' => $team->id]);
             $total_photos = $query->count();
-            $total_litter = $query->sum('total_litter');
+            $total_litter = $query->sum('total_tags');
 
             DB::table('team_user')
                 ->where(['user_id' => $user->id, 'team_id' => $team->id])

@@ -2,91 +2,53 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\CalculateTagsDifferenceAction;
 use App\Enums\VerificationStatus;
-use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Photos\DeleteTagsFromPhotoAction;
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
-use App\Models\Users\User;
+use App\Services\Metrics\MetricsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 class AdminResetTagsController extends Controller
 {
-    /**
-     * Apply IsAdmin middleware to all of these routes
-     */
-    public function __construct (
-        DeleteTagsFromPhotoAction $deleteTagsAction,
-        DeletePhotoAction $deletePhotoAction,
-        CalculateTagsDifferenceAction $calculateTagsDiffAction
-    )
-    {
+    public function __construct(
+        private MetricsService $metricsService,
+    ) {
         $this->middleware('admin');
-
-        $this->deleteTagsAction = $deleteTagsAction;
-        $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
 
     /**
-     * Incorrect image - reset verification to 0
+     * Reset all tags on a photo — reverses metrics, deletes tags, resets to unverified.
      *
-     *  - Reset user_verification_count to 0
+     * Only works on photos not yet admin-approved (superadmins can override).
      */
-    public function __invoke (Request $request)
+    public function __invoke(Request $request)
     {
         $photo = Photo::findOrFail($request->photoId);
 
-        // Verification to decrease the user by
-        $negativeNumber = -1;
-
-        // This function should only be run when the image is not verified already
-        // Only superadmins should be able to reset tags on a verified photo
-        if ($photo->verified->value < VerificationStatus::ADMIN_APPROVED->value)
-        {
-            $photo->verification = 0;
-            $photo->verified = VerificationStatus::UNVERIFIED->value;
-            $photo->total_litter = 0;
-            $photo->result_string = null;
-            $photo->save();
-
-            $user = User::find($photo->user_id);
-
-            if ($photo->tags())
-            {
-                $tagUpdates = $this->calculateTagsDiffAction->run(
-                    $photo->tags(),
-                    [],
-                    $photo->customTags->pluck('tag')->toArray(),
-                    []
-                );
-                $this->deleteTagsAction->run($photo);
-
-                $user->xp = max(0, $user->xp - $tagUpdates['removedUserXp']);
-
-                logAdminAction($photo, 'reset-tags', $tagUpdates);
-            }
-
-//            // Todo - Add test to show xp is decrementing
-//            if (Redis::hexists("user_verification_count", $user->id))
-//            {
-//                $verificationCount = Redis::hget("user_verification_count", $user->id);
-//
-//                if ($verificationCount > 0)
-//                {
-//                    Redis::hincrby("user_verification_count", $user->id, -1);
-//                }
-//            }
-
-            $user->save();
-
-            rewardXpToAdmin();
+        if ($photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) {
+            return ['success' => true];
         }
 
-        return [
-            'success' => true
-        ];
+        // Reverse metrics before clearing tags (if photo was processed)
+        if ($photo->processed_at !== null) {
+            $this->metricsService->deletePhoto($photo);
+        }
+
+        // Delete v5 photo tags
+        PhotoTag::where('photo_id', $photo->id)->delete();
+
+        // Reset photo state
+        $photo->verified = VerificationStatus::UNVERIFIED->value;
+        $photo->summary = null;
+        $photo->xp = 0;
+        $photo->total_tags = 0;
+        $photo->save();
+
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
+        rewardXpToAdmin();
+
+        return ['success' => true];
     }
 }

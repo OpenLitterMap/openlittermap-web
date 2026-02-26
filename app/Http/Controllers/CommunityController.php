@@ -40,7 +40,7 @@ class CommunityController extends Controller
         return Photo::query()
             ->where('is_public', true)
             ->where('created_at', '>', now()->subDays(30)->endOfDay())
-            ->sum('total_litter');
+            ->sum('total_tags');
     }
 
     private function getUsersPerMonth(): int

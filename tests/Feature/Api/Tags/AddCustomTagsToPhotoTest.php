@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Tags;
 
 use App\Models\Users\User;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\HasPhotoUploads;
@@ -22,6 +23,7 @@ class AddCustomTagsToPhotoTest extends TestCase
         Storage::fake('bbox');
 
         $this->setImagePath();
+        $this->seed(GenerateTagsSeeder::class);
 
         $this->imageAndAttributes = $this->getImageAndAttributes();
     }
@@ -52,7 +54,16 @@ class AddCustomTagsToPhotoTest extends TestCase
             'custom_tags' => ['tag1', 'tag2', 'tag3']
         ])->assertOk();
 
-        $this->assertEquals(['tag1', 'tag2', 'tag3'], $photo->fresh()->customTags->pluck('tag')->toArray());
+        // v5: custom tags stored as extra_tags on photo_tags
+        $photo->refresh();
+        $customTagKeys = $photo->photoTags
+            ->flatMap(fn ($pt) => $pt->extraTags->where('tag_type', 'custom_tag'))
+            ->map(fn ($extra) => $extra->extraTag?->key)
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $this->assertEquals(['tag1', 'tag2', 'tag3'], $customTagKeys);
     }
 
     /**

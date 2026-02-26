@@ -7,6 +7,8 @@ description: PhotoTag, PhotoTagExtraTags, categories, litter objects, materials,
 
 V5 uses a normalized hierarchy: Photo -> PhotoTag (category + object + quantity) -> PhotoTagExtraTags (materials, brands, custom tags). All tag data lives in `photo_tags` and `photo_tag_extra_tags` tables — not the old per-category tables.
 
+**V5.1 Architecture (Phase 1 complete — schema + seed only, no behavior changes):** Added `LitterObjectType` dimension ("what was in the container" — beer, water, soda, etc.), `category_object_types` pivot controlling which types are valid per category+object combo, and `category_litter_object_id`/`litter_object_type_id` nullable FK columns on `photo_tags`. Full spec: `readme/TaggingArchitectureSpec.md`.
+
 ## Key Files
 
 - `app/Models/Litter/Tags/PhotoTag.php` — Primary tag record (category + object)
@@ -16,7 +18,9 @@ V5 uses a normalized hierarchy: Photo -> PhotoTag (category + object + quantity)
 - `app/Models/Litter/Tags/BrandList.php` — Brand records (`brandslist` table)
 - `app/Models/Litter/Tags/Materials.php` — Material records (`materials` table)
 - `app/Models/Litter/Tags/CustomTagNew.php` — Custom tags (`custom_tags_new` table)
-- `app/Models/Litter/Tags/CategoryObject.php` — Pivot: `category_litter_object`
+- `app/Models/Litter/Tags/CategoryObject.php` — Pivot: `category_litter_object` + `types()` BelongsToMany
+- `app/Models/Litter/Tags/LitterObjectType.php` — Type lookup: "what was in the container" (beer, water, etc.)
+- `database/seeds/Tags/SeedLitterObjectTypesSeeder.php` — Seeds 17 types, unclassified/beverages categories, canonical objects, 9 typed CLO pivot mappings
 - `app/Services/Tags/ClassifyTagsService.php` — Tag classification + deprecated key mapping
 - `app/Services/Tags/UpdateTagsService.php` — V4->V5 migration per photo
 - `app/Services/Tags/GeneratePhotoSummaryService.php` — Summary JSON + XP from PhotoTags
@@ -116,7 +120,9 @@ enum Dimension: string
 -- photo_tags: FK columns, NOT strings
 photo_tags (
     id, photo_id, category_id, litter_object_id,
-    custom_tag_primary_id,  -- for custom-only tags
+    category_litter_object_id,  -- v5.1: nullable FK to category_litter_object (Phase 3: NOT NULL)
+    litter_object_type_id,      -- v5.1: nullable FK to litter_object_types
+    custom_tag_primary_id,      -- for custom-only tags
     quantity, picked_up,
     created_at, updated_at
 )
@@ -131,12 +137,20 @@ photo_tag_extra_tags (
 )
 
 -- Reference tables
-categories (id, key, parent_id)
+categories (id, key, parent_id)          -- includes 'unclassified' (hidden from UI)
 litter_objects (id, key, crowdsourced)
+litter_object_types (id, key, name)      -- v5.1: "what was in the container" (~17 rows)
 materials (id, key)
 brandslist (id, key, crowdsourced)
 custom_tags_new (id, key)
-category_litter_object (id, category_id, litter_object_id)  -- pivot
+category_litter_object (id, category_id, litter_object_id)  -- CLO pivot
+
+-- v5.1: controls which types are valid per CLO
+category_object_types (
+    category_litter_object_id,  -- FK to category_litter_object
+    litter_object_type_id,      -- FK to litter_object_types
+    UNIQUE(category_litter_object_id, litter_object_type_id)
+)
 ```
 
 ### TagKeyCache for performance
@@ -184,14 +198,40 @@ Creates PhotoTag with null category/object, attaches brand as extra tag.
 ```
 Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
 
+### GET /api/tags/all response (v5.1)
+
+```json
+{
+    "categories": [{"id": 1, "key": "alcohol"}],
+    "objects": [{"id": 5, "key": "bottle", "categories": [{"id": 1, "key": "alcohol"}]}],
+    "materials": [{"id": 1, "key": "glass"}],
+    "brands": [{"id": 7, "key": "heineken"}],
+    "types": [{"id": 3, "key": "beer", "name": "Beer"}],
+    "category_objects": [{"id": 42, "category_id": 1, "litter_object_id": 5}],
+    "category_object_types": [{"category_litter_object_id": 42, "litter_object_type_id": 3}]
+}
+```
+
+`unclassified` category is excluded from the response. `category_object_types` maps which types are valid per CLO.
+
 ### Frontend files
 | File | Purpose |
 |---|---|
-| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page |
-| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Tag search combobox |
-| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Individual tag card |
+| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page — search index with per-(object,category) entries, type entries, formatKey, keyboard guards, hasUnresolvedTags validation |
+| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced (100ms) search combobox, grouped results (object/type/material/brand/customTag), formatKey display, category breadcrumbs |
+| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with "Object · Category" display, type pills (replaces select dropdown), red border on unresolved CLO |
+| `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | XP bar, level titles (50 from config/levels.php), unresolved tags warning, submit disabled when unresolved |
+| `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags |
 | `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST /api/v3/tags |
 | `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → GET /api/tags/all |
+
+### Frontend category disambiguation
+
+The search index generates **one entry per (object, category) pair** with pre-resolved `cloId`, `categoryId`, `categoryKey`. This prevents the bug where searching "bottle" picked `categories[0]` alphabetically (always the first category). Each entry has a precomputed `lowerKey` for fast filtering. Type entries use composite id `type-{cloId}-{typeId}`.
+
+`formatKey(key)` converts `snake_case` → `Title Case` (e.g., `six_pack_rings` → "Six Pack Rings"). Used everywhere in the tagging UI.
+
+`hasUnresolvedTags` computed blocks submit when any object tag lacks a `cloId`. Keyboard shortcuts guard against firing inside form inputs (INPUT/SELECT/TEXTAREA).
 
 ## Common Mistakes
 
@@ -204,3 +244,5 @@ Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
 - **Expecting category from frontend.** The web frontend sends `object.id` but NOT `category`. Backend auto-resolves category from `object->categories()->first()`.
 - **Reading `$tag['custom']` as the tag name.** It's a boolean flag. The actual name is `$tag['key']`.
 - **Checking `$tag['brands']` for brand-only tags.** Brand-only tags use `$tag['brand']` (singular) + `$tag['brand_only']` flag.
+- **Using `cot.id` for type entries.** The `category_object_types` API only returns `category_litter_object_id` and `litter_object_type_id` — no `id` column. Use composite key `type-${cot.category_litter_object_id}-${cot.litter_object_type_id}`.
+- **Relying on old localStorage recentTags.** Entries from before category disambiguation lack `cloId`. Filter them out on mount: `parsed.filter((t) => t.type !== 'object' || t.cloId)`.

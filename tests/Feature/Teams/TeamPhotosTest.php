@@ -7,6 +7,7 @@ use App\Events\SchoolDataApproved;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Photo;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -59,10 +60,17 @@ class TeamPhotosTest extends TestCase
         $this->schoolTeam->users()->attach($this->student->id);
 
         // Tag taxonomy (needed for tag editing tests)
-        Category::firstOrCreate(['key' => 'smoking']);
-        Category::firstOrCreate(['key' => 'alcohol']);
-        LitterObject::firstOrCreate(['key' => 'cigarette_butt']);
-        LitterObject::firstOrCreate(['key' => 'beer_can']);
+        $smokingCat = Category::firstOrCreate(['key' => 'smoking']);
+        $alcoholCat = Category::firstOrCreate(['key' => 'alcohol']);
+        $unclassifiedCat = Category::firstOrCreate(['key' => 'unclassified']);
+        $cigaretteButt = LitterObject::firstOrCreate(['key' => 'cigarette_butt']);
+        $beerCan = LitterObject::firstOrCreate(['key' => 'beer_can']);
+        $otherObj = LitterObject::firstOrCreate(['key' => 'other']);
+
+        // CLO pivots for tag creation
+        CategoryObject::firstOrCreate(['category_id' => $smokingCat->id, 'litter_object_id' => $cigaretteButt->id]);
+        CategoryObject::firstOrCreate(['category_id' => $alcoholCat->id, 'litter_object_id' => $beerCan->id]);
+        CategoryObject::firstOrCreate(['category_id' => $unclassifiedCat->id, 'litter_object_id' => $otherObj->id]);
     }
 
     // ─── Enum Tests ─────────────────────────────────

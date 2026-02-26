@@ -5,19 +5,24 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-605 tests passing, 0 failures. PHPUnit 10 with `RefreshDatabase`. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated).
+710 tests passing, 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
 
 ## Key Files
 
 - `phpunit.xml` — Config: excludes `deprecated` group, uses `olm_test` DB, Redis DB 2
 - `tests/TestCase.php` — Base class: `RefreshDatabase` + Redis flush + `TagKeyCache::forgetAll()`
+- `tests/Feature/Admin/AdminQueueTest.php` — 11 tests (queue endpoint: filters, pagination, exclusions, auth)
+- `tests/Feature/UploadValidationTest.php` — 11 tests (EXIF datetime, GPS DMS conversion, zero denominator, 0,0 coords)
 - `tests/Feature/HasPhotoUploads.php` — Trait for old upload-based tests (deprecated)
 - `database/factories/PhotoFactory.php` — Photo with user, country, state, geom
 - `database/factories/Location/CountryFactory.php` — Country with shortcode
 - `database/factories/Location/StateFactory.php` — State with country FK
 - `database/factories/Location/CityFactory.php` — City with country + state FKs
+- `tests/Feature/Bbox/BoundingBoxRetiredTest.php` — 5 tests (all bbox endpoints return 410 Gone)
 - `database/factories/Litter/Tags/CategoryFactory.php` — Category with unique key
 - `database/factories/Litter/Tags/LitterObjectFactory.php` — LitterObject with unique key
+- `database/factories/Litter/Tags/LitterObjectTypeFactory.php` — LitterObjectType with unique key + name
+- `tests/Feature/Tags/TaggingArchitecturePhase1Test.php` — 20 tests (seeding, relationships, API, idempotency)
 
 ## Invariants
 
@@ -41,6 +46,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         Redis::connection()->flushdb();
+        Cache::flush(); // Reset rate limiters (array cache persists between tests)
         TagKeyCache::forgetAll();
     }
 
@@ -55,15 +61,32 @@ abstract class TestCase extends BaseTestCase
 ### Auth guard patterns
 
 ```php
-// API guard (Passport) — for /api/* routes
+// auth:api routes (Passport — mobile legacy) → use 'api' guard
+$this->actingAs($user, 'api')->postJson('/api/photos/submit', [...]);
+
+// auth:sanctum routes (SPA + Sanctum tokens) → use NO guard argument
+$this->actingAs($user)->postJson('/api/settings/update', [...]);
+
+// auth:api,web routes (both guards — teams, v3) → either guard works
 $this->actingAs($user, 'api')->postJson('/api/v3/tags', [...]);
+$this->actingAs($user)->postJson('/api/v3/tags', [...]); // also works
 
-// Web guard (default) — for web routes
-$this->actingAs($user)->postJson('/add-tags', [...]);
+// CRITICAL: actingAs($user) (no guard) does NOT work for auth:api routes.
+// actingAs($user, 'api') does NOT work for auth:sanctum routes.
+// Mismatching guard ↔ middleware = silent 401 with no helpful error message.
+```
 
-// IMPORTANT: actingAs() bypasses auth middleware entirely.
-// It does NOT test real auth guards (Passport vs Sanctum).
-// 'auth:api' and 'auth:web' will both pass with actingAs().
+### Using factories instead of uploading in tests
+
+```php
+// BAD: Upload via API requires auth:api, but test uses web guard
+$this->actingAs($user); // web guard
+$this->post('/api/photos/submit', [...]); // auth:api → 401, photo not created
+$photo = $user->photos->last(); // null!
+
+// GOOD: Use factories when testing non-upload behavior
+$photo = Photo::factory()->create(['user_id' => $user->id]);
+$this->actingAs($user)->post('/api/profile/photos/delete', ['photoid' => $photo->id]);
 ```
 
 ### Event::fake patterns
@@ -149,6 +172,20 @@ protected function setUp(): void
 }
 ```
 
+### Seeding tags + types for v5.1 architecture tests
+
+```php
+protected function setUp(): void
+{
+    parent::setUp();
+    $this->seed([
+        GenerateTagsSeeder::class,
+        SeedLitterObjectTypesSeeder::class,
+    ]);
+}
+// SeedLitterObjectTypesSeeder depends on GenerateTagsSeeder (needs categories/objects to exist)
+```
+
 ### VerificationStatus in assertions
 
 ```php
@@ -222,6 +259,8 @@ DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --c
 - **Using `assertDatabaseMissing` for soft-deleted records.** Use `assertSoftDeleted` instead.
 - **Creating PhotoTags with string keys.** `photo_tags.category_id` and `litter_object_id` are integer FKs. Create Category/LitterObject records first.
 - **Missing `city_id` in photo factory.** The default PhotoFactory doesn't include `city_id`. Add `'city_id' => City::factory()` when testing location-dependent features.
-- **Testing auth guards with `actingAs()`.** This bypasses middleware. It doesn't verify that `auth:api` vs `auth:web` actually works.
+- **Mismatching `actingAs()` guard with route middleware.** `actingAs($user)` (web guard) fails on `auth:api` routes. `actingAs($user, 'api')` fails on `auth:sanctum` routes. The mismatch causes silent 401s — no error message, just empty responses.
+- **Uploading photos via `/api/photos/submit` in web-guard tests.** That route uses `auth:api`. If your test uses `actingAs($user)`, the upload returns 401 and no photo is created. Use `Photo::factory()` for tests that aren't testing upload behavior.
 - **Expecting `geom` in JSON responses.** `Photo::$hidden = ['geom']` — binary spatial data is excluded from serialization.
 - **Using `assertNull` for `Redis::zScore()` on missing members.** PHP Redis returns `false` (not `null`) when a ZSET member doesn't exist. Use `assertFalse(Redis::zScore($key, $member))`.
+- **Flaky 429s from rate limiter state.** `CACHE_DRIVER=array` in phpunit.xml means rate limiter entries persist between tests in the same PHPUnit process. The base `TestCase::setUp()` calls `Cache::flush()` to prevent this. If you add a new test file that hits throttled routes and see intermittent 429s, verify it extends the base `TestCase`.

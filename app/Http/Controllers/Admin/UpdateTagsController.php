@@ -2,70 +2,77 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Tags\AddTagsToPhotoAction;
 use App\Enums\VerificationStatus;
-use App\Models\Photo;
-use App\Models\Users\User;
-use App\Actions\CalculateTagsDifferenceAction;
-use App\Traits\AddTagsTrait;
 use App\Events\TagsVerifiedByAdmin;
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Photo;
+use App\Services\Metrics\MetricsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
+/**
+ * @deprecated Use AdminController::updateDelete() instead.
+ */
 class UpdateTagsController extends Controller
 {
-    use AddTagsTrait;
-
-    public $calculateTagsDiffAction;
-
-    /**
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
-     */
-    public function __construct (CalculateTagsDifferenceAction $calculateTagsDiffAction)
-    {
+    public function __construct(
+        private MetricsService $metricsService,
+        private AddTagsToPhotoAction $addTagsAction,
+    ) {
         $this->middleware('admin');
-
-        $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
+
     /**
-     * Update tags on an image
+     * Update tags on a photo and approve it.
      *
-     * Keep the image,
-     * Verify the image
-     *
-     * Decrease the users verification_score they need to reach 1 Littercoin
-     * Currently we decrease by 1 but we need to decrease by the amount of edits the Admin made
+     * Mirrors AdminController::updateDelete() logic.
      */
-    public function __invoke (Request $request)
+    public function __invoke(Request $request)
     {
-        $photo = Photo::find($request->photoId);
-        $photo->verification = 1;
-        $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
-        $photo->total_litter = 0;
-        $photo->save();
+        $photo = Photo::findOrFail($request->photoId);
 
-        // $oldTags = $photo->tags();
-        // $user = User::find($photo->user_id);
+        // Replace tags inside a transaction
+        DB::transaction(function () use ($request, $photo) {
+            PhotoTag::where('photo_id', $photo->id)->delete();
 
-        $updatedTags = $this->addTags($request->tags ?? [], $request->custom_tags ?? [], $request->photoId);
+            $this->addTagsAction->run(
+                $photo->user_id,
+                $photo->id,
+                $request->tags ?? []
+            );
+        });
 
-//        // Todo - Add test to show xp is decrementing
-//        if (Redis::hexists("user_verification_count", $user->id))
-//        {
-//            // Todo - decrease by total number of tags changed
-//            // Todo - minimum score should be 0
-//            Redis::hincrby("user_verification_count", $user->id, ($updatedTags['rewardedAdminXp'] * -1));
-//        }
+        $photo->refresh();
 
-        rewardXpToAdmin(1 + $updatedTags['rewardedAdminXp']);
+        // Atomic approve
+        $affected = Photo::where('id', $photo->id)
+            ->where('is_public', true)
+            ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value)
+            ->update(['verified' => VerificationStatus::ADMIN_APPROVED->value]);
 
-        logAdminAction($photo, 'update-tags', $updatedTags);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
-        event (new TagsVerifiedByAdmin($photo->id));
+        if ($affected > 0) {
+            $photo->refresh();
 
-        return [
-            'success' => true,
-            'updatedTags' => $updatedTags
-        ];
+            event(new TagsVerifiedByAdmin(
+                $photo->id,
+                $photo->user_id,
+                $photo->country_id,
+                $photo->state_id,
+                $photo->city_id,
+                $photo->team_id,
+            ));
+        } elseif ($photo->is_public && $photo->processed_at !== null) {
+            // Re-tag of already-approved photo
+            $this->metricsService->processPhoto($photo);
+        }
+
+        rewardXpToAdmin();
+
+        return ['success' => true];
     }
 }

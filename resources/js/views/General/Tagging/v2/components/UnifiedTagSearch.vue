@@ -19,7 +19,7 @@
 
             <transition leave="transition ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0">
                 <ComboboxOptions
-                    v-if="query.length > 0 && (groupedTags.length > 0 || query.length > 2)"
+                    v-if="debouncedQuery.length > 0 && (groupedTags.length > 0 || debouncedQuery.length > 2)"
                     class="absolute z-10 mt-1 w-full max-h-[30rem] overflow-auto rounded-lg bg-gray-700 py-1 shadow-lg ring-1 ring-black ring-opacity-25 focus:outline-none"
                 >
                     <!-- Grouped tag sections -->
@@ -46,16 +46,22 @@
                                 <span class="flex items-center gap-2">
                                     <span
                                         :class="['truncate', selected ? 'font-semibold' : 'font-normal']"
-                                        v-html="highlightMatch(tag.key)"
+                                        v-html="highlightMatch(formatKey(tag.key))"
                                     />
 
-                                    <!-- Category breadcrumb for objects -->
+                                    <!-- Parent object context for type results -->
                                     <span
-                                        v-if="tag.raw?.categories?.length"
+                                        v-if="tag.type === 'type' && tag.objectKey"
+                                        :class="['text-xs shrink-0', active ? 'text-blue-200' : 'text-gray-400']"
+                                        v-html="'(' + highlightMatch(formatKey(tag.objectKey)) + ')'"
+                                    />
+
+                                    <!-- Category breadcrumb -->
+                                    <span
+                                        v-if="tag.categoryKey"
                                         :class="['text-xs shrink-0', active ? 'text-blue-200' : 'text-gray-500']"
-                                    >
-                                        · {{ tag.raw.categories[0].key }}
-                                    </span>
+                                        v-html="'&middot; ' + highlightMatch(formatKey(tag.categoryKey))"
+                                    />
 
                                     <!-- Type badge -->
                                     <span
@@ -83,7 +89,7 @@
 
                     <!-- Custom tag option -->
                     <ComboboxOption
-                        v-if="query.length > 2 && !exactMatch"
+                        v-if="debouncedQuery.length > 2 && !exactMatch"
                         :value="{ custom: true, key: query }"
                         v-slot="{ active }"
                     >
@@ -113,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/vue';
 import { CheckIcon } from '@heroicons/vue/20/solid';
 
@@ -133,6 +139,24 @@ const emit = defineEmits(['update:modelValue', 'tag-selected', 'custom-tag']);
 
 const query = ref('');
 const selected = ref(null);
+const debouncedQuery = ref('');
+let debounceTimer = null;
+
+watch(query, (val) => {
+    clearTimeout(debounceTimer);
+    if (val === '') {
+        debouncedQuery.value = '';
+        return;
+    }
+    debounceTimer = setTimeout(() => {
+        debouncedQuery.value = val;
+    }, 100);
+});
+
+const formatKey = (key) => {
+    if (!key) return '';
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+};
 
 onMounted(() => {
     nextTick(() => {
@@ -140,18 +164,25 @@ onMounted(() => {
     });
 });
 
-const filteredTags = computed(() => {
-    if (query.value === '') return [];
+onUnmounted(() => {
+    clearTimeout(debounceTimer);
+});
 
-    const searchTerm = query.value.toLowerCase();
+const filteredTags = computed(() => {
+    if (debouncedQuery.value === '') return [];
+
+    const searchTerm = debouncedQuery.value.toLowerCase();
     return props.tags.filter((tag) => {
-        // Direct key match
+        // Use precomputed lowerKey when available
+        if (tag.lowerKey?.includes(searchTerm)) return true;
+        // Fallback for tags without lowerKey
         if (tag.key.toLowerCase().includes(searchTerm)) return true;
 
-        // Match objects by their parent category name
-        if (tag.type === 'object' && tag.raw?.categories?.length) {
-            return tag.raw.categories.some((cat) => cat.key.toLowerCase().includes(searchTerm));
-        }
+        // Match by category name
+        if (tag.categoryKey?.toLowerCase().includes(searchTerm)) return true;
+
+        // Match types by parent object name
+        if (tag.type === 'type' && tag.objectKey?.toLowerCase().includes(searchTerm)) return true;
 
         return false;
     });
@@ -165,7 +196,7 @@ const groupedTags = computed(() => {
         groups[type].tags.push(tag);
     }
 
-    const order = ['object', 'category', 'material', 'brand', 'customTag'];
+    const order = ['object', 'type', 'category', 'material', 'brand', 'customTag'];
     return order
         .map((t) => {
             if (!groups[t]) return null;
@@ -175,7 +206,7 @@ const groupedTags = computed(() => {
 });
 
 const exactMatch = computed(() => {
-    const searchTerm = query.value.toLowerCase();
+    const searchTerm = debouncedQuery.value.toLowerCase();
     return props.tags.some((tag) => tag.key.toLowerCase() === searchTerm);
 });
 
@@ -183,6 +214,7 @@ const typeBadgeClass = (type) => {
     const classes = {
         category: 'bg-green-500/20 text-green-300',
         object: 'bg-sky-500/20 text-sky-300',
+        type: 'bg-indigo-500/20 text-indigo-300',
         brand: 'bg-amber-500/20 text-amber-300',
         material: 'bg-teal-500/20 text-teal-300',
         customTag: 'bg-purple-500/20 text-purple-300',
@@ -193,6 +225,7 @@ const typeBadgeClass = (type) => {
 const groupLabel = (type) => {
     const labels = {
         object: 'Objects',
+        type: 'Types',
         category: 'Categories',
         material: 'Materials',
         brand: 'Brands',
@@ -202,12 +235,13 @@ const groupLabel = (type) => {
 };
 
 const highlightMatch = (text) => {
-    if (!query.value) return text;
-    const idx = text.toLowerCase().indexOf(query.value.toLowerCase());
+    const q = debouncedQuery.value || query.value;
+    if (!q) return text;
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
     if (idx === -1) return text;
     const before = text.slice(0, idx);
-    const match = text.slice(idx, idx + query.value.length);
-    const after = text.slice(idx + query.value.length);
+    const match = text.slice(idx, idx + q.length);
+    const after = text.slice(idx + q.length);
     return `${before}<span class="font-bold text-white underline decoration-blue-400/50">${match}</span>${after}`;
 };
 

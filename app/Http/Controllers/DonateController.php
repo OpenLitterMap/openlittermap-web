@@ -9,6 +9,9 @@ use Stripe\Stripe;
 use App\Payment;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated Routes commented out. Uses legacy Stripe API v2.
+ */
 class DonateController extends Controller
 {
     /**

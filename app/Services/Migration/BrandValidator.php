@@ -5,6 +5,9 @@ namespace App\Services\Migration;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @deprecated
+ */
 class BrandValidator
 {
     protected string $apiKey;

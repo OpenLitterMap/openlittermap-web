@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <div class="text-white font-semibold text-sm">Lvl {{ userLevel }}</div>
-                    <div class="text-gray-400 text-xs">{{ getLevelTitle() }}</div>
+                    <div class="text-gray-400 text-xs truncate">{{ getLevelTitle() }}</div>
                 </div>
             </div>
 
@@ -93,6 +93,18 @@
                 </button>
             </div>
 
+            <!-- Unresolved tags warning -->
+            <span
+                v-if="hasUnresolvedTags"
+                class="flex items-center gap-1 text-red-400 text-xs font-medium"
+                title="Some tags need a category selected"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Unresolved
+            </span>
+
             <div class="h-8 w-px bg-gray-700"></div>
 
             <!-- Actions - fixed width -->
@@ -119,7 +131,7 @@
 
                 <button
                     @click="$emit('submit')"
-                    :disabled="tags.length === 0 || submitting"
+                    :disabled="tags.length === 0 || submitting || hasUnresolvedTags"
                     class="w-20 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-1"
                 >
                     <template v-if="!submitting">
@@ -158,6 +170,7 @@ const props = defineProps({
     tags: { type: Array, default: () => [] },
     xpPreview: { type: Number, default: 0 },
     submitting: { type: Boolean, default: false },
+    hasUnresolvedTags: { type: Boolean, default: false },
 });
 
 defineEmits(['navigate', 'skip', 'clear', 'submit']);
@@ -201,7 +214,22 @@ const formatNumber = (num) => {
     return num.toString();
 };
 
+const LEVEL_TITLES = {
+    1: 'Beginner', 2: 'Observer', 3: 'Field Observer', 4: 'Recorder', 5: 'Field Recorder',
+    6: 'Surveyor', 7: 'Field Surveyor', 8: 'Mapper', 9: 'Field Mapper', 10: 'Contributor',
+    11: 'Data Contributor', 12: 'Researcher', 13: 'Field Researcher', 14: 'Analyst',
+    15: 'Data Analyst', 16: 'Specialist', 17: 'Environmental Specialist', 18: 'Scientist',
+    19: 'Citizen Scientist', 20: 'Senior Scientist', 21: 'Lead Scientist', 22: 'Expert',
+    23: 'Senior Expert', 24: 'Advisor', 25: 'Senior Advisor', 26: 'Director',
+    27: 'Regional Director', 28: 'National Director', 29: 'International Director', 30: 'Ambassador',
+    31: 'Senior Ambassador', 32: 'Global Ambassador', 33: 'Fellow', 34: 'Senior Fellow',
+    35: 'Distinguished Fellow', 36: 'Champion', 37: 'National Champion', 38: 'Global Champion',
+    39: 'Pioneer', 40: 'Trailblazer', 41: 'Visionary', 42: 'Guardian', 43: 'Earth Guardian',
+    44: 'Steward', 45: 'Earth Steward', 46: 'Luminary', 47: 'Icon', 48: 'Legend',
+    49: 'Grandmaster', 50: 'Founder',
+};
+
 const getLevelTitle = () => {
-    return 'todo';
+    return LEVEL_TITLES[userLevel.value] || 'Beginner';
 };
 </script>

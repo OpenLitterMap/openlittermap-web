@@ -31,8 +31,14 @@ class AssignSchoolManager extends Command
 
         $user->assignRole('school_manager');
 
+        // Grant 1 team creation slot if they have none
+        if ($user->remaining_teams < 1) {
+            $user->remaining_teams = 1;
+            $user->save();
+        }
+
         $this->info("{$user->name} ({$user->email}) is now a school manager.");
-        $this->line("  They can now create school teams and manage safeguarding settings.");
+        $this->line("  They can now create 1 team and manage safeguarding settings.");
 
         return self::SUCCESS;
     }

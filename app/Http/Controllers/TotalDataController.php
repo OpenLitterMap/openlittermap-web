@@ -23,6 +23,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Excel;
 
+/**
+ * @deprecated No route exists. Personal ML export tool using v4 category models.
+ */
 class TotalDataController extends Controller
 {
     /**

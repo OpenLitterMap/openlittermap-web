@@ -9,6 +9,9 @@ use App\Models\Users\User;
 use Laravel\Cashier\Cashier;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated Routes commented out. Stripe subscriptions removed.
+ */
 class StripeController extends Controller
 {
     /**

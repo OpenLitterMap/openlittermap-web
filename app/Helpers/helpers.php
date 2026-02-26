@@ -174,6 +174,14 @@ if (!function_exists('dmsToDec'))
         $lon[1] = explode("/", $lon[1]);
         $lon[2] = explode("/", $lon[2]);
 
+        // Guard against division by zero in any DMS component
+        $parts = [$lat[0], $lat[1], $lat[2], $lon[0], $lon[1], $lon[2]];
+        foreach ($parts as $part) {
+            if (!isset($part[1]) || (int) $part[1] === 0) {
+                return null;
+            }
+        }
+
         $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
         $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
 

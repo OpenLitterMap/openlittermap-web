@@ -2,361 +2,174 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Payment;
 use App\Models\Photo;
-use App\Models\Littercoin;
 use App\Models\Teams\Team;
-use App\Models\AI\Annotation;
 use App\Models\Location\City;
 use App\Models\Location\State;
 use App\Models\Location\Country;
 use App\Models\Cleanups\Cleanup;
 use App\Models\AdminVerificationLog;
 use App\Http\Controllers\Controller;
+use App\Payment;
+use App\Services\Redis\RedisKeys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class DeleteAccountController extends Controller
 {
     /**
-     * Try to delete a User
+     * Delete a user account (GDPR-compliant).
+     *
+     * Photos are preserved as anonymous public contributions (user_id set to NULL).
+     * The migration makes photos.user_id nullable with ON DELETE SET NULL,
+     * so the database handles photo anonymization automatically on user deletion.
      */
-    public function __invoke (Request $request)
+    public function __invoke(Request $request)
     {
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
-        // Check the users password matches
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return [
                 'success' => false,
-                'msg' => 'password does not match'
+                'msg' => 'password does not match',
             ];
         }
 
         $userId = $user->id;
 
-        // user.photos
-        Photo::where('user_id', $userId)
-            ->chunk(1000, function ($photos) use ($userId)
-            {
-                foreach ($photos as $photo)
-                {
-                    foreach ($photo->categories() as $category)
-                    {
-                        try
-                        {
-                            if ($photo->$category)
-                            {
-                                $photo->$category->delete();
-                            }
+        // Collect Redis scopes BEFORE nullifying user_id on photos
+        // (need to know which locations the user contributed to)
+        $redisScopes = $this->collectRedisScopes($userId);
 
-                            if (sizeof($photo->customTags) > 0)
-                            {
-                                $photo->customTags->each->delete();
-                            }
+        try {
+            AdminVerificationLog::where('admin_id', $userId)->delete();
 
-                            $adminVerificationLogs = AdminVerificationLog::where([
-                                'admin_id' => $userId,
-                                'photo_id' => $photo->id
-                            ])->count();
+            DB::table('cleanup_user')->where('user_id', $userId)->delete();
+            Cleanup::where('user_id', $userId)->delete();
 
-                            if ($adminVerificationLogs > 0)
-                            {
-                                AdminVerificationLog::where([
-                                    'admin_id' => $userId,
-                                    'photo_id' => $photo->id
-                                ])->delete();
-                            }
+            // Nullify location ownership
+            Country::where('created_by', $userId)->update(['created_by' => null]);
+            State::where('created_by', $userId)->update(['created_by' => null]);
+            City::where('created_by', $userId)->update(['created_by' => null]);
 
-                            $annotations = Annotation::where([
-                                'photo_id' => $photo->id
-                            ])->count();
-
-                            if ($annotations > 0)
-                            {
-                                Annotation::where([
-                                    'photo_id' => $photo->id
-                                ])->delete();
-                            }
-
-                            $littercoin = Littercoin::where([
-                                'user_id' => $userId,
-                                'photo_id' => $photo->id
-                            ])->count();
-
-                            if ($littercoin > 0)
-                            {
-                                Littercoin::where([
-                                    'user_id' => $userId,
-                                    'photo_id' => $photo->id
-                                ])->delete();
-                            }
-
-                            $photo->delete();
-                        }
-                        catch (\Exception $e)
-                        {
-                            \Log::info(['DeleteAccountController', $e->getMessage()]);
-
-                            return [
-                                'success' => false,
-                                'msg' => 'problem deleting photo'
-                            ];
-                        }
-                    }
-                }
-            });
-
-        try
-        {
-            $adminVerificationLogs = AdminVerificationLog::where('admin_id', $userId)->count();
-
-            if ($adminVerificationLogs > 0)
-            {
-                AdminVerificationLog::where('admin_id', $userId)->delete();
-            }
-
-            $cleanupUser = DB::table('cleanup_user')->where('user_id', $userId)->count();
-
-            if ($cleanupUser > 0)
-            {
-                DB::table('cleanup_user')->where('user_id', $userId)->delete();
-            }
-
-            $cleanups = Cleanup::where('user_id', $userId)->count();
-
-            if ($cleanups > 0)
-            {
-                Cleanup::where('user_id', $userId)->delete();
-            }
-
-            $countriesCreatedBy = Country::select('id', 'created_by')
-                ->where('created_by', $userId)
-                ->get();
-
-            if (sizeof($countriesCreatedBy) > 0)
-            {
-                foreach ($countriesCreatedBy as $country)
-                {
-                    $country->created_by = null;
-                    $country->save();
-                }
-            }
-
-            $countriesLastUploaded = Country::select('id', 'user_id_last_uploaded')
-                ->where('user_id_last_uploaded', $userId)
-                ->get();
-
-            if (sizeof($countriesLastUploaded) > 0)
-            {
-                foreach ($countriesLastUploaded as $country)
-                {
-                    $country->user_id_last_uploaded = null;
-                    $country->save();
-                }
-            }
-
-            $statesCreatedBy = State::select('id', 'created_by')
-                ->where('created_by', $userId)
-                ->get();
-
-            if (sizeof($statesCreatedBy) > 0)
-            {
-                foreach ($statesCreatedBy as $state)
-                {
-                    $state->created_by = null;
-                    $state->save();
-                }
-            }
-
-            $statesLastUploaded = State::select('id', 'user_id_last_uploaded')
-                ->where('user_id_last_uploaded', $userId)
-                ->get();
-
-            if (sizeof($statesLastUploaded) > 0)
-            {
-                foreach ($statesLastUploaded as $state)
-                {
-                    $state->user_id_last_uploaded = null;
-                    $state->save();
-                }
-            }
-
-            $citiesCreatedBy = City::select('id', 'created_by')
-                ->where('created_by', $userId)
-                ->get();
-
-            if (sizeof($citiesCreatedBy) > 0)
-            {
-                foreach ($citiesCreatedBy as $city)
-                {
-                    $city->created_by = null;
-                    $city->save();
-                }
-            }
-
-            $citiesLastUploaded = City::select('id', 'user_id_last_uploaded')
-                ->where('user_id_last_uploaded', $userId)
-                ->get();
-
-            if (sizeof($citiesLastUploaded) > 0)
-            {
-                foreach ($citiesLastUploaded as $city)
-                {
-                    $city->user_id_last_uploaded = null;
-                    $city->save();
-                }
-            }
-
-            $littercoin = Littercoin::where('user_id', $userId)->get();
-
-            if (sizeof($littercoin) > 0)
-            {
-                foreach ($littercoin as $ltc)
-                {
-                    $ltc->delete();
-                }
-            }
-
-            $modelHasRoles = DB::table('model_has_roles')
+            DB::table('model_has_roles')
                 ->where('model_type', 'App\Models\Users\User')
                 ->where('model_id', $userId)
-                ->count();
+                ->delete();
 
-            if ($modelHasRoles > 0)
-            {
-                DB::table('model_has_roles')
-                    ->where('model_type', 'App\Models\Users\User')
-                    ->where('model_id', $userId)
-                    ->delete();
-            }
-
-            $oauthTokens = DB::table('oauth_access_tokens')
+            DB::table('oauth_access_tokens')
                 ->where('user_id', $userId)
-                ->count();
+                ->delete();
 
-            if ($oauthTokens > 0)
-            {
-                DB::table('oauth_access_tokens')
-                    ->where('user_id', $userId)
-                    ->delete();
-            }
+            // Reassign payments rather than deleting (preserves financial records)
+            Payment::where('user_id', $userId)->update(['user_id' => 1]);
 
-            // payments
-            $payments = Payment::where('user_id', $userId)->get();
+            DB::table('subscriptions')->where('user_id', $userId)->delete();
+            DB::table('team_user')->where('user_id', $userId)->delete();
 
-            if (sizeof($payments) > 0)
-            {
-                foreach ($payments as $payment)
-                {
-                    // should we do something on stripe with stripe_id?
-                    $payment->user_id = 1;
-                    $payment->save();
-                }
-            }
-
-            // photos
-            // subscriptions
-            $subscriptions = DB::table('subscriptions')
-                ->where('user_id', $userId)
-                ->count();
-
-            if ($subscriptions > 0 )
-            {
-                DB::table('subscriptions')
-                    ->where('user_id', $userId)
-                    ->delete();
-            }
-
-            // team_user
-            $teamUsers = DB::table('team_user')
-                ->where('user_id', $userId)
-                ->count();
-
-            if ($teamUsers > 0)
-            {
-                DB::table('team_user')
-                    ->where('user_id', $userId)
-                    ->delete();
-            }
-
-            $teams = Team::where('leader', $userId)
-                ->where('leader', $userId)
+            // Detach photos from teams before deleting teams (team_id FK is RESTRICT)
+            $teamIds = Team::where('leader', $userId)
                 ->orWhere('created_by', $userId)
-                ->get();
+                ->pluck('id');
 
-            foreach ($teams as $team)
-            {
-                // remove other team members?
-                $team->delete();
+            if ($teamIds->isNotEmpty()) {
+                Photo::whereIn('team_id', $teamIds)->update(['team_id' => null]);
+                Team::whereIn('id', $teamIds)->delete();
             }
-        }
-        catch (\Exception $e)
-        {
-            \Log::info(['DeleteAccountController', $e->getMessage()]);
+
+            // Nullify merchant photo ownership
+            DB::table('merchant_photos')
+                ->where('uploaded_by', $userId)
+                ->update(['uploaded_by' => 1]);
+
+            // Delete per-user metrics rows (prevents ghost leaderboard entries)
+            DB::table('metrics')
+                ->where('user_id', $userId)
+                ->delete();
+
+            // Clean up Redis: remove user from all leaderboards and delete user hashes
+            $this->cleanupRedis($userId, $redisScopes);
+        } catch (\Exception $e) {
+            Log::info(['DeleteAccountController relationship cleanup', $e->getMessage()]);
 
             return [
                 'success' => false,
-                'msg' => 'problem deleting user relationships'
+                'msg' => 'problem deleting user relationships',
             ];
         }
 
-        try
-        {
+        try {
+            // photos.user_id and photos.verified_by are SET NULL on delete
+            // so the database automatically anonymizes photos
             $user->delete();
-        }
-        catch (\Exception $e)
-        {
-            \Log::info(['DeleteAccountController', $e->getMessage()]);
+        } catch (\Exception $e) {
+            Log::info(['DeleteAccountController user delete', $e->getMessage()]);
 
             return [
-                'succcess' => false,
-                'msg' => 'problem deleting user'
+                'success' => false,
+                'msg' => 'problem deleting user',
             ];
         }
 
-        return [
-            'success' => true
-        ];
+        return ['success' => true];
+    }
 
-        // These are our relationships
-        // user.photo_id exists
-        // - smoking
-        // - food
-        // - coffee
-        // - softdrinks
-        // - alcohol
-        // - coastal
-        // - other
-        // - sanitary
-        // - brands
-        // - dumping
-        // - industrial
-        // - material
-        // custom_tags
-        // admin_verification_tag.admin_id & photo_id
-        // annotations
-        // littercoins (user_id, photo_id)
+    /**
+     * Collect Redis scopes from the user's photos BEFORE they are anonymized.
+     */
+    private function collectRedisScopes(int $userId): array
+    {
+        $scopes = [RedisKeys::global()];
 
-        // user_id exists
-        // admin_verification_tag
-        // cleanup_user
-        // cleanups
-        // countries.created_at, user_id_last_uploaded
-        // states.created_by, user_id_last_uploaded
-        // cities.created_by, user_id_last_uploaded
-        // littercoin
+        $locationIds = Photo::where('user_id', $userId)
+            ->select('country_id', 'state_id', 'city_id')
+            ->distinct()
+            ->get();
 
-        // model_has_roles
-        // oauth_access_tokens
-        // payments
-        // photos
-        // subscriptions
-        // team_user
-        // teams.leader
-        // teams.created_by
-        // users
+        foreach ($locationIds as $row) {
+            if ($row->country_id) {
+                $scopes[] = RedisKeys::country($row->country_id);
+            }
+            if ($row->state_id) {
+                $scopes[] = RedisKeys::state($row->state_id);
+            }
+            if ($row->city_id) {
+                $scopes[] = RedisKeys::city($row->city_id);
+            }
+        }
+
+        return array_unique($scopes);
+    }
+
+    /**
+     * Remove user from all Redis leaderboards and delete user-specific keys.
+     */
+    private function cleanupRedis(int $userId, array $scopes): void
+    {
+        try {
+            Redis::pipeline(function ($pipe) use ($scopes, $userId) {
+                $userIdStr = (string) $userId;
+
+                foreach ($scopes as $scope) {
+                    $pipe->zRem(RedisKeys::contributorRanking($scope), $userIdStr);
+                    $pipe->zRem(RedisKeys::xpRanking($scope), $userIdStr);
+                }
+
+                // Delete user-specific hashes and bitmap
+                $userScope = RedisKeys::user($userId);
+                $pipe->del(RedisKeys::stats($userScope));
+                $pipe->del("{$userScope}:tags");
+                $pipe->del(RedisKeys::userBitmap($userId));
+            });
+        } catch (\Exception $e) {
+            Log::warning('Redis cleanup failed during account deletion', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

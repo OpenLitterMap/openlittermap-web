@@ -79,6 +79,11 @@ final class RedisKeys
         return "$scope:custom";
     }
 
+    public static function types(string $scope): string
+    {
+        return "$scope:type";
+    }
+
     // Legacy time series (if still needed for backwards compatibility)
     public static function dailyPhotos(string $scope): string
     {

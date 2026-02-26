@@ -10,22 +10,30 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 ## Key Files
 
 - `app/Http/Controllers/Uploads/UploadPhotoController.php` — Web upload entry point
+- `app/Http/Requests/UploadPhotoRequest.php` — Web upload validation (EXIF datetime, GPS, duplicates)
 - `app/Http/Controllers/API/Tags/PhotoTagsController.php` — V5 tagging endpoint (`POST /api/v3/tags`)
 - `app/Actions/Tags/AddTagsToPhotoAction.php` — Core tagging logic (v5)
+- `app/Actions/Photos/MakeImageAction.php` — Image processing + EXIF extraction
+- `app/Actions/Photos/UploadPhotoAction.php` — S3 storage (requires non-null Carbon datetime)
 - `app/Services/Tags/GeneratePhotoSummaryService.php` — Builds summary JSON + calculates XP
 - `app/Services/Tags/XpCalculator.php` — XP scoring rules
 - `app/Enums/VerificationStatus.php` — Photo verification state machine
 - `app/Enums/XpScore.php` — XP values per tag type
 - `app/Http/Requests/Api/PhotoTagsRequest.php` — V5 tag request validation
 - `app/Observers/PhotoObserver.php` — Sets `is_public = false` for school team photos
+- `app/Helpers/helpers.php` — `getDateTimeForPhoto()`, `getCoordinatesFromPhoto()`, `dmsToDec()`
+- `tests/Feature/UploadValidationTest.php` — 11 tests (EXIF datetime, GPS DMS conversion, edge cases)
 
 ## Invariants
 
 1. **Upload creates observation only.** No tags, no XP, no summary, no metrics. Just the photo record with location FKs.
-2. **Summary generation is unconditional.** `GeneratePhotoSummaryService::run()` MUST run regardless of trust level. School photos need a summary at tag time so it exists when the teacher approves later. Gating summary behind a trust check causes null summary at approval = zero metrics.
-3. **XP calculation is unconditional.** Runs for all users, before verification.
-4. **`TagsVerifiedByAdmin` only fires for trusted users.** School students' photos stop at `VERIFIED(1)` and wait for teacher approval.
-5. **VerificationStatus is an enum cast.** `$photo->verified` returns the enum, not an int. Use `->value` for `>=`/`<` comparisons, `===` for equality checks. Never compare enum to raw int.
+2. **EXIF datetime is required for web uploads.** `UploadPhotoRequest` rejects images without EXIF datetime. Controller has `?? Carbon::now()` safety fallback. `UploadPhotoAction::run()` type-hints `Carbon $datetime` — null will crash.
+3. **GPS DMS conversion guards against division by zero.** `dmsToDec()` validates all 6 denominator values before dividing. Returns `null` on malformed data.
+4. **0,0 coordinates are accepted.** Photos at latitude 0, longitude 0 are valid. Future: manual coordinate reassignment.
+5. **Summary generation is unconditional.** `GeneratePhotoSummaryService::run()` MUST run regardless of trust level. School photos need a summary at tag time so it exists when the teacher approves later. Gating summary behind a trust check causes null summary at approval = zero metrics.
+6. **XP calculation is unconditional.** Runs for all users, before verification.
+7. **`TagsVerifiedByAdmin` only fires for trusted users.** School students' photos stop at `VERIFIED(1)` and wait for teacher approval.
+8. **VerificationStatus is an enum cast.** `$photo->verified` returns the enum, not an int. Use `->value` for `>=`/`<` comparisons, `===` for equality checks. Never compare enum to raw int.
 
 ## VerificationStatus Enum
 
@@ -48,12 +56,19 @@ enum VerificationStatus: int
 
 ### Phase 1: Upload
 
+`UploadPhotoRequest::after()` validates before controller runs:
+1. EXIF must exist and be non-empty
+2. DateTime must exist (DateTimeOriginal → DateTime → FileDateTime fallback)
+3. GPS fields must exist and `dmsToDec()` must succeed (guards zero denominators)
+4. Duplicate check (same user + same EXIF datetime)
+
 `UploadPhotoController::__invoke()` flow:
 1. `MakeImageAction::run($file)` — extract EXIF
-2. `UploadPhotoAction::run()` x2 — S3 full image + bbox thumbnail
-3. `ResolveLocationAction::run($lat, $lon)` — Country/State/City FKs
-4. `Photo::create()` — observation record with FKs only
-5. `event(new ImageUploaded(...))` — real-time broadcast
+2. `getDateTimeForPhoto($exif) ?? Carbon::now()` — EXIF datetime with safety fallback
+3. `UploadPhotoAction::run()` x2 — S3 full image + bbox thumbnail
+4. `getCoordinatesFromPhoto($exif)` → `ResolveLocationAction::run($lat, $lon)` — Country/State/City FKs
+5. `Photo::create()` — observation record with FKs only
+6. `event(new ImageUploaded(...))` — real-time broadcast
 
 ### Phase 2: Tagging
 
@@ -129,6 +144,12 @@ Large     => 50  // Special objects: 'large'
 BagsLitter => 10 // Special objects: 'bagsLitter'
 ```
 
+### result_string and total_litter (v4 compatibility — write-only)
+
+`GeneratePhotoSummaryService::run()` still populates `result_string` from the summary keys for backward compatibility. Format: `category.object qty,category.object qty,...` (e.g., `smoking.butts 3,food.wrapper 2,`). However, **no public-facing endpoint reads `result_string` anymore** — all map endpoints (`GlobalMapController`, `DisplayTagsOnMapController`, `TeamsClusterController`, `PointsController`, `FilterPhotosByGeoHashTrait`) were updated to select and return `summary` instead. Both `result_string` and `total_litter` columns are now write-only and scheduled for eventual removal.
+
+**`total_litter` → `total_tags`:** All active endpoints now read `total_tags` instead of `total_litter`. Fixed: `CommunityController`, `ContributorAggregator`, `TimeSeriesAggregator`, `ProfileController` (global litter fallback), `JoinTeamAction` (team pivot). Safe (location-level Redis, not photo column): `GlobalStatsController`, `WorldCupController`. Safe (correct fallback): `CreateCSVExport`. Console commands that read these columns (`CompileResultsString`, `ResetResultString`) have been deleted. Dead jobs deleted: `Api/AddTags`, `Photos/AddTagsToPhoto` (both wrote `total_litter` + `verification` float).
+
 ### Summary JSON structure
 
 ```json
@@ -170,4 +191,11 @@ Always ensure `geom` stays in `$hidden`. If you need coordinates, use `lat`/`lon
 - **Comparing VerificationStatus enum to int.** `$photo->verified >= 2` fails. Use `$photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value`.
 - **Dispatching `TagsVerifiedByAdmin` for school students.** School photos must wait for teacher approval. Only trusted users get immediate dispatch.
 - **Including `geom` in API responses.** Binary spatial data. Keep it in `$hidden`.
+- **Using `$photo->toArray()` for queue responses.** The Location model's `updatedAtDiffForHumans` accessor crashes on null `updated_at`. Build response arrays manually when including country relation. See `AdminQueueController` for pattern.
+- **Passing null datetime to `UploadPhotoAction::run()`.** The method type-hints `Carbon $datetime`. If EXIF has no datetime, `getDateTimeForPhoto()` returns null. Validation must reject first; controller has `?? Carbon::now()` safety fallback.
+- **Not guarding `dmsToDec()` against zero denominators.** EXIF GPS values are `"numerator/denominator"` format. If denominator is 0 in any of the 6 components (degrees/minutes/seconds for lat and lon), division crashes. The function now returns `null` instead.
+- **Rejecting 0,0 coordinates.** Photos at latitude 0, longitude 0 are valid (Gulf of Guinea). Do not reject `0,0` — only reject `null`.
 - **Forgetting `city_id` in factory.** PhotoFactory doesn't include `city_id` by default. Add `'city_id' => City::factory()` when testing location-dependent features.
+- **Confusing `category_litter_object_id` with `category_id`.** Phase 1 adds `category_litter_object_id` (FK to `category_litter_object` pivot) and `litter_object_type_id` (FK to `litter_object_types`) to `photo_tags`. Both are nullable in Phase 1. The existing `category_id` and `litter_object_id` columns remain and are still the authoritative source until Phase 3.
+- **Returning `'tags'` instead of `'new_tags'` in upload controller.** `UsersUploadsController` must return tags under the key `'new_tags'` — the `Uploads.vue` frontend reads `photo.new_tags` for tag counts and objects list.
+- **Using `doesntHave('photoTags')` for untagged filter.** The `/tag` page filter must use `WHERE verified = 0` (VerificationStatus::UNVERIFIED), not `doesntHave('photoTags')`. V4-migrated photos may have `verified >= 1` but no v5 photoTags records, or photoTags can exist without the photo being fully tagged.

@@ -60,7 +60,7 @@ class DisplayTagsOnMapController extends Controller
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
             $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) ? $photo->filename : '/assets/images/waiting.png';
-            $resultString = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->result_string : null;
+            $summary = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->summary : null;
 
             $features[] = [
                 'type' => 'Feature',
@@ -70,7 +70,7 @@ class DisplayTagsOnMapController extends Controller
                 ],
                 'properties' => [
                     'photo_id' => $photo->id,
-                    'result_string' => $resultString,
+                    'summary' => $summary,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,
                     'time' => $photo->datetime,

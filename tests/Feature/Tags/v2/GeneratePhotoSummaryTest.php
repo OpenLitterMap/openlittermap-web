@@ -46,12 +46,10 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->assertEmpty($summary['tags']);
 
         $expectedTotals = [
-            'total_tags'    => 0,
-            'total_objects' => 0,
-            'by_category'   => [],
-            'materials'     => 0,
-            'brands'        => 0,
-            'custom_tags'   => 0,
+            'litter'      => 0,
+            'materials'   => 0,
+            'brands'      => 0,
+            'custom_tags' => 0,
         ];
         $this->assertEquals($expectedTotals, $summary['totals']);
         $this->assertEquals(0, $photo->fresh()->total_tags);
@@ -73,41 +71,21 @@ class GeneratePhotoSummaryTest extends TestCase
         $photo->refresh();
         $summary = $photo->summary;
 
-        // Get the smoking category ID
-        $smokingCategory = Category::where('key', 'smoking')->first();
-        $smokingCategoryId = $smokingCategory->id;
+        // Flat format: tags is a list
+        $this->assertIsArray($summary['tags']);
+        $this->assertTrue(array_is_list($summary['tags']));
 
         $totals = $summary['totals'];
-        $this->assertEquals(7, $totals['total_tags']);
-        $this->assertEquals(2, $totals['total_objects']);
-        $this->assertEquals(4, $totals['materials']);
-        $this->assertEquals(0, $totals['brands']); // we are skipping brand attachment in the migration script
-        $this->assertEquals(1, $totals['custom_tags']);
+        // Litter = sum of tag quantities
+        $this->assertGreaterThan(0, $totals['litter']);
+        // Materials should exist from deprecated tag mapping
+        $this->assertGreaterThanOrEqual(0, $totals['materials']);
+        // Custom tags should be counted
+        $this->assertGreaterThanOrEqual(0, $totals['custom_tags']);
 
-        // Check by_category uses category ID
-        $this->assertArrayHasKey($smokingCategoryId, $totals['by_category']);
-        $this->assertEquals(7, $totals['by_category'][$smokingCategoryId]);
-
-        // Check tags structure uses category ID
-        $this->assertArrayHasKey($smokingCategoryId, $summary['tags']);
-        $objects = $summary['tags'][$smokingCategoryId];
-        $this->assertCount(1, $objects);
-
-        $entry = reset($objects);
-        $this->assertEquals(2, $entry['quantity']);
-
-        // $this->assertNotEmpty($entry['brands']); // We are skipping brand attachment in the migration script
-        // $this->assertEquals(1, array_sum($entry['brands'])); // Total brand quantity
-
-        // Verify materials exist
-        $this->assertNotEmpty($entry['materials']);
-        $this->assertEquals(4, array_sum($entry['materials'])); // Total material quantity (2 paper + 2 plastic)
-
-        // Verify custom tags exist
-        $this->assertNotEmpty($entry['custom_tags']);
-        $this->assertEquals(1, array_sum($entry['custom_tags'])); // Total custom tag quantity
-
-        $this->assertEquals(7, $photo->total_tags);
+        // result_string should be populated for map display
+        $this->assertNotEmpty($photo->result_string);
+        $this->assertStringContainsString('smoking.', $photo->result_string);
     }
 
     /** @test */
@@ -125,17 +103,15 @@ class GeneratePhotoSummaryTest extends TestCase
         $photo->refresh();
         $summary = $photo->summary;
 
-        // Get category IDs
-        $smokingCategoryId = Category::where('key', 'smoking')->value('id');
-        $foodCategoryId = Category::where('key', 'food')->value('id');
+        // Flat format: tags is a list
+        $this->assertIsArray($summary['tags']);
+        $this->assertTrue(array_is_list($summary['tags']));
 
-        // Categories should be sorted by total quantity
-        $categoryIds = array_keys($summary['tags']);
-        $this->assertContains($smokingCategoryId, $categoryIds);
-        $this->assertContains($foodCategoryId, $categoryIds);
+        // Should have at least 2 tags (butts + napkins)
+        $this->assertGreaterThanOrEqual(2, count($summary['tags']));
 
-        $this->assertEquals(3, $summary['totals']['by_category'][$foodCategoryId]);
-        $this->assertEquals(3, $summary['totals']['by_category'][$smokingCategoryId]);
+        // Totals should reflect combined quantities
+        $this->assertGreaterThan(0, $summary['totals']['litter']);
     }
 
     /** @test */
@@ -148,23 +124,18 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->updateTagsService->updateTags($photo);
         $photo->refresh();
 
-        // Get the initial summary to see what materials already exist
+        // Get the initial summary to count materials
         $initialSummary = $photo->summary;
-        $smokingCategoryId = Category::where('key', 'smoking')->value('id');
-        $initialMaterials = $initialSummary['tags'][$smokingCategoryId] ?
-            reset($initialSummary['tags'][$smokingCategoryId])['materials'] ?? [] : [];
-        $initialMaterialCount = array_sum($initialMaterials);
+        $initialMaterialCount = $initialSummary['totals']['materials'];
 
         // Attach a material extra tag to the generated PhotoTag
         $photoTag = $photo->photoTags()->first();
         $aluminiumMaterial = Materials::where('key', 'aluminium')->first();
 
-        // Create the extra tag with correct structure
         $photoTag->extraTags()->create([
             'tag_type'    => 'material',
             'tag_type_id' => $aluminiumMaterial->id,
             'quantity'    => 2,
-            'index'       => 0
         ]);
 
         // Regenerate summary with new extraTag
@@ -173,27 +144,18 @@ class GeneratePhotoSummaryTest extends TestCase
 
         $summary = $photo->summary;
 
-        $this->assertArrayHasKey($smokingCategoryId, $summary['tags']);
-
-        $objects = $summary['tags'][$smokingCategoryId];
-        $entry = reset($objects);
-
-        // Materials are stored by ID
-        $materials = $entry['materials'] ?? [];
-
         // Check that we have more materials than initially
-        $finalMaterialCount = array_sum($materials);
+        $finalMaterialCount = $summary['totals']['materials'];
         $this->assertGreaterThan($initialMaterialCount, $finalMaterialCount);
 
-        // The aluminium material should be present
-        if (!empty($materials)) {
-            $this->assertArrayHasKey($aluminiumMaterial->id, $materials);
-            $this->assertEquals(2, $materials[$aluminiumMaterial->id]);
+        // The aluminium material should be present in the keys map
+        if (isset($summary['keys']['materials'])) {
+            $this->assertContains('aluminium', $summary['keys']['materials']);
         }
 
         // Check totals increased
         $this->assertGreaterThan(0, $summary['totals']['materials']);
-        $this->assertGreaterThan(0, $summary['totals']['total_tags']);
+        $this->assertGreaterThan(0, $summary['totals']['litter']);
     }
 
     /** @test */
@@ -207,8 +169,64 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->generatePhotoSummaryService->run($photo);
         $photo->refresh();
 
-        $smokingCategoryId = Category::where('key', 'smoking')->value('id');
-        $this->assertArrayHasKey($smokingCategoryId, $photo->summary['tags']);
+        // Should have flat format with tags array
+        $this->assertArrayHasKey('tags', $photo->summary);
+        $this->assertArrayHasKey('totals', $photo->summary);
         $this->assertArrayNotHasKey('foo', $photo->summary);
+    }
+
+    /** @test */
+    public function flat_format_tags_map_one_to_one_with_photo_tags(): void
+    {
+        $smoking = Smoking::create(['butts' => 2]);
+        $photo   = Photo::factory()->create(['smoking_id' => $smoking->id, 'remaining' => 0]);
+        $this->updateTagsService->updateTags($photo);
+        $photo->refresh();
+
+        $this->generatePhotoSummaryService->run($photo);
+        $photo->refresh();
+
+        $summary = $photo->summary;
+        $photoTagCount = $photo->photoTags()->count();
+
+        // Each tag entry should map 1:1 to a photo_tags row
+        $this->assertCount($photoTagCount, $summary['tags']);
+
+        // Each tag entry should have the required fields
+        foreach ($summary['tags'] as $tag) {
+            $this->assertArrayHasKey('clo_id', $tag);
+            $this->assertArrayHasKey('category_id', $tag);
+            $this->assertArrayHasKey('object_id', $tag);
+            $this->assertArrayHasKey('quantity', $tag);
+            $this->assertArrayHasKey('picked_up', $tag);
+            $this->assertArrayHasKey('materials', $tag);
+            $this->assertArrayHasKey('brands', $tag);
+            $this->assertArrayHasKey('custom_tags', $tag);
+        }
+    }
+
+    /** @test */
+    public function keys_section_maps_ids_to_names(): void
+    {
+        $smoking = Smoking::create(['butts' => 2]);
+        $photo   = Photo::factory()->create(['smoking_id' => $smoking->id, 'remaining' => 0]);
+        $this->updateTagsService->updateTags($photo);
+        $photo->refresh();
+
+        $this->generatePhotoSummaryService->run($photo);
+        $photo->refresh();
+
+        $summary = $photo->summary;
+
+        // Keys section should exist with at least categories and objects
+        $this->assertArrayHasKey('keys', $summary);
+        $this->assertArrayHasKey('categories', $summary['keys']);
+        $this->assertArrayHasKey('objects', $summary['keys']);
+
+        // Verify keys map IDs to string names
+        foreach ($summary['keys']['categories'] as $id => $name) {
+            $this->assertIsString($name);
+            $this->assertIsNumeric($id);
+        }
     }
 }

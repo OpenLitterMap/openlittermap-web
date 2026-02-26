@@ -82,6 +82,9 @@
                     <router-link to="/references" class="block text-blue-100 hover:text-white">
                         {{ t('References') }}
                     </router-link>
+                    <router-link to="/changelog" class="block text-blue-100 hover:text-white">
+                        {{ t('Changelog') }}
+                    </router-link>
                     <router-link to="/credits" class="block text-blue-100 hover:text-white">
                         {{ t('Credits') }}
                     </router-link>

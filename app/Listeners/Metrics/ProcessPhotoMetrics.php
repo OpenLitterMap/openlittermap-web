@@ -3,6 +3,7 @@
 namespace App\Listeners\Metrics;
 
 use App\Events\TagsVerifiedByAdmin;
+use App\Jobs\EvaluateUserAchievements;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,5 +23,7 @@ class ProcessPhotoMetrics implements ShouldQueue
         }
 
         $this->metricsService->processPhoto($photo);
+
+        EvaluateUserAchievements::dispatch($photo->user_id);
     }
 }

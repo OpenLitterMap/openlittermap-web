@@ -9,6 +9,9 @@ use App\Helpers\Locations;
 
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated Routes commented out. Superseded by LocationController.
+ */
 class LocationsController extends Controller
 {
     /**

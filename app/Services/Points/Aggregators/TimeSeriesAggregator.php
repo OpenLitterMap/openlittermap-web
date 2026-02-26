@@ -24,7 +24,7 @@ class TimeSeriesAggregator
             ->selectRaw("
                 {$groupBy} as bucket,
                 COUNT(*) as photos,
-                COALESCE(SUM(total_litter), 0) as objects
+                COALESCE(SUM(total_tags), 0) as objects
             ")
             ->groupBy('bucket')
             ->orderBy('bucket')

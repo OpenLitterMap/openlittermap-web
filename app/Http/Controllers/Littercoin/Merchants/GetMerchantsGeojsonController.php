@@ -6,6 +6,9 @@ use App\Models\Merchant;
 use App\Http\Controllers\Controller;
 use App\Traits\GeoJson\CreateGeoJsonPoints;
 
+/**
+ * @deprecated Route commented out. Merchant map disabled.
+ */
 class GetMerchantsGeojsonController extends Controller
 {
     use CreateGeoJsonPoints;

@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @deprecated Route commented out. Uses studly_case() removed in Laravel 6.
+ */
 class WebhookController extends Controller
 {
     /**

@@ -11,6 +11,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @deprecated
+ */
 class GetDataForWorldCupController extends Controller
 {
     use LocationHelper;

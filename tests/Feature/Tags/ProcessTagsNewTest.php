@@ -24,8 +24,8 @@ class ProcessTagsNewTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('tags.alcohol.key', 'alcohol');
-        $response->assertJsonPath('tags.alcohol.litter_objects.0.key', 'beer_bottle');
-        $response->assertJsonMissing(['key' => 'water_bottle']);
+        $response->assertJsonPath('tags.alcohol.litter_objects.0.key', 'bottle');
+        $response->assertJsonMissing(['key' => 'butts']);
         $response->assertJsonMissing(['key' => 'nylon']);
     }
 
@@ -37,16 +37,9 @@ class ProcessTagsNewTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('tags.alcohol.key', 'alcohol');
-        $response->assertJsonPath('tags.alcohol.litter_objects.0.key', 'beer_bottle');
+        $response->assertJsonPath('tags.alcohol.litter_objects.0.key', 'bottle');
         $response->assertJsonPath('tags.alcohol.litter_objects.0.materials.0.key', 'glass');
-        $response->assertJsonMissingPath('tags.0.litter_objects.0.materials.1.key', 'plastic');
 
-        $response->assertJsonFragment(['key' => 'cider_bottle']);
-        $response->assertJsonFragment(['key' => 'wine_bottle']);
-        $response->assertJsonFragment(['key' => 'spirits_bottle']);
-        $response->assertJsonFragment(['key' => 'bottleTop']);
-        $response->assertJsonMissing(['key' => 'water_bottle']);
-        $response->assertJsonMissing(['key' => 'energyDrink']);
         $response->assertJsonMissing(['key' => 'paper']);
         $response->assertJsonMissing(['key' => 'nylon']);
         $response->assertJsonMissing(['key' => 'butts']);
@@ -61,12 +54,7 @@ class ProcessTagsNewTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertJsonFragment(['key' => 'alcohol']);
-        $response->assertJsonFragment(['key' => 'softdrinks']);
-        $response->assertJsonFragment(['key' => 'cider_bottle']);
-        $response->assertJsonFragment(['key' => 'wine_bottle']);
-        $response->assertJsonFragment(['key' => 'spirits_bottle']);
-        $response->assertJsonFragment(['key' => 'water_bottle']);
-        $response->assertJsonFragment(['key' => 'energy_bottle']);
+        $response->assertJsonFragment(['key' => 'beverages']);
         $response->assertJsonMissing(['key' => 'paper']);
         $response->assertJsonMissing(['key' => 'nylon']);
         $response->assertJsonMissing(['key' => 'butts']);
@@ -77,11 +65,11 @@ class ProcessTagsNewTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        $response = $this->get('/api/tags?search=beer');
+        $response = $this->get('/api/tags?search=butt');
 
         $response->assertStatus(200);
-        $response->assertJsonFragment(['key' => 'alcohol']);
-        $response->assertJsonMissing(['key', 'smoking']);
+        $response->assertJsonFragment(['key' => 'smoking']);
+        $response->assertJsonMissing(['key' => 'alcohol']);
     }
 
     public function test_it_returns_a_list_of_materials_for_a_litter_object (): void
@@ -91,7 +79,6 @@ class ProcessTagsNewTest extends TestCase
         $response = $this->get('/api/tags?materials=aluminium');
 
         $response->assertStatus(200);
-        // add more tests here to ensure only correct tags are loaded. Initial response log looks good.
     }
 
     public function test_it_searches_across_tags (): void
@@ -102,8 +89,7 @@ class ProcessTagsNewTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonFragment(['key' => 'battery']);
-        $response->assertJsonFragment(['bamboo']); // materials does not have a key, it's just an array
-        $response->assertJsonMissing(['key' => 'beer_bottle']);
+        $response->assertJsonFragment(['bamboo']);
         $response->assertJsonMissing(['key' => 'smoking']);
         $response->assertJsonMissing(['key' => 'alcohol']);
         $response->assertJsonMissing(['key' => 'butts']);
@@ -111,9 +97,9 @@ class ProcessTagsNewTest extends TestCase
 
     public function test_it_searches_across_a_category ()
     {
-        $this->seed(GenerateTagsSeeder::class);;
+        $this->seed(GenerateTagsSeeder::class);
 
-        $response = $this->get('/api/tags?category=softdrinks&object=bottle&search=pl');
+        $response = $this->get('/api/tags?category=beverages&object=bottle&search=pl');
 
         $response->assertStatus(200);
     }

@@ -5,6 +5,10 @@ export const useLeaderboardStore = defineStore('leaderboard', {
     state: () => ({
         currentPage: 1,
         hasNextPage: false,
+        total: 0,
+        currentUserRank: null,
+        loading: false,
+        error: null,
 
         currentFilters: {
             timeFilter: 'all-time',
@@ -12,16 +16,10 @@ export const useLeaderboardStore = defineStore('leaderboard', {
             locationId: null,
         },
 
-        // array of users in the leaderboard
         leaderboard: [],
-
-        // locationId: array
-        country: {},
-        state: {},
-        city: {},
-
-        selectedLocationId: null,
-        locationTabKey: 0,
+        countries: [],
+        states: [],
+        cities: [],
     }),
 
     actions: {

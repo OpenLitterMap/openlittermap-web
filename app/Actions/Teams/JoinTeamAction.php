@@ -14,7 +14,7 @@ class JoinTeamAction
 
         $user->teams()->attach($team, [
             'total_photos' => $userPhotosOnThisTeam->count(),
-            'total_litter' => $userPhotosOnThisTeam->sum('total_litter')
+            'total_litter' => $userPhotosOnThisTeam->sum('total_tags')
         ]);
 
         $this->setAsActiveTeamIfNull($user, $team);

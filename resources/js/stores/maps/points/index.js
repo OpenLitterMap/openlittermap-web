@@ -87,19 +87,15 @@ export const usePointsStore = defineStore('points', {
             this.currentZoom = zoom;
         },
 
-        // Manual state setters for debugging
         setLoading(loading) {
-            console.log('Setting loading to:', loading);
             this.loading = loading;
         },
 
         setError(error) {
-            console.log('Setting error to:', error);
             this.error = error;
         },
 
         setPointsGeojson(data) {
-            console.log('Setting pointsGeojson to:', data?.features?.length || 0, 'features');
             this.pointsGeojson = data;
         },
     },

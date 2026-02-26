@@ -45,13 +45,26 @@ class CreateTeamTest extends TestCase
         $role->syncPermissions($permissions);
     }
 
-    // ── Community Teams ──
-
-    public function test_a_user_can_create_a_community_team()
+    /**
+     * Helper to create a school manager user with 1 remaining team.
+     */
+    private function createSchoolManager(array $overrides = []): User
     {
-        $user = User::factory()->create(['remaining_teams' => 3]);
+        $user = User::factory()->create(array_merge([
+            'remaining_teams' => 1,
+        ], $overrides));
+        $user->assignRole('school_manager');
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        return $user;
+    }
+
+    // ── Authorization — school_manager role required ──
+
+    public function test_school_manager_can_create_a_community_team(): void
+    {
+        $manager = $this->createSchoolManager();
+
+        $response = $this->actingAs($manager, 'api')->postJson('/api/teams/create', [
             'name' => 'Cork Litter Pickers',
             'identifier' => 'CorkLP2026',
             'teamType' => $this->communityTypeId,
@@ -64,61 +77,70 @@ class CreateTeamTest extends TestCase
         $this->assertDatabaseHas('teams', [
             'name' => 'Cork Litter Pickers',
             'identifier' => 'CorkLP2026',
-            'leader' => $user->id,
+            'leader' => $manager->id,
             'safeguarding' => false,
         ]);
 
-        $this->assertTrue($user->fresh()->isMemberOfTeam(
+        $this->assertTrue($manager->fresh()->isMemberOfTeam(
             Team::where('name', 'Cork Litter Pickers')->value('id')
         ));
 
-        $this->assertEquals(2, $user->fresh()->remaining_teams);
+        $this->assertEquals(0, $manager->fresh()->remaining_teams);
     }
 
-    public function test_a_user_cannot_create_when_none_remaining()
+    public function test_regular_user_cannot_create_any_team(): void
     {
-        $user = User::factory()->create(['remaining_teams' => 0]);
+        $user = User::factory()->create(['remaining_teams' => 10]);
+        // No school_manager role
 
-        // Ensure the value is actually 0 (not null or unset)
-        $this->assertEquals(0, $user->fresh()->remaining_teams);
+        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+            'name' => 'Regular Team',
+            'identifier' => 'Regular1',
+            'teamType' => $this->communityTypeId,
+        ])->assertStatus(403);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $this->assertDatabaseMissing('teams', ['name' => 'Regular Team']);
+    }
+
+    public function test_school_manager_cannot_create_when_none_remaining(): void
+    {
+        $manager = $this->createSchoolManager(['remaining_teams' => 0]);
+
+        $response = $this->actingAs($manager, 'api')->postJson('/api/teams/create', [
             'name' => 'No Quota',
             'identifier' => 'NoQuota1',
             'teamType' => $this->communityTypeId,
         ]);
 
-        // NOTE: If this fails, the controller's strict === 0 comparison
-        // needs changing to == 0, or User model needs: 'remaining_teams' => 'integer' in $casts
         $response->assertOk()
             ->assertJsonPath('success', false)
             ->assertJsonPath('msg', 'max-created');
     }
 
-    public function test_create_validates_required_fields()
+    public function test_create_validates_required_fields(): void
     {
-        $user = User::factory()->create(['remaining_teams' => 3]);
+        $manager = $this->createSchoolManager();
 
-        $this->actingAs($user, 'api')
+        $this->actingAs($manager, 'api')
             ->postJson('/api/teams/create', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'identifier', 'teamType']);
     }
 
-    public function test_create_validates_unique_name_and_identifier()
+    public function test_create_validates_unique_name_and_identifier(): void
     {
-        $user = User::factory()->create(['remaining_teams' => 3]);
+        $manager = $this->createSchoolManager();
 
         Team::create([
             'name' => 'Taken Name',
             'identifier' => 'TakenID',
             'type_id' => $this->communityTypeId,
             'type_name' => 'community',
-            'leader' => $user->id,
-            'created_by' => $user->id,
+            'leader' => $manager->id,
+            'created_by' => $manager->id,
         ]);
 
-        $this->actingAs($user, 'api')
+        $this->actingAs($manager, 'api')
             ->postJson('/api/teams/create', [
                 'name' => 'Taken Name',
                 'identifier' => 'TakenID',
@@ -128,7 +150,7 @@ class CreateTeamTest extends TestCase
             ->assertJsonValidationErrors(['name', 'identifier']);
     }
 
-    public function test_unauthenticated_users_cannot_create_teams()
+    public function test_unauthenticated_users_cannot_create_teams(): void
     {
         $this->postJson('/api/teams/create', [
             'name' => 'Ghost Team',
@@ -137,12 +159,11 @@ class CreateTeamTest extends TestCase
         ])->assertStatus(401);
     }
 
-    // ── School Teams — Role Required ──
+    // ── School Teams ──
 
-    public function test_school_manager_can_create_a_school_team()
+    public function test_school_manager_can_create_a_school_team(): void
     {
-        $teacher = User::factory()->create(['remaining_teams' => 3]);
-        $teacher->assignRole('school_manager');
+        $teacher = $this->createSchoolManager();
 
         $response = $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
             'name' => 'Curraghboy NS',
@@ -170,10 +191,9 @@ class CreateTeamTest extends TestCase
         ]);
     }
 
-    public function test_school_teams_have_safeguarding_on_by_default()
+    public function test_school_teams_have_safeguarding_on_by_default(): void
     {
-        $teacher = User::factory()->create(['remaining_teams' => 3]);
-        $teacher->assignRole('school_manager');
+        $teacher = $this->createSchoolManager();
 
         $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
             'name' => 'Safe School',
@@ -185,7 +205,7 @@ class CreateTeamTest extends TestCase
         $this->assertTrue((bool) Team::where('name', 'Safe School')->value('safeguarding'));
     }
 
-    public function test_regular_user_cannot_create_school_team()
+    public function test_regular_user_cannot_create_school_team(): void
     {
         $user = User::factory()->create(['remaining_teams' => 3]);
         // No school_manager role
@@ -200,10 +220,9 @@ class CreateTeamTest extends TestCase
         $this->assertDatabaseMissing('teams', ['name' => 'Unauthorized School']);
     }
 
-    public function test_school_team_requires_contact_email()
+    public function test_school_team_requires_contact_email(): void
     {
-        $teacher = User::factory()->create(['remaining_teams' => 3]);
-        $teacher->assignRole('school_manager');
+        $teacher = $this->createSchoolManager();
 
         $this->actingAs($teacher, 'api')
             ->postJson('/api/teams/create', [
@@ -214,17 +233,5 @@ class CreateTeamTest extends TestCase
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['contact_email']);
-    }
-
-    public function test_community_teams_do_not_require_school_manager_role()
-    {
-        $user = User::factory()->create(['remaining_teams' => 3]);
-        // No role at all — should still work for community
-
-        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
-            'name' => 'Regular Team',
-            'identifier' => 'Regular1',
-            'teamType' => $this->communityTypeId,
-        ])->assertOk()->assertJsonPath('success', true);
     }
 }

@@ -8,6 +8,10 @@ use App\Models\Location\Country;
 use App\Models\Users\User;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated
+ * @old_mobile_app
+ */
 class GlobalStatsController extends Controller
 {
     /**

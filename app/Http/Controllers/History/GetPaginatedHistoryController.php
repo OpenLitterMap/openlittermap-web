@@ -52,10 +52,9 @@ class GetPaginatedHistoryController extends Controller
                 $q->whereDate('created_at', '<=', $request->filterDateTo);
             })
 
-            // Filter by tags: needs improvement to search by category, item, quantity
-            // instead of looking at the result_string, we should be looking at the photos relationships
+            // Filter by tag name in summary JSON (contains category/object keys)
             ->when($request->filterTag, function ($q) use ($request) {
-                $q->where('result_string', 'like', '%' . $request->filterTag . '%');
+                $q->where('summary', 'like', '%' . $request->filterTag . '%');
             })
 
             ->when($request->filterCustomTag, function ($q) use ($request) {

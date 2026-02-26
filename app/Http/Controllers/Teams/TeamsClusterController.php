@@ -2,53 +2,99 @@
 
 namespace App\Http\Controllers\Teams;
 
-use App\Models\Photo;
-use App\Models\TeamCluster;
-use App\Traits\FilterClustersByGeohashTrait;
-
 use App\Http\Controllers\Controller;
 use App\Traits\FilterPhotosByGeoHashTrait;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use App\Traits\GeoJson\CreateGeoJsonPoints;
+use App\Models\Photo;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TeamsClusterController extends Controller
 {
-    use FilterClustersByGeohashTrait;
+    use CreateGeoJsonPoints;
     use FilterPhotosByGeoHashTrait;
 
     /**
-     * Get clusters for the teams map
+     * GET /api/teams/clusters/{team}
      *
-     * @param Request $request
-     * @return array
+     * Returns GeoJSON FeatureCollection of clusters for a team.
+     * Uses the same bbox-based approach as ClusterController.
      */
-    public function clusters(Request $request): array
+    public function clusters(Request $request, int $team): array|JsonResponse
     {
-        if (!$request->team) {
-            return [
-                'type' => 'FeatureCollection',
-                'features' => []
-            ];
+        /* ── 1. Available Zoom Levels ──────────────────────── */
+        $levels = config('clustering.zoom_levels.all', [0, 2, 4, 6, 8, 10, 12, 14, 16]);
+
+        /* ── 2. Validate Inputs ────────────────────────────── */
+        $request->validate([
+            'zoom' => ['nullable', 'numeric', 'between:' . min($levels) . ',' . max($levels)],
+            'bbox' => ['nullable', 'array'],
+        ]);
+
+        /* ── 3. Snap Zoom ──────────────────────────────────── */
+        $requested = (float) $request->input('zoom', $levels[0]);
+        $zoom = collect($levels)->first(fn($z) => $z >= round($requested)) ?? end($levels);
+
+        /* ── 4. Build Bounding Box ─────────────────────────── */
+        $bbox = [-180, -90, 180, 90];
+
+        if ($request->has('bbox')) {
+            $arr = $request->input('bbox');
+            if (is_array($arr)) {
+                $bbox = [
+                    (float) ($arr['left']   ?? $arr[0] ?? -180),
+                    (float) ($arr['bottom'] ?? $arr[1] ?? -90),
+                    (float) ($arr['right']  ?? $arr[2] ?? 180),
+                    (float) ($arr['top']    ?? $arr[3] ?? 90),
+                ];
+            }
         }
 
-        $clusters = $this->getClusters($request->team);
-
-        $features = $this->getFeatures($clusters);
-
-        return [
-            'type' => 'FeatureCollection',
-            'features' => $features
+        [$west, $south, $east, $north] = [
+            max($bbox[0], -180),
+            max($bbox[1], -90),
+            min($bbox[2], 180),
+            min($bbox[3], 90),
         ];
+
+        if ($south > $north) {
+            [$south, $north] = [$north, $south];
+        }
+
+        $crossesDateline = $west > $east;
+        $limit = (int) config('clustering.max_clusters_per_request', 5000);
+
+        /* ── 5. Query Clusters ─────────────────────────────── */
+        $query = DB::table('clusters')
+            ->select('lon', 'lat', 'point_count as count')
+            ->where('team_id', $team)
+            ->where('zoom', $zoom)
+            ->whereBetween('lat', [$south, $north])
+            ->limit($limit);
+
+        if ($crossesDateline) {
+            $query->where(function ($q) use ($west, $east) {
+                $q->where('lon', '>=', $west)
+                    ->orWhere('lon', '<=', $east);
+            });
+        } else {
+            $query->whereBetween('lon', [$west, $east]);
+        }
+
+        $query->orderBy('lat')->orderBy('lon');
+
+        $rows = $query->get();
+
+        return $this->createGeoJsonPoints('team-clusters', $rows, true);
     }
 
     /**
-     * Get photos point data at zoom levels 16 or above
+     * GET /api/teams/points/{team}
      *
-     * @param Request $request
-     * @return array
+     * Returns individual photo points at deep zoom levels.
      */
-    public function points(Request $request): array
+    public function points(Request $request, int $team): array
     {
         $query = Photo::query()
             ->select(
@@ -56,7 +102,7 @@ class TeamsClusterController extends Controller
                 'verified',
                 'user_id',
                 'team_id',
-                'result_string',
+                'summary',
                 'filename',
                 'geohash',
                 'lat',
@@ -70,7 +116,7 @@ class TeamsClusterController extends Controller
                 'team:id,name',
                 'customTags:photo_id,tag',
             ])
-            ->whereTeamId($request->team);
+            ->whereTeamId($team);
 
         $photos = $this->filterPhotosByGeoHash(
             $query,
@@ -79,24 +125,5 @@ class TeamsClusterController extends Controller
         )->get();
 
         return $this->photosToGeojson($photos);
-    }
-
-    /**
-     * @return Builder[]|Collection
-     */
-    protected function getClusters($teamId)
-    {
-        $query = TeamCluster::query()->whereTeamId($teamId);
-
-        // If the zoom is 2,3,4,5 -> get all clusters for this zoom level
-        if (request()->zoom <= 5) {
-            return $query->where('zoom', request()->zoom)->get();
-        }
-
-        return $this->filterClustersByGeoHash(
-            $query,
-            request()->zoom,
-            request()->bbox
-        )->get();
     }
 }

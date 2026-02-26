@@ -18,9 +18,11 @@ The mobile app sends v4 tag format (`{smoking: {butts: 3}}`) to old endpoints. T
 - `tests/Feature/Mobile/ConvertV4TagsTest.php` — 7 tests (payload, summary, idempotency, verification)
 - `readme/Mobile.md` — Design document for the shim
 
-## Current State — DEPLOYED
+## Current State — DEPLOYED + AUDITED
 
 The `ConvertV4TagsAction` shim is built and wired into both mobile tagging controllers. Mobile users contribute to v5 metrics immediately without an app update. The shim reuses the same `UpdateTagsService` pipeline as the `olm:v5` migration script (battle-tested against 500k+ photos).
+
+**Audit (2026-02-26):** Confirmed v5-correct. Removed deprecated `verification` float writes (`$photo->verification = 0.1` / `1`) — the `verified` VerificationStatus enum column handles this. `TagsVerifiedByAdmin` fires with correct 6-arg signature. Both `AddTagsToUploadedImageController` and `ApiPhotosController` confirmed v5-correct.
 
 ### Old endpoints (routes/api.php)
 
