@@ -290,6 +290,9 @@ class ApiPhotosController extends Controller
             ], 403);
         }
 
+        // Capture XP before MetricsService clears it
+        $photoXp = (int) ($photo->processed_xp ?? 0);
+
         // Reverse metrics before soft delete (if photo was processed)
         if ($photo->processed_at !== null) {
             app(MetricsService::class)->deletePhoto($photo);
@@ -300,6 +303,10 @@ class ApiPhotosController extends Controller
 
         // Soft delete
         $photo->delete();
+
+        $user->xp = max(0, $user->xp - $photoXp);
+        $user->total_images = max(0, $user->total_images - 1);
+        $user->save();
 
         return response()->json(['success' => true]);
     }

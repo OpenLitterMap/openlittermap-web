@@ -4,7 +4,6 @@ import { usePhotosStore } from '@/stores/photos';
 const store = usePhotosStore();
 const currentPage = computed(() => store.currentPage);
 const lastPage = computed(() => store.lastPage);
-const perPage = computed(() => store.perPage);
 
 const changePage = (page) => {
     if (page >= 1 && page <= lastPage.value) {
@@ -13,7 +12,7 @@ const changePage = (page) => {
 };
 
 const loadPhotos = async (page = 1) => {
-    await store.fetchPhotosOnly(page, perPage.value);
+    await store.fetchPhotosOnly(page);
 };
 
 const paginationRange = computed(() => {
@@ -60,7 +59,7 @@ const paginationRange = computed(() => {
             :disabled="currentPage === 1"
             class="px-3 py-2 bg-gray-900 text-gray-200 border border-gray-700 rounded text-sm min-w-[40px] hover:bg-gray-800 hover:border-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
-            First
+            {{ $t('First') }}
         </button>
 
         <button
@@ -68,7 +67,7 @@ const paginationRange = computed(() => {
             :disabled="currentPage === 1"
             class="px-3 py-2 bg-gray-900 text-gray-200 border border-gray-700 rounded text-sm min-w-[40px] hover:bg-gray-800 hover:border-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
-            Prev
+            {{ $t('Previous') }}
         </button>
 
         <template v-for="page in paginationRange" :key="page">
@@ -92,7 +91,7 @@ const paginationRange = computed(() => {
             :disabled="currentPage === lastPage"
             class="px-3 py-2 bg-gray-900 text-gray-200 border border-gray-700 rounded text-sm min-w-[40px] hover:bg-gray-800 hover:border-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
-            Next
+            {{ $t('Next') }}
         </button>
 
         <button
@@ -100,7 +99,7 @@ const paginationRange = computed(() => {
             :disabled="currentPage === lastPage"
             class="px-3 py-2 bg-gray-900 text-gray-200 border border-gray-700 rounded text-sm min-w-[40px] hover:bg-gray-800 hover:border-gray-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
-            Last
+            {{ $t('Last') }}
         </button>
     </div>
 </template>

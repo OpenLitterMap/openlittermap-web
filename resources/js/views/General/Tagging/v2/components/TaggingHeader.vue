@@ -1,9 +1,9 @@
 <template>
     <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 shadow-2xl">
-        <!-- Single Row Header -->
-        <div class="px-6 py-3 flex items-center gap-4">
-            <!-- Photo ID - fixed width -->
-            <div class="w-36 flex items-center gap-2">
+        <!-- Header - wraps on mobile -->
+        <div class="px-4 py-2 md:px-6 md:py-3 flex flex-wrap items-center gap-2 md:gap-4">
+            <!-- Photo ID -->
+            <div class="flex items-center gap-2">
                 <div class="bg-blue-500/20 p-1.5 rounded-lg">
                     <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -20,27 +20,27 @@
                 </div>
             </div>
 
-            <div class="h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
 
-            <!-- Level - fixed width -->
-            <div class="w-24 flex items-center gap-2">
+            <!-- Level -->
+            <div class="hidden md:flex items-center gap-2">
                 <div
                     class="bg-gradient-to-r from-yellow-500 to-amber-500 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                 >
                     <span class="text-white font-bold text-xs">{{ userLevel }}</span>
                 </div>
                 <div>
-                    <div class="text-white font-semibold text-sm">Lvl {{ userLevel }}</div>
+                    <div class="text-white font-semibold text-sm">{{ $t('Lvl') }} {{ userLevel }}</div>
                     <div class="text-gray-400 text-xs truncate">{{ getLevelTitle() }}</div>
                 </div>
             </div>
 
-            <div class="h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
 
-            <!-- XP Bar - takes remaining space -->
-            <div class="flex-1 flex flex-col gap-1 px-2">
+            <!-- XP Bar - takes remaining space on desktop, full width on mobile -->
+            <div class="flex-1 min-w-[120px] flex flex-col gap-1 px-1 md:px-2">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="text-gray-400">{{ tags.length }} {{ tags.length === 1 ? 'tag' : 'tags' }}</span>
+                    <span class="text-gray-400">{{ tags.length }} {{ tags.length === 1 ? $t('tag') : $t('tags') }}</span>
                     <span class="text-gray-400">
                         {{ formatNumber(currentXP)
                         }}<span v-if="xpPreview > 0" class="text-green-400 ml-0.5">+{{ xpPreview }}</span> /
@@ -63,10 +63,10 @@
                 </div>
             </div>
 
-            <div class="h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
 
-            <!-- Pagination - fixed width -->
-            <div class="w-32 flex items-center justify-center gap-2">
+            <!-- Pagination (hidden in edit mode) -->
+            <div v-if="!isEditMode" class="flex items-center justify-center gap-2">
                 <button
                     @click="$emit('navigate', 'prev')"
                     :disabled="!canGoPrevious"
@@ -77,9 +77,9 @@
                     </svg>
                 </button>
 
-                <div class="w-16 text-center">
+                <div class="text-center">
                     <div class="text-white text-xs font-medium">{{ currentNumber }}/{{ totalPhotos }}</div>
-                    <div class="text-gray-400 text-xs">{{ untaggedCount }} left</div>
+                    <div class="text-gray-400 text-xs">{{ untaggedCount }} {{ $t('left') }}</div>
                 </div>
 
                 <button
@@ -93,52 +93,60 @@
                 </button>
             </div>
 
+            <!-- Edit mode label -->
+            <div v-if="isEditMode" class="flex items-center gap-1">
+                <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs font-semibold rounded">
+                    {{ $t('Editing') }}
+                </span>
+            </div>
+
             <!-- Unresolved tags warning -->
             <span
                 v-if="hasUnresolvedTags"
                 class="flex items-center gap-1 text-red-400 text-xs font-medium"
-                title="Some tags need a category selected"
+                :title="$t('Some tags need a category selected')"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-                Unresolved
+                <span class="hidden sm:inline">{{ $t('Unresolved') }}</span>
             </span>
 
-            <div class="h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
 
-            <!-- Actions - fixed width -->
-            <div class="w-48 flex items-center justify-end gap-2">
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
                 <button
+                    v-if="!isEditMode"
                     @click="$emit('skip')"
-                    class="w-12 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg hover:bg-gray-600/50 transition-all text-xs text-center"
+                    class="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg hover:bg-gray-600/50 transition-all text-xs text-center"
                 >
-                    Skip
+                    {{ $t('Skip') }}
                 </button>
 
                 <button
                     @click="$emit('clear')"
                     :class="[
-                        'w-12 py-1.5 rounded-lg transition-all text-xs font-semibold text-center',
+                        'px-3 py-1.5 rounded-lg transition-all text-xs font-semibold text-center',
                         tags.length > 0
                             ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
                             : 'bg-gray-700/30 text-gray-500 cursor-not-allowed',
                     ]"
                     :disabled="tags.length === 0"
                 >
-                    Clear
+                    {{ $t('Clear') }}
                 </button>
 
                 <button
                     @click="$emit('submit')"
                     :disabled="tags.length === 0 || submitting || hasUnresolvedTags"
-                    class="w-20 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-1"
+                    class="px-4 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-1"
                 >
                     <template v-if="!submitting">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Save</span>
+                        <span>{{ isEditMode ? $t('Update') : $t('Save') }}</span>
                     </template>
                     <template v-else>
                         <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -159,9 +167,11 @@
 <script setup>
 import { computed } from 'vue';
 import { useUserStore } from '@stores/user/index.js';
+import { usePhotosStore } from '@stores/photos/index.js';
 import moment from 'moment';
 
 const userStore = useUserStore();
+const photosStore = usePhotosStore();
 
 const props = defineProps({
     currentPhoto: Object,
@@ -171,6 +181,7 @@ const props = defineProps({
     xpPreview: { type: Number, default: 0 },
     submitting: { type: Boolean, default: false },
     hasUnresolvedTags: { type: Boolean, default: false },
+    isEditMode: { type: Boolean, default: false },
 });
 
 defineEmits(['navigate', 'skip', 'clear', 'submit']);
@@ -183,14 +194,7 @@ const currentNumber = computed(() => {
 
 const totalPhotos = computed(() => props.photos?.total || 0);
 
-const untaggedCount = computed(() => {
-    if (!props.photos?.data) return 0;
-    return props.photos.data.filter((p) => {
-        const hasOld = p.old_tags && Object.keys(p.old_tags).length > 0;
-        const hasNew = p.new_tags && p.new_tags.length > 0;
-        return !hasOld && !hasNew;
-    }).length;
-});
+const untaggedCount = computed(() => photosStore.untaggedStats.leftToTag || props.photos?.total || 0);
 
 const canGoPrevious = computed(() => props.currentIndex > 0 || props.photos?.current_page > 1);
 const canGoNext = computed(

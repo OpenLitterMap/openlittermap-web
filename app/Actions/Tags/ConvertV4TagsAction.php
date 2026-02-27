@@ -2,6 +2,7 @@
 
 namespace App\Actions\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
@@ -115,7 +116,7 @@ class ConvertV4TagsAction
         // Custom tags — each becomes a separate tag on unclassified.other
         if (! empty($customTags)) {
             $unclassifiedClo = CategoryObject::query()
-                ->whereHas('category', fn ($q) => $q->where('key', 'unclassified'))
+                ->whereHas('category', fn ($q) => $q->where('key', CategoryKey::Unclassified->value))
                 ->whereHas('litterObject', fn ($q) => $q->where('key', 'other'))
                 ->first();
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Map\Points;
 
 use Tests\TestCase;
+use App\Enums\CategoryKey;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Models\Teams\Team;
@@ -150,8 +151,8 @@ class PointsTest extends TestCase
     public function it_filters_photos_by_categories()
     {
         // Get categories from seeded data
-        $smoking = Category::where('key', 'smoking')->first();
-        $alcohol = Category::where('key', 'alcohol')->first();
+        $smoking = Category::where('key', CategoryKey::Smoking->value)->first();
+        $alcohol = Category::where('key', CategoryKey::Alcohol->value)->first();
 
         // Get litter objects from seeded data
         $cigarettes = LitterObject::where('key', 'butts')->first();
@@ -686,7 +687,7 @@ class PointsTest extends TestCase
     public function it_filters_photos_by_litter_objects()
     {
         // Get categories and objects from seeded data
-        $smoking = Category::where('key', 'smoking')->first();
+        $smoking = Category::where('key', CategoryKey::Smoking->value)->first();
         $cigarettes = LitterObject::where('key', 'butts')->first();
         $bottles = LitterObject::where('key', 'bottle')->first();
 
@@ -706,9 +707,9 @@ class PointsTest extends TestCase
 
         PhotoTag::create([
             'photo_id' => $photo2->id,
-            'category_id' => Category::where('key', 'alcohol')->first()->id,
+            'category_id' => Category::where('key', CategoryKey::Alcohol->value)->first()->id,
             'litter_object_id' => $bottles->id,
-            'category_litter_object_id' => $this->getCloId(Category::where('key', 'alcohol')->first()->id, $bottles->id),
+            'category_litter_object_id' => $this->getCloId(Category::where('key', CategoryKey::Alcohol->value)->first()->id, $bottles->id),
             'quantity' => 1,
             'picked_up' => false
         ]);
@@ -730,7 +731,7 @@ class PointsTest extends TestCase
     public function it_filters_photos_by_brands()
     {
         // Get data from seeded database
-        $category = Category::where('key', 'beverages')->first();
+        $category = Category::where('key', CategoryKey::Softdrinks->value)->first();
         $bottle = LitterObject::where('key', 'bottle')->first();
 
         // Create photos
@@ -838,7 +839,7 @@ class PointsTest extends TestCase
     public function it_filters_photos_by_materials()
     {
         // Get data from seeded database
-        $category = Category::where('key', 'beverages')->first();
+        $category = Category::where('key', CategoryKey::Softdrinks->value)->first();
         $bottle = LitterObject::where('key', 'bottle')->first();
         $plastic = Materials::where('key', 'plastic')->first();
         $glass = Materials::where('key', 'glass')->first();
@@ -900,7 +901,7 @@ class PointsTest extends TestCase
     public function filters_require_same_photo_tag_to_match_all_selected_criteria()
     {
         // Arrange: create properly matched photo
-        $smoking = Category::where('key', 'smoking')->first();
+        $smoking = Category::where('key', CategoryKey::Smoking->value)->first();
         $butts = LitterObject::where('key', 'butts')->first();
 
         $photo = Photo::factory()->create(['lat' => 52.145, 'lon' => 4.420, 'datetime' => now()]);
@@ -1113,8 +1114,8 @@ class PointsTest extends TestCase
     public function it_filters_multiple_tag_types_with_and_logic()
     {
         // Setup: Photos with different tag combinations
-        $smoking = Category::where('key', 'smoking')->first();
-        $alcohol = Category::where('key', 'alcohol')->first();
+        $smoking = Category::where('key', CategoryKey::Smoking->value)->first();
+        $alcohol = Category::where('key', CategoryKey::Alcohol->value)->first();
         $butts = LitterObject::where('key', 'butts')->first();
         $plastic = Materials::where('key', 'plastic')->first();
 

@@ -16,7 +16,7 @@ class RequestManager {
      * Generate a hash for request deduplication
      */
     generateRequestHash(params) {
-        const { zoom, bbox, year, fromDate, toDate, username, page } = params;
+        const { zoom, bbox, year, fromDate, toDate, username, tagFilter, page } = params;
         return JSON.stringify({
             z: Math.round(zoom),
             b: [
@@ -29,6 +29,7 @@ class RequestManager {
             f: fromDate,
             t: toDate,
             u: username,
+            tf: tagFilter ? `${tagFilter.type}:${tagFilter.id}` : null,
             p: page,
         });
     }
@@ -84,6 +85,7 @@ export const pointsHelper = {
         fromDate,
         toDate,
         username,
+        tagFilter = null,
         t,
         page = 1,
         abortSignal = null,
@@ -101,6 +103,7 @@ export const pointsHelper = {
             fromDate,
             toDate,
             username,
+            tagFilter,
             page,
         });
 
@@ -129,6 +132,7 @@ export const pointsHelper = {
                 fromDate,
                 toDate,
                 username,
+                tagFilter,
                 page,
                 signal, // Pass abort signal to store
             });
@@ -144,11 +148,12 @@ export const pointsHelper = {
             // Check for photo in URL using centralized helper
             const photoId = urlHelper.getPhotoIdFromURL();
 
-            if (photoId && pointsStore.pointsGeojson?.features?.length) {
-                const feature = pointsStore.pointsGeojson.features.find((f) => f.properties?.id === photoId);
+            if (photoId && !signal.aborted) {
+                const feature = pointsStore.pointsGeojson?.features?.find(
+                    (f) => f.properties?.id === photoId
+                );
 
                 if (feature) {
-                    // Use requestAnimationFrame instead of setTimeout for better performance
                     requestAnimationFrame(() => {
                         if (!signal.aborted) {
                             popupHelper.renderLeafletPopup(
@@ -159,6 +164,9 @@ export const pointsHelper = {
                             );
                         }
                     });
+                } else {
+                    // Fallback: fetch the individual photo if not in current page
+                    pointsHelper.fetchAndShowPhoto(photoId, t, mapInstance, signal);
                 }
             }
 
@@ -188,6 +196,7 @@ export const pointsHelper = {
         fromDate = null,
         toDate = null,
         username = null,
+        tagFilter = null,
         page = 1,
         abortSignal = null,
     }) {
@@ -198,6 +207,7 @@ export const pointsHelper = {
             fromDate,
             toDate,
             username,
+            tagFilter,
             page,
         });
 
@@ -222,6 +232,7 @@ export const pointsHelper = {
                 fromDate,
                 toDate,
                 username,
+                tagFilter,
                 page,
                 signal,
             });
@@ -236,8 +247,10 @@ export const pointsHelper = {
             // Check if we should open a popup after loading points
             const photoId = urlHelper.getPhotoIdFromURL();
 
-            if (photoId && pointsStore.pointsGeojson?.features?.length) {
-                const feature = pointsStore.pointsGeojson.features.find((f) => f.properties?.id === photoId);
+            if (photoId && !signal.aborted) {
+                const feature = pointsStore.pointsGeojson?.features?.find(
+                    (f) => f.properties?.id === photoId
+                );
 
                 if (feature) {
                     requestAnimationFrame(() => {
@@ -245,11 +258,13 @@ export const pointsHelper = {
                             popupHelper.renderLeafletPopup(
                                 feature,
                                 [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-                                null, // Translation might not be available
+                                null,
                                 mapInstance
                             );
                         }
                     });
+                } else {
+                    pointsHelper.fetchAndShowPhoto(photoId, null, mapInstance, signal);
                 }
             }
 
@@ -287,6 +302,7 @@ export const pointsHelper = {
         fromDate = null,
         toDate = null,
         username = null,
+        tagFilter = null,
         abortSignal = null,
     }) {
         const bounds = mapInstance.getBounds();
@@ -305,6 +321,7 @@ export const pointsHelper = {
             fromDate,
             toDate,
             username,
+            tagFilter,
             page: 0, // Stats don't have pages
         });
 
@@ -332,6 +349,21 @@ export const pointsHelper = {
         if (fromDate) params.append('from', fromDate);
         if (toDate) params.append('to', toDate);
         if (username) params.append('username', username);
+
+        // Apply tag filter
+        if (tagFilter) {
+            const filterMap = {
+                category: 'categories[0]',
+                object: 'litter_objects[0]',
+                brand: 'brands[0]',
+                material: 'materials[0]',
+                contributor: 'username',
+            };
+            const paramKey = filterMap[tagFilter.type];
+            if (paramKey) {
+                params.append(paramKey, tagFilter.id);
+            }
+        }
 
         try {
             const response = await fetch(`/api/points/stats?${params.toString()}`, {
@@ -362,6 +394,45 @@ export const pointsHelper = {
             return null;
         } finally {
             requestManager.clearRequest(requestHash);
+        }
+    },
+
+    /**
+     * Fallback: fetch a single photo by ID and render its popup.
+     * Used when the photo isn't in the current page of GeoJSON results.
+     */
+    async fetchAndShowPhoto(photoId, t, mapInstance, signal) {
+        try {
+            const response = await fetch(`/api/points/${photoId}`, {
+                headers: { Accept: 'application/json' },
+                signal,
+            });
+
+            if (!response.ok || signal?.aborted) return;
+
+            const photo = await response.json();
+            if (!photo.lat || !photo.lon) return;
+
+            const feature = {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [photo.lon, photo.lat] },
+                properties: photo,
+            };
+
+            requestAnimationFrame(() => {
+                if (!signal?.aborted) {
+                    popupHelper.renderLeafletPopup(
+                        feature,
+                        [photo.lat, photo.lon],
+                        t,
+                        mapInstance
+                    );
+                }
+            });
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.warn('Could not fetch photo for popup:', error);
+            }
         }
     },
 

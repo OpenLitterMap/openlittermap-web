@@ -159,47 +159,77 @@ export const popupHelper = {
         }
 
         const tagLines = [];
+        const keys = summary.keys || {};
 
-        // Iterate through categories
-        Object.entries(summary.tags).forEach(([category, objects]) => {
-            // Sanitize category name
-            const safeCategory = htmlSanitizer.escapeHtml(category);
+        // v5.1 flat array format: tags is an array of tag objects with numeric IDs
+        if (Array.isArray(summary.tags)) {
+            summary.tags.forEach((tag) => {
+                const categoryName = keys.categories?.[tag.category_id] || 'unknown';
+                const objectName = keys.objects?.[tag.object_id] || 'item';
+                const safeCategory = htmlSanitizer.escapeHtml(categoryName);
+                const safeObject = htmlSanitizer.escapeHtml(objectName);
+                const quantity = parseInt(tag.quantity) || 0;
 
-            // Iterate through objects in each category
-            Object.entries(objects).forEach(([objectKey, data]) => {
-                const safeObjectKey = htmlSanitizer.escapeHtml(objectKey);
-                const quantity = parseInt(data.quantity) || 0;
+                tagLines.push(`${safeCategory} - ${safeObject}: ${quantity}`);
 
-                // Add main item with quantity
-                tagLines.push(`${safeCategory} - ${safeObjectKey}: ${quantity}`);
-
-                // Add materials if present
-                if (data.materials && typeof data.materials === 'object') {
-                    Object.entries(data.materials).forEach(([material, count]) => {
-                        const safeMaterial = htmlSanitizer.escapeHtml(material);
-                        const safeCount = parseInt(count) || 0;
-                        tagLines.push(`  ${safeMaterial}: ${safeCount}`);
+                // Materials (array of IDs)
+                if (Array.isArray(tag.materials)) {
+                    tag.materials.forEach((matId) => {
+                        const matName = keys.materials?.[matId] || `material #${matId}`;
+                        tagLines.push(`&nbsp;&nbsp;${htmlSanitizer.escapeHtml(matName)}`);
                     });
                 }
 
-                // Add brands if present
-                if (data.brands && typeof data.brands === 'object') {
-                    Object.entries(data.brands).forEach(([brand, count]) => {
-                        const safeBrand = htmlSanitizer.escapeHtml(brand);
-                        const safeCount = parseInt(count) || 0;
-                        tagLines.push(`  ${safeBrand}: ${safeCount}`);
+                // Brands (object: id → quantity)
+                if (tag.brands && typeof tag.brands === 'object' && !Array.isArray(tag.brands)) {
+                    Object.entries(tag.brands).forEach(([brandId, qty]) => {
+                        const brandName = keys.brands?.[brandId] || `brand #${brandId}`;
+                        const safeCount = parseInt(qty) || 0;
+                        tagLines.push(`&nbsp;&nbsp;${htmlSanitizer.escapeHtml(brandName)}: ${safeCount}`);
                     });
                 }
 
-                // Add custom tags if present
-                if (Array.isArray(data.custom_tags)) {
-                    data.custom_tags.forEach((customTag) => {
-                        const safeTag = htmlSanitizer.escapeHtml(customTag);
-                        tagLines.push(`  ${safeTag}`);
+                // Custom tags (array of IDs)
+                if (Array.isArray(tag.custom_tags)) {
+                    tag.custom_tags.forEach((ctId) => {
+                        const ctName = keys.custom_tags?.[ctId] || `tag #${ctId}`;
+                        tagLines.push(`&nbsp;&nbsp;${htmlSanitizer.escapeHtml(ctName)}`);
                     });
                 }
             });
-        });
+        } else {
+            // Legacy nested dict format: { category: { object: { quantity, materials, brands } } }
+            Object.entries(summary.tags).forEach(([category, objects]) => {
+                if (!objects || typeof objects !== 'object') return;
+                const safeCategory = htmlSanitizer.escapeHtml(category);
+
+                Object.entries(objects).forEach(([objectKey, data]) => {
+                    if (!data || typeof data !== 'object') return;
+                    const safeObjectKey = htmlSanitizer.escapeHtml(objectKey);
+                    const quantity = parseInt(data.quantity) || 0;
+
+                    tagLines.push(`${safeCategory} - ${safeObjectKey}: ${quantity}`);
+
+                    if (data.materials && typeof data.materials === 'object') {
+                        Object.entries(data.materials).forEach(([material, count]) => {
+                            tagLines.push(`&nbsp;&nbsp;${htmlSanitizer.escapeHtml(material)}: ${parseInt(count) || 0}`);
+                        });
+                    }
+
+                    if (data.brands && typeof data.brands === 'object') {
+                        Object.entries(data.brands).forEach(([brand, count]) => {
+                            tagLines.push(`&nbsp;&nbsp;${htmlSanitizer.escapeHtml(brand)}: ${parseInt(count) || 0}`);
+                        });
+                    }
+
+                    if (Array.isArray(data.custom_tags)) {
+                        data.custom_tags.forEach((customTag) => {
+                            tagLines.push(`&nbsp;&nbsp;${htmlSanitizer.escapeHtml(customTag)}`);
+                        });
+                    }
+                });
+            });
+        }
 
         return tagLines.length > 0
             ? tagLines.join('<br>')
@@ -214,6 +244,17 @@ export const popupHelper = {
     checkIfLitterArt: (summary) => {
         if (!summary?.tags) return false;
 
+        // v5.1 flat array format
+        if (Array.isArray(summary.tags)) {
+            const keys = summary.keys || {};
+            return summary.tags.some((tag) => {
+                const catName = keys.categories?.[tag.category_id] || '';
+                const objName = keys.objects?.[tag.object_id] || '';
+                return catName === 'art' || objName.toLowerCase().includes('art');
+            });
+        }
+
+        // Legacy nested dict format
         return Object.keys(summary.tags).some(
             (category) =>
                 category === 'art' ||
@@ -226,7 +267,12 @@ export const popupHelper = {
      * Format user with team information
      */
     formatUser: (name, username, team, translate) => {
-        if (!name && !username) return '';
+        if (!name && !username && !team) return '';
+
+        // Team-only attribution (school safeguarding — no student identity)
+        if (!name && !username && team) {
+            return `${translate('Contributed by')} ${team}`;
+        }
 
         const parts = [translate('By')];
 

@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Route;
 Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
     Route::post('/upload', UploadPhotoController::class);
     Route::post('/tags', [PhotoTagsController::class, 'store']);
+    Route::put('/tags', [PhotoTagsController::class, 'update']);
     Route::get('/user/photos', [UsersUploadsController::class, 'index']);
     Route::get('/user/photos/stats', [UsersUploadsController::class, 'stats']);
 });
@@ -46,6 +47,7 @@ Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 Route::get('/points', [PointsController::class, 'index']);
 Route::get('/points/stats', [PointsStatsController::class, 'index']);
+Route::get('/points/{id}', [PointsController::class, 'show'])->where('id', '[0-9]+');
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');
 
@@ -251,6 +253,8 @@ Route::prefix('/teams')->group(function () {
             Route::get('/{photo}', 'Teams\TeamPhotosController@show');
             Route::patch('/{photo}/tags', 'Teams\TeamPhotosController@updateTags');
             Route::post('/approve', 'Teams\TeamPhotosController@approve');
+            Route::post('/revoke', 'Teams\TeamPhotosController@revoke');
+            Route::delete('/{photo}', 'Teams\TeamPhotosController@destroy');
         });
     });
 });

@@ -73,6 +73,13 @@
                     <p v-if="photo.user" class="text-xs text-slate-400 mt-1 truncate">
                         by {{ photo.user.name }}
                     </p>
+                    <button
+                        v-if="isLeader && photo.is_public && photo.team_approved_at"
+                        class="mt-2 w-full px-2 py-1 text-xs font-medium rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                        @click.stop="revokePhoto(photo.id)"
+                    >
+                        Revoke
+                    </button>
                 </div>
             </div>
         </div>
@@ -102,10 +109,12 @@
         <TeamPhotoEdit
             v-if="selectedPhoto"
             :photo="selectedPhoto"
+            :team-id="teamId"
             :is-leader="isLeader"
             :is-school-team="isSchoolTeam"
             @close="selectedPhoto = null"
             @saved="onPhotoSaved"
+            @deleted="onPhotoDeleted"
         />
     </div>
 </template>
@@ -171,6 +180,15 @@ export default {
             store.fetchPhotos(props.teamId, photos.value.current_page);
         };
 
+        const onPhotoDeleted = () => {
+            selectedPhoto.value = null;
+        };
+
+        const revokePhoto = async (photoId) => {
+            if (!confirm('Revoke approval? This photo will become private and metrics will be reversed.')) return;
+            await store.revokePhotos(props.teamId, [photoId]);
+        };
+
         const formatDate = (date) => {
             return new Intl.DateTimeFormat('en-IE', {
                 month: 'short',
@@ -183,7 +201,7 @@ export default {
 
         return {
             photos, loading, filter, filters, selectedPhoto,
-            setFilter, changePage, openPhoto, onPhotoSaved,
+            setFilter, changePage, openPhoto, onPhotoSaved, onPhotoDeleted, revokePhoto,
             formatDate, verificationLabel, verificationClass,
         };
     },

@@ -78,6 +78,12 @@
                             >
                                 Approve
                             </button>
+                            <button
+                                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 text-white hover:bg-red-700"
+                                @click="deletePhoto(photo.id)"
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
 
@@ -126,10 +132,12 @@
         <TeamPhotoEdit
             v-if="editingPhoto"
             :photo="editingPhoto"
+            :team-id="teamId"
             :is-leader="true"
             :is-school-team="true"
             @close="editingPhoto = null"
             @saved="onEditSaved"
+            @deleted="onPhotoDeleted"
         />
     </div>
 </template>
@@ -171,6 +179,15 @@ export default {
             }
         };
 
+        const deletePhoto = async (photoId) => {
+            if (!confirm('Delete this photo? This cannot be undone.')) return;
+
+            const success = await store.deletePhoto(props.teamId, photoId);
+            if (success) {
+                showSuccess('Photo deleted.');
+            }
+        };
+
         const editPhoto = (photo) => {
             editingPhoto.value = photo;
         };
@@ -178,6 +195,11 @@ export default {
         const onEditSaved = () => {
             editingPhoto.value = null;
             store.fetchPhotos(props.teamId, photos.value.current_page);
+        };
+
+        const onPhotoDeleted = () => {
+            editingPhoto.value = null;
+            showSuccess('Photo deleted.');
         };
 
         const changePage = (page) => store.fetchPhotos(props.teamId, page);
@@ -200,7 +222,7 @@ export default {
 
         return {
             photos, stats, loading, approving, editingPhoto, successMessage,
-            approveOne, approveAll, editPhoto, onEditSaved, changePage, formatDate,
+            approveOne, approveAll, deletePhoto, editPhoto, onEditSaved, onPhotoDeleted, changePage, formatDate,
         };
     },
 };

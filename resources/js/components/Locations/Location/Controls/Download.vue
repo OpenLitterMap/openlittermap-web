@@ -1,9 +1,9 @@
 <template>
     <div class="text-center">
-        <h1 class="text-2xl font-bold">{{ t('location.download-open-verified-data') }}</h1>
-        <h1 class="text-2xl font-bold">{{ t('location.stop-plastic-ocean') }}</h1>
+        <h1 class="text-2xl font-bold">{{ t('Free and Open Verified Citizen Science Data on Plastic Pollution.') }}</h1>
+        <h1 class="text-2xl font-bold">{{ t("Let's stop plastic going into the ocean.") }}</h1>
 
-        <p class="mb-1" v-if="!isAuth">{{ t('location.enter-email-sent-data') }}</p>
+        <p class="mb-1" v-if="!isAuth">{{ t('Please enter an email address to which the data will be sent:') }}</p>
 
         <input
             v-if="!isAuth"
@@ -22,7 +22,7 @@
             class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded text-lg mb-4 disabled:opacity-50"
             @click="download"
         >
-            {{ t('common.download') }}
+            {{ t('Download') }}
         </button>
 
         <p>&copy; OpenLitterMap & Contributors.</p>

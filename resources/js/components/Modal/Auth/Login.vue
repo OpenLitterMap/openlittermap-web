@@ -5,7 +5,7 @@
         <form class="space-y-4 text-center" @submit.prevent="login">
             <input
                 class="input border border-gray-300 rounded px-4 py-2 w-full text-lg"
-                placeholder="Email or username"
+                :placeholder="$t('Email or username')"
                 type="text"
                 name="identifier"
                 required
@@ -16,7 +16,7 @@
 
             <input
                 class="input border border-gray-300 rounded px-4 py-2 w-full text-lg"
-                placeholder="Your Password"
+                :placeholder="$t('Your Password')"
                 type="password"
                 name="password"
                 required
@@ -36,58 +36,51 @@
 
         <footer class="mt-6 border-t border-gray-200 pt-4">
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <a
-                    href="/signup"
+                <router-link
+                    to="/signup"
                     class="inline-flex items-center justify-center px-4 py-2 text-blue-600 hover:underline"
+                    @click="closeModal"
                 >
                     {{ $t('Sign up') }}
-                </a>
-                <a
-                    href="/password/reset"
+                </router-link>
+                <router-link
+                    to="/password/reset"
                     class="inline-flex items-center justify-center px-4 py-2 text-blue-600 hover:underline"
+                    @click="closeModal"
                 >
                     {{ $t('Forgot Password') }}
-                </a>
+                </router-link>
             </div>
         </footer>
     </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { useModalStore } from '@/stores/modal';
 
-export default {
-    name: 'Login',
-    setup() {
-        const userStore = useUserStore();
-        const identifier = ref('');
-        const password = ref('');
-        const processing = ref(false);
+const userStore = useUserStore();
+const modalStore = useModalStore();
+const identifier = ref('');
+const password = ref('');
+const processing = ref(false);
 
-        const errorLogin = computed(() => userStore.errorLogin);
+const errorLogin = computed(() => userStore.errorLogin);
 
-        const clearLoginError = () => userStore.clearErrorLogin();
-        const clearPwError = () => {};
+const clearLoginError = () => userStore.clearErrorLogin();
+const clearPwError = () => {};
 
-        const login = async () => {
-            processing.value = true;
-            await userStore.LOGIN({
-                identifier: identifier.value,
-                password: password.value,
-            });
-            processing.value = false;
-        };
+const closeModal = () => {
+    modalStore.hideModal();
+};
 
-        return {
-            identifier,
-            password,
-            processing,
-            errorLogin,
-            clearLoginError,
-            clearPwError,
-            login,
-        };
-    },
+const login = async () => {
+    processing.value = true;
+    await userStore.LOGIN({
+        identifier: identifier.value,
+        password: password.value,
+    });
+    processing.value = false;
 };
 </script>

@@ -46,12 +46,16 @@ class UserPhotoController extends Controller
         $photos = $this->filterPhotos(json_encode($request->filters), $request->selectAll, $ids)->get();
 
         $deleted = 0;
+        $totalXpToRemove = 0;
 
         foreach ($photos as $photo) {
             try {
                 if ($user->id !== $photo->user_id) {
                     continue;
                 }
+
+                // Capture XP before MetricsService clears it
+                $totalXpToRemove += (int) ($photo->processed_xp ?? 0);
 
                 // Reverse metrics before soft delete (if photo was processed)
                 if ($photo->processed_at !== null) {
@@ -72,7 +76,7 @@ class UserPhotoController extends Controller
 
         // Decrement user counters
         if ($deleted > 0) {
-            $user->xp = max(0, $user->xp - $deleted);
+            $user->xp = max(0, $user->xp - $totalXpToRemove);
             $user->total_images = max(0, $user->total_images - $deleted);
             $user->save();
         }

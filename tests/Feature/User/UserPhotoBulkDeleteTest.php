@@ -59,6 +59,9 @@ class UserPhotoBulkDeleteTest extends TestCase
             'user_id' => $this->user->id,
             'verified' => 0,
             'verification' => 0,
+            'processed_at' => now(),
+            'processed_xp' => 3,
+            'processed_tags' => json_encode(['objects' => [1 => 1]]),
         ]);
 
         $this->actingAs($this->user)
@@ -73,7 +76,8 @@ class UserPhotoBulkDeleteTest extends TestCase
             ->assertOk();
 
         $this->user->refresh();
-        $this->assertEquals(8, $this->user->xp);
+        // 10 - (2 × 3) = 4
+        $this->assertEquals(4, $this->user->xp);
         $this->assertEquals(3, $this->user->total_images);
     }
 

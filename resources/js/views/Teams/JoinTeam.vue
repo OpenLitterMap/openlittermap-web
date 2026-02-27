@@ -1,11 +1,11 @@
 <template>
     <div class="max-w-lg">
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">Join a Team</h1>
-        <p class="text-slate-500 mb-6">Enter the team identifier shared by your team leader.</p>
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">{{ $t('Join a Team') }}</h1>
+        <p class="text-slate-500 mb-6">{{ $t('Enter the team identifier shared by your team leader.') }}</p>
 
         <form class="bg-white rounded-xl p-6 shadow-sm space-y-5" @submit.prevent="submit">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Team identifier</label>
+                <label class="block text-sm font-medium text-slate-700 mb-1">{{ $t('Team identifier') }}</label>
                 <input
                     v-model="identifier"
                     type="text"
@@ -25,7 +25,7 @@
                 class="w-full py-2 rounded-lg text-white font-medium text-sm transition-colors"
                 :class="processing ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
             >
-                {{ processing ? 'Joining...' : 'Join Team' }}
+                {{ processing ? $t('Joining...') : $t('Join Team') }}
             </button>
 
             <p v-if="successMessage" class="text-green-600 text-sm font-medium">{{ successMessage }}</p>

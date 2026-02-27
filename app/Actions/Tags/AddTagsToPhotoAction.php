@@ -3,7 +3,9 @@
 namespace App\Actions\Tags;
 
 use App\Actions\Badges\CheckLocationTypeAward;
+use App\Enums\CategoryKey;
 use App\Enums\VerificationStatus;
+use App\Enums\XpScore;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -396,7 +398,7 @@ class AddTagsToPhotoAction
     protected function getUnclassifiedOtherClo(): CategoryObject
     {
         $clo = CategoryObject::query()
-            ->whereHas('category', fn($q) => $q->where('key', 'unclassified'))
+            ->whereHas('category', fn($q) => $q->where('key', CategoryKey::Unclassified->value))
             ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
             ->first();
 
@@ -443,16 +445,23 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Calculate XP from PhotoTag records.
+     * Calculate XP from PhotoTag records using XpScore enum multipliers.
      *
-     * XP = sum of all tag quantities + sum of all extra tag quantities
+     * Upload=5, Object=1 (special objects override), Brand=3, Material=2, CustomTag=1.
+     * Materials and custom tags use the parent tag's quantity (set membership).
+     * Brands use their own independent quantity.
      */
     protected function calculateXp(array $photoTags): int
     {
-        $xp = 0;
+        $xp = XpScore::Upload->xp(); // Base upload XP: 5
 
         foreach ($photoTags as $photoTag) {
-            $xp += $photoTag->quantity;
+            // Object XP — check for special keys (dumping small/medium/large)
+            $objectKey = $photoTag->object?->key;
+            $objectXp = $objectKey
+                ? XpScore::getObjectXp($objectKey)
+                : XpScore::Object->xp();
+            $xp += $photoTag->quantity * $objectXp;
 
             // Reload extra tags if not already loaded
             if (! $photoTag->relationLoaded('extraTags')) {
@@ -460,7 +469,12 @@ class AddTagsToPhotoAction
             }
 
             foreach ($photoTag->extraTags as $extraTag) {
-                $xp += $extraTag->quantity;
+                $xp += match ($extraTag->tag_type) {
+                    'brand'      => $extraTag->quantity * XpScore::Brand->xp(),
+                    'material'   => $photoTag->quantity * XpScore::Material->xp(),
+                    'custom_tag' => $photoTag->quantity * XpScore::CustomTag->xp(),
+                    default      => $extraTag->quantity,
+                };
             }
         }
 

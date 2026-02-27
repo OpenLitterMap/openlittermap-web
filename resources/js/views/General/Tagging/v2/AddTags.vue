@@ -9,6 +9,7 @@
             :xp-preview="calculateXP"
             :submitting="isSubmitting"
             :has-unresolved-tags="hasUnresolvedTags"
+            :is-edit-mode="isEditMode"
             @navigate="handleNavigation"
             @skip="skipPhoto"
             @clear="clearAllTags"
@@ -50,7 +51,7 @@
                                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                     />
                                 </svg>
-                                Learn about tagging
+                                {{ $t('Learn about tagging') }}
                             </a>
                             <button @click="hideTaggingHelp" class="text-gray-400 hover:text-gray-300">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +78,7 @@
 
                         <!-- Quick suggestions -->
                         <div v-if="recentTags.length > 0">
-                            <span class="text-xs text-gray-400 mr-2">Recent:</span>
+                            <span class="text-xs text-gray-400 mr-2">{{ $t('Recent:') }}</span>
                             <div class="flex flex-wrap gap-2 mt-1">
                                 <button
                                     v-for="tag in recentTags"
@@ -114,6 +115,8 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { usePhotosStore } from '@stores/photos/index.js';
 import { useTagsStore } from '@stores/tags/index.js';
 
@@ -121,6 +124,10 @@ import TaggingHeader from './components/TaggingHeader.vue';
 import UnifiedTagSearch from './components/UnifiedTagSearch.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import ActiveTagsList from './components/ActiveTagsList.vue';
+
+const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 
 // Stores
 const photosStore = usePhotosStore();
@@ -140,6 +147,8 @@ const recentTags = ref([]);
 const imageLoading = ref(true);
 const isSubmitting = ref(false);
 const showTaggingHelp = ref(true);
+const isEditMode = ref(false);
+const editPhotoId = ref(null);
 
 // Computed
 const paginatedPhotos = computed(() => photosStore.paginated);
@@ -244,15 +253,40 @@ const searchableTags = computed(() => {
 const brandsList = computed(() => tagsStore.brands || []);
 const materialsList = computed(() => tagsStore.materials || []);
 
-// XP Calculation
+// XP Calculation — matches backend XpCalculator enum values:
+// Upload=5, Object=1, Brand=3, Material=2, CustomTag=1
 const calculateXP = computed(() => {
-    let xp = 0;
+    if (activeTags.value.length === 0) return 0;
+
+    let xp = 5; // Base upload XP (XpScore::Upload)
+
     activeTags.value.forEach((tag) => {
-        xp += tag.quantity || 1;
-        if (tag.pickedUp) xp += 5;
-        if (tag.brands?.length) xp += tag.brands.length * 3;
-        if (tag.materials?.length) xp += tag.materials.length * 2;
+        const qty = tag.quantity || 1;
+
+        if (tag.type === 'brand-only') {
+            xp += qty; // Object (unclassified.other): qty × 1
+            xp += qty * 3; // Brand: qty × 3
+        } else if (tag.type === 'material-only') {
+            xp += qty; // Object: qty × 1
+            xp += qty * 2; // Material: qty × 2
+        } else if (tag.custom) {
+            xp += qty; // Object: qty × 1
+            xp += qty; // Custom tag: qty × 1
+        } else {
+            xp += qty; // Object: qty × 1
+
+            if (tag.brands?.length) {
+                tag.brands.forEach((b) => (xp += (b.quantity || 1) * 3));
+            }
+            if (tag.materials?.length) {
+                xp += tag.materials.length * qty * 2;
+            }
+            if (tag.customTags?.length) {
+                xp += tag.customTags.length * qty;
+            }
+        }
     });
+
     return xp;
 });
 
@@ -271,12 +305,110 @@ const ensurePhotoTags = () => {
     return photoId;
 };
 
+// Convert API new_tags format to frontend tag format
+const convertExistingTags = (photo) => {
+    if (!photo.new_tags?.length) return [];
+
+    return photo.new_tags.map((apiTag) => {
+        const tagId = Math.random().toString(16).slice(2);
+
+        // Brand-only or material-only (no object)
+        if (!apiTag.object && apiTag.extra_tags?.length) {
+            const firstExtra = apiTag.extra_tags[0];
+            if (firstExtra.type === 'brand') {
+                return {
+                    id: tagId,
+                    brand: firstExtra.tag,
+                    quantity: apiTag.quantity || 1,
+                    pickedUp: apiTag.picked_up,
+                    type: 'brand-only',
+                };
+            }
+            if (firstExtra.type === 'material') {
+                return {
+                    id: tagId,
+                    material: firstExtra.tag,
+                    quantity: apiTag.quantity || 1,
+                    pickedUp: apiTag.picked_up,
+                    type: 'material-only',
+                };
+            }
+            if (firstExtra.type === 'custom_tag') {
+                return {
+                    id: tagId,
+                    custom: true,
+                    key: firstExtra.tag?.key || '',
+                    quantity: apiTag.quantity || 1,
+                    pickedUp: apiTag.picked_up,
+                };
+            }
+        }
+
+        // Standard object tag
+        const cloId = apiTag.category_litter_object_id || tagsStore.getCloId(apiTag.category?.id, apiTag.object?.id);
+
+        const brands = [];
+        const materials = [];
+        const customTags = [];
+
+        apiTag.extra_tags?.forEach((extra) => {
+            if (extra.type === 'brand' && extra.tag) {
+                brands.push({ id: extra.tag.id, key: extra.tag.key, quantity: extra.quantity || 1 });
+            } else if (extra.type === 'material' && extra.tag) {
+                materials.push({ id: extra.tag.id, key: extra.tag.key });
+            } else if (extra.type === 'custom_tag' && extra.tag) {
+                customTags.push(extra.tag.key);
+            }
+        });
+
+        return {
+            id: tagId,
+            object: apiTag.object,
+            cloId: cloId,
+            categoryId: apiTag.category?.id || null,
+            categoryKey: apiTag.category?.key || null,
+            typeId: null,
+            quantity: apiTag.quantity || 1,
+            pickedUp: apiTag.picked_up ?? true,
+            brands,
+            materials,
+            customTags,
+        };
+    });
+};
+
 // Initialize
 onMounted(async () => {
-    await photosStore.fetchUntaggedData(1, { tagged: false });
-
+    // Load tags data first (needed for edit mode CLO lookups)
     if (tagsStore.objects.length === 0) {
         await tagsStore.GET_ALL_TAGS();
+    }
+
+    // Check for specific photo (photo query param)
+    const photoIdParam = route.query.photo;
+    if (photoIdParam) {
+        editPhotoId.value = parseInt(photoIdParam);
+
+        const photo = await photosStore.GET_SINGLE_PHOTO(editPhotoId.value);
+        if (photo) {
+            // Set up the store with just this photo
+            photosStore.paginated = {
+                data: [photo],
+                current_page: 1,
+                last_page: 1,
+                per_page: 1,
+                total: 1,
+            };
+            photosStore.photos = [photo];
+
+            // Only enter edit mode if photo already has tags (replace vs add)
+            if (photo.new_tags?.length > 0) {
+                isEditMode.value = true;
+                tagsByPhoto.value[photo.id] = convertExistingTags(photo);
+            }
+        }
+    } else {
+        await photosStore.fetchUntaggedData(1, { tagged: false });
     }
 
     const stored = localStorage.getItem('recentTags');
@@ -566,26 +698,43 @@ const submitTags = async () => {
     });
 
     try {
-        await photosStore.UPLOAD_TAGS({
-            photoId: photoId,
-            tags: tagsForUpload,
-        });
+        if (isEditMode.value) {
+            await photosStore.REPLACE_TAGS({
+                photoId: photoId,
+                tags: tagsForUpload,
+            });
 
-        // Clear only this photo's tags after successful submit
-        delete tagsByPhoto.value[photoId];
+            // Navigate back to uploads page after successful edit
+            router.push('/uploads');
+        } else {
+            await photosStore.UPLOAD_TAGS({
+                photoId: photoId,
+                tags: tagsForUpload,
+            });
 
-        // UPLOAD_TAGS already reloaded photos — the tagged photo is removed
-        // from the untagged list, so currentPhotoIndex now points to the next
-        // photo. Just clamp if we were at the end.
-        const newLength = paginatedPhotos.value?.data?.length || 0;
-        if (newLength === 0) {
-            currentPhotoIndex.value = 0;
-        } else if (currentPhotoIndex.value >= newLength) {
-            currentPhotoIndex.value = newLength - 1;
+            // Clear only this photo's tags after successful submit
+            delete tagsByPhoto.value[photoId];
+
+            // If we came from a specific photo link, go back to uploads
+            if (editPhotoId.value) {
+                router.push('/uploads');
+            } else {
+                // UPLOAD_TAGS already reloaded photos — the tagged photo is removed
+                // from the untagged list, so currentPhotoIndex now points to the next
+                // photo. Just clamp if we were at the end.
+                const newLength = paginatedPhotos.value?.data?.length || 0;
+                if (newLength === 0) {
+                    currentPhotoIndex.value = 0;
+                } else if (currentPhotoIndex.value >= newLength) {
+                    currentPhotoIndex.value = newLength - 1;
+                }
+                imageLoading.value = true;
+            }
         }
-        imageLoading.value = true;
     } catch (error) {
         console.error('Failed to submit tags:', error);
+        const msg = error?.response?.data?.message || error?.response?.data?.errors?.tags?.[0] || 'Failed to save tags. Please try again.';
+        toast.error(msg);
     } finally {
         isSubmitting.value = false;
     }

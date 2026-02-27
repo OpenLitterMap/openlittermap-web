@@ -30,8 +30,10 @@ class PointsController extends Controller
         $photo = Photo::where('is_public', true)
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
-                'team:id,name',
+                'team:id,name,safeguarding',
             ])->findOrFail($id);
+
+        $isSafeguarded = $photo->team && $photo->team->hasSafeguarding();
 
         return [
             'id' => $photo->id,
@@ -40,9 +42,9 @@ class PointsController extends Controller
             'datetime' => $photo->datetime,
             'verified' => $photo->verified,
             'filename' => $photo->filename,
-            'username' => $photo->user && $photo->user->show_username_maps ? $photo->user->username : null,
-            'name' => $photo->user && $photo->user->show_name_maps ? $photo->user->name : null,
-            'social' => $photo->user?->social_links,
+            'username' => $isSafeguarded ? null : ($photo->user && $photo->user->show_username_maps ? $photo->user->username : null),
+            'name' => $isSafeguarded ? null : ($photo->user && $photo->user->show_name_maps ? $photo->user->name : null),
+            'social' => $isSafeguarded ? null : $photo->user?->social_links,
             'team' => $photo->team?->name,
             'summary' => $photo->summary,
         ];
@@ -158,7 +160,7 @@ class PointsController extends Controller
             ])
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
-                'team:id,name'
+                'team:id,name,safeguarding'
             ])
             ->where('is_public', true)
             ->whereNotNull('lat')
@@ -370,6 +372,13 @@ class PointsController extends Controller
             // Add social links if user exists
             if ($photo->user) {
                 $properties['social'] = $photo->user->social_links;
+            }
+
+            // Safeguard school team photos — hide student identity on global map
+            if ($photo->team && $photo->team->hasSafeguarding()) {
+                $properties['name'] = null;
+                $properties['username'] = null;
+                $properties['social'] = null;
             }
 
             return [

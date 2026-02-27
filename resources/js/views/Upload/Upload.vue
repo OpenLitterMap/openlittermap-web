@@ -4,19 +4,19 @@
         style="min-height: calc(100% - 72px)"
     >
         <div class="h-full">
-            <h1 class="text-5xl font-semibold mb-10 text-center">Click or Drop to upload your photos</h1>
+            <h1 class="text-5xl font-semibold mb-10 text-center">{{ $t('Click or Drop to upload your photos') }}</h1>
 
             <div v-if="uploadProgress > 0" class="text-center mb-6">
-                <p>Upload Progress: {{ uploadProgress.toFixed() }}%</p>
+                <p>{{ $t('Upload Progress') }}: {{ uploadProgress.toFixed() }}%</p>
             </div>
 
             <!-- After uploading-->
             <transition name="fade">
                 <div v-if="uploadSuccess" class="text-center mb-6">
-                    <p class="text-2xl font-bold-500 mb-4">Next you need to tag the litter</p>
+                    <p class="text-2xl font-bold-500 mb-4">{{ $t('Next you need to tag the litter') }}</p>
 
                     <router-link to="/tag" class="bg-[#2793da] px-6 py-4 rounded-2xl text-white hov">
-                        Tag Litter &nbsp;
+                        {{ $t('Tag Litter') }} &nbsp;
 
                         <i data-v-fcf00e23="" aria-hidden="true" class="fa fa-arrow-right"></i>
                     </router-link>
@@ -38,7 +38,7 @@
             />
 
             <div class="text-center mt-10 pb-10">
-                <p class="text-4xl font-bold">Thank you!</p>
+                <p class="text-4xl font-bold">{{ $t('Thank you!') }}</p>
             </div>
         </div>
     </div>
@@ -117,8 +117,6 @@ const handleFileUpload = (error, file) => {
     if (error) {
         console.error('Error uploading file:', error);
     } else {
-        console.log('File uploaded successfully:', file);
-
         const name = file.file.name;
 
         toast.success(`File ${name} uploaded successfully`);
@@ -126,6 +124,13 @@ const handleFileUpload = (error, file) => {
         updateProgress();
 
         uploadSuccess.value = true;
+    }
+
+    // Reset isUploading when all files are done (processed or errored)
+    const files = pond.value?.getFiles() || [];
+    const pending = files.filter((f) => f.status !== 5 && f.status !== 6 && f.status !== 8);
+    if (pending.length === 0) {
+        uploadingStore.setIsUploading(false);
     }
 };
 
@@ -138,9 +143,6 @@ const updateProgress = () => {
     uploadProgress.value = files.length ? (processedFiles.length / files.length) * 100 : 0;
 };
 
-const team = computed(() => {
-    return userStore.user?.team?.name;
-});
 </script>
 
 <style>

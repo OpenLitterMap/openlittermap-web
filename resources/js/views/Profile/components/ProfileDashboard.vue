@@ -4,17 +4,17 @@
         <div class="bg-white/5 border border-white/10 rounded-xl p-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">Level</div>
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Level') }}</div>
                     <div class="text-white text-4xl font-bold">{{ profileStore.level.level }}</div>
                     <div class="text-emerald-400 text-sm font-medium">{{ profileStore.level.title }}</div>
                 </div>
                 <div class="text-right">
-                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">Total XP</div>
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Total XP') }}</div>
                     <div class="text-white text-3xl font-bold tabular-nums">
                         {{ profileStore.stats.xp?.toLocaleString() }}
                     </div>
                     <div v-if="profileStore.user.member_since" class="text-white/30 text-xs mt-1">
-                        Member since {{ profileStore.user.member_since }}
+                        {{ $t('Member since') }} {{ profileStore.user.member_since }}
                     </div>
                 </div>
             </div>
@@ -22,8 +22,8 @@
             <!-- Progress bar -->
             <div class="mt-4">
                 <div class="flex justify-between text-xs text-white/40 mb-1.5">
-                    <span>{{ profileStore.level.xp_into_level?.toLocaleString() }} XP into level</span>
-                    <span>{{ profileStore.level.xp_remaining?.toLocaleString() }} XP to next</span>
+                    <span>{{ profileStore.level.xp_into_level?.toLocaleString() }} {{ $t('XP into level') }}</span>
+                    <span>{{ profileStore.level.xp_remaining?.toLocaleString() }} {{ $t('XP to next') }}</span>
                 </div>
                 <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
                     <div
@@ -55,12 +55,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Rank -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-                <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-3">Global Rank</div>
+                <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-3">{{ $t('Global Rank') }}</div>
                 <div class="text-white text-3xl font-bold tabular-nums">
                     #{{ profileStore.rank.global_position?.toLocaleString() }}
                 </div>
                 <div class="text-white/40 text-sm mt-1">
-                    of {{ profileStore.rank.global_total?.toLocaleString() }} users
+                    {{ $t('of') }} {{ profileStore.rank.global_total?.toLocaleString() }} {{ $t('users') }}
                     <span v-if="profileStore.rank.percentile > 0" class="text-emerald-400">
                         &middot; Top {{ profileStore.rank.percentile }}%
                     </span>
@@ -69,18 +69,18 @@
 
             <!-- Achievements -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-                <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-3">Achievements</div>
+                <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-3">{{ $t('Achievements') }}</div>
                 <div class="text-white text-3xl font-bold tabular-nums">
                     {{ profileStore.achievements.unlocked?.toLocaleString() }}
                 </div>
                 <div class="text-white/40 text-sm mt-1">
-                    of {{ profileStore.achievements.total?.toLocaleString() }} unlocked
+                    {{ $t('of') }} {{ profileStore.achievements.total?.toLocaleString() }} {{ $t('unlocked') }}
                 </div>
                 <router-link
                     to="/achievements"
                     class="inline-block mt-3 text-emerald-400 text-sm hover:text-emerald-300 transition"
                 >
-                    View all &rarr;
+                    {{ $t('View all') }} &rarr;
                 </router-link>
             </div>
         </div>
@@ -89,25 +89,25 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Locations -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-                <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">Your Impact</div>
+                <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Your Impact') }}</div>
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div>
                         <div class="text-white text-2xl font-bold tabular-nums">
                             {{ profileStore.locations.countries }}
                         </div>
-                        <div class="text-white/40 text-sm">Countries</div>
+                        <div class="text-white/40 text-sm">{{ $t('Countries') }}</div>
                     </div>
                     <div>
                         <div class="text-white text-2xl font-bold tabular-nums">
                             {{ profileStore.locations.states }}
                         </div>
-                        <div class="text-white/40 text-sm">States</div>
+                        <div class="text-white/40 text-sm">{{ $t('States') }}</div>
                     </div>
                     <div>
                         <div class="text-white text-2xl font-bold tabular-nums">
                             {{ profileStore.locations.cities }}
                         </div>
-                        <div class="text-white/40 text-sm">Cities</div>
+                        <div class="text-white/40 text-sm">{{ $t('Cities') }}</div>
                     </div>
                 </div>
             </div>
@@ -115,7 +115,7 @@
             <!-- Team + Littercoin -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-6">
                 <div v-if="profileStore.team" class="mb-4">
-                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">Active Team</div>
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Active Team') }}</div>
                     <router-link
                         :to="`/teams/${profileStore.team.id}`"
                         class="text-white font-semibold hover:text-emerald-400 transition"
@@ -124,7 +124,7 @@
                     </router-link>
                 </div>
                 <div>
-                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">Littercoin</div>
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Littercoin') }}</div>
                     <div class="text-white text-2xl font-bold tabular-nums">
                         {{ profileStore.stats.littercoin?.toLocaleString() || 0 }}
                     </div>
@@ -135,20 +135,20 @@
         <!-- Global Stats -->
         <div class="bg-white/5 border border-white/10 rounded-xl p-6">
             <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">
-                OpenLitterMap Global
+                {{ $t('OpenLitterMap Global') }}
             </div>
             <div class="grid grid-cols-2 gap-4 text-center">
                 <div>
                     <div class="text-white text-2xl font-bold tabular-nums">
                         {{ profileStore.global_stats.total_photos?.toLocaleString() }}
                     </div>
-                    <div class="text-white/40 text-sm">Total Photos</div>
+                    <div class="text-white/40 text-sm">{{ $t('Total Photos') }}</div>
                 </div>
                 <div>
                     <div class="text-white text-2xl font-bold tabular-nums">
                         {{ profileStore.global_stats.total_litter?.toLocaleString() }}
                     </div>
-                    <div class="text-white/40 text-sm">Total Litter Tagged</div>
+                    <div class="text-white/40 text-sm">{{ $t('Total Litter Tagged') }}</div>
                 </div>
             </div>
         </div>
@@ -157,8 +157,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useProfileStore } from '@stores/profile.js';
 
+const { t: $t } = useI18n();
 const profileStore = useProfileStore();
 
 const photoPercent = computed(() => {
@@ -172,9 +174,9 @@ const tagPercent = computed(() => {
 });
 
 const statCards = computed(() => [
-    { label: 'Uploads', value: profileStore.stats.uploads?.toLocaleString(), sub: photoPercent.value },
-    { label: 'Litter Tagged', value: profileStore.stats.litter?.toLocaleString(), sub: tagPercent.value },
-    { label: 'XP', value: profileStore.stats.xp?.toLocaleString() },
-    { label: 'Day Streak', value: profileStore.stats.streak?.toLocaleString() },
+    { label: $t('Uploads'), value: profileStore.stats.uploads?.toLocaleString(), sub: photoPercent.value },
+    { label: $t('Litter Tagged'), value: profileStore.stats.litter?.toLocaleString(), sub: tagPercent.value },
+    { label: $t('XP'), value: profileStore.stats.xp?.toLocaleString() },
+    { label: $t('Day Streak'), value: profileStore.stats.streak?.toLocaleString() },
 ]);
 </script>

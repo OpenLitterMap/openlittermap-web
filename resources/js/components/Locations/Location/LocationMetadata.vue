@@ -29,7 +29,7 @@
         <div class="bg-white shadow rounded divide-y divide-gray-200">
             <!-- Total Litter -->
             <div class="p-2 flex items-center justify-between">
-                <span>{{ t('location.total-verified-litter') }}:</span>
+                <span>{{ t('Total Litter') }}:</span>
                 <strong class="text-green-500 flex-1 pl-2">
                     {{ location.total_litter_redis.toLocaleString() }}
                 </strong>
@@ -40,7 +40,7 @@
 
             <!-- Total Photos -->
             <div class="p-2 flex items-center justify-between">
-                <span>{{ t('location.total-verified-photos') }}:</span>
+                <span>{{ t('Total Photos') }}:</span>
                 <strong class="text-green-500 flex-1 pl-2">
                     {{ location.total_photos_redis.toLocaleString() }}
                 </strong>
@@ -51,7 +51,7 @@
 
             <!-- Created at -->
             <div class="p-2">
-                {{ t('common.created') }}:
+                {{ t('Created') }}:
                 <strong class="text-green-500">
                     {{ location.diffForHumans }}
                 </strong>
@@ -59,7 +59,7 @@
 
             <!-- Number of Contributors -->
             <div class="p-2">
-                {{ t('location.number-of-contributors') }}:
+                {{ t('Number of Contributors') }}:
                 <strong class="text-green-500">
                     {{ location.total_contributors_redis.toLocaleString() }}
                 </strong>
@@ -67,7 +67,7 @@
 
             <!-- Average Image per Person -->
             <div class="p-2">
-                {{ t('location.avg-img-per-person') }}:
+                {{ t('Average Image per Person') }}:
                 <strong class="text-green-500">
                     {{ location.avg_photo_per_user.toLocaleString() }}
                 </strong>
@@ -75,7 +75,7 @@
 
             <!-- Average Litter per Person -->
             <div class="p-2">
-                {{ t('location.avg-litter-per-person') }}:
+                {{ t('Average Litter per Person') }}:
                 <strong class="text-green-500">
                     {{ location.avg_litter_per_user.toLocaleString() }}
                 </strong>
@@ -83,7 +83,7 @@
 
             <!-- Created By -->
             <div class="p-2">
-                {{ t('common.created-by') }}:
+                {{ t('Created by') }}:
                 <strong class="text-green-500">
                     {{ location.created_by_name }} {{ location.created_by_username }}
                 </strong>

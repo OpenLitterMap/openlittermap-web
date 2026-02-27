@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
@@ -22,7 +23,7 @@ class GenerateTagsSeederTest extends TestCase
             'smoking',
             'food',
             'alcohol',
-            'beverages',
+            'softdrinks',
             'personal_care',
             'medical',
         ];
@@ -45,7 +46,7 @@ class GenerateTagsSeederTest extends TestCase
         $this->assertDatabaseHas('litter_objects', ['key' => 'butts']);
 
         // Assert that 'bottle' is associated with the 'alcohol' category
-        $alcoholCategory = Category::where('key', 'alcohol')->first();
+        $alcoholCategory = Category::where('key', CategoryKey::Alcohol->value)->first();
         $bottleObject = LitterObject::where('key', 'bottle')->first();
         $this->assertTrue($alcoholCategory->litterObjects->contains($bottleObject));
 
@@ -69,7 +70,7 @@ class GenerateTagsSeederTest extends TestCase
         $bottleObject = LitterObject::where('key', 'bottle')->first();
         $this->assertNotNull($bottleObject, "Bottle object not found.");
 
-        $alcoholCategory = Category::where('key', 'alcohol')->first();
+        $alcoholCategory = Category::where('key', CategoryKey::Alcohol->value)->first();
         $clo = CategoryObject::where('category_id', $alcoholCategory->id)
             ->where('litter_object_id', $bottleObject->id)
             ->first();
@@ -96,7 +97,7 @@ class GenerateTagsSeederTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        $smokingCategory = Category::where('key', 'smoking')->first();
+        $smokingCategory = Category::where('key', CategoryKey::Smoking->value)->first();
         $buttsObject = LitterObject::where('key', 'butts')->first();
 
         $categoryLitterObject = CategoryObject::where([
@@ -116,7 +117,7 @@ class GenerateTagsSeederTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        // Cup is used across multiple categories (alcohol, beverages)
+        // Cup is used across multiple categories (alcohol, softdrinks)
         $cupObject = LitterObject::where('key', 'cup')->first();
 
         $expectedMaterials = ['ceramic', 'foam', 'paper', 'plastic', 'metal'];

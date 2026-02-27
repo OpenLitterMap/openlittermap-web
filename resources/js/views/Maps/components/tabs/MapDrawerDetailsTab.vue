@@ -14,9 +14,13 @@
                         v-for="(obj, idx) in processedObjects"
                         :key="obj.key"
                         class="object-item"
-                        :class="{ highlighted: highlightedObject === obj.key }"
+                        :class="{
+                            highlighted: highlightedObject === obj.key,
+                            'active-filter': isActiveFilter('object', obj.objectKey),
+                        }"
                         @mouseenter="handleObjectHover(obj)"
                         @mouseleave="handleObjectHover(null)"
+                        @click="handleObjectClick(obj)"
                     >
                         <span class="object-rank" :style="`color: ${obj.color}`">#{{ idx + 1 }}</span>
                         <div class="object-info">
@@ -50,7 +54,13 @@
             </div>
             <div v-show="expandedSections.brands" class="section-content">
                 <div class="brands-grid">
-                    <div v-for="(brand, idx) in processedData.topBrands" :key="brand.key" class="brand-card">
+                    <div
+                        v-for="(brand, idx) in processedData.topBrands"
+                        :key="brand.key"
+                        class="brand-card"
+                        :class="{ 'active-filter': isActiveFilter('brand', brand.key) }"
+                        @click="handleBrandClick(brand)"
+                    >
                         <div class="brand-rank">#{{ idx + 1 }}</div>
                         <div class="brand-name">{{ brand.key }}</div>
                         <div class="brand-count">{{ helper.formatNumber(brand.count) }}</div>
@@ -76,6 +86,8 @@
                         v-for="material in processedData.materialsWithPercentages"
                         :key="material.key"
                         class="material-item"
+                        :class="{ 'active-filter': isActiveFilter('material', material.key) }"
+                        @click="handleMaterialClick(material)"
                     >
                         <span class="material-icon">{{ material.icon || '🗑️' }}</span>
                         <span class="material-name">{{ material.key }}</span>
@@ -103,6 +115,8 @@
                         v-for="(user, idx) in statsData.top_contributors"
                         :key="user.username"
                         class="contributor-item"
+                        :class="{ 'active-filter': isActiveFilter('contributor', user.username) }"
+                        @click="handleContributorClick(user)"
                     >
                         <div class="contributor-rank">
                             <template v-if="idx === 0">🥇</template>
@@ -150,10 +164,14 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    activeFilter: {
+        type: Object,
+        default: null,
+    },
 });
 
 // Emits
-const emit = defineEmits(['highlight-object', 'highlight-category']);
+const emit = defineEmits(['highlight-object', 'highlight-category', 'filter-apply']);
 
 // State
 const highlightedObject = ref(null);
@@ -223,11 +241,6 @@ const toggleSection = (section) => {
 const handleObjectHover = (object) => {
     if (object) {
         highlightedObject.value = object.key;
-        console.log('Emitting highlight-object:', {
-            category: object.category,
-            objectKey: object.objectKey,
-            fullKey: object.fullKey,
-        });
         // Emit both the category and the full object key
         emit('highlight-object', {
             category: object.category,
@@ -238,6 +251,26 @@ const handleObjectHover = (object) => {
         highlightedObject.value = null;
         emit('highlight-object', null);
     }
+};
+
+const handleObjectClick = (obj) => {
+    emit('filter-apply', { type: 'object', id: obj.objectKey, label: obj.objectKey });
+};
+
+const handleBrandClick = (brand) => {
+    emit('filter-apply', { type: 'brand', id: brand.key, label: brand.key });
+};
+
+const handleMaterialClick = (material) => {
+    emit('filter-apply', { type: 'material', id: material.key, label: material.key });
+};
+
+const handleContributorClick = (user) => {
+    emit('filter-apply', { type: 'contributor', id: user.username, label: user.username });
+};
+
+const isActiveFilter = (type, id) => {
+    return props.activeFilter?.type === type && props.activeFilter?.id === id;
 };
 </script>
 
@@ -378,6 +411,10 @@ const handleObjectHover = (object) => {
     transition: all 0.2s ease;
 }
 
+.brand-card {
+    cursor: pointer;
+}
+
 .brand-card:hover {
     transform: translateY(-4px);
     background: rgba(255, 255, 255, 0.15);
@@ -430,6 +467,10 @@ const handleObjectHover = (object) => {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     transition: all 0.2s ease;
+}
+
+.material-item {
+    cursor: pointer;
 }
 
 .material-item:hover {
@@ -490,6 +531,10 @@ const handleObjectHover = (object) => {
     transition: all 0.2s ease;
 }
 
+.contributor-item {
+    cursor: pointer;
+}
+
 .contributor-item:hover {
     background: rgba(255, 255, 255, 0.15);
     transform: translateX(4px);
@@ -532,5 +577,11 @@ const handleObjectHover = (object) => {
 
 .contributor-period {
     color: rgba(255, 255, 255, 0.6);
+}
+
+/* Active filter highlight */
+.active-filter {
+    background: rgba(74, 222, 128, 0.15) !important;
+    border-color: rgba(74, 222, 128, 0.4) !important;
 }
 </style>

@@ -10,6 +10,7 @@ export const requests = {
         fromDate = null,
         toDate = null,
         username = null,
+        tagFilter = null,
         page = 1,
         signal = null,
     }) {
@@ -30,6 +31,21 @@ export const requests = {
             if (fromDate) params.from = fromDate;
             if (toDate) params.to = toDate;
             if (username) params.username = username;
+
+            // Apply tag filter
+            if (tagFilter) {
+                const filterMap = {
+                    category: 'categories[0]',
+                    object: 'litter_objects[0]',
+                    brand: 'brands[0]',
+                    material: 'materials[0]',
+                    contributor: 'username',
+                };
+                const paramKey = filterMap[tagFilter.type];
+                if (paramKey) {
+                    params[paramKey] = tagFilter.id;
+                }
+            }
 
             const config = { params };
             if (signal) config.signal = signal;

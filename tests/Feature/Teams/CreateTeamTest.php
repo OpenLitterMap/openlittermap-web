@@ -88,18 +88,40 @@ class CreateTeamTest extends TestCase
         $this->assertEquals(0, $manager->fresh()->remaining_teams);
     }
 
-    public function test_regular_user_cannot_create_any_team(): void
+    public function test_regular_user_can_create_community_team(): void
     {
-        $user = User::factory()->create(['remaining_teams' => 10]);
-        // No school_manager role
+        $user = User::factory()->create(['remaining_teams' => 1]);
+        // No school_manager role needed for community teams
 
-        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
             'name' => 'Regular Team',
             'identifier' => 'Regular1',
             'teamType' => $this->communityTypeId,
-        ])->assertStatus(403);
+        ]);
 
-        $this->assertDatabaseMissing('teams', ['name' => 'Regular Team']);
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('team.name', 'Regular Team');
+
+        $this->assertDatabaseHas('teams', ['name' => 'Regular Team']);
+        $this->assertEquals(0, $user->fresh()->remaining_teams);
+    }
+
+    public function test_regular_user_cannot_create_without_remaining_teams(): void
+    {
+        $user = User::factory()->create(['remaining_teams' => 0]);
+
+        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+            'name' => 'No Quota Team',
+            'identifier' => 'NoQuota1',
+            'teamType' => $this->communityTypeId,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('msg', 'max-created');
+
+        $this->assertDatabaseMissing('teams', ['name' => 'No Quota Team']);
     }
 
     public function test_school_manager_cannot_create_when_none_remaining(): void

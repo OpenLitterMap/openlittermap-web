@@ -11,7 +11,7 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 
 - `app/Http/Controllers/Uploads/UploadPhotoController.php` — Web upload entry point
 - `app/Http/Requests/UploadPhotoRequest.php` — Web upload validation (EXIF datetime, GPS, duplicates)
-- `app/Http/Controllers/API/Tags/PhotoTagsController.php` — V5 tagging endpoint (`POST /api/v3/tags`)
+- `app/Http/Controllers/API/Tags/PhotoTagsController.php` — V5 tagging endpoint (`POST /api/v3/tags` add, `PUT /api/v3/tags` replace)
 - `app/Actions/Tags/AddTagsToPhotoAction.php` — Core tagging logic (v5)
 - `app/Actions/Photos/MakeImageAction.php` — Image processing + EXIF extraction
 - `app/Actions/Photos/UploadPhotoAction.php` — S3 storage (requires non-null Carbon datetime)
@@ -19,10 +19,12 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 - `app/Services/Tags/XpCalculator.php` — XP scoring rules
 - `app/Enums/VerificationStatus.php` — Photo verification state machine
 - `app/Enums/XpScore.php` — XP values per tag type
-- `app/Http/Requests/Api/PhotoTagsRequest.php` — V5 tag request validation
+- `app/Http/Requests/Api/PhotoTagsRequest.php` — V5 tag request validation (POST — blocks already-verified photos)
+- `app/Http/Requests/Api/ReplacePhotoTagsRequest.php` — V5 replace tag request validation (PUT — ownership only, no verification gate)
 - `app/Observers/PhotoObserver.php` — Sets `is_public = false` for school team photos
 - `app/Helpers/helpers.php` — `getDateTimeForPhoto()`, `getCoordinatesFromPhoto()`, `dmsToDec()`
 - `tests/Feature/UploadValidationTest.php` — 11 tests (EXIF datetime, GPS DMS conversion, edge cases)
+- `tests/Feature/Tags/ReplacePhotoTagsTest.php` — 5 tests (replace tags, ownership, auth, extra tags cleanup)
 
 ## Invariants
 
@@ -85,7 +87,7 @@ public function run(int $userId, int $photoId, array $tags): array
     // ALWAYS — generates summary JSON from PhotoTag records
 
     $photo->xp = $this->calculateXp($photoTags);
-    // ALWAYS — sets XP before verification
+    // ALWAYS — uses XpScore enum multipliers (Upload=5, Object=1, Brand=3, Material=2, Custom=1)
 
     $this->updateVerification($userId, $photo);
     // Routes to trusted path or school-pending path
@@ -143,6 +145,19 @@ Medium    => 25  // Special objects: 'medium'
 Large     => 50  // Special objects: 'large'
 BagsLitter => 10 // Special objects: 'bagsLitter'
 ```
+
+### Phase 2b: Replace Tags (edit mode)
+
+`PhotoTagsController::update()` handles `PUT /api/v3/tags` for replacing all tags on an already-tagged photo:
+
+1. Delete all existing PhotoTags + PhotoTagExtraTags
+2. Reset photo: `summary=null, xp=0, verified=0`
+3. Call `AddTagsToPhotoAction::run()` — regenerates summary, XP, fires `TagsVerifiedByAdmin`
+4. `MetricsService::processPhoto()` detects prior processing (has `processed_at`), calls `doUpdate()` which calculates deltas between old `processed_tags` and new summary, applies adjustments to all metrics
+
+**Frontend edit mode:** `/tag?photo=<id>` loads a specific photo. If it has existing tags, `isEditMode=true` → uses PUT. If untagged, uses POST. `convertExistingTags()` transforms API `new_tags` format back to frontend format.
+
+**Security:** `ReplacePhotoTagsRequest` checks `$photo->user_id === $this->user()->id`. `GET_SINGLE_PHOTO` calls `/api/v3/user/photos` which filters by authenticated user.
 
 ### result_string and total_litter (v4 compatibility — write-only)
 

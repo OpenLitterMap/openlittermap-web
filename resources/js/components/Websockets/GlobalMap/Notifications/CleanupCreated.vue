@@ -7,14 +7,16 @@
         </template>
         <template #content>
             <p>Cleanup created</p>
-            <i>{{ t('home.globalMap.say-hello-to') }} <strong>{{ props.payload.name }}</strong>!</i>
+            <i>{{ t('Say hello to') }} <strong>{{ props.payload.name }}</strong>!</i>
         </template>
     </GlobalMapNotification>
 </template>
 
 <script setup>
 import { defineProps } from 'vue';
+import { useI18n } from 'vue-i18n';
 import GlobalMapNotification from "./GlobalMapNotification.vue";
+const { t } = useI18n();
 const props = defineProps({
     payload: {
         type: Object,

@@ -10,7 +10,7 @@ class URLStateManager {
         // Define parameter categories
         this.mapParams = ['lat', 'lon', 'zoom'];
         this.viewParams = ['photo', 'page', 'open', 'load'];
-        this.filterParams = ['year', 'fromDate', 'toDate', 'username'];
+        this.filterParams = ['year', 'fromDate', 'toDate', 'username', 'filter'];
         this.allParams = [...this.mapParams, ...this.viewParams, ...this.filterParams];
     }
 
@@ -110,13 +110,49 @@ class URLStateManager {
      */
     getFiltersFromURL() {
         const params = new URLSearchParams(window.location.search);
+
+        // Parse tag filter: format is "type:value" (e.g., "category:smoking", "brand:45")
+        let tagFilter = null;
+        const filterParam = params.get('filter');
+        if (filterParam) {
+            const colonIdx = filterParam.indexOf(':');
+            if (colonIdx > 0) {
+                tagFilter = {
+                    type: filterParam.substring(0, colonIdx),
+                    id: filterParam.substring(colonIdx + 1),
+                };
+            }
+        }
+
         return {
             year: parseInt(params.get('year')) || null,
             fromDate: params.get('fromDate') || null,
             toDate: params.get('toDate') || null,
             username: params.get('username') || null,
             page: parseInt(params.get('page')) || 1,
+            tagFilter,
         };
+    }
+
+    /**
+     * Set tag filter in URL
+     */
+    setTagFilter(type, id) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('filter', `${type}:${id}`);
+        // Reset page when filter changes
+        url.searchParams.delete('page');
+        this.commitURL(url, false); // Push for user action
+    }
+
+    /**
+     * Clear tag filter from URL
+     */
+    clearTagFilter() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('filter');
+        url.searchParams.delete('page');
+        this.commitURL(url, false); // Push for user action
     }
 
     /**

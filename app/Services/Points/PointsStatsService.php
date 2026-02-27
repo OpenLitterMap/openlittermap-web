@@ -55,6 +55,7 @@ class PointsStatsService
             'brands' => $this->brandAggregator->aggregate($photoIds),
             'materials' => $this->materialAggregator->aggregate($photoIds),
             'custom_tags' => $this->customTagAggregator->aggregate($photoIds),
+            'top_contributors' => $this->contributorAggregator->aggregate($photoIds),
             'time_histogram' => $this->timeSeriesAggregator->aggregate($photoIds, $params),
             'meta' => [
                 'truncated' => $totalCount > self::MAX_RESULTS,
@@ -83,6 +84,7 @@ class PointsStatsService
             'brands' => [],
             'materials' => [],
             'custom_tags' => [],
+            'top_contributors' => [],
             'time_histogram' => [],
             'meta' => [
                 'truncated' => false,

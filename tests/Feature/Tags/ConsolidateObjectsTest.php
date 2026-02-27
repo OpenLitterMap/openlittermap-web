@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
@@ -101,7 +102,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_seeder_creates_material_associations(): void
     {
         $config = TagsConfig::get();
-        $category = Category::where('key', 'smoking')->first();
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
         $object = LitterObject::where('key', 'butts')->first();
 
         $clo = CategoryObject::where('category_id', $category->id)
@@ -135,7 +136,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_beer_bottle_maps_to_alcohol_bottle_with_beer_type(): void
     {
         $oldObject = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
-        $oldCategory = Category::where('key', 'alcohol')->first();
+        $oldCategory = Category::where('key', CategoryKey::Alcohol->value)->first();
 
         $photo = Photo::factory()->create();
         PhotoTag::create([
@@ -157,10 +158,10 @@ class ConsolidateObjectsTest extends TestCase
         $this->assertNotNull($tag->category_litter_object_id);
     }
 
-    public function test_water_bottle_maps_to_beverages_bottle_with_water_type(): void
+    public function test_water_bottle_maps_to_softdrinks_bottle_with_water_type(): void
     {
         $oldObject = LitterObject::firstOrCreate(['key' => 'water_bottle']);
-        $softdrinksCat = Category::firstOrCreate(['key' => 'softdrinks']);
+        $softdrinksCat = Category::firstOrCreate(['key' => CategoryKey::Softdrinks->value]);
 
         $photo = Photo::factory()->create();
         PhotoTag::create([
@@ -176,7 +177,7 @@ class ConsolidateObjectsTest extends TestCase
 
         $tag = PhotoTag::where('photo_id', $photo->id)->first();
 
-        $this->assertEquals('beverages', Category::find($tag->category_id)->key);
+        $this->assertEquals('softdrinks', Category::find($tag->category_id)->key);
         $this->assertEquals('bottle', LitterObject::find($tag->litter_object_id)->key);
         $this->assertEquals('water', LitterObjectType::find($tag->litter_object_type_id)->key);
     }
@@ -184,7 +185,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_camel_case_object_maps_to_snake_case(): void
     {
         $oldObject = LitterObject::firstOrCreate(['key' => 'tobaccoPouch']);
-        $smokingCat = Category::where('key', 'smoking')->first();
+        $smokingCat = Category::where('key', CategoryKey::Smoking->value)->first();
 
         $photo = Photo::factory()->create();
         PhotoTag::create([
@@ -205,10 +206,10 @@ class ConsolidateObjectsTest extends TestCase
         $this->assertNotNull($tag->category_litter_object_id);
     }
 
-    public function test_category_merge_softdrinks_cup_to_beverages(): void
+    public function test_category_merge_softdrinks_cup_stays_in_softdrinks(): void
     {
         $cup = LitterObject::firstOrCreate(['key' => 'cup']);
-        $softdrinksCat = Category::firstOrCreate(['key' => 'softdrinks']);
+        $softdrinksCat = Category::firstOrCreate(['key' => CategoryKey::Softdrinks->value]);
 
         // Create old CLO so the cup belongs to softdrinks
         CategoryObject::firstOrCreate([
@@ -230,7 +231,7 @@ class ConsolidateObjectsTest extends TestCase
 
         $tag = PhotoTag::where('photo_id', $photo->id)->first();
 
-        $this->assertEquals('beverages', Category::find($tag->category_id)->key);
+        $this->assertEquals('softdrinks', Category::find($tag->category_id)->key);
         $this->assertEquals('cup', LitterObject::find($tag->litter_object_id)->key);
         $this->assertNotNull($tag->category_litter_object_id);
     }
@@ -238,7 +239,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_sanitary_syringe_maps_to_medical(): void
     {
         $syringe = LitterObject::firstOrCreate(['key' => 'syringe']);
-        $sanitaryCat = Category::firstOrCreate(['key' => 'sanitary']);
+        $sanitaryCat = Category::firstOrCreate(['key' => CategoryKey::Sanitary->value]);
 
         $photo = Photo::factory()->create();
         PhotoTag::create([
@@ -261,7 +262,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_automobile_maps_to_vehicles(): void
     {
         $carPart = LitterObject::firstOrCreate(['key' => 'car_part']);
-        $automobileCat = Category::firstOrCreate(['key' => 'automobile']);
+        $automobileCat = Category::firstOrCreate(['key' => CategoryKey::Automobile->value]);
 
         CategoryObject::firstOrCreate([
             'category_id' => $automobileCat->id,
@@ -289,11 +290,11 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_taggable_remaps_to_new_clo(): void
     {
-        $softdrinksCat = Category::firstOrCreate(['key' => 'softdrinks']);
+        $coffeeCat = Category::firstOrCreate(['key' => CategoryKey::Coffee->value]);
         $cup = LitterObject::firstOrCreate(['key' => 'cup']);
 
         $oldCLO = CategoryObject::firstOrCreate([
-            'category_id' => $softdrinksCat->id,
+            'category_id' => $coffeeCat->id,
             'litter_object_id' => $cup->id,
         ]);
 
@@ -308,12 +309,12 @@ class ConsolidateObjectsTest extends TestCase
         $this->artisan('olm:consolidate-objects')
             ->assertExitCode(0);
 
-        $beveragesCat = Category::where('key', 'beverages')->first();
-        $newCLO = CategoryObject::where('category_id', $beveragesCat->id)
+        $softdrinksCat = Category::where('key', CategoryKey::Softdrinks->value)->first();
+        $newCLO = CategoryObject::where('category_id', $softdrinksCat->id)
             ->where('litter_object_id', $cup->id)
             ->first();
 
-        // Taggable should now point to beverages/cup CLO
+        // Taggable should now point to softdrinks/cup CLO
         $taggable = Taggable::where('taggable_type', 'App\\Models\\Litter\\Tags\\Materials')
             ->where('taggable_id', $material->id)
             ->where('category_litter_object_id', $newCLO->id)
@@ -324,29 +325,29 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_taggable_remap_handles_duplicates(): void
     {
-        $softdrinksCat = Category::firstOrCreate(['key' => 'softdrinks']);
+        $coffeeCat = Category::firstOrCreate(['key' => CategoryKey::Coffee->value]);
         $cup = LitterObject::firstOrCreate(['key' => 'cup']);
 
         $oldCLO = CategoryObject::firstOrCreate([
-            'category_id' => $softdrinksCat->id,
+            'category_id' => $coffeeCat->id,
             'litter_object_id' => $cup->id,
         ]);
 
-        $beveragesCat = Category::where('key', 'beverages')->first();
-        $newCLO = CategoryObject::where('category_id', $beveragesCat->id)
+        $softdrinksCat = Category::where('key', CategoryKey::Softdrinks->value)->first();
+        $newCLO = CategoryObject::where('category_id', $softdrinksCat->id)
             ->where('litter_object_id', $cup->id)
             ->first();
 
         $material = \App\Models\Litter\Tags\Materials::firstOrCreate(['key' => 'plastic']);
 
-        // Taggable on old CLO
+        // Taggable on old CLO (coffee/cup)
         Taggable::create([
             'category_litter_object_id' => $oldCLO->id,
             'taggable_type' => 'App\\Models\\Litter\\Tags\\Materials',
             'taggable_id' => $material->id,
         ]);
 
-        // Same taggable already on new CLO (duplicate scenario)
+        // Same taggable already on new CLO (softdrinks/cup — duplicate scenario)
         Taggable::create([
             'category_litter_object_id' => $newCLO->id,
             'taggable_type' => 'App\\Models\\Litter\\Tags\\Materials',
@@ -377,7 +378,7 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_null_null_tag_with_clo_is_unchanged_by_consolidation(): void
     {
-        $unclassifiedCat = Category::firstOrCreate(['key' => 'unclassified']);
+        $unclassifiedCat = Category::firstOrCreate(['key' => CategoryKey::Unclassified->value]);
         $otherObj = LitterObject::firstOrCreate(['key' => 'other']);
         $cloId = $this->getCloId($unclassifiedCat->id, $otherObj->id);
 
@@ -404,7 +405,7 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_partial_null_tag_with_clo_is_unchanged_by_consolidation(): void
     {
-        $category = Category::where('key', 'smoking')->first();
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
         $butts = LitterObject::where('key', 'butts')->first();
         $cloId = $this->getCloId($category->id, $butts->id);
 
@@ -432,7 +433,7 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_existing_canonical_tag_gets_clo_backfilled(): void
     {
-        $category = Category::where('key', 'smoking')->first();
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
         $object = LitterObject::where('key', 'butts')->first();
 
         $photo = Photo::factory()->create();
@@ -457,7 +458,7 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_tag_with_existing_clo_is_not_changed(): void
     {
-        $category = Category::where('key', 'smoking')->first();
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
         $object = LitterObject::where('key', 'butts')->first();
         $clo = CategoryObject::where('category_id', $category->id)
             ->where('litter_object_id', $object->id)
@@ -484,7 +485,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_running_twice_produces_same_result(): void
     {
         $oldObject = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
-        $alcoholCat = Category::where('key', 'alcohol')->first();
+        $alcoholCat = Category::where('key', CategoryKey::Alcohol->value)->first();
 
         $photo = Photo::factory()->create();
         PhotoTag::create([
@@ -521,7 +522,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_dry_run_makes_no_database_changes(): void
     {
         $oldObject = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
-        $alcoholCat = Category::where('key', 'alcohol')->first();
+        $alcoholCat = Category::where('key', CategoryKey::Alcohol->value)->first();
 
         $photo = Photo::factory()->create();
         $tag = PhotoTag::create([
@@ -548,7 +549,7 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_dry_run_does_not_remap_taggables(): void
     {
-        $softdrinksCat = Category::firstOrCreate(['key' => 'softdrinks']);
+        $softdrinksCat = Category::firstOrCreate(['key' => CategoryKey::Softdrinks->value]);
         $cup = LitterObject::firstOrCreate(['key' => 'cup']);
 
         $oldCLO = CategoryObject::firstOrCreate([
@@ -572,7 +573,7 @@ class ConsolidateObjectsTest extends TestCase
 
     public function test_dry_run_does_not_fix_null_null_tags(): void
     {
-        $unclassifiedCat = Category::firstOrCreate(['key' => 'unclassified']);
+        $unclassifiedCat = Category::firstOrCreate(['key' => CategoryKey::Unclassified->value]);
         $otherObj = LitterObject::firstOrCreate(['key' => 'other']);
         $cloId = $this->getCloId($unclassifiedCat->id, $otherObj->id);
 
@@ -599,7 +600,7 @@ class ConsolidateObjectsTest extends TestCase
     public function test_quantity_is_preserved_during_mapping(): void
     {
         $oldObject = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
-        $alcoholCat = Category::where('key', 'alcohol')->first();
+        $alcoholCat = Category::where('key', CategoryKey::Alcohol->value)->first();
 
         $photo = Photo::factory()->create();
         PhotoTag::create([
@@ -625,8 +626,8 @@ class ConsolidateObjectsTest extends TestCase
 
         $beerBottle = LitterObject::firstOrCreate(['key' => 'beer_bottle']);
         $waterBottle = LitterObject::firstOrCreate(['key' => 'water_bottle']);
-        $alcoholCat = Category::where('key', 'alcohol')->first();
-        $softdrinksCat = Category::firstOrCreate(['key' => 'softdrinks']);
+        $alcoholCat = Category::where('key', CategoryKey::Alcohol->value)->first();
+        $softdrinksCat = Category::firstOrCreate(['key' => CategoryKey::Softdrinks->value]);
 
         PhotoTag::create([
             'photo_id' => $photo->id,
@@ -670,7 +671,7 @@ class ConsolidateObjectsTest extends TestCase
             return $type && $type->key === 'water';
         });
         $this->assertNotNull($waterTag);
-        $this->assertEquals('beverages', Category::find($waterTag->category_id)->key);
+        $this->assertEquals('softdrinks', Category::find($waterTag->category_id)->key);
         $this->assertEquals(3, $waterTag->quantity);
     }
 }

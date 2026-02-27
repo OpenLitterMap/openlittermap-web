@@ -1,8 +1,8 @@
 <template>
     <div class="flex items-center justify-center px-4 bg-blue-600" style="min-height: calc(100vh - 80px)">
         <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
-            <h1 class="text-2xl font-bold text-center mb-2">Reset your password</h1>
-            <p class="text-gray-600 text-center mb-6">Enter your username or email and we'll send you a reset link.</p>
+            <h1 class="text-2xl font-bold text-center mb-2">{{ $t('Reset your password') }}</h1>
+            <p class="text-gray-600 text-center mb-6">{{ $t("Enter your username or email and we'll send you a reset link.") }}</p>
 
             <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 rounded p-3 mb-4">
                 {{ successMessage }}
@@ -14,7 +14,7 @@
 
             <form @submit.prevent="submit">
                 <div class="mb-4">
-                    <label for="login" class="block text-sm font-medium text-gray-700 mb-1">Username or email</label>
+                    <label for="login" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('Username or email') }}</label>
                     <input
                         id="login"
                         v-model="login"
@@ -31,12 +31,12 @@
                     :disabled="loading || disabled"
                     class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded disabled:opacity-50"
                 >
-                    {{ loading ? 'Sending...' : 'Send Reset Link' }}
+                    {{ loading ? $t('Sending...') : $t('Send Reset Link') }}
                 </button>
             </form>
 
             <p class="text-center text-sm text-gray-500 mt-4">
-                <router-link to="/signup" class="text-green-600 hover:underline">Back to login</router-link>
+                <router-link to="/signup" class="text-green-600 hover:underline">{{ $t('Back to login') }}</router-link>
             </p>
         </div>
     </div>

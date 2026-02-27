@@ -21,7 +21,7 @@
                 <div class="w-full max-w-md">
                     <div class="rounded-xl bg-white p-4 shadow-xl md:p-6">
                         <h2 class="mb-4 text-xl font-bold text-gray-900">
-                            Sign up to tell your story about litter & plastic pollution.
+                            {{ $t('Sign up to tell your story about litter & plastic pollution.') }}
                         </h2>
 
                         <!-- General server error -->
@@ -33,7 +33,7 @@
                             <!-- Username -->
                             <div class="mb-3">
                                 <label for="username" class="mb-1 block text-sm font-medium text-gray-700">
-                                    Username
+                                    {{ $t('Username') }}
                                 </label>
                                 <div class="relative">
                                     <span
@@ -67,7 +67,7 @@
                             <!-- Email -->
                             <div class="mb-3">
                                 <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
-                                    E-Mail Address
+                                    {{ $t('E-Mail Address') }}
                                 </label>
                                 <div class="relative">
                                     <span
@@ -107,7 +107,7 @@
                             <!-- Password -->
                             <div class="mb-3">
                                 <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
-                                    Create a password
+                                    {{ $t('Create a password') }}
                                 </label>
                                 <div class="relative">
                                     <span
@@ -200,13 +200,13 @@
                                         class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600"
                                     />
                                     <span class="text-sm text-gray-600">
-                                        I agree to the
+                                        {{ $t('I agree to the') }}
                                         <router-link to="/terms" class="text-green-600 hover:underline"
-                                            >Terms</router-link
+                                            >{{ $t('Terms') }}</router-link
                                         >
-                                        and
+                                        {{ $t('and') }}
                                         <router-link to="/privacy" class="text-green-600 hover:underline"
-                                            >Privacy Policy</router-link
+                                            >{{ $t('Privacy Policy') }}</router-link
                                         >
                                     </span>
                                 </label>
@@ -226,7 +226,7 @@
                                 v-if="serverErrors['g-recaptcha-response']"
                                 class="mb-2 text-center text-xs text-red-600"
                             >
-                                Please complete the reCAPTCHA
+                                {{ $t('Please complete the reCAPTCHA') }}
                             </p>
 
                             <!-- Submit -->
@@ -235,7 +235,7 @@
                                 :disabled="!canSubmit"
                                 class="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                             >
-                                <span v-if="!isSubmitting">Create Account</span>
+                                <span v-if="!isSubmitting">{{ $t('Create Account') }}</span>
                                 <span v-else class="flex items-center justify-center gap-2">
                                     <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
                                         <circle
@@ -252,24 +252,24 @@
                                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                                         />
                                     </svg>
-                                    Creating...
+                                    {{ $t('Creating...') }}
                                 </span>
                             </button>
 
                             <p class="mt-2 text-center text-xs text-gray-500">
-                                Check spam folder if verification email doesn't arrive
+                                {{ $t("Check spam folder if verification email doesn't arrive") }}
                             </p>
 
                             <!-- Sign in link -->
                             <div class="mt-4 pt-4 border-t border-gray-200">
                                 <p class="text-center text-sm text-gray-600">
-                                    Have an account?
+                                    {{ $t('Have an account?') }}
                                     <button
                                         type="button"
                                         @click="navigateToLogin"
                                         class="text-gray-900 hover:underline"
                                     >
-                                        Sign in
+                                        {{ $t('Sign in') }}
                                     </button>
                                 </p>
                             </div>

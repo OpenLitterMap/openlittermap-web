@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Tags;
 
+use App\Enums\CategoryKey;
 use App\Enums\LitterModels;
+use App\Enums\XpScore;
+use App\Models\Photo;
 use App\Models\Users\User;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -52,7 +55,7 @@ class AddNewTagsToPhotosTest extends TestCase
 
         $photo = $user->photos->last();
 
-        $category = Category::where('key', 'smoking')->first();
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
         $object = LitterObject::where('key', 'butts')->first();
         $pickedUp = true;
         $quantity = 3;
@@ -209,5 +212,61 @@ class AddNewTagsToPhotosTest extends TestCase
         $response->assertStatus(405);
 //        $content = json_decode($response->getContent(), true);
 //        $this->assertEquals('Unauthenticated.', $content['msg']);
+    }
+
+    /**
+     * Test XP calculation uses proper multipliers:
+     * Upload=5, Object=1×qty, Brand=3×brandQty, Material=2×parentQty, CustomTag=1×parentQty
+     */
+    public function test_xp_calculation_uses_correct_multipliers(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        $this->seed(GenerateBrandsSeeder::class);
+
+        $user = User::factory()->create();
+        $this->actingAs($user, 'api');
+
+        $this->post('/api/photos/submit', $this->getApiImageAttributes($this->imageAndAttributes));
+        $photo = $user->fresh()->photos->last();
+
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
+        $object = LitterObject::where('key', 'butts')->first();
+        $brand = BrandList::where('key', 'marlboro')->first();
+        $materials = Materials::whereIn('key', ['plastic', 'paper'])->get();
+
+        $quantity = 3;
+
+        $response = $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                [
+                    'category' => ['id' => $category->id],
+                    'object' => ['id' => $object->id, 'key' => $object->key],
+                    'quantity' => $quantity,
+                    'picked_up' => false,
+                    'materials' => [
+                        ['id' => $materials[0]->id, 'key' => $materials[0]->key],
+                        ['id' => $materials[1]->id, 'key' => $materials[1]->key],
+                    ],
+                    'brands' => [
+                        ['id' => $brand->id, 'key' => $brand->key, 'quantity' => 2],
+                    ],
+                    'custom_tags' => ['test-tag'],
+                ],
+            ],
+        ]);
+
+        $response->assertOk();
+
+        $photo->refresh();
+
+        // Expected XP:
+        // Upload base:  5
+        // Object:       3 × 1  = 3  (qty=3, object XP=1)
+        // 2 Materials:  2 × (3 × 2) = 12  (each material: parentQty × 2)
+        // 1 Brand:      2 × 3  = 6  (brandQty=2, brand XP=3)
+        // 1 Custom tag: 3 × 1  = 3  (parentQty × 1)
+        // Total: 5 + 3 + 12 + 6 + 3 = 29
+        $this->assertEquals(29, $photo->xp, 'XP should use enum multipliers: Upload=5, Object=1, Brand=3, Material=2, Custom=1');
     }
 }

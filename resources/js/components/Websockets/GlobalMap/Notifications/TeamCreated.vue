@@ -10,9 +10,9 @@
 
         <!-- Content slot -->
         <template #content>
-            <p>{{ t('home.globalMap.team-created') }}</p>
+            <p>{{ t('A new Team has been created!') }}</p>
             <i>
-                {{ t('home.globalMap.say-hello-to') }}
+                {{ t('Say hello to') }}
                 <strong>{{ payload.teamName }}</strong>!
             </i>
         </template>

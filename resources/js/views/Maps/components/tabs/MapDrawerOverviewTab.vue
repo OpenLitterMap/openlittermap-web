@@ -125,9 +125,13 @@
                     v-for="cat in categories"
                     :key="cat.key"
                     class="p-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg transition-all cursor-pointer hover:bg-white/15 hover:translate-x-1"
-                    :class="{ 'bg-white/15 translate-x-1': highlightedCategory === cat.key }"
+                    :class="{
+                        'bg-white/15 translate-x-1': highlightedCategory === cat.key,
+                        '!bg-green-500/20 !border-green-500/40': isActiveFilter('category', cat.key),
+                    }"
                     @mouseenter="handleCategoryHover(cat.key)"
                     @mouseleave="handleCategoryHover(null)"
+                    @click="handleCategoryClick(cat)"
                 >
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-semibold text-sm">{{ cat.name }}</span>
@@ -164,9 +168,13 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    activeFilter: {
+        type: Object,
+        default: null,
+    },
 });
 
-const emit = defineEmits(['highlight-category']);
+const emit = defineEmits(['highlight-category', 'filter-apply']);
 
 const highlightedCategory = ref(null);
 
@@ -271,5 +279,13 @@ const categories = computed(() => {
 const handleCategoryHover = (category) => {
     highlightedCategory.value = category;
     emit('highlight-category', category);
+};
+
+const handleCategoryClick = (cat) => {
+    emit('filter-apply', { type: 'category', id: cat.key, label: cat.name });
+};
+
+const isActiveFilter = (type, id) => {
+    return props.activeFilter?.type === type && props.activeFilter?.id === id;
 };
 </script>

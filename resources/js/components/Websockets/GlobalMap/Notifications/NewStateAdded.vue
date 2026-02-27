@@ -6,8 +6,8 @@
             </div>
         </template>
         <template #content>
-            <strong>{{ t('home.globalMap.new-state') }}</strong>
-            <p>{{ t('home.globalMap.say-hello-to') }} <i>{{ payload.state }}</i></p>
+            <strong>{{ t('New State') }}</strong>
+            <p>{{ t('Say hello to') }} <i>{{ payload.state }}</i></p>
         </template>
     </GlobalMapNotification>
 </template>

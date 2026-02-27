@@ -58,15 +58,37 @@ class WebDeletePhotoTest extends TestCase
 
     public function test_delete_decrements_user_counters(): void
     {
-        $user = User::factory()->create(['xp' => 5, 'total_images' => 3]);
-        $photo = Photo::factory()->create(['user_id' => $user->id]);
+        $user = User::factory()->create(['xp' => 50, 'total_images' => 3]);
+        $photo = Photo::factory()->create([
+            'user_id' => $user->id,
+            'processed_at' => now(),
+            'processed_xp' => 20,
+            'processed_tags' => json_encode(['objects' => [1 => 3]]),
+        ]);
 
         $this->actingAs($user)
             ->post('/api/profile/photos/delete', ['photoid' => $photo->id])
             ->assertOk();
 
         $user->refresh();
-        $this->assertEquals(4, $user->xp);
+        $this->assertEquals(30, $user->xp);
+        $this->assertEquals(2, $user->total_images);
+    }
+
+    public function test_delete_unprocessed_photo_does_not_decrement_xp(): void
+    {
+        $user = User::factory()->create(['xp' => 5, 'total_images' => 3]);
+        $photo = Photo::factory()->create([
+            'user_id' => $user->id,
+            'processed_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->post('/api/profile/photos/delete', ['photoid' => $photo->id])
+            ->assertOk();
+
+        $user->refresh();
+        $this->assertEquals(5, $user->xp);
         $this->assertEquals(2, $user->total_images);
     }
 

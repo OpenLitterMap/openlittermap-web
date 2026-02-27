@@ -29,10 +29,6 @@ class MakeImageAction
 
         if ($resize) {
             $imageAndExifData['image']->resize(500, 500);
-
-            $imageAndExifData['image']->resize(500, 500, function ($constraint) {
-                $constraint->aspectRatio();
-            });
         }
 
         return $imageAndExifData;

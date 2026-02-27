@@ -95,21 +95,33 @@
             </div>
 
             <!-- Footer -->
-            <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
-                <button
-                    class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100"
-                    @click="$emit('close')"
-                >
-                    {{ canEdit ? 'Cancel' : 'Close' }}
-                </button>
+            <div class="flex justify-between px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
                 <button
                     v-if="canEdit"
-                    :disabled="saving"
-                    class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                    @click="save"
+                    :disabled="deleting"
+                    class="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                    @click="deletePhoto"
                 >
-                    {{ saving ? 'Saving...' : 'Save Changes' }}
+                    {{ deleting ? 'Deleting...' : 'Delete Photo' }}
                 </button>
+                <div v-else></div>
+
+                <div class="flex gap-3">
+                    <button
+                        class="px-4 py-2 text-sm rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100"
+                        @click="$emit('close')"
+                    >
+                        {{ canEdit ? 'Cancel' : 'Close' }}
+                    </button>
+                    <button
+                        v-if="canEdit"
+                        :disabled="saving"
+                        class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        @click="save"
+                    >
+                        {{ saving ? 'Saving...' : 'Save Changes' }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -123,14 +135,16 @@ export default {
     name: 'TeamPhotoEdit',
     props: {
         photo: { type: Object, required: true },
+        teamId: { type: Number, required: true },
         isLeader: { type: Boolean, default: false },
         isSchoolTeam: { type: Boolean, default: false },
     },
-    emits: ['close', 'saved'],
+    emits: ['close', 'saved', 'deleted'],
     setup(props, { emit }) {
         const store = useTeamPhotosStore();
         const editTags = ref([]);
         const saving = ref(false);
+        const deleting = ref(false);
         const error = ref('');
 
         const canEdit = computed(() => props.isLeader && props.isSchoolTeam);
@@ -139,8 +153,8 @@ export default {
             // Deep clone tags for editing
             editTags.value = (props.photo.photo_tags || []).map((t) => ({
                 id: t.id,
-                category: t.category,
-                object: t.object,
+                category: t.category?.key || '',
+                object: t.object?.key || '',
                 quantity: t.quantity,
                 picked_up: !!t.picked_up,
             }));
@@ -183,6 +197,20 @@ export default {
             }
         };
 
+        const deletePhoto = async () => {
+            if (!confirm('Delete this photo? This cannot be undone.')) return;
+
+            deleting.value = true;
+            const success = await store.deletePhoto(props.teamId, props.photo.id);
+            deleting.value = false;
+
+            if (success) {
+                emit('deleted');
+            } else {
+                error.value = 'Failed to delete photo.';
+            }
+        };
+
         const formatDate = (date) => {
             return new Intl.DateTimeFormat('en-IE', {
                 year: 'numeric', month: 'short', day: 'numeric',
@@ -191,8 +219,8 @@ export default {
         };
 
         return {
-            editTags, saving, error, canEdit,
-            addTag, removeTag, save, formatDate,
+            editTags, saving, deleting, error, canEdit,
+            addTag, removeTag, save, deletePhoto, formatDate,
         };
     },
 };

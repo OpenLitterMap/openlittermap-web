@@ -259,6 +259,7 @@ export const mapEventHelper = {
                     fromDate: filters.fromDate,
                     toDate: filters.toDate,
                     username: filters.username,
+                    tagFilter: filters.tagFilter,
                     t,
                     page: pageToLoad,
                     abortSignal: controller.signal,

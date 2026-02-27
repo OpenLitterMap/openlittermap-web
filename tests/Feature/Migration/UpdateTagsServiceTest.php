@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Migration;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Categories\Food;
 use App\Models\Litter\Categories\SoftDrinks;
 use App\Models\Litter\Tags\BrandList;
@@ -486,7 +487,7 @@ class UpdateTagsServiceTest extends TestCase
     public function it_creates_one_plastic_tag_for_each_water_bottle_quantity(): void
     {
         // Ensure old category exists for v4 migration
-        Category::firstOrCreate(['key' => 'softdrinks']);
+        Category::firstOrCreate(['key' => CategoryKey::Softdrinks->value]);
 
         $softdrinks = Softdrinks::create([
             'waterBottle' => 2,   // two plastic items

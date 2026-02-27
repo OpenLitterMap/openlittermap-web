@@ -17,7 +17,7 @@ class ListTeamLeaderboardsAction
     public function run()
     {
         return Team::query()
-            ->select('name', 'total_litter', 'total_images', 'created_at')
+            ->select('id', 'name', 'total_litter', 'total_images', 'created_at')
             ->where('leaderboards', true)
             ->orderBy('total_litter', 'desc')
             ->get();

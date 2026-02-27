@@ -2,6 +2,8 @@
 
 namespace App\Tags;
 
+use App\Enums\CategoryKey;
+
 class TagsConfig
 {
     /**
@@ -13,7 +15,7 @@ class TagsConfig
     public static function get(): array
     {
         return [
-            'smoking' => [
+            CategoryKey::Smoking->value => [
                 'butts' => [
                     'materials' => ['plastic', 'paper'],
                 ],
@@ -50,7 +52,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'alcohol' => [
+            CategoryKey::Alcohol->value => [
                 'bottle' => [
                     'materials' => ['glass', 'plastic'],
                     'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown'],
@@ -92,7 +94,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'beverages' => [
+            CategoryKey::Softdrinks->value => [
                 'bottle' => [
                     'materials' => ['plastic', 'glass'],
                     'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown'],
@@ -136,7 +138,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'food' => [
+            CategoryKey::Food->value => [
                 'bag' => [
                     'materials' => ['plastic', 'paper', 'cloth', 'bioplastic'],
                 ],
@@ -185,7 +187,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'personal_care' => [
+            CategoryKey::PersonalCare->value => [
                 'wipes' => [
                     'materials' => ['polyester', 'plastic'],
                 ],
@@ -225,7 +227,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'medical' => [
+            CategoryKey::Medical->value => [
                 'syringe' => [
                     'materials' => ['plastic', 'metal'],
                 ],
@@ -253,7 +255,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'industrial' => [
+            CategoryKey::Industrial->value => [
                 'oil_container' => [
                     'materials' => ['plastic', 'metal'],
                 ],
@@ -290,7 +292,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'vehicles' => [
+            CategoryKey::Vehicles->value => [
                 'car_part' => [
                     'materials' => ['metal', 'plastic', 'rubber', 'glass'],
                 ],
@@ -318,7 +320,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'marine' => [
+            CategoryKey::Marine->value => [
                 'fishing_net' => [
                     'materials' => ['nylon', 'plastic'],
                 ],
@@ -346,7 +348,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'electronics' => [
+            CategoryKey::Electronics->value => [
                 'battery' => [
                     'materials' => ['metal', 'plastic'],
                 ],
@@ -365,7 +367,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'pets' => [
+            CategoryKey::Pets->value => [
                 'dog_waste' => [],
                 'dog_waste_in_bag' => [
                     'materials' => ['plastic'],
@@ -373,7 +375,7 @@ class TagsConfig
                 'other' => [],
             ],
 
-            'unclassified' => [
+            CategoryKey::Unclassified->value => [
                 'other' => [],
             ],
         ];

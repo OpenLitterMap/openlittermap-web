@@ -7,7 +7,9 @@ use App\Events\ImageUploaded;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Photo;
 use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -58,6 +60,10 @@ class UploadPhotoTest extends TestCase
         );
 
         $response->assertOk()->assertJson(['success' => true]);
+
+        // Response includes the photo ID
+        $response->assertJsonStructure(['success', 'photo_id']);
+        $this->assertIsInt($response->json('photo_id'));
 
         // Image is uploaded
         Storage::disk('s3')->assertExists($imageAttributes['filepath']);
@@ -269,4 +275,109 @@ class UploadPhotoTest extends TestCase
         $this->post('/api/photos/submit', $this->getApiImageAttributes($imageAttributes))->assertOk();
     }
 
+    public function test_web_upload_returns_photo_id()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['items_remaining' => 0]);
+
+        // Web route uses auth:api,web — web guard works
+        $response = $this->actingAs($user)->postJson('/api/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure(['success', 'photo_id']);
+
+        $photoId = $response->json('photo_id');
+        $this->assertDatabaseHas('photos', [
+            'id' => $photoId,
+            'user_id' => $user->id,
+            'platform' => 'web',
+        ]);
+    }
+
+    public function test_upload_attaches_photo_to_active_team()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $teamType = TeamType::create(['team' => 'community', 'price' => 0]);
+        $team = Team::factory()->create(['type_id' => $teamType->id]);
+
+        $user = User::factory()->create([
+            'active_team' => $team->id,
+            'items_remaining' => 0,
+        ]);
+        $team->users()->attach($user->id);
+
+        $response = $this->actingAs($user)->postJson('/api/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertEquals($team->id, $photo->team_id);
+    }
+
+    public function test_upload_without_active_team_has_null_team_id()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['active_team' => null, 'items_remaining' => 0]);
+
+        $response = $this->actingAs($user)->postJson('/api/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertNull($photo->team_id);
+    }
+
+    public function test_web_upload_rejects_duplicate_photo()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['items_remaining' => 0]);
+        $file = new UploadedFile(
+            storage_path('framework/testing/img_with_exif.JPG'),
+            'photo.jpg',
+            'image/jpeg',
+            null,
+            true
+        );
+
+        // First upload succeeds
+        $response = $this->actingAs($user)->postJson('/api/upload', ['photo' => $file]);
+        $response->assertOk();
+
+        // Second upload of same photo (same EXIF datetime) is rejected
+        $response = $this->actingAs($user)->postJson('/api/upload', ['photo' => $file]);
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('photo');
+    }
 }

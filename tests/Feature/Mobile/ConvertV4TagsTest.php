@@ -3,6 +3,7 @@
 namespace Tests\Feature\Mobile;
 
 use App\Actions\Tags\ConvertV4TagsAction;
+use App\Enums\CategoryKey;
 use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Tags\Category;
@@ -39,7 +40,7 @@ class ConvertV4TagsTest extends TestCase
 
         $photo->refresh();
 
-        $smokingCategory = Category::where('key', 'smoking')->first();
+        $smokingCategory = Category::where('key', CategoryKey::Smoking->value)->first();
         $buttsObject = LitterObject::where('key', 'butts')->first();
 
         $photoTags = PhotoTag::where('photo_id', $photo->id)->get();

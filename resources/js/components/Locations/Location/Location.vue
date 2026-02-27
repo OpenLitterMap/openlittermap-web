@@ -92,11 +92,11 @@ const index = props.index;
 const selectedTab = ref('LeaderboardList');
 
 const tabs = ref([
-    { title: t('location.litter'), component: 'ChartsContainer', in_location: 'all' },
-    { title: t('location.time-series'), component: 'TimeSeriesContainer', in_location: 'all' },
-    { title: t('location.leaderboard'), component: 'LeaderboardList', in_location: 'all' },
-    { title: t('location.options'), component: 'Options', in_location: 'city' },
-    { title: t('common.download'), component: 'Download', in_location: 'all' },
+    { title: t('Litter'), component: 'ChartsContainer', in_location: 'all' },
+    { title: t('Time-series'), component: 'TimeSeriesContainer', in_location: 'all' },
+    { title: t('Leaderboard'), component: 'LeaderboardList', in_location: 'all' },
+    { title: t('Options'), component: 'Options', in_location: 'city' },
+    { title: t('Download'), component: 'Download', in_location: 'all' },
 ]);
 
 // Expose the current sort option (for passing to child components)

@@ -18,7 +18,7 @@
 
         <!-- Loading -->
         <div v-if="adminStore.loading" class="flex-1 flex items-center justify-center">
-            <div class="text-gray-400">Loading photos...</div>
+            <div class="text-gray-400">{{ $t('Loading photos...') }}</div>
         </div>
 
         <!-- Empty state -->
@@ -34,8 +34,8 @@
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
             </svg>
-            <h2 class="text-white text-xl font-semibold mb-2">Queue is clear!</h2>
-            <p class="text-gray-400">No pending photos match the current filters.</p>
+            <h2 class="text-white text-xl font-semibold mb-2">{{ $t('Queue is clear!') }}</h2>
+            <p class="text-gray-400">{{ $t('No pending photos match the current filters.') }}</p>
         </div>
 
         <!-- Main content -->
@@ -85,6 +85,7 @@
                             :materials="materialsList"
                             @update-quantity="updateTagQuantity"
                             @set-picked-up="setPickedUp"
+                            @set-type="setTagType"
                             @add-detail="addTagDetail"
                             @remove-tag="removeTag"
                             @remove-detail="removeTagDetail"
@@ -104,7 +105,7 @@
                 :disabled="adminStore.photos.current_page <= 1"
                 class="px-3 py-1 text-sm bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-                Prev Page
+                {{ $t('Prev Page') }}
             </button>
             <span class="text-gray-400 text-sm">
                 Page {{ adminStore.photos.current_page }} / {{ adminStore.photos.last_page }}
@@ -114,7 +115,7 @@
                 :disabled="adminStore.photos.current_page >= adminStore.photos.last_page"
                 class="px-3 py-1 text-sm bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-                Next Page
+                {{ $t('Next Page') }}
             </button>
         </div>
     </div>
@@ -167,14 +168,84 @@ const hasEdits = computed(() => {
 
 const searchableTags = computed(() => {
     const tags = [];
+
+    // Objects: one entry per (object, category) pair for CLO disambiguation
     tagsStore.objects.forEach((obj) => {
-        tags.push({ id: `obj-${obj.id}`, key: obj.key, text: obj.key, type: 'object', raw: obj });
+        if (obj.categories?.length) {
+            obj.categories.forEach((cat) => {
+                const cloId = tagsStore.getCloId(cat.id, obj.id);
+                tags.push({
+                    id: `obj-${obj.id}-cat-${cat.id}`,
+                    key: obj.key,
+                    lowerKey: obj.key.toLowerCase(),
+                    text: obj.key,
+                    type: 'object',
+                    categoryId: cat.id,
+                    categoryKey: cat.key,
+                    cloId: cloId,
+                    raw: obj,
+                });
+            });
+        } else {
+            tags.push({
+                id: `obj-${obj.id}`,
+                key: obj.key,
+                lowerKey: obj.key.toLowerCase(),
+                text: obj.key,
+                type: 'object',
+                categoryId: null,
+                categoryKey: null,
+                cloId: null,
+                raw: obj,
+            });
+        }
     });
+
+    // Types
+    tagsStore.categoryObjectTypes.forEach((cot) => {
+        const typeObj = tagsStore.types.find((t) => t.id === cot.litter_object_type_id);
+        if (!typeObj) return;
+
+        const clo = tagsStore.categoryObjects.find((co) => co.id === cot.category_litter_object_id);
+        if (!clo) return;
+
+        const obj = tagsStore.objects.find((o) => o.id === clo.litter_object_id);
+        const cat = tagsStore.categories.find((c) => c.id === clo.category_id);
+        if (!obj || !cat) return;
+
+        tags.push({
+            id: `type-${cot.category_litter_object_id}-${cot.litter_object_type_id}`,
+            key: typeObj.key,
+            lowerKey: typeObj.key.toLowerCase(),
+            text: typeObj.key,
+            type: 'type',
+            cloId: clo.id,
+            typeId: typeObj.id,
+            objectKey: obj.key,
+            categoryKey: cat.key,
+            raw: { type: typeObj, object: obj, category: cat, clo: clo },
+        });
+    });
+
     tagsStore.brands.forEach((brand) => {
-        tags.push({ id: `brand-${brand.id}`, key: brand.key, text: brand.key, type: 'brand', raw: brand });
+        tags.push({
+            id: `brand-${brand.id}`,
+            key: brand.key,
+            lowerKey: brand.key.toLowerCase(),
+            text: brand.key,
+            type: 'brand',
+            raw: brand,
+        });
     });
     tagsStore.materials.forEach((material) => {
-        tags.push({ id: `mat-${material.id}`, key: material.key, text: material.key, type: 'material', raw: material });
+        tags.push({
+            id: `mat-${material.id}`,
+            key: material.key,
+            lowerKey: material.key.toLowerCase(),
+            text: material.key,
+            type: 'material',
+            raw: material,
+        });
     });
     return tags;
 });
@@ -198,6 +269,10 @@ const hydrateTagsForPhoto = (photo) => {
             id: `existing-${apiTag.id}`,
             quantity: apiTag.quantity || 1,
             pickedUp: apiTag.picked_up === true ? true : apiTag.picked_up === false ? false : null,
+            cloId: apiTag.category_litter_object_id || null,
+            categoryId: apiTag.category?.id || null,
+            categoryKey: apiTag.category?.key || null,
+            typeId: apiTag.litter_object_type_id || null,
             brands: [],
             materials: [],
             customTags: [],
@@ -206,6 +281,11 @@ const hydrateTagsForPhoto = (photo) => {
         // Primary tag type
         if (apiTag.object) {
             tag.object = { id: apiTag.object.id, key: apiTag.object.key };
+
+            // Resolve cloId from tagsStore if not in API response
+            if (!tag.cloId && tag.categoryId) {
+                tag.cloId = tagsStore.getCloId(tag.categoryId, apiTag.object.id);
+            }
         } else if (apiTag.primary_custom_tag) {
             tag.custom = true;
             tag.key = apiTag.primary_custom_tag.key;
@@ -356,6 +436,25 @@ const handleTagSelection = (selected) => {
         tagsByPhoto.value[photoId].push({
             id: tagId,
             object: selected.raw,
+            cloId: selected.cloId || null,
+            categoryId: selected.categoryId || null,
+            categoryKey: selected.categoryKey || null,
+            typeId: null,
+            quantity: 1,
+            pickedUp: true,
+            brands: [],
+            materials: [],
+            customTags: [],
+        });
+    } else if (selected.type === 'type') {
+        const parentObject = selected.raw?.object;
+        tagsByPhoto.value[photoId].push({
+            id: tagId,
+            object: parentObject,
+            cloId: selected.cloId,
+            categoryId: selected.raw?.category?.id || null,
+            categoryKey: selected.raw?.category?.key || null,
+            typeId: selected.typeId,
             quantity: 1,
             pickedUp: true,
             brands: [],
@@ -403,6 +502,11 @@ const updateTagQuantity = (tagId, quantity) => {
 const setPickedUp = (tagId, value) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
     if (tag) tag.pickedUp = value;
+};
+
+const setTagType = (tagId, typeId) => {
+    const tag = activeTags.value.find((t) => t.id === tagId);
+    if (tag) tag.typeId = typeId;
 };
 
 const addTagDetail = (tagId, detail) => {
@@ -467,6 +571,20 @@ const resetFilters = async () => {
 
 const buildTagsPayload = () => {
     return activeTags.value.map((tag) => {
+        // Use CLO-based payload when we have a CLO id (matches AddTags.vue)
+        if (tag.cloId) {
+            return {
+                category_litter_object_id: tag.cloId,
+                litter_object_type_id: tag.typeId || null,
+                quantity: tag.quantity,
+                picked_up: tag.pickedUp,
+                materials: tag.materials?.map((m) => m.id) || [],
+                brands: tag.brands?.map((b) => ({ id: b.id, quantity: b.quantity || 1 })) || [],
+                custom_tags: tag.customTags || [],
+            };
+        }
+
+        // Legacy format fallback for brand-only, material-only, custom-only
         if (tag.custom) {
             return {
                 custom: true,

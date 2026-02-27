@@ -297,6 +297,7 @@ export const paginationHelper = {
                 fromDate: filters.fromDate,
                 toDate: filters.toDate,
                 username: filters.username,
+                tagFilter: filters.tagFilter,
                 page: page,
                 abortSignal: controller.signal,
             });
@@ -358,6 +359,7 @@ export const paginationHelper = {
                 fromDate: filters.fromDate,
                 toDate: filters.toDate,
                 username: filters.username,
+                tagFilter: filters.tagFilter,
                 abortSignal: statsController.signal,
             });
 
@@ -435,6 +437,7 @@ export const paginationHelper = {
                 fromDate: filters.fromDate,
                 toDate: filters.toDate,
                 username: filters.username,
+                tagFilter: filters.tagFilter,
                 page: page,
             });
         } catch (error) {

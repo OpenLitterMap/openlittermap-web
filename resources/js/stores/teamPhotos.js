@@ -149,6 +149,55 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
             }
         },
 
+        /**
+         * Delete a team photo (teacher only).
+         */
+        async deletePhoto(teamId, photoId) {
+            try {
+                const { data } = await axios.delete(`/api/teams/photos/${photoId}`, {
+                    params: { team_id: teamId },
+                });
+
+                if (data.success) {
+                    this.stats = data.stats;
+                    await this.fetchPhotos(teamId, this.photos.current_page);
+                    return true;
+                }
+
+                return false;
+            } catch (e) {
+                console.error('deletePhoto', e);
+                return false;
+            }
+        },
+
+        /**
+         * Revoke approval on photos (teacher only).
+         */
+        async revokePhotos(teamId, photoIds = null) {
+            try {
+                const payload = { team_id: teamId };
+
+                if (photoIds) {
+                    payload.photo_ids = photoIds;
+                } else {
+                    payload.revoke_all = true;
+                }
+
+                const { data } = await axios.post('/api/teams/photos/revoke', payload);
+
+                if (data.success) {
+                    await this.fetchPhotos(teamId, this.photos.current_page);
+                    return data.revoked_count;
+                }
+
+                return 0;
+            } catch (e) {
+                console.error('revokePhotos', e);
+                return 0;
+            }
+        },
+
         setFilter(filter) {
             this.filter = filter;
         },

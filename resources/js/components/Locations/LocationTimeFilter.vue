@@ -25,7 +25,7 @@
                 class="bg-white/5 border border-white/10 rounded-md pl-2.5 pr-7 py-1 text-xs text-white/70 focus:outline-none focus:border-emerald-500/50 appearance-none cursor-pointer"
                 @change="onYearChange($event.target.value)"
             >
-                <option value="">Year</option>
+                <option value="">{{ $t('Year') }}</option>
                 <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
             </select>
             <svg
@@ -87,6 +87,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLocationsStore } from '@/stores/locations';
 
 const props = defineProps({
@@ -96,26 +97,27 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['change', 'update:modelValue']);
+const { t } = useI18n();
 const store = useLocationsStore();
 
 const periodPresets = [
-    { value: 'all', label: 'All Time' },
-    { value: 'today', label: 'Today' },
-    { value: 'yesterday', label: 'Yesterday' },
-    { value: 'this_month', label: 'This Month' },
-    { value: 'last_month', label: 'Last Month' },
-    { value: 'this_year', label: 'This Year' },
+    { value: 'all', label: t('All Time') },
+    { value: 'today', label: t('Today') },
+    { value: 'yesterday', label: t('Yesterday') },
+    { value: 'this_month', label: t('This Month') },
+    { value: 'last_month', label: t('Last Month') },
+    { value: 'this_year', label: t('This Year') },
 ];
 
 const sortOptions = [
-    { value: 'tags:desc', label: 'Most Tags' },
-    { value: 'avg_tags_per_person:desc', label: 'Most Tags / Person' },
-    { value: 'photos:desc', label: 'Most Photos' },
-    { value: 'contributors:desc', label: 'Most Contributors' },
-    { value: 'name:asc', label: 'A–Z' },
-    { value: 'created_at:asc', label: 'First Created' },
-    { value: 'created_at:desc', label: 'Recently Created' },
-    { value: 'last_updated_at:desc', label: 'Recently Updated' },
+    { value: 'tags:desc', label: t('Most Tags') },
+    { value: 'avg_tags_per_person:desc', label: t('Most Tags / Person') },
+    { value: 'photos:desc', label: t('Most Photos') },
+    { value: 'contributors:desc', label: t('Most Contributors') },
+    { value: 'name:asc', label: t('A–Z') },
+    { value: 'created_at:asc', label: t('First Created') },
+    { value: 'created_at:desc', label: t('Recently Created') },
+    { value: 'last_updated_at:desc', label: t('Recently Updated') },
 ];
 
 const currentYear = new Date().getFullYear();

@@ -12,8 +12,10 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
+use App\Services\Metrics\MetricsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -308,8 +310,10 @@ class TeamPhotosTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true);
 
-        $this->assertEquals(7, $photo->fresh()->total_tags);
-        $this->assertCount(2, $photo->fresh()->photoTags);
+        $fresh = $photo->fresh();
+        $this->assertEquals(7, $fresh->total_tags);
+        $this->assertEquals(7, $fresh->xp);
+        $this->assertCount(2, $fresh->photoTags);
     }
 
     public function test_student_cannot_edit_tags_on_team_photo()
@@ -515,5 +519,259 @@ class TeamPhotosTest extends TestCase
         $photos = $response->json('photos.data');
         // Teacher is leader, so should see real names
         $this->assertEquals($this->student->name, $photos[0]['user']['name']);
+    }
+
+    // ─── Delete ──────────────────────────────────────
+
+    public function test_teacher_can_delete_team_photo()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+
+        // Set student counters
+        $this->student->update(['xp' => 10, 'total_images' => 5]);
+
+        $response = $this->actingAs($this->teacher, 'api')
+            ->deleteJson("/api/teams/photos/{$photo->id}", [
+                'team_id' => $this->schoolTeam->id,
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        // Soft-deleted
+        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+
+        // Student counters decremented (not teacher's)
+        $this->student->refresh();
+        $this->assertEquals(10, $this->student->xp); // no processed_xp → no XP change
+        $this->assertEquals(4, $this->student->total_images);
+    }
+
+    public function test_teacher_can_delete_processed_photo_with_metrics_reversal()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => true,
+            'verified' => VerificationStatus::ADMIN_APPROVED->value,
+            'processed_at' => now(),
+            'processed_fp' => 'abc123',
+            'processed_tags' => json_encode(['objects' => [1 => 3], 'materials' => [], 'brands' => [], 'custom_tags' => []]),
+            'processed_xp' => 5,
+        ]);
+
+        $this->student->update(['xp' => 20, 'total_images' => 3]);
+
+        $response = $this->actingAs($this->teacher, 'api')
+            ->deleteJson("/api/teams/photos/{$photo->id}", [
+                'team_id' => $this->schoolTeam->id,
+            ]);
+
+        $response->assertOk();
+
+        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+
+        // XP reversed on student
+        $this->student->refresh();
+        $this->assertEquals(15, $this->student->xp); // 20 - 5
+        $this->assertEquals(2, $this->student->total_images);
+    }
+
+    public function test_student_cannot_delete_team_photo()
+    {
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+
+        $response = $this->actingAs($this->student, 'api')
+            ->deleteJson("/api/teams/photos/{$photo->id}", [
+                'team_id' => $this->schoolTeam->id,
+            ]);
+
+        $response->assertStatus(403);
+
+        // Not deleted
+        $this->assertDatabaseHas('photos', ['id' => $photo->id, 'deleted_at' => null]);
+    }
+
+    // ─── Revoke ──────────────────────────────────────
+
+    public function test_revoke_approval_makes_photos_private()
+    {
+        Event::fake([TagsVerifiedByAdmin::class, SchoolDataApproved::class]);
+
+        // Create photo then approve it (bypasses observer setting is_public=false)
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'verified' => VerificationStatus::VERIFIED->value,
+        ]);
+
+        // Simulate teacher approval
+        $photo->update([
+            'is_public' => true,
+            'verified' => VerificationStatus::ADMIN_APPROVED->value,
+            'team_approved_at' => now(),
+            'team_approved_by' => $this->teacher->id,
+        ]);
+
+        $this->assertTrue((bool) $photo->fresh()->is_public);
+
+        // Revoke
+        $response = $this->actingAs($this->teacher, 'api')
+            ->postJson('/api/teams/photos/revoke', [
+                'team_id' => $this->schoolTeam->id,
+                'photo_ids' => [$photo->id],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('revoked_count', 1);
+
+        $photo->refresh();
+        $this->assertFalse((bool) $photo->is_public);
+        $this->assertNull($photo->team_approved_at);
+        $this->assertNull($photo->team_approved_by);
+        $this->assertEquals(VerificationStatus::VERIFIED->value, $photo->verified->value ?? $photo->verified);
+    }
+
+    public function test_revoke_reverses_metrics()
+    {
+        Event::fake([TagsVerifiedByAdmin::class, SchoolDataApproved::class]);
+
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'verified' => VerificationStatus::VERIFIED->value,
+        ]);
+
+        // Simulate approved + processed state
+        $photo->update([
+            'is_public' => true,
+            'verified' => VerificationStatus::ADMIN_APPROVED->value,
+            'team_approved_at' => now(),
+            'team_approved_by' => $this->teacher->id,
+            'processed_at' => now(),
+            'processed_fp' => 'def456',
+            'processed_tags' => json_encode(['objects' => [1 => 5], 'materials' => [], 'brands' => [], 'custom_tags' => []]),
+            'processed_xp' => 8,
+        ]);
+
+        $response = $this->actingAs($this->teacher, 'api')
+            ->postJson('/api/teams/photos/revoke', [
+                'team_id' => $this->schoolTeam->id,
+                'photo_ids' => [$photo->id],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('revoked_count', 1);
+
+        // MetricsService clears processed_* fields
+        $photo->refresh();
+        $this->assertNull($photo->processed_at);
+        $this->assertNull($photo->processed_xp);
+    }
+
+    public function test_revoke_is_idempotent()
+    {
+        Event::fake([TagsVerifiedByAdmin::class, SchoolDataApproved::class]);
+
+        // Photo already private (never approved or already revoked)
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+            'verified' => VerificationStatus::VERIFIED->value,
+            'team_approved_at' => null,
+        ]);
+
+        $response = $this->actingAs($this->teacher, 'api')
+            ->postJson('/api/teams/photos/revoke', [
+                'team_id' => $this->schoolTeam->id,
+                'photo_ids' => [$photo->id],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('revoked_count', 0);
+    }
+
+    public function test_student_cannot_revoke()
+    {
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'verified' => VerificationStatus::VERIFIED->value,
+        ]);
+
+        // Simulate approved state
+        $photo->update([
+            'is_public' => true,
+            'verified' => VerificationStatus::ADMIN_APPROVED->value,
+            'team_approved_at' => now(),
+            'team_approved_by' => $this->teacher->id,
+        ]);
+
+        $response = $this->actingAs($this->student, 'api')
+            ->postJson('/api/teams/photos/revoke', [
+                'team_id' => $this->schoolTeam->id,
+                'photo_ids' => [$photo->id],
+            ]);
+
+        $response->assertStatus(403);
+
+        // Still public
+        $this->assertTrue((bool) $photo->fresh()->is_public);
+    }
+
+    // ─── Safeguarding on Global Map ──────────────────
+
+    public function test_safeguarding_masks_student_on_global_map()
+    {
+        // Create and approve a school photo so it appears on global map
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'verified' => VerificationStatus::VERIFIED->value,
+            'lat' => 53.3498,
+            'lon' => -6.2603,
+        ]);
+
+        // Simulate approval (bypass observer)
+        $photo->update([
+            'is_public' => true,
+            'verified' => VerificationStatus::ADMIN_APPROVED->value,
+            'team_approved_at' => now(),
+            'team_approved_by' => $this->teacher->id,
+        ]);
+
+        // Global points API — zoom >= 15, tight bbox around the photo
+        $response = $this->getJson('/api/points?' . http_build_query([
+            'bbox' => ['left' => -6.27, 'right' => -6.25, 'bottom' => 53.34, 'top' => 53.36],
+            'zoom' => 16,
+        ]));
+
+        $response->assertOk();
+
+        $features = $response->json('features');
+        $this->assertNotEmpty($features);
+
+        $props = $features[0]['properties'];
+        $this->assertNull($props['name']);
+        $this->assertNull($props['username']);
+        $this->assertNull($props['social']);
+        // Team name IS shown
+        $this->assertEquals($this->schoolTeam->name, $props['team']);
     }
 }

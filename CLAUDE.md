@@ -108,7 +108,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, 4 bug fixes. 710 tests passing.
+Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator (delete/revoke/safeguarding), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, translations. 810 tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -132,6 +132,8 @@ Built by a single developer over 17 years.
 - Untagged photo filter uses `WHERE verified = 0`, NOT `doesntHave('photoTags')`
 - `clustering:update --all` flushes `clusters:v5:*` cache keys after regeneration
 - Map cluster layer MUST be added to Leaflet map unconditionally (not gated on initial feature count)
+- Teacher delete/revoke MUST call `MetricsService::deletePhoto()` before state change to reverse metrics
+- PointsController masks student identity on global map when `team.hasSafeguarding()` (name/username/social = null)
 - Points API returns `page` (not `current_page`) at root level — frontend normalizes to `current_page`
 - Nav.vue `isAdmin` check includes `'superadmin'` role (not just `'admin'` and `'helper'`)
 
@@ -144,7 +146,7 @@ Built by a single developer over 17 years.
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 710 tests passing (0 failures). All steps complete:
+Fully deployed. 810 tests passing (0 failures). All steps complete:
 - VerificationStatus enum + Photo model cast (step 10)
 - `is_public=true` filtering on all public-facing queries (step 9)
 - Frontend: Pinia stores, 12 Vue components, router updated (steps 11-12)

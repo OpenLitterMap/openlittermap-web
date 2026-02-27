@@ -22,35 +22,35 @@
                 class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm bg-white/5 border border-white/10 rounded-xl px-5 py-4"
             >
                 <div v-if="store.meta.pct_tags > 0">
-                    <span class="text-white/40">% of global tags</span>
+                    <span class="text-white/40">{{ $t('% of global tags') }}</span>
                     <span class="ml-2 text-white">{{ store.meta.pct_tags }}%</span>
                 </div>
                 <div v-if="store.meta.pct_photos > 0">
-                    <span class="text-white/40">% of global photos</span>
+                    <span class="text-white/40">{{ $t('% of global photos') }}</span>
                     <span class="ml-2 text-white">{{ store.meta.pct_photos }}%</span>
                 </div>
                 <div v-if="store.meta.avg_tags_per_person > 0">
-                    <span class="text-white/40">Avg tags / person</span>
+                    <span class="text-white/40">{{ $t('Avg tags / person') }}</span>
                     <span class="ml-2 text-white">{{ store.meta.avg_tags_per_person }}</span>
                 </div>
                 <div v-if="store.meta.avg_photos_per_person > 0">
-                    <span class="text-white/40">Avg photos / person</span>
+                    <span class="text-white/40">{{ $t('Avg photos / person') }}</span>
                     <span class="ml-2 text-white">{{ store.meta.avg_photos_per_person }}</span>
                 </div>
                 <div v-if="store.meta.created_by">
-                    <span class="text-white/40">Created by</span>
+                    <span class="text-white/40">{{ $t('Created by') }}</span>
                     <span class="ml-2 text-white">{{ store.meta.created_by.name }}</span>
                 </div>
                 <div v-if="store.meta.created_at">
-                    <span class="text-white/40">Created</span>
+                    <span class="text-white/40">{{ $t('Created') }}</span>
                     <span class="ml-2 text-white">{{ timeAgo(store.meta.created_at) }}</span>
                 </div>
                 <div v-if="store.meta.last_updated_by">
-                    <span class="text-white/40">Last updated by</span>
+                    <span class="text-white/40">{{ $t('Last updated by') }}</span>
                     <span class="ml-2 text-white">{{ store.meta.last_updated_by.name }}</span>
                 </div>
                 <div v-if="store.meta.last_updated_at">
-                    <span class="text-white/40">Last updated</span>
+                    <span class="text-white/40">{{ $t('Last updated') }}</span>
                     <span class="ml-2 text-white">{{ timeAgo(store.meta.last_updated_at) }}</span>
                 </div>
             </div>
@@ -84,7 +84,7 @@
 
             <!-- City detail (leaf node) -->
             <div v-if="!store.loading && !store.hasChildren && store.location" class="mt-8 text-center text-white/60">
-                <p>Photo map and tag breakdown coming soon.</p>
+                <p>{{ $t('Photo map and tag breakdown coming soon.') }}</p>
             </div>
 
             <!-- Error -->
@@ -94,7 +94,7 @@
                     @click="loadData"
                     class="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition"
                 >
-                    Retry
+                    {{ $t('Retry') }}
                 </button>
             </div>
         </div>

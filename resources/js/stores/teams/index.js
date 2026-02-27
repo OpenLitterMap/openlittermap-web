@@ -49,7 +49,7 @@ export const useTeamsStore = defineStore('teams', {
         async fetchTeamTypes() {
             try {
                 const { data } = await axios.get('/api/teams/types');
-                this.types = data;
+                this.types = data.types || data;
             } catch (e) {
                 console.error('fetchTeamTypes', e);
             }
@@ -101,18 +101,21 @@ export const useTeamsStore = defineStore('teams', {
 
         // ── Mutations ────────────────────────────────────
 
-        async createTeam({ name, identifier, teamType }) {
+        async createTeam(payload) {
             this.errors = {};
 
             try {
-                const { data } = await axios.post('/api/teams/create', {
-                    name,
-                    identifier,
-                    teamType,
-                });
+                const { data } = await axios.post('/api/teams/create', payload);
 
                 if (data.success) {
                     this.teams.push(data.team);
+
+                    // Decrement remaining teams on user store
+                    const userStore = useUserStore();
+                    if (userStore.user?.remaining_teams > 0) {
+                        userStore.user.remaining_teams--;
+                    }
+
                     return data.team;
                 }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
@@ -50,9 +51,9 @@ class TaggingArchitecturePhase1Test extends TestCase
         $this->assertDatabaseHas('categories', ['key' => 'unclassified']);
     }
 
-    public function test_beverages_category_is_seeded(): void
+    public function test_softdrinks_category_is_seeded(): void
     {
-        $this->assertDatabaseHas('categories', ['key' => 'beverages']);
+        $this->assertDatabaseHas('categories', ['key' => 'softdrinks']);
     }
 
     public function test_canonical_objects_are_seeded(): void
@@ -72,10 +73,10 @@ class TaggingArchitecturePhase1Test extends TestCase
             ['alcohol', 'pint_glass'],
             ['alcohol', 'wine_glass'],
             ['alcohol', 'shot_glass'],
-            ['beverages', 'bottle'],
-            ['beverages', 'can'],
-            ['beverages', 'carton'],
-            ['beverages', 'cup'],
+            ['softdrinks', 'bottle'],
+            ['softdrinks', 'can'],
+            ['softdrinks', 'carton'],
+            ['softdrinks', 'cup'],
         ];
 
         foreach ($expectedCombos as [$catKey, $objKey]) {
@@ -119,9 +120,9 @@ class TaggingArchitecturePhase1Test extends TestCase
         $this->assertEquals(['beer', 'cider', 'spirits', 'unknown', 'wine'], $typeKeys);
     }
 
-    public function test_beverages_can_has_correct_types(): void
+    public function test_softdrinks_can_has_correct_types(): void
     {
-        $clo = $this->getClo('beverages', 'can');
+        $clo = $this->getClo('softdrinks', 'can');
         $typeKeys = $clo->types->pluck('key')->sort()->values()->toArray();
 
         $this->assertEquals(['energy', 'iced_tea', 'juice', 'soda', 'sparkling_water', 'unknown'], $typeKeys);
@@ -139,7 +140,7 @@ class TaggingArchitecturePhase1Test extends TestCase
 
     public function test_photo_tag_category_object_relationship(): void
     {
-        $category = Category::where('key', 'alcohol')->first();
+        $category = Category::where('key', CategoryKey::Alcohol->value)->first();
         $object = LitterObject::where('key', 'bottle')->first();
         $clo = CategoryObject::where('category_id', $category->id)
             ->where('litter_object_id', $object->id)
@@ -161,7 +162,7 @@ class TaggingArchitecturePhase1Test extends TestCase
     public function test_photo_tag_type_relationship(): void
     {
         $type = LitterObjectType::where('key', 'beer')->first();
-        $category = Category::where('key', 'alcohol')->first();
+        $category = Category::where('key', CategoryKey::Alcohol->value)->first();
         $object = LitterObject::where('key', 'bottle')->first();
         $clo = CategoryObject::where('category_id', $category->id)
             ->where('litter_object_id', $object->id)
@@ -183,7 +184,7 @@ class TaggingArchitecturePhase1Test extends TestCase
 
     public function test_photo_tag_type_is_nullable(): void
     {
-        $category = Category::where('key', 'alcohol')->first();
+        $category = Category::where('key', CategoryKey::Alcohol->value)->first();
         $object = LitterObject::where('key', 'bottle')->first();
         $clo = CategoryObject::where('category_id', $category->id)
             ->where('litter_object_id', $object->id)
@@ -204,7 +205,7 @@ class TaggingArchitecturePhase1Test extends TestCase
 
     public function test_photo_tag_clo_id_is_required(): void
     {
-        $category = Category::where('key', 'alcohol')->first();
+        $category = Category::where('key', CategoryKey::Alcohol->value)->first();
         $object = LitterObject::where('key', 'bottle')->first();
 
         $photo = Photo::factory()->create();

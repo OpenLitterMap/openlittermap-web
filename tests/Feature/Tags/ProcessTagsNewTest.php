@@ -54,7 +54,7 @@ class ProcessTagsNewTest extends TestCase
         $response->assertStatus(200);
 
         $response->assertJsonFragment(['key' => 'alcohol']);
-        $response->assertJsonFragment(['key' => 'beverages']);
+        $response->assertJsonFragment(['key' => 'softdrinks']);
         $response->assertJsonMissing(['key' => 'paper']);
         $response->assertJsonMissing(['key' => 'nylon']);
         $response->assertJsonMissing(['key' => 'butts']);
@@ -99,7 +99,7 @@ class ProcessTagsNewTest extends TestCase
     {
         $this->seed(GenerateTagsSeeder::class);
 
-        $response = $this->get('/api/tags?category=beverages&object=bottle&search=pl');
+        $response = $this->get('/api/tags?category=softdrinks&object=bottle&search=pl');
 
         $response->assertStatus(200);
     }

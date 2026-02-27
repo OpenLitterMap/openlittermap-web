@@ -10,9 +10,12 @@
             :cluster-zoom-threshold="CLUSTER_ZOOM_THRESHOLD"
             :is-loading="isLoadingData"
             :is-open="isDrawerOpen"
+            :active-filter="activeFilter"
             @toggle="handleDrawerToggle"
             @highlight-category="handleCategoryHighlight"
             @highlight-object="handleObjectHighlight"
+            @filter-apply="handleFilterApply"
+            @filter-clear="handleFilterClear"
         />
 
         <!-- Search Custom Tags -->
@@ -80,6 +83,9 @@ const isLoadingData = ref(false);
 
 // Stats state
 const pointsStats = ref(null);
+
+// Filter state
+const activeFilter = ref(null);
 
 // Request management
 const updateTimeout = ref(null);
@@ -162,6 +168,12 @@ onMounted(async () => {
         } else if (openParam === 'false') {
             isDrawerOpen.value = false;
             userHasInteractedWithDrawer.value = true;
+        }
+
+        // Restore active filter from URL
+        const urlFilters = urlHelper.stateManager.getFiltersFromURL();
+        if (urlFilters.tagFilter) {
+            activeFilter.value = urlFilters.tagFilter;
         }
 
         // Fly to location if specified in URL
@@ -288,6 +300,53 @@ const handleObjectHighlight = (objectData) => {
     // Only highlight if we're in points view
     if (currentZoom.value >= CLUSTER_ZOOM_THRESHOLD && mapInstance.value) {
         highlightPointsByObject(objectData, mapInstance.value);
+    }
+};
+
+// Handle filter apply from drawer — toggle behavior
+const handleFilterApply = async (filter) => {
+    // Toggle off if same filter is already active
+    if (
+        activeFilter.value &&
+        activeFilter.value.type === filter.type &&
+        activeFilter.value.id === filter.id
+    ) {
+        return handleFilterClear();
+    }
+
+    activeFilter.value = filter;
+    urlHelper.stateManager.setTagFilter(filter.type, filter.id);
+
+    // Reset pagination and re-fetch
+    paginationHelper.resetPagination({ currentPage, totalPages, pointsStats });
+    isLoadingData.value = true;
+
+    try {
+        await performMapUpdate();
+        if (currentZoom.value >= CLUSTER_ZOOM_THRESHOLD) {
+            await loadPointsStats();
+        }
+    } finally {
+        isLoadingData.value = false;
+    }
+};
+
+// Handle filter clear
+const handleFilterClear = async () => {
+    activeFilter.value = null;
+    urlHelper.stateManager.clearTagFilter();
+
+    // Reset pagination and re-fetch
+    paginationHelper.resetPagination({ currentPage, totalPages, pointsStats });
+    isLoadingData.value = true;
+
+    try {
+        await performMapUpdate();
+        if (currentZoom.value >= CLUSTER_ZOOM_THRESHOLD) {
+            await loadPointsStats();
+        }
+    } finally {
+        isLoadingData.value = false;
     }
 };
 

@@ -31,8 +31,8 @@
 
             <!-- Login/Signup -->
             <div v-if="!auth" class="hidden md:flex space-x-4">
-                <button @click="login" class="nav-item">Login</button>
-                <router-link to="/signup" class="nav-item">Sign Up</router-link>
+                <button @click="login" class="nav-item">{{ t('Login') }}</button>
+                <router-link to="/signup" class="nav-item">{{ t('Sign Up') }}</router-link>
             </div>
 
             <!-- User Dropdown -->
@@ -44,7 +44,7 @@
                     @mouseleave="webDropdownOpen = false"
                 >
                     <!-- Dropdown Trigger -->
-                    <span class="text-white cursor-pointer hover:underline">Menu</span>
+                    <span class="text-white cursor-pointer hover:underline">{{ t('Menu') }}</span>
 
                     <!-- Dropdown Menu -->
                     <div
@@ -57,40 +57,40 @@
                             <router-link
                                 to="/admin/queue"
                                 class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                >Admin - Queue</router-link
+                                >{{ t('Admin - Queue') }}</router-link
                             >
                             <router-link
                                 to="/admin/redis"
                                 class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                >Admin - Redis</router-link
+                                >{{ t('Admin - Redis') }}</router-link
                             >
                         </template>
 
                         <router-link to="/tag" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >Add Tags</router-link
+                            >{{ t('Add Tags') }}</router-link
                         >
 
                         <router-link
                             to="/achievements"
                             class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >Achievements</router-link
+                            >{{ t('Achievements') }}</router-link
                         >
 
                         <router-link to="/uploads" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >My Uploads</router-link
+                            >{{ t('My Uploads') }}</router-link
                         >
 
                         <router-link to="/profile" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >Profile</router-link
+                            >{{ t('Profile') }}</router-link
                         >
 
                         <router-link to="/teams" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >Teams</router-link
+                            >{{ t('Teams') }}</router-link
                         >
                     </div>
                 </div>
 
-                <button @click="logout" class="nav-item">Logout</button>
+                <button @click="logout" class="nav-item">{{ t('Logout') }}</button>
             </div>
         </div>
     </nav>

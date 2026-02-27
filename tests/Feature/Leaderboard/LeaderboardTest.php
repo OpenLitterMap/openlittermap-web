@@ -10,15 +10,12 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Redis\RedisKeys;
 use App\Services\Redis\RedisMetricsCollector;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
 class LeaderboardTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -26,15 +23,45 @@ class LeaderboardTest extends TestCase
         Redis::flushdb();
     }
 
+    /**
+     * Insert a per-user metrics row for leaderboard testing.
+     */
+    private function seedMetric(
+        int $userId,
+        float $xp,
+        int $timescale = 0,
+        int $locationType = 0,
+        int $locationId = 0,
+        int $year = 0,
+        int $month = 0,
+        ?string $bucketDate = null
+    ): void {
+        DB::table('metrics')->insert([
+            'timescale' => $timescale,
+            'location_type' => $locationType,
+            'location_id' => $locationId,
+            'user_id' => $userId,
+            'year' => $year,
+            'month' => $month,
+            'week' => 0,
+            'bucket_date' => $bucketDate ?? '1970-01-01',
+            'uploads' => 0,
+            'tags' => 0,
+            'litter' => 0,
+            'brands' => 0,
+            'materials' => 0,
+            'custom_tags' => 0,
+            'xp' => $xp,
+        ]);
+    }
+
     public function test_global_all_time_leaderboard_returns_users_sorted_by_xp(): void
     {
         $users = User::factory(3)->create();
 
-        // Seed Redis ZSET with different XP values
-        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
-        Redis::zAdd($globalKey, 300, (string) $users[0]->id);
-        Redis::zAdd($globalKey, 100, (string) $users[1]->id);
-        Redis::zAdd($globalKey, 200, (string) $users[2]->id);
+        $this->seedMetric($users[0]->id, 300);
+        $this->seedMetric($users[1]->id, 100);
+        $this->seedMetric($users[2]->id, 200);
 
         $response = $this
             ->actingAs($users[0])
@@ -58,9 +85,8 @@ class LeaderboardTest extends TestCase
         $country = Country::factory()->create();
         $users = User::factory(2)->create();
 
-        $countryKey = RedisKeys::xpRanking(RedisKeys::country($country->id));
-        Redis::zAdd($countryKey, 50, (string) $users[0]->id);
-        Redis::zAdd($countryKey, 150, (string) $users[1]->id);
+        $this->seedMetric($users[0]->id, 50, 0, LocationType::Country->value, $country->id);
+        $this->seedMetric($users[1]->id, 150, 0, LocationType::Country->value, $country->id);
 
         $response = $this
             ->actingAs($users[0])
@@ -81,43 +107,8 @@ class LeaderboardTest extends TestCase
 
         $now = now()->utc();
 
-        // Insert per-user metrics rows for "this-month" (timescale=3)
-        DB::table('metrics')->insert([
-            [
-                'timescale' => 3,
-                'location_type' => LocationType::Global->value,
-                'location_id' => 0,
-                'user_id' => $user1->id,
-                'year' => $now->year,
-                'month' => $now->month,
-                'week' => 0,
-                'bucket_date' => $now->copy()->startOfMonth()->toDateString(),
-                'uploads' => 5,
-                'tags' => 10,
-                'litter' => 8,
-                'brands' => 1,
-                'materials' => 1,
-                'custom_tags' => 0,
-                'xp' => 250,
-            ],
-            [
-                'timescale' => 3,
-                'location_type' => LocationType::Global->value,
-                'location_id' => 0,
-                'user_id' => $user2->id,
-                'year' => $now->year,
-                'month' => $now->month,
-                'week' => 0,
-                'bucket_date' => $now->copy()->startOfMonth()->toDateString(),
-                'uploads' => 3,
-                'tags' => 6,
-                'litter' => 5,
-                'brands' => 0,
-                'materials' => 1,
-                'custom_tags' => 0,
-                'xp' => 400,
-            ],
-        ]);
+        $this->seedMetric($user1->id, 250, 3, LocationType::Global->value, 0, $now->year, $now->month, $now->copy()->startOfMonth()->toDateString());
+        $this->seedMetric($user2->id, 400, 3, LocationType::Global->value, 0, $now->year, $now->month, $now->copy()->startOfMonth()->toDateString());
 
         $response = $this
             ->actingAs($user1)
@@ -134,13 +125,11 @@ class LeaderboardTest extends TestCase
 
     public function test_leaderboard_pagination_works(): void
     {
-        // Create 3 users, set page size effectively to 2 by making 3 entries
         $users = User::factory(3)->create();
 
-        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
-        Redis::zAdd($globalKey, 300, (string) $users[0]->id);
-        Redis::zAdd($globalKey, 200, (string) $users[1]->id);
-        Redis::zAdd($globalKey, 100, (string) $users[2]->id);
+        $this->seedMetric($users[0]->id, 300);
+        $this->seedMetric($users[1]->id, 200);
+        $this->seedMetric($users[2]->id, 100);
 
         // Page 1 should return all 3 (PER_PAGE = 100)
         $response = $this
@@ -169,8 +158,7 @@ class LeaderboardTest extends TestCase
             'show_username' => false,
         ]);
 
-        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
-        Redis::zAdd($globalKey, 100, (string) $user->id);
+        $this->seedMetric($user->id, 100);
 
         $response = $this
             ->actingAs($user)
@@ -193,10 +181,9 @@ class LeaderboardTest extends TestCase
     {
         $users = User::factory(3)->create();
 
-        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
-        Redis::zAdd($globalKey, 300, (string) $users[0]->id);
-        Redis::zAdd($globalKey, 200, (string) $users[1]->id);
-        Redis::zAdd($globalKey, 100, (string) $users[2]->id);
+        $this->seedMetric($users[0]->id, 300);
+        $this->seedMetric($users[1]->id, 200);
+        $this->seedMetric($users[2]->id, 100);
 
         // Acting as user with 200 XP (rank 2)
         $response = $this
@@ -206,6 +193,20 @@ class LeaderboardTest extends TestCase
             ->json();
 
         $this->assertEquals(2, $response['currentUserRank']);
+    }
+
+    public function test_user_not_on_leaderboard_gets_null_rank(): void
+    {
+        $user = User::factory()->create();
+
+        // No metrics seeded for this user
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/api/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $this->assertNull($response['currentUserRank']);
     }
 
     public function test_invalid_location_type_returns_error(): void
@@ -243,42 +244,10 @@ class LeaderboardTest extends TestCase
         $yesterday = $now->copy()->subDay();
 
         // Insert daily row for today (user1)
-        DB::table('metrics')->insert([
-            'timescale' => 1,
-            'location_type' => LocationType::Global->value,
-            'location_id' => 0,
-            'user_id' => $user1->id,
-            'year' => $now->year,
-            'month' => $now->month,
-            'week' => (int) $now->format('W'),
-            'bucket_date' => $now->toDateString(),
-            'uploads' => 1,
-            'tags' => 2,
-            'litter' => 1,
-            'brands' => 0,
-            'materials' => 0,
-            'custom_tags' => 0,
-            'xp' => 100,
-        ]);
+        $this->seedMetric($user1->id, 100, 1, LocationType::Global->value, 0, $now->year, $now->month, $now->toDateString());
 
         // Insert daily row for yesterday (user2)
-        DB::table('metrics')->insert([
-            'timescale' => 1,
-            'location_type' => LocationType::Global->value,
-            'location_id' => 0,
-            'user_id' => $user2->id,
-            'year' => $yesterday->year,
-            'month' => $yesterday->month,
-            'week' => (int) $yesterday->format('W'),
-            'bucket_date' => $yesterday->toDateString(),
-            'uploads' => 1,
-            'tags' => 5,
-            'litter' => 3,
-            'brands' => 0,
-            'materials' => 0,
-            'custom_tags' => 0,
-            'xp' => 500,
-        ]);
+        $this->seedMetric($user2->id, 500, 1, LocationType::Global->value, 0, $yesterday->year, $yesterday->month, $yesterday->toDateString());
 
         // "today" filter should only return user1
         $response = $this
@@ -303,7 +272,7 @@ class LeaderboardTest extends TestCase
         $this->assertEquals('500', $response['users'][0]['xp']);
     }
 
-    public function test_deleted_photo_removes_user_from_leaderboard_when_xp_hits_zero(): void
+    public function test_deleted_photo_removes_user_from_redis_leaderboard_when_xp_hits_zero(): void
     {
         $user = User::factory()->create();
         $country = Country::factory()->create();
@@ -339,9 +308,8 @@ class LeaderboardTest extends TestCase
         $state = State::factory()->create();
         $users = User::factory(2)->create();
 
-        $stateKey = RedisKeys::xpRanking(RedisKeys::state($state->id));
-        Redis::zAdd($stateKey, 80, (string) $users[0]->id);
-        Redis::zAdd($stateKey, 120, (string) $users[1]->id);
+        $this->seedMetric($users[0]->id, 80, 0, LocationType::State->value, $state->id);
+        $this->seedMetric($users[1]->id, 120, 0, LocationType::State->value, $state->id);
 
         $response = $this
             ->actingAs($users[0])
@@ -361,9 +329,8 @@ class LeaderboardTest extends TestCase
         $city = City::factory()->create();
         $users = User::factory(2)->create();
 
-        $cityKey = RedisKeys::xpRanking(RedisKeys::city($city->id));
-        Redis::zAdd($cityKey, 200, (string) $users[0]->id);
-        Redis::zAdd($cityKey, 75, (string) $users[1]->id);
+        $this->seedMetric($users[0]->id, 200, 0, LocationType::City->value, $city->id);
+        $this->seedMetric($users[1]->id, 75, 0, LocationType::City->value, $city->id);
 
         $response = $this
             ->actingAs($users[0])
@@ -386,23 +353,7 @@ class LeaderboardTest extends TestCase
         $now = now()->utc();
 
         foreach ($users as $user) {
-            DB::table('metrics')->insert([
-                'timescale' => 3,
-                'location_type' => LocationType::Global->value,
-                'location_id' => 0,
-                'user_id' => $user->id,
-                'year' => $now->year,
-                'month' => $now->month,
-                'week' => 0,
-                'bucket_date' => $now->copy()->startOfMonth()->toDateString(),
-                'uploads' => 1,
-                'tags' => 2,
-                'litter' => 1,
-                'brands' => 0,
-                'materials' => 0,
-                'custom_tags' => 0,
-                'xp' => 100,
-            ]);
+            $this->seedMetric($user->id, 100, 3, LocationType::Global->value, 0, $now->year, $now->month, $now->copy()->startOfMonth()->toDateString());
         }
 
         $response = $this
@@ -428,5 +379,46 @@ class LeaderboardTest extends TestCase
             collect($response['users'])->pluck('xp')->toArray(),
             collect($response2['users'])->pluck('xp')->toArray()
         );
+    }
+
+    public function test_zero_xp_users_are_excluded(): void
+    {
+        $users = User::factory(2)->create();
+
+        $this->seedMetric($users[0]->id, 100);
+        $this->seedMetric($users[1]->id, 0);
+
+        $response = $this
+            ->actingAs($users[0])
+            ->getJson('/api/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $this->assertCount(1, $response['users']);
+        $this->assertEquals(1, $response['total']);
+    }
+
+    public function test_all_time_country_filtered_leaderboard(): void
+    {
+        $country1 = Country::factory()->create();
+        $country2 = Country::factory()->create();
+        $users = User::factory(3)->create();
+
+        // User 0 and 1 in country1, user 2 in country2
+        $this->seedMetric($users[0]->id, 500, 0, LocationType::Country->value, $country1->id);
+        $this->seedMetric($users[1]->id, 300, 0, LocationType::Country->value, $country1->id);
+        $this->seedMetric($users[2]->id, 900, 0, LocationType::Country->value, $country2->id);
+
+        // Country 1 should only show 2 users
+        $response = $this
+            ->actingAs($users[0])
+            ->getJson("/api/leaderboard?locationType=country&locationId={$country1->id}")
+            ->assertOk()
+            ->json();
+
+        $this->assertCount(2, $response['users']);
+        $this->assertEquals(2, $response['total']);
+        $this->assertEquals('500', $response['users'][0]['xp']);
+        $this->assertEquals('300', $response['users'][1]['xp']);
     }
 }

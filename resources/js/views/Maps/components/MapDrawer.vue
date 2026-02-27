@@ -9,12 +9,12 @@
         <div class="drawer-content">
             <!-- Header -->
             <div class="drawer-header">
-                <h2>Data Analysis</h2>
+                <h2>{{ $t('Data Analysis') }}</h2>
                 <div class="tabs">
                     <button :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">
-                        Overview
+                        {{ $t('Overview') }}
                     </button>
-                    <button :class="{ active: activeTab === 'details' }" @click="activeTab = 'details'">Details</button>
+                    <button :class="{ active: activeTab === 'details' }" @click="activeTab = 'details'">{{ $t('Details') }}</button>
                     <!--                    <button :class="{ active: activeTab === 'export' }" @click="activeTab = 'export'">Export</button>-->
                 </div>
             </div>
@@ -23,7 +23,7 @@
             <div v-if="isLoading" class="drawer-body">
                 <div class="loading-container">
                     <div class="spinner"></div>
-                    <p>Analyzing data...</p>
+                    <p>{{ $t('Analyzing data...') }}</p>
                 </div>
             </div>
 
@@ -32,7 +32,7 @@
                 <div class="error-container">
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>{{ error }}</p>
-                    <button @click="$emit('retry')" class="retry-btn">Try Again</button>
+                    <button @click="$emit('retry')" class="retry-btn">{{ $t('Try Again') }}</button>
                 </div>
             </div>
 
@@ -40,18 +40,34 @@
             <div v-else-if="!processedData" class="drawer-body">
                 <div class="no-data">
                     <i class="fas fa-chart-line"></i>
-                    <p>No data available for the current selection</p>
+                    <p>{{ $t('No data available for the current selection') }}</p>
                 </div>
             </div>
 
             <!-- Content with Tab Components -->
             <div v-else class="drawer-body">
+                <!-- Active Filter Chip -->
+                <div v-if="activeFilter" class="flex items-center gap-2 mb-4 px-1">
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/40 rounded-full text-sm text-green-300">
+                        <span class="text-xs text-green-400/70 uppercase">{{ activeFilter.type }}</span>
+                        <span class="font-medium text-white">{{ formatFilterLabel(activeFilter.id) }}</span>
+                        <button
+                            class="ml-1 hover:text-white text-green-300/70 transition-colors"
+                            @click="$emit('filter-clear')"
+                        >
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Overview Tab -->
                 <MapDrawerOverviewTab
                     v-if="activeTab === 'overview'"
                     :stats-data="statsData"
                     :processed-data="processedData"
+                    :active-filter="activeFilter"
                     @highlight-category="handleCategoryHighlight"
+                    @filter-apply="handleFilterApply"
                 />
 
                 <!-- Details Tab -->
@@ -59,7 +75,9 @@
                     v-if="activeTab === 'details'"
                     :stats-data="statsData"
                     :processed-data="processedData"
+                    :active-filter="activeFilter"
                     @highlight-object="handleObjectHighlight"
+                    @filter-apply="handleFilterApply"
                 />
 
                 <!-- Export Tab -->
@@ -109,10 +127,14 @@ const props = defineProps({
         type: Number,
         default: 17,
     },
+    activeFilter: {
+        type: Object,
+        default: null,
+    },
 });
 
 // Emits
-const emit = defineEmits(['toggle', 'highlight-category', 'highlight-object', 'retry']);
+const emit = defineEmits(['toggle', 'highlight-category', 'highlight-object', 'filter-apply', 'filter-clear', 'retry']);
 
 // State
 const activeTab = ref('overview');
@@ -135,6 +157,18 @@ const handleCategoryHighlight = (category) => {
 
 const handleObjectHighlight = (objectData) => {
     emit('highlight-object', objectData);
+};
+
+const handleFilterApply = (filter) => {
+    emit('filter-apply', filter);
+};
+
+const formatFilterLabel = (id) => {
+    // Format snake_case to Title Case
+    if (typeof id === 'string' && id.includes('_')) {
+        return id.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    }
+    return id;
 };
 
 // Watch for stats data changes to validate

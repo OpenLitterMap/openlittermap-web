@@ -9,7 +9,7 @@ School teams enforce a private-by-default pipeline. Photos are invisible to the 
 
 ## Key Files
 
-- `app/Http/Controllers/Teams/TeamPhotosController.php` — Photo listing, approval, tag editing, map points
+- `app/Http/Controllers/Teams/TeamPhotosController.php` — Photo listing, approval, tag editing, map points, delete, revoke
 - `app/Observers/PhotoObserver.php` — Sets `is_public = false` on school team photo creation
 - `app/Traits/MasksStudentIdentity.php` — Masks student names as "Student N"
 - `app/Models/Teams/Team.php` — `isSchool()`, `isLeader()`, `hasSafeguarding()`
@@ -128,6 +128,43 @@ INDEX photos_team_public_idx ON photos(team_id, is_public)
 
 -- Public queries
 INDEX photos_public_verified_idx ON photos(is_public, verified)
+```
+
+### Teacher delete flow
+
+```php
+// TeamPhotosController::destroy()
+// DELETE /api/teams/photos/{photo}?team_id=X
+// 1. Check authorization (leader or 'manage school team')
+// 2. If processed: MetricsService::deletePhoto() → reverse metrics
+// 3. DeletePhotoAction → S3 cleanup
+// 4. $photo->delete() → soft-delete
+// 5. Decrement photo owner's XP and total_images
+```
+
+### Teacher revoke flow
+
+```php
+// TeamPhotosController::revoke()
+// POST /api/teams/photos/revoke { team_id, photo_ids? | revoke_all? }
+// 1. Check authorization (leader or 'manage school team')
+// 2. Query: is_public = true AND team_approved_at IS NOT NULL
+// 3. For each processed photo: MetricsService::deletePhoto()
+// 4. Atomic update: is_public=false, verified=VERIFIED, clear approval timestamps
+// Idempotent: already-private photos filtered by WHERE clause
+```
+
+### Safeguarding on global map (PointsController)
+
+```php
+// PointsController::formatFeatures()
+// After building properties array:
+if ($photo->team_id && $photo->team && $photo->team->hasSafeguarding()) {
+    $properties['name'] = null;
+    $properties['username'] = null;
+    $properties['social'] = null;
+}
+// popup.js shows "Contributed by [Team Name]" when name/username are null but team exists
 ```
 
 ### Controllers/queries that must use `is_public = true`

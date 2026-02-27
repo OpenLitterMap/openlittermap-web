@@ -9,8 +9,8 @@
 
         <!-- Content Slot -->
         <template #content>
-            <strong>{{ t('home.globalMap.new-user') }}</strong>
-            <p>{{ t('home.globalMap.user-signed-up') }}</p>
+            <strong>{{ t('New User') }}</strong>
+            <p>{{ t('A new user has signed up!') }}</p>
         </template>
     </GlobalMapNotification>
 </template>

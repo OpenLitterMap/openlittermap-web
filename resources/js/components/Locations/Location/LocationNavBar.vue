@@ -19,8 +19,8 @@ const { t } = useI18n();
 
 const options = ref([
     { text: 'A-Z', value: 'alphabetical' },
-    { text: t('location.most-data'), value: 'most-data' },
-    { text: t('location.most-data-person'), value: 'most-data-per-person' },
+    { text: t('Most Litter Tags'), value: 'most-data' },
+    { text: t('Most Litter Tags Per Person'), value: 'most-data-per-person' },
     { text: 'Total Contributors', value: 'total-contributors' },
     { text: 'First Created', value: 'first-created' },
     { text: 'Most Recently Created', value: 'most-recently-created' },

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\API\Tags;
 
 use App\Actions\Tags\AddTagsToPhotoAction;
 use App\Http\Requests\Api\PhotoTagsRequest;
+use App\Http\Requests\Api\ReplacePhotoTagsRequest;
 use App\Http\Controllers\Controller;
+use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,18 +21,49 @@ class PhotoTagsController extends Controller
 
     /**
      * Attach tags to a photo.
-     *
-     * @param PhotoTagsRequest $request
-     * @return JsonResponse
-     * @throws \Exception
      */
-    public function store (PhotoTagsRequest $request): JsonResponse
+    public function store(PhotoTagsRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
 
         $photoTags = $this->addTagsToPhotoActionNew->run(
             Auth::id(),
             $validatedData['photo_id'],
+            $validatedData['tags']
+        );
+
+        return response()->json([
+            'success' => true,
+            'photoTags' => $photoTags,
+        ]);
+    }
+
+    /**
+     * Replace all tags on a photo (delete old tags, add new ones).
+     * MetricsService handles the delta via processPhoto → doUpdate.
+     */
+    public function update(ReplacePhotoTagsRequest $request): JsonResponse
+    {
+        $validatedData = $request->validated();
+        $photo = Photo::findOrFail($validatedData['photo_id']);
+
+        // Delete existing tags (extra_tags cascade via FK)
+        $photo->photoTags()->each(function ($tag) {
+            $tag->extraTags()->delete();
+            $tag->delete();
+        });
+
+        // Reset summary and XP so AddTagsToPhotoAction regenerates them
+        $photo->update([
+            'summary' => null,
+            'xp' => 0,
+            'verified' => 0,
+        ]);
+
+        // Add new tags (generates summary, XP, fires TagsVerifiedByAdmin → MetricsService)
+        $photoTags = $this->addTagsToPhotoActionNew->run(
+            Auth::id(),
+            $photo->id,
             $validatedData['tags']
         );
 

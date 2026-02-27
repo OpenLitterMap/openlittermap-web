@@ -78,15 +78,21 @@ class QueryBuilder
     }
 
     /**
-     * Apply tag filters (categories and objects)
-     * FIXED: Use if-elseif to avoid applying multiple conflicting whereExists clauses
+     * Apply tag filters (categories, objects, materials, brands, custom tags)
      */
     private function applyTagFilters($query, array $params): void
     {
         $hasCategories = !empty($params['categories']);
         $hasObjects = !empty($params['litter_objects']);
+        $hasMaterials = !empty($params['materials']);
+        $hasBrands = !empty($params['brands']);
+        $hasCustomTags = !empty($params['custom_tags']);
 
-        // When both filters are present, they must match the same tag
+        if (!$hasCategories && !$hasObjects && !$hasMaterials && !$hasBrands && !$hasCustomTags) {
+            return;
+        }
+
+        // Category/object filters via photo_tags
         if ($hasCategories && $hasObjects) {
             $query->whereExists(function($q) use ($params) {
                 $q->select(DB::raw(1))
@@ -97,9 +103,7 @@ class QueryBuilder
                     ->whereIn('categories.key', $params['categories'])
                     ->whereIn('litter_objects.key', $params['litter_objects']);
             });
-        }
-        // Only category filter
-        elseif ($hasCategories) {
+        } elseif ($hasCategories) {
             $query->whereExists(function($q) use ($params) {
                 $q->select(DB::raw(1))
                     ->from('photo_tags')
@@ -107,9 +111,7 @@ class QueryBuilder
                     ->whereColumn('photo_tags.photo_id', 'photos.id')
                     ->whereIn('categories.key', $params['categories']);
             });
-        }
-        // Only litter object filter
-        elseif ($hasObjects) {
+        } elseif ($hasObjects) {
             $query->whereExists(function($q) use ($params) {
                 $q->select(DB::raw(1))
                     ->from('photo_tags')
@@ -118,5 +120,64 @@ class QueryBuilder
                     ->whereIn('litter_objects.key', $params['litter_objects']);
             });
         }
+
+        // Material filter via photo_tag_extra_tags
+        if ($hasMaterials) {
+            $materialIds = $this->prefetchIds('materials', $params['materials']);
+            if (!empty($materialIds)) {
+                $query->whereExists(function($q) use ($materialIds) {
+                    $q->select(DB::raw(1))
+                        ->from('photo_tags')
+                        ->join('photo_tag_extra_tags', 'photo_tags.id', '=', 'photo_tag_extra_tags.photo_tag_id')
+                        ->whereColumn('photo_tags.photo_id', 'photos.id')
+                        ->where('photo_tag_extra_tags.tag_type', 'material')
+                        ->whereIn('photo_tag_extra_tags.tag_type_id', $materialIds);
+                });
+            }
+        }
+
+        // Brand filter via photo_tag_extra_tags
+        if ($hasBrands) {
+            $brandIds = $this->prefetchIds('brandslist', $params['brands']);
+            if (!empty($brandIds)) {
+                $query->whereExists(function($q) use ($brandIds) {
+                    $q->select(DB::raw(1))
+                        ->from('photo_tags')
+                        ->join('photo_tag_extra_tags', 'photo_tags.id', '=', 'photo_tag_extra_tags.photo_tag_id')
+                        ->whereColumn('photo_tags.photo_id', 'photos.id')
+                        ->where('photo_tag_extra_tags.tag_type', 'brand')
+                        ->whereIn('photo_tag_extra_tags.tag_type_id', $brandIds);
+                });
+            }
+        }
+
+        // Custom tag filter via photo_tag_extra_tags
+        if ($hasCustomTags) {
+            $query->whereExists(function($q) use ($params) {
+                $q->select(DB::raw(1))
+                    ->from('photo_tags')
+                    ->join('photo_tag_extra_tags', 'photo_tags.id', '=', 'photo_tag_extra_tags.photo_tag_id')
+                    ->join('custom_tags_new', 'photo_tag_extra_tags.tag_type_id', '=', 'custom_tags_new.id')
+                    ->whereColumn('photo_tags.photo_id', 'photos.id')
+                    ->where('photo_tag_extra_tags.tag_type', 'custom_tag')
+                    ->whereIn('custom_tags_new.key', $params['custom_tags'])
+                    ->where('custom_tags_new.approved', true);
+            });
+        }
+    }
+
+    /**
+     * Prefetch IDs by key for a given table
+     */
+    private function prefetchIds(string $table, array $keys): array
+    {
+        if (empty($keys)) {
+            return [];
+        }
+
+        return DB::table($table)
+            ->whereIn('key', $keys)
+            ->pluck('id')
+            ->all();
     }
 }

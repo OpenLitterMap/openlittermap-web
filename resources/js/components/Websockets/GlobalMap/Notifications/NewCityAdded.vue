@@ -10,9 +10,9 @@
 
         <!-- Content slot -->
         <template #content>
-            <strong>{{ t('home.globalMap.new-city') }}</strong>
+            <strong>{{ t('New City') }}</strong>
             <p>
-                {{ t('home.globalMap.say-hello-to') }}
+                {{ t('Say hello to') }}
                 <i>{{ payload.city }}</i>
             </p>
         </template>

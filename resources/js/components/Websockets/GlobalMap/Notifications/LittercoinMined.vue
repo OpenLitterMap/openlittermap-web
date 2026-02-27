@@ -8,8 +8,8 @@
         <template #content>
             <div class="flex items-center h-full">
                 <div>
-                    <p>{{ t('home.globalMap.littercoin-mined') }}</p>
-                    <i>{{ t('common.reason') }}: <span class="font-semibold">{{ getLittercoinReason(payload.reason) }}</span></i>
+                    <p>{{ t('A Littercoin has been mined!') }}</p>
+                    <i>{{ t('Reason') }}: <span class="font-semibold">{{ getLittercoinReason(payload.reason) }}</span></i>
                 </div>
             </div>
         </template>
@@ -32,9 +32,9 @@ const props = defineProps({
 
 const getLittercoinReason = (reason) => {
     if (reason === 'verified-box') {
-        return t('home.globalMap.littercoin-100-boxes-verified');
+        return t('100 OpenLitterAI boxes verified');
     } else if (reason === '100-images-verified') {
-        return t('home.globalMap.littercoin-100-verified');
+        return t('100 images verified');
     }
 }
 </script>

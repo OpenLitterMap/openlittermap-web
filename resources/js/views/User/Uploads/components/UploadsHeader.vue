@@ -76,7 +76,7 @@ onMounted(async () => {
                     <div class="text-xl font-semibold text-gray-900">
                         {{ totalPhotos.toLocaleString() }}
                     </div>
-                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Total Photos</div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">{{ $t('Total Photos') }}</div>
                 </div>
             </div>
 
@@ -86,7 +86,7 @@ onMounted(async () => {
                     <div class="text-xl font-semibold text-gray-900">
                         {{ totalTags.toLocaleString() }}
                     </div>
-                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Total Tags</div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">{{ $t('Total Tags') }}</div>
                 </div>
             </div>
 
@@ -96,7 +96,7 @@ onMounted(async () => {
                     <div class="text-xl font-semibold text-gray-900">
                         {{ leftToTag.toLocaleString() }}
                     </div>
-                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Untagged</div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">{{ $t('Untagged') }}</div>
                 </div>
             </div>
 
@@ -104,7 +104,7 @@ onMounted(async () => {
             <div class="flex items-center justify-center">
                 <div class="text-center">
                     <div class="text-xl font-semibold text-gray-900">{{ taggedPercentage }}%</div>
-                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">Tagged</div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide mt-0.5">{{ $t('Tagged') }}</div>
                 </div>
             </div>
         </div>
@@ -113,7 +113,7 @@ onMounted(async () => {
         <div class="flex items-end gap-3 px-6 py-4 flex-wrap justify-center">
             <!-- Three-state Toggle for Tagged/Untagged/All -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">Photo Status</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Photo Status') }}</label>
                 <button
                     @click="cycleTaggedState"
                     class="px-3 py-1.5 text-xs font-medium border rounded transition-colors min-w-[90px]"
@@ -125,17 +125,17 @@ onMounted(async () => {
                 >
                     {{
                         filters.taggedState === 'all'
-                            ? 'All Photos'
+                            ? $t('All Photos')
                             : filters.taggedState === 'untagged'
-                              ? 'Untagged'
-                              : 'Tagged'
+                              ? $t('Untagged')
+                              : $t('Tagged')
                     }}
                 </button>
             </div>
 
             <!-- ID Filter -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">Photo ID</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Photo ID') }}</label>
                 <div class="flex gap-1">
                     <select
                         v-model="filters.idOperator"
@@ -156,7 +156,7 @@ onMounted(async () => {
 
             <!-- Tag Filter -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">Tag</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Tag') }}</label>
                 <input
                     v-model="filters.tag"
                     placeholder="Enter tag"
@@ -166,7 +166,7 @@ onMounted(async () => {
 
             <!-- Custom Tag Filter -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">Custom Tag</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Custom Tag') }}</label>
                 <input
                     v-model="filters.customTag"
                     placeholder="Enter custom tag"
@@ -176,7 +176,7 @@ onMounted(async () => {
 
             <!-- Date From -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">From Date</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('From Date') }}</label>
                 <input
                     type="date"
                     v-model="filters.dateFrom"
@@ -186,7 +186,7 @@ onMounted(async () => {
 
             <!-- Date To -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">To Date</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('To Date') }}</label>
                 <input
                     type="date"
                     v-model="filters.dateTo"
@@ -196,7 +196,7 @@ onMounted(async () => {
 
             <!-- Per Page -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">Per Page</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Per Page') }}</label>
                 <select
                     v-model="filters.perPage"
                     class="w-16 px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -212,7 +212,7 @@ onMounted(async () => {
                 @click="applyFilters"
                 class="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
             >
-                Apply
+                {{ $t('Apply') }}
             </button>
         </div>
     </div>

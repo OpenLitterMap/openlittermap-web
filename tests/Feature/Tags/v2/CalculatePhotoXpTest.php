@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tags\v2;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Categories\Smoking;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -82,7 +83,7 @@ class CalculatePhotoXpTest extends TestCase
     /** @test */
     public function small_medium_large_and_bagsLitter_override_object_xp()
     {
-        $category = Category::firstOrCreate(['key' => 'industrial']);
+        $category = Category::firstOrCreate(['key' => CategoryKey::Industrial->value]);
 
         $specialObjects = [
             'small' => 10,
@@ -119,7 +120,7 @@ class CalculatePhotoXpTest extends TestCase
     /** @test */
     public function multiple_objects_in_same_category_are_sorted_desc()
     {
-        $category = Category::where('key', 'smoking')->firstOrFail();
+        $category = Category::where('key', CategoryKey::Smoking->value)->firstOrFail();
         $buttsObj = LitterObject::where('key', 'butts')->firstOrFail();
         $cigarObj = LitterObject::firstOrCreate(['key' => 'cigar']);
 
@@ -208,8 +209,8 @@ class CalculatePhotoXpTest extends TestCase
     {
         $photo = Photo::factory()->create(['remaining' => 1]);
 
-        $smokingCat = Category::where('key', 'smoking')->firstOrFail();
-        $foodCat = Category::where('key', 'food')->firstOrFail();
+        $smokingCat = Category::where('key', CategoryKey::Smoking->value)->firstOrFail();
+        $foodCat = Category::where('key', CategoryKey::Food->value)->firstOrFail();
         $wrapperObj = LitterObject::where('key', 'wrapper')->first();
         $buttsObj = LitterObject::where('key', 'butts')->first();
 
@@ -313,13 +314,13 @@ class CalculatePhotoXpTest extends TestCase
         $plastic = Materials::where('key', 'plastic')->first();
         $glass = Materials::where('key', 'glass')->first();
         $bottleObj = LitterObject::where('key', 'bottle')->first();
-        $beveragesCat = Category::where('key', 'beverages')->first();
+        $softdrinksCat = Category::where('key', CategoryKey::Softdrinks->value)->first();
 
         $pt = $photo->photoTags()->create([
-            'category_litter_object_id' => $this->getCloId($beveragesCat->id, $bottleObj->id),
+            'category_litter_object_id' => $this->getCloId($softdrinksCat->id, $bottleObj->id),
             'litter_object_id' => $bottleObj->id,
             'quantity' => 2,
-            'category_id' => $beveragesCat->id,
+            'category_id' => $softdrinksCat->id,
         ]);
 
         $pt->extraTags()->create([
@@ -381,7 +382,7 @@ class CalculatePhotoXpTest extends TestCase
         $photo = Photo::factory()->create(['remaining' => 1]);
 
         $brand = BrandList::first();
-        $category = Category::where('key', 'smoking')->first();
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
         $buttsObj = LitterObject::where('key', 'butts')->first();
         $packagingObj = LitterObject::where('key', 'packaging')->first();
 
@@ -467,16 +468,16 @@ class CalculatePhotoXpTest extends TestCase
         $photo = Photo::factory()->create(['remaining' => 0]);
 
         $bottleObj = LitterObject::where('key', 'bottle')->first();
-        $beveragesCat = Category::where('key', 'beverages')->first();
-        $industrialCat = Category::where('key', 'industrial')->first();
+        $softdrinksCat = Category::where('key', CategoryKey::Softdrinks->value)->first();
+        $industrialCat = Category::where('key', CategoryKey::Industrial->value)->first();
         $largeObj = LitterObject::firstOrCreate(['key' => 'large']);
 
         // Add regular object with material and brand
         $pt1 = $photo->photoTags()->create([
-            'category_litter_object_id' => $this->getCloId($beveragesCat->id, $bottleObj->id),
+            'category_litter_object_id' => $this->getCloId($softdrinksCat->id, $bottleObj->id),
             'litter_object_id' => $bottleObj->id,
             'quantity' => 3,
-            'category_id' => $beveragesCat->id,
+            'category_id' => $softdrinksCat->id,
         ]);
 
         $pt1->extraTags()->create([

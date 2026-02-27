@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-710 tests passing, 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
+810 tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
 
 ## Key Files
 
@@ -23,6 +23,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 - `database/factories/Litter/Tags/LitterObjectFactory.php` — LitterObject with unique key
 - `database/factories/Litter/Tags/LitterObjectTypeFactory.php` — LitterObjectType with unique key + name
 - `tests/Feature/Tags/TaggingArchitecturePhase1Test.php` — 20 tests (seeding, relationships, API, idempotency)
+- `tests/Feature/Tags/ReplacePhotoTagsTest.php` — 5 tests (replace tags, ownership, auth, extra tags cleanup)
 
 ## Invariants
 

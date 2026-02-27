@@ -1,16 +1,16 @@
 <template>
     <div>
-        <h1 class="text-2xl font-bold text-slate-800 mb-6">Team Settings</h1>
+        <h1 class="text-2xl font-bold text-slate-800 mb-6">{{ $t('Team Settings') }}</h1>
 
-        <p v-if="!hasTeams" class="text-slate-500">You haven't joined any teams yet.</p>
+        <p v-if="!hasTeams" class="text-slate-500">{{ $t("You haven't joined any teams yet.") }}</p>
 
         <template v-else>
             <!-- Privacy Settings -->
             <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-700 mb-2">Privacy</h2>
+                    <h2 class="text-lg font-semibold text-slate-700 mb-2">{{ $t('Privacy') }}</h2>
                     <p class="text-sm text-slate-500">
-                        Control how your name and username appear on team maps and leaderboards.
+                        {{ $t('Control how your name and username appear on team maps and leaderboards.') }}
                     </p>
                 </div>
 
@@ -26,30 +26,30 @@
 
                     <div v-if="privacyTeam">
                         <!-- Maps -->
-                        <h3 class="text-sm font-semibold text-slate-600 mb-2">Team Map</h3>
+                        <h3 class="text-sm font-semibold text-slate-600 mb-2">{{ $t('Team Map') }}</h3>
                         <label class="flex items-center gap-2 mb-1 cursor-pointer">
                             <input type="checkbox" v-model="privacy.show_name_maps" class="rounded" />
-                            <span class="text-sm">Show my name</span>
+                            <span class="text-sm">{{ $t('Show my name') }}</span>
                         </label>
                         <label class="flex items-center gap-2 mb-3 cursor-pointer">
                             <input type="checkbox" v-model="privacy.show_username_maps" class="rounded" />
-                            <span class="text-sm">Show my username</span>
+                            <span class="text-sm">{{ $t('Show my username') }}</span>
                         </label>
 
                         <p v-if="!privacy.show_name_maps && !privacy.show_username_maps"
                            class="text-xs text-red-500 mb-3">
-                            You won't appear on the team map.
+                            {{ $t("You won't appear on the team map.") }}
                         </p>
 
                         <!-- Leaderboards -->
-                        <h3 class="text-sm font-semibold text-slate-600 mb-2 mt-4">Team Leaderboard</h3>
+                        <h3 class="text-sm font-semibold text-slate-600 mb-2 mt-4">{{ $t('Team Leaderboard') }}</h3>
                         <label class="flex items-center gap-2 mb-1 cursor-pointer">
                             <input type="checkbox" v-model="privacy.show_name_leaderboards" class="rounded" />
-                            <span class="text-sm">Show my name</span>
+                            <span class="text-sm">{{ $t('Show my name') }}</span>
                         </label>
                         <label class="flex items-center gap-2 mb-3 cursor-pointer">
                             <input type="checkbox" v-model="privacy.show_username_leaderboards" class="rounded" />
-                            <span class="text-sm">Show my username</span>
+                            <span class="text-sm">{{ $t('Show my username') }}</span>
                         </label>
 
                         <div class="flex gap-3 pt-3 border-t border-slate-100">
@@ -58,14 +58,14 @@
                                 class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                                 @click="savePrivacy(false)"
                             >
-                                Save for this team
+                                {{ $t('Save for this team') }}
                             </button>
                             <button
                                 :disabled="privacySaving"
                                 class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
                                 @click="savePrivacy(true)"
                             >
-                                Apply to all teams
+                                {{ $t('Apply to all teams') }}
                             </button>
                         </div>
                     </div>
@@ -75,9 +75,9 @@
             <!-- Team Attributes (leader only) -->
             <section v-if="teamsLed.length" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div>
-                    <h2 class="text-lg font-semibold text-slate-700 mb-2">Edit Team</h2>
+                    <h2 class="text-lg font-semibold text-slate-700 mb-2">{{ $t('Edit Team') }}</h2>
                     <p class="text-sm text-slate-500">
-                        Update the name or identifier for teams you lead.
+                        {{ $t('Update the name or identifier for teams you lead.') }}
                     </p>
                 </div>
 
@@ -93,7 +93,7 @@
                         </select>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Team name</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">{{ $t('Team name') }}</label>
                             <input
                                 v-model="editName"
                                 type="text"
@@ -106,7 +106,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Team identifier</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">{{ $t('Team identifier') }}</label>
                             <input
                                 v-model="editIdentifier"
                                 type="text"
@@ -123,7 +123,7 @@
                             :disabled="updating"
                             class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                            {{ updating ? 'Saving...' : 'Update Team' }}
+                            {{ updating ? $t('Saving...') : $t('Update Team') }}
                         </button>
                     </form>
                 </div>

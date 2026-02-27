@@ -132,6 +132,9 @@ class UploadPhotoController extends Controller
             ));
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'photo_id' => $photo->id,
+        ]);
     }
 }

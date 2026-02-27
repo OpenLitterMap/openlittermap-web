@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { useUserStore } from './user/index.js';
 
 export const useProfileStore = defineStore('profile', {
     state: () => ({
@@ -36,6 +37,21 @@ export const useProfileStore = defineStore('profile', {
                 this.achievements = data.achievements;
                 this.locations = data.locations;
                 this.team = data.team;
+
+                // Sync settings-related fields to user store
+                const userStore = useUserStore();
+                if (userStore.user) {
+                    const settingsFields = [
+                        'name', 'username', 'email', 'public_profile',
+                        'show_name', 'show_username', 'show_name_maps',
+                        'show_username_maps', 'previous_tags', 'emailsub',
+                    ];
+                    settingsFields.forEach((key) => {
+                        if (key in data.user) {
+                            userStore.user[key] = data.user[key];
+                        }
+                    });
+                }
             } catch (e) {
                 this.error = e.response?.status === 401 ? 'unauthenticated' : 'Failed to load profile';
             } finally {

@@ -49,6 +49,15 @@ export const useSettingsStore = defineStore('settings', {
 
             try {
                 const { data } = await axios.post(endpoint);
+
+                // Sync returned key/value back to user store so toggles update
+                const userStore = useUserStore();
+                if (userStore.user) {
+                    Object.keys(data).forEach((key) => {
+                        userStore.user[key] = data[key];
+                    });
+                }
+
                 return data;
             } catch (e) {
                 this.error = e.response?.data?.msg || 'Failed to toggle privacy setting.';

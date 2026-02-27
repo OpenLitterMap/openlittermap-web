@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Actions\Photos\DeletePhotoAction;
+use App\Enums\CategoryKey;
 use App\Enums\VerificationStatus;
 use App\Events\SchoolDataApproved;
 use App\Events\TagsVerifiedByAdmin;
@@ -12,6 +14,7 @@ use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Teams\Team;
+use App\Services\Metrics\MetricsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +41,7 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
-        $query = Photo::with(['photoTags', 'user:id,name,username'])
+        $query = Photo::with(['photoTags.category:id,key', 'photoTags.object:id,key', 'user:id,name,username'])
             ->where('team_id', $team->id)
             ->orderByDesc('created_at');
 
@@ -81,7 +84,7 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
-        $photo->load(['photoTags', 'user:id,name,username']);
+        $photo->load(['photoTags.category:id,key', 'photoTags.object:id,key', 'user:id,name,username']);
 
         return response()->json([
             'success' => true,
@@ -136,7 +139,7 @@ class TeamPhotosController extends Controller
 
                 if (! $cloId) {
                     $cloId = CategoryObject::query()
-                        ->whereHas('category', fn($q) => $q->where('key', 'unclassified'))
+                        ->whereHas('category', fn($q) => $q->where('key', CategoryKey::Unclassified->value))
                         ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
                         ->value('id');
                 }
@@ -159,15 +162,18 @@ class TeamPhotosController extends Controller
             ]);
 
             // Regenerate summary + XP.
-            // CRITICAL: MetricsService reads the summary JSON to extract tag data.
-            // If summary is null/stale when TagsVerifiedByAdmin fires, metrics
-            // will extract zero and the photo counts for nothing.
+            // CRITICAL: MetricsService reads photo.summary for tag data and
+            // photo.xp for XP totals. Both must be current before approval.
             if (method_exists($photo, 'generateSummary')) {
                 $photo->generateSummary();
             }
+
+            // XP = sum of tag quantities (teacher edits don't have extra tags)
+            $photo->xp = $totalTags;
+            $photo->save();
         });
 
-        $photo->load('photoTags');
+        $photo->load(['photoTags.category:id,key', 'photoTags.object:id,key']);
 
         return response()->json([
             'success' => true,
@@ -322,6 +328,131 @@ class TeamPhotosController extends Controller
         return response()->json([
             'success' => true,
             'points' => $points,
+        ]);
+    }
+
+    /**
+     * Delete a team photo (teacher only).
+     *
+     * DELETE /api/teams/photos/{photo}?team_id=X
+     *
+     * Reverses metrics, deletes S3 files, soft-deletes the photo,
+     * and decrements the photo owner's XP and total_images.
+     */
+    public function destroy(Request $request, Photo $photo): JsonResponse
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'team_id' => 'required|exists:teams,id',
+        ]);
+
+        $team = Team::findOrFail($request->team_id);
+
+        if ((int) $photo->team_id !== (int) $team->id) {
+            return response()->json(['success' => false, 'message' => 'photo-not-in-team'], 404);
+        }
+
+        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
+            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        }
+
+        $photoOwner = $photo->user;
+        $photoXp = (int) ($photo->processed_xp ?? 0);
+
+        // Reverse metrics if photo was processed
+        if ($photo->processed_at !== null) {
+            app(MetricsService::class)->deletePhoto($photo);
+        }
+
+        // Delete S3 files
+        app(DeletePhotoAction::class)->run($photo);
+
+        // Soft delete
+        $photo->delete();
+
+        // Decrement photo owner's counters (not the teacher's)
+        if ($photoOwner) {
+            $photoOwner->xp = max(0, $photoOwner->xp - $photoXp);
+            $photoOwner->total_images = max(0, $photoOwner->total_images - 1);
+            $photoOwner->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo deleted.',
+            'stats' => $this->teamPhotoStats($team->id),
+        ]);
+    }
+
+    /**
+     * Revoke approval on team photos — makes them private again.
+     *
+     * POST /api/teams/photos/revoke
+     *
+     * Body: { team_id: X, photo_ids: [1, 2, 3] } or { team_id: X, revoke_all: true }
+     *
+     * IDEMPOTENT: WHERE clause filters out already-private photos.
+     * Reverses metrics for any processed photos before un-publishing.
+     */
+    public function revoke(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'photo_ids' => 'required_without:revoke_all|array',
+            'photo_ids.*' => 'exists:photos,id',
+            'team_id' => 'required|exists:teams,id',
+            'revoke_all' => 'nullable|boolean',
+        ]);
+
+        $team = Team::findOrFail($request->team_id);
+
+        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
+            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        }
+
+        // Build query for approved photos only (idempotent)
+        $query = Photo::where('team_id', $team->id)
+            ->where('is_public', true)
+            ->whereNotNull('team_approved_at');
+
+        if (! $request->revoke_all) {
+            $query->whereIn('id', $request->photo_ids);
+        }
+
+        $photosToRevoke = $query->get();
+
+        if ($photosToRevoke->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'revoked_count' => 0,
+                'message' => 'No photos to revoke.',
+            ]);
+        }
+
+        $metricsService = app(MetricsService::class);
+
+        // Reverse metrics for each processed photo
+        foreach ($photosToRevoke as $photo) {
+            if ($photo->processed_at !== null) {
+                $metricsService->deletePhoto($photo);
+            }
+        }
+
+        // Atomic update — un-publish all
+        $revokedCount = Photo::whereIn('id', $photosToRevoke->pluck('id'))
+            ->update([
+                'is_public' => false,
+                'verified' => VerificationStatus::VERIFIED->value,
+                'team_approved_at' => null,
+                'team_approved_by' => null,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'revoked_count' => $revokedCount,
+            'message' => "{$revokedCount} photos revoked.",
         ]);
     }
 

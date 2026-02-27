@@ -9,7 +9,11 @@ class CreateTeamRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole('school_manager');
+        if ($this->isSchoolTeam()) {
+            return $this->user()->hasRole('school_manager');
+        }
+
+        return true;
     }
 
     public function rules(): array

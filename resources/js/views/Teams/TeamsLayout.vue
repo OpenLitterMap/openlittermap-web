@@ -1,8 +1,8 @@
 <template>
-    <section class="flex min-h-[calc(100vh-70px)]">
-        <!-- Sidebar -->
+    <section class="flex flex-col md:flex-row min-h-[calc(100vh-70px)]">
+        <!-- Sidebar (desktop) -->
         <nav class="w-56 shrink-0 bg-slate-800 text-slate-300 p-6 hidden md:block">
-            <h2 class="text-xl font-semibold mb-6">{{ $t('teams.dashboard.olm-teams') }}</h2>
+            <h2 class="text-xl font-semibold mb-6">{{ $t('OpenLitterMap Teams') }}</h2>
 
             <button
                 v-for="item in navItems"
@@ -19,7 +19,7 @@
         </nav>
 
         <!-- Mobile nav -->
-        <div class="md:hidden w-full">
+        <div class="md:hidden">
             <select
                 v-model="activeView"
                 class="w-full border-b border-slate-200 px-4 py-3 text-sm bg-slate-800 text-white"
@@ -36,7 +36,7 @@
 
         <!-- Content -->
         <main class="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
-            <p v-if="loading" class="text-slate-500">{{ $t('common.loading') }}</p>
+            <p v-if="loading" class="text-slate-500">{{ $t('Loading...') }}</p>
 
             <component v-else :is="currentComponent" />
         </main>

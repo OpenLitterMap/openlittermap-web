@@ -458,6 +458,179 @@ class PointsStatsTest extends TestCase
         $this->assertEquals(1000, $stats['counts']['photos']);
     }
 
+    /** @test */
+    public function it_filters_by_material_correctly()
+    {
+        // Arrange
+        $user = User::factory()->create();
+        $photo1 = $this->createPhotoWithLocation($user, 0.0, 51.5);
+        $photo2 = $this->createPhotoWithLocation($user, 0.1, 51.5);
+
+        $smoking = $this->createCategory('smoking');
+        $food = $this->createCategory('food');
+        $butts = $this->createLitterObject('butts');
+        $wrapper = $this->createLitterObject('wrapper');
+        $plastic = $this->createMaterial('plastic');
+
+        // Photo 1: smoking/butts with plastic material
+        $photoTag1 = PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_litter_object_id' => $this->getCloId($smoking->id, $butts->id),
+            'category_id' => $smoking->id,
+            'litter_object_id' => $butts->id,
+            'quantity' => 5,
+        ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'material',
+            'tag_type_id' => $plastic->id,
+            'quantity' => 5,
+        ]);
+
+        // Photo 2: food/wrapper with NO materials
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_litter_object_id' => $this->getCloId($food->id, $wrapper->id),
+            'category_id' => $food->id,
+            'litter_object_id' => $wrapper->id,
+            'quantity' => 3,
+        ]);
+
+        // Act - Filter for plastic material
+        $stats = $this->service->getStats([
+            'bbox' => $this->testBbox,
+            'zoom' => 16,
+            'materials' => ['plastic'],
+        ]);
+
+        // Assert - Only photo1 should match
+        $this->assertEquals(1, $stats['counts']['photos']);
+    }
+
+    /** @test */
+    public function it_filters_by_brand_correctly()
+    {
+        // Arrange
+        $user = User::factory()->create();
+        $photo1 = $this->createPhotoWithLocation($user, 0.0, 51.5);
+        $photo2 = $this->createPhotoWithLocation($user, 0.1, 51.5);
+
+        $alcohol = $this->createCategory('alcohol');
+        $beerCan = $this->createLitterObject('beer_can');
+
+        $brandId = DB::table('brandslist')->insertGetId([
+            'key' => 'coca-cola',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Photo 1: alcohol/beer_can with coca-cola brand
+        $photoTag1 = PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_litter_object_id' => $this->getCloId($alcohol->id, $beerCan->id),
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $beerCan->id,
+            'quantity' => 2,
+        ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'brand',
+            'tag_type_id' => $brandId,
+            'quantity' => 2,
+        ]);
+
+        // Photo 2: alcohol/beer_can with NO brand
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_litter_object_id' => $this->getCloId($alcohol->id, $beerCan->id),
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $beerCan->id,
+            'quantity' => 3,
+        ]);
+
+        // Act - Filter for coca-cola brand
+        $stats = $this->service->getStats([
+            'bbox' => $this->testBbox,
+            'zoom' => 16,
+            'brands' => ['coca-cola'],
+        ]);
+
+        // Assert - Only photo1 should match
+        $this->assertEquals(1, $stats['counts']['photos']);
+    }
+
+    /** @test */
+    public function it_filters_by_custom_tag_correctly()
+    {
+        // Arrange
+        $user = User::factory()->create();
+        $photo1 = $this->createPhotoWithLocation($user, 0.0, 51.5);
+        $photo2 = $this->createPhotoWithLocation($user, 0.1, 51.5);
+
+        $other = $this->createCategory('other');
+        $object = $this->createLitterObject('random_litter');
+        $customTagId = $this->createCustomTag('broken_glass');
+
+        // Photo 1: with custom tag
+        $photoTag1 = PhotoTag::create([
+            'photo_id' => $photo1->id,
+            'category_litter_object_id' => $this->getCloId($other->id, $object->id),
+            'category_id' => $other->id,
+            'litter_object_id' => $object->id,
+            'quantity' => 1,
+        ]);
+        PhotoTagExtraTags::create([
+            'photo_tag_id' => $photoTag1->id,
+            'tag_type' => 'custom_tag',
+            'tag_type_id' => $customTagId,
+            'quantity' => 1,
+        ]);
+
+        // Photo 2: no custom tag
+        PhotoTag::create([
+            'photo_id' => $photo2->id,
+            'category_litter_object_id' => $this->getCloId($other->id, $object->id),
+            'category_id' => $other->id,
+            'litter_object_id' => $object->id,
+            'quantity' => 2,
+        ]);
+
+        // Act - Filter for broken_glass custom tag
+        $stats = $this->service->getStats([
+            'bbox' => $this->testBbox,
+            'zoom' => 16,
+            'custom_tags' => ['broken_glass'],
+        ]);
+
+        // Assert - Only photo1 should match
+        $this->assertEquals(1, $stats['counts']['photos']);
+    }
+
+    /** @test */
+    public function it_includes_top_contributors_in_stats()
+    {
+        // Arrange
+        $user = User::factory()->create([
+            'username' => 'test_contributor',
+            'show_username_maps' => true,
+        ]);
+
+        $this->createPhotoWithLocation($user, 0.0, 51.5, [
+            'total_tags' => 10,
+        ]);
+
+        // Act
+        $stats = $this->service->getStats([
+            'bbox' => $this->testBbox,
+            'zoom' => 16,
+        ]);
+
+        // Assert
+        $this->assertArrayHasKey('top_contributors', $stats);
+        $this->assertNotEmpty($stats['top_contributors']);
+        $this->assertEquals('test_contributor', $stats['top_contributors'][0]->username);
+    }
+
     private function createPhotoWithTags($user, $lon, $lat, $categoryKey, $objectKey, $quantity, $attributes = [])
     {
         $photo = $this->createPhotoWithLocation($user, $lon, $lat, $attributes);

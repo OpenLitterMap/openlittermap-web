@@ -2,6 +2,7 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\CategoryKey;
 use App\Enums\Dimension;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
@@ -341,7 +342,7 @@ class UpdateTagsService
         $photoTag = PhotoTag::create([
             'photo_id'                  => $photo->id,
             'category_litter_object_id' => $unclassifiedOtherCloId,
-            'category_id'               => Category::where('key', 'brands')->value('id'),
+            'category_id'               => Category::where('key', CategoryKey::Brands->value)->value('id'),
             'quantity'                  => array_sum(array_column($brands, 'quantity')),
             'picked_up'                 => !$photo->remaining,
         ]);
@@ -416,7 +417,7 @@ class UpdateTagsService
     private function getUnclassifiedOtherCloId(): int
     {
         $clo = CategoryObject::query()
-            ->whereHas('category', fn($q) => $q->where('key', 'unclassified'))
+            ->whereHas('category', fn($q) => $q->where('key', CategoryKey::Unclassified->value))
             ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
             ->first();
 

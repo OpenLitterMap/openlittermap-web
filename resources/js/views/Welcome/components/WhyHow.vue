@@ -15,7 +15,7 @@
 
     <!-- How -->
     <div>
-        <h1 class="main-title">{{ $t('home.welcome.how-does-it-work') }}?</h1>
+        <h1 class="main-title">{{ $t('How does it work') }}?</h1>
         <div v-for="(step, index) in howItWorksItems" :key="index" class="md:flex mb-10 md:mb-20">
             <div class="flex-4 pr-20 pl-20 mb-10 md:mb-0">
                 <img :src="step.icon" class="h-[10em]" alt="icon" />

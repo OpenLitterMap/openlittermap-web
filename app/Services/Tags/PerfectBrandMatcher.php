@@ -2,6 +2,7 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\CategoryKey;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
@@ -206,10 +207,10 @@ class PerfectBrandMatcher
         }
 
         // Get brands category
-        $brandsCategoryId = DB::table('categories')->where('key', 'brands')->value('id');
+        $brandsCategoryId = DB::table('categories')->where('key', CategoryKey::Brands->value)->value('id');
         if (!$brandsCategoryId) {
             $brandsCategoryId = DB::table('categories')->insertGetId([
-                'key' => 'brands',
+                'key' => CategoryKey::Brands->value,
                 'name' => 'Brands',
                 'created_at' => now(),
                 'updated_at' => now(),

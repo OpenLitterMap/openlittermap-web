@@ -37,10 +37,10 @@
                 class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
                 @change="changeLocationType"
             >
-                <option value="global">Global</option>
-                <option value="country">Country</option>
-                <option value="state">State</option>
-                <option value="city">City</option>
+                <option value="global">{{ $t('Global') }}</option>
+                <option value="country">{{ $t('Country') }}</option>
+                <option value="state">{{ $t('State') }}</option>
+                <option value="city">{{ $t('City') }}</option>
             </select>
 
             <!-- Country dropdown -->
@@ -50,7 +50,7 @@
                 class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
                 @change="changeCountry"
             >
-                <option :value="null" disabled>Select country</option>
+                <option :value="null" disabled>{{ $t('Select country') }}</option>
                 <option v-for="country in store.countries" :key="country.id" :value="country.id">
                     {{ country.name }}
                 </option>
@@ -63,7 +63,7 @@
                 class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
                 @change="changeState"
             >
-                <option :value="null" disabled>Select state</option>
+                <option :value="null" disabled>{{ $t('Select state') }}</option>
                 <option v-for="state in store.states" :key="state.id" :value="state.id">
                     {{ state.name }}
                 </option>
@@ -76,7 +76,7 @@
                 class="bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-emerald-500/50"
                 @change="changeCity"
             >
-                <option :value="null" disabled>Select city</option>
+                <option :value="null" disabled>{{ $t('Select city') }}</option>
                 <option v-for="city in store.cities" :key="city.id" :value="city.id">
                     {{ city.name }}
                 </option>
@@ -87,9 +87,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLeaderboardStore } from '../../../../stores/leaderboard/index.js';
 
 const emit = defineEmits(['change']);
+const { t } = useI18n();
 const store = useLeaderboardStore();
 
 const selectedTime = ref('all-time');
@@ -99,13 +101,13 @@ const selectedStateId = ref(null);
 const selectedCityId = ref(null);
 
 const timeOptions = [
-    { value: 'all-time', label: 'All Time' },
-    { value: 'today', label: 'Today' },
-    { value: 'yesterday', label: 'Yesterday' },
-    { value: 'this-month', label: 'This Month' },
-    { value: 'last-month', label: 'Last Month' },
-    { value: 'this-year', label: 'This Year' },
-    { value: 'last-year', label: 'Last Year' },
+    { value: 'all-time', label: t('All Time') },
+    { value: 'today', label: t('Today') },
+    { value: 'yesterday', label: t('Yesterday') },
+    { value: 'this-month', label: t('This Month') },
+    { value: 'last-month', label: t('Last Month') },
+    { value: 'this-year', label: t('This Year') },
+    { value: 'last-year', label: t('Last Year') },
 ];
 
 const showStateDropdown = computed(() => {

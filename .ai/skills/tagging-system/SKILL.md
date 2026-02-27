@@ -20,7 +20,7 @@ V5 uses a normalized hierarchy: Photo -> PhotoTag (category + object + quantity)
 - `app/Models/Litter/Tags/CustomTagNew.php` — Custom tags (`custom_tags_new` table)
 - `app/Models/Litter/Tags/CategoryObject.php` — Pivot: `category_litter_object` + `types()` BelongsToMany
 - `app/Models/Litter/Tags/LitterObjectType.php` — Type lookup: "what was in the container" (beer, water, etc.)
-- `database/seeds/Tags/SeedLitterObjectTypesSeeder.php` — Seeds 17 types, unclassified/beverages categories, canonical objects, 9 typed CLO pivot mappings
+- `database/seeds/Tags/SeedLitterObjectTypesSeeder.php` — Seeds 17 types, unclassified/softdrinks categories, canonical objects, 9 typed CLO pivot mappings
 - `app/Services/Tags/ClassifyTagsService.php` — Tag classification + deprecated key mapping
 - `app/Services/Tags/UpdateTagsService.php` — V4->V5 migration per photo
 - `app/Services/Tags/GeneratePhotoSummaryService.php` — Summary JSON + XP from PhotoTags

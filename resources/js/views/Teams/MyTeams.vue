@@ -1,19 +1,19 @@
 <template>
     <div>
-        <h1 class="text-2xl font-bold text-slate-800 mb-4">My Teams</h1>
+        <h1 class="text-2xl font-bold text-slate-800 mb-4">{{ $t('My Teams') }}</h1>
 
         <!-- Active team status -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-xl p-4 shadow-sm mb-6">
             <div>
                 <p v-if="activeTeam" class="text-slate-700">
-                    Contributing to <strong>{{ activeTeam.name }}</strong>.
-                    All uploads will be attributed to this team.
+                    {{ $t('Contributing to') }} <strong>{{ activeTeam.name }}</strong>.
+                    {{ $t('All uploads will be attributed to this team.') }}
                 </p>
                 <p v-else-if="hasTeams" class="text-amber-600">
-                    No active team — uploads won't be attributed to any team.
+                    {{ $t("No active team — uploads won't be attributed to any team.") }}
                 </p>
                 <p v-else class="text-slate-500">
-                    You haven't joined any teams yet.
+                    {{ $t("You haven't joined any teams yet.") }}
                 </p>
             </div>
 
@@ -22,7 +22,7 @@
                 class="mt-3 sm:mt-0 shrink-0 px-4 py-2 text-sm font-medium rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
                 @click="deactivate"
             >
-                Deactivate
+                {{ $t('Deactivate') }}
             </button>
         </div>
 
@@ -30,7 +30,7 @@
             <!-- Team members -->
             <div class="mb-8">
                 <div class="flex items-center gap-3 mb-4">
-                    <h2 class="text-lg font-semibold text-slate-700">Team Members</h2>
+                    <h2 class="text-lg font-semibold text-slate-700">{{ $t('Team Members') }}</h2>
                     <select
                         v-model="viewTeamId"
                         class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
@@ -51,12 +51,12 @@
                         <thead class="bg-slate-50 text-slate-600 text-left">
                             <tr>
                                 <th class="px-4 py-3 font-medium text-center w-16">#</th>
-                                <th class="px-4 py-3 font-medium">Name</th>
-                                <th class="px-4 py-3 font-medium">Username</th>
-                                <th class="px-4 py-3 font-medium text-center">Status</th>
-                                <th class="px-4 py-3 font-medium text-right">Photos</th>
-                                <th class="px-4 py-3 font-medium text-right">Litter</th>
-                                <th class="px-4 py-3 font-medium text-right">Last active</th>
+                                <th class="px-4 py-3 font-medium">{{ $t('Name') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ $t('Username') }}</th>
+                                <th class="px-4 py-3 font-medium text-center">{{ $t('Status') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ $t('Photos') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ $t('Litter') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ $t('Last active') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -77,7 +77,7 @@
                                             ? 'bg-green-100 text-green-700'
                                             : 'bg-slate-100 text-slate-500'"
                                     >
-                                        {{ member.active_team === viewTeamId ? 'Active' : 'Inactive' }}
+                                        {{ member.active_team === viewTeamId ? $t('Active') : $t('Inactive') }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right tabular-nums">{{ member.pivot.total_photos }}</td>
@@ -97,7 +97,7 @@
                         class="px-4 py-2 text-sm rounded-lg border border-slate-300 bg-white disabled:opacity-40"
                         @click="changePage(members.current_page - 1)"
                     >
-                        Previous
+                        {{ $t('Previous') }}
                     </button>
                     <span class="px-3 py-2 text-sm text-slate-500">
                         {{ members.current_page }} / {{ members.last_page }}
@@ -107,25 +107,25 @@
                         class="px-4 py-2 text-sm rounded-lg border border-slate-300 bg-white disabled:opacity-40"
                         @click="changePage(members.current_page + 1)"
                     >
-                        Next
+                        {{ $t('Next') }}
                     </button>
                 </div>
             </div>
 
             <!-- All my teams table -->
             <div>
-                <h2 class="text-lg font-semibold text-slate-700 mb-4">All My Teams</h2>
+                <h2 class="text-lg font-semibold text-slate-700 mb-4">{{ $t('All My Teams') }}</h2>
 
                 <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="bg-slate-50 text-slate-600 text-left">
                             <tr>
-                                <th class="px-4 py-3 font-medium">Name</th>
-                                <th class="px-4 py-3 font-medium">Identifier</th>
-                                <th class="px-4 py-3 font-medium text-right">Members</th>
-                                <th class="px-4 py-3 font-medium text-right">Photos</th>
-                                <th class="px-4 py-3 font-medium text-right">Litter</th>
-                                <th class="px-4 py-3 font-medium text-center">Actions</th>
+                                <th class="px-4 py-3 font-medium">{{ $t('Name') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ $t('Identifier') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ $t('Members') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ $t('Photos') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ $t('Litter') }}</th>
+                                <th class="px-4 py-3 font-medium text-center">{{ $t('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -146,7 +146,7 @@
                                         <button
                                             :disabled="team.id === activeTeamId"
                                             class="p-1.5 rounded text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                                            :title="team.id === activeTeamId ? 'Currently active' : 'Set as active team'"
+                                            :title="team.id === activeTeamId ? $t('Currently active') : $t('Set as active team')"
                                             @click="activate(team.id)"
                                         >
                                             <i class="fa fa-star" />
@@ -155,7 +155,7 @@
                                         <!-- Download -->
                                         <button
                                             class="p-1.5 rounded text-slate-600 hover:bg-slate-100"
-                                            title="Download team data"
+                                            :title="$t('Download team data')"
                                             @click="download(team.id)"
                                         >
                                             <i class="fa fa-download" />
@@ -165,7 +165,7 @@
                                         <button
                                             :disabled="team.members <= 1"
                                             class="p-1.5 rounded text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                                            :title="team.members > 1 ? 'Leave team' : 'You are the only member'"
+                                            :title="team.members > 1 ? $t('Leave team') : $t('You are the only member')"
                                             @click="leave(team.id)"
                                         >
                                             <i class="fa fa-sign-out" />
@@ -175,7 +175,7 @@
                                         <button
                                             v-if="team.leader === userId"
                                             class="p-1.5 rounded text-amber-600 hover:bg-amber-50"
-                                            :title="team.leaderboards ? 'Hide from leaderboards' : 'Show on leaderboards'"
+                                            :title="team.leaderboards ? $t('Hide from leaderboards') : $t('Show on leaderboards')"
                                             @click="teamsStore.toggleLeaderboardVisibility(team.id)"
                                         >
                                             <i class="fa" :class="team.leaderboards ? 'fa-eye-slash' : 'fa-eye'" />
@@ -193,12 +193,14 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useTeamsStore } from '@/stores/teams';
 import { useUserStore } from '@/stores/user';
 
 export default {
     name: 'MyTeams',
     setup() {
+        const { t } = useI18n();
         const teamsStore = useTeamsStore();
         const userStore = useUserStore();
 
@@ -222,7 +224,7 @@ export default {
         };
 
         const rank = (index) => {
-            return index + 1 + (members.value.current_page - 1) * 10;
+            return index + 1 + (members.value.current_page - 1) * (members.value.per_page || 10);
         };
 
         const activate = (teamId) => teamsStore.setActiveTeam(teamId);
@@ -233,7 +235,7 @@ export default {
         };
 
         const leave = async (teamId) => {
-            if (!confirm('Are you sure you want to leave this team?')) return;
+            if (!confirm(t('Are you sure you want to leave this team?'))) return;
             await teamsStore.leaveTeam(teamId);
 
             // Reset viewed team if we left it

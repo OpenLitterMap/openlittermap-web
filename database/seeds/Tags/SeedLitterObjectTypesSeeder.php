@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
@@ -60,7 +61,7 @@ class SeedLitterObjectTypesSeeder extends Seeder
      */
     protected function seedUnclassifiedCategory(): void
     {
-        Category::firstOrCreate(['key' => 'unclassified']);
+        Category::firstOrCreate(['key' => CategoryKey::Unclassified->value]);
     }
 
     /**
@@ -85,8 +86,7 @@ class SeedLitterObjectTypesSeeder extends Seeder
      */
     protected function seedTypeMappings(): void
     {
-        // beverages category (new — merges old coffee + softdrinks)
-        Category::firstOrCreate(['key' => 'beverages']);
+        Category::firstOrCreate(['key' => CategoryKey::Softdrinks->value]);
 
         $mappings = $this->getTypeMappings();
 
@@ -119,18 +119,16 @@ class SeedLitterObjectTypesSeeder extends Seeder
     protected function getTypeMappings(): array
     {
         return [
-            // Alcohol
-            ['category' => 'alcohol', 'object' => 'bottle', 'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown']],
-            ['category' => 'alcohol', 'object' => 'can', 'types' => ['beer', 'cider', 'spirits', 'unknown']],
-            ['category' => 'alcohol', 'object' => 'pint_glass', 'types' => ['beer', 'cider', 'unknown']],
-            ['category' => 'alcohol', 'object' => 'wine_glass', 'types' => ['wine', 'unknown']],
-            ['category' => 'alcohol', 'object' => 'shot_glass', 'types' => ['spirits', 'unknown']],
+            ['category' => CategoryKey::Alcohol->value, 'object' => 'bottle', 'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown']],
+            ['category' => CategoryKey::Alcohol->value, 'object' => 'can', 'types' => ['beer', 'cider', 'spirits', 'unknown']],
+            ['category' => CategoryKey::Alcohol->value, 'object' => 'pint_glass', 'types' => ['beer', 'cider', 'unknown']],
+            ['category' => CategoryKey::Alcohol->value, 'object' => 'wine_glass', 'types' => ['wine', 'unknown']],
+            ['category' => CategoryKey::Alcohol->value, 'object' => 'shot_glass', 'types' => ['spirits', 'unknown']],
 
-            // Beverages
-            ['category' => 'beverages', 'object' => 'bottle', 'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown']],
-            ['category' => 'beverages', 'object' => 'can', 'types' => ['soda', 'energy', 'juice', 'iced_tea', 'sparkling_water', 'unknown']],
-            ['category' => 'beverages', 'object' => 'carton', 'types' => ['juice', 'milk', 'iced_tea', 'plant_milk', 'unknown']],
-            ['category' => 'beverages', 'object' => 'cup', 'types' => ['coffee', 'tea', 'soda', 'smoothie', 'unknown']],
+            ['category' => CategoryKey::Softdrinks->value, 'object' => 'bottle', 'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown']],
+            ['category' => CategoryKey::Softdrinks->value, 'object' => 'can', 'types' => ['soda', 'energy', 'juice', 'iced_tea', 'sparkling_water', 'unknown']],
+            ['category' => CategoryKey::Softdrinks->value, 'object' => 'carton', 'types' => ['juice', 'milk', 'iced_tea', 'plant_milk', 'unknown']],
+            ['category' => CategoryKey::Softdrinks->value, 'object' => 'cup', 'types' => ['coffee', 'tea', 'soda', 'smoothie', 'unknown']],
         ];
     }
 }

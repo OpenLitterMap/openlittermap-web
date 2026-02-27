@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Models\Litter\Tags\Category;
@@ -32,7 +33,7 @@ class TagSummaryServiceTest extends TestCase
     public function it_generates_basic_summary_with_object_only()
     {
         $photo = Photo::factory()->create();
-        $category = Category::firstWhere('key', 'alcohol');
+        $category = Category::firstWhere('key', CategoryKey::Alcohol->value);
         $object = LitterObject::firstWhere('key', 'can');
 
         PhotoTag::create([
@@ -55,7 +56,7 @@ class TagSummaryServiceTest extends TestCase
     public function it_counts_brands_and_materials_correctly()
     {
         $photo = Photo::factory()->create();
-        $category = Category::firstWhere('key', 'beverages');
+        $category = Category::firstWhere('key', CategoryKey::Softdrinks->value);
         $object = LitterObject::firstWhere('key', 'can');
 
         $tag = PhotoTag::create([
@@ -148,7 +149,7 @@ class TagSummaryServiceTest extends TestCase
     public function it_handles_multiple_tags_in_one_category()
     {
         $photo = Photo::factory()->create();
-        $category = Category::firstWhere('key', 'alcohol');
+        $category = Category::firstWhere('key', CategoryKey::Alcohol->value);
         $can = LitterObject::firstWhere('key', 'can');
         $bottle = LitterObject::firstWhere('key', 'bottle');
 
@@ -168,8 +169,8 @@ class TagSummaryServiceTest extends TestCase
     public function it_handles_multiple_categories()
     {
         $photo = Photo::factory()->create();
-        $alcohol = Category::firstWhere('key', 'alcohol');
-        $smoking = Category::firstWhere('key', 'smoking');
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $smoking = Category::firstWhere('key', CategoryKey::Smoking->value);
         $can = LitterObject::firstWhere('key', 'can');
         $butts = LitterObject::firstWhere('key', 'butts');
 
@@ -201,7 +202,7 @@ class TagSummaryServiceTest extends TestCase
     public function it_handles_duplicate_extras_with_different_indexes()
     {
         $photo = Photo::factory()->create();
-        $category = Category::firstWhere('key', 'alcohol');
+        $category = Category::firstWhere('key', CategoryKey::Alcohol->value);
         $object = LitterObject::firstWhere('key', 'can');
 
         $tag = PhotoTag::create([
