@@ -23,7 +23,7 @@ class SettingsTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')->patchJson('/api/settings', [
+        $response = $this->actingAs($user)->patchJson('/api/settings', [
             'social_twitter' => 'https://twitter.com/user',
             'test setting' => 'this should not be stored',
         ]);
@@ -40,7 +40,7 @@ class SettingsTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')->patchJson('/api/settings', $settings);
+        $response = $this->actingAs($user)->patchJson('/api/settings', $settings);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors($errors);

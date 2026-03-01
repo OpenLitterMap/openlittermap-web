@@ -39,7 +39,7 @@ class JoinTeamTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/join', [
+        $response = $this->actingAs($user)->postJson('/api/teams/join', [
             'identifier' => 'TestTeam2026',
         ]);
 
@@ -56,7 +56,7 @@ class JoinTeamTest extends TestCase
 
         $this->assertEquals(1, $this->team->members);
 
-        $this->actingAs($user, 'api')->postJson('/api/teams/join', [
+        $this->actingAs($user)->postJson('/api/teams/join', [
             'identifier' => 'TestTeam2026',
         ]);
 
@@ -68,7 +68,7 @@ class JoinTeamTest extends TestCase
         $user = User::factory()->create();
         $user->teams()->attach($this->team->id);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/join', [
+        $response = $this->actingAs($user)->postJson('/api/teams/join', [
             'identifier' => 'TestTeam2026',
         ]);
 
@@ -81,7 +81,7 @@ class JoinTeamTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user, 'api')
+        $this->actingAs($user)
             ->postJson('/api/teams/join', [
                 'identifier' => 'NonExistentTeam',
             ])
@@ -93,7 +93,7 @@ class JoinTeamTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user, 'api')
+        $this->actingAs($user)
             ->postJson('/api/teams/join', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['identifier']);
@@ -112,7 +112,7 @@ class JoinTeamTest extends TestCase
         $user->teams()->attach($this->team->id);
         $this->team->increment('members');
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/leave', [
+        $response = $this->actingAs($user)->postJson('/api/teams/leave', [
             'team_id' => $this->team->id,
         ]);
 
@@ -125,7 +125,7 @@ class JoinTeamTest extends TestCase
     public function test_the_last_member_cannot_leave_a_team()
     {
         // Leader is the only member (members=1)
-        $response = $this->actingAs($this->leader, 'api')->postJson('/api/teams/leave', [
+        $response = $this->actingAs($this->leader)->postJson('/api/teams/leave', [
             'team_id' => $this->team->id,
         ]);
 
@@ -137,7 +137,7 @@ class JoinTeamTest extends TestCase
         $user = User::factory()->create();
         $user->teams()->attach($this->team->id);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/active', [
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
             'team_id' => $this->team->id,
         ]);
 
@@ -151,7 +151,7 @@ class JoinTeamTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/active', [
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
             'team_id' => $this->team->id,
         ]);
 

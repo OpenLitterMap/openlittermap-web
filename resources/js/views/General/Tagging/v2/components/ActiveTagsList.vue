@@ -1,14 +1,19 @@
 <template>
     <div class="bg-gray-800 rounded-lg p-4 h-full overflow-y-auto">
         <h3 class="text-white font-semibold mb-4 flex items-center justify-between">
-            <span>Active Tags</span>
+            <span>Tags</span>
             <span v-if="tags.length > 0" class="text-sm font-normal text-gray-400">
                 {{ tags.length }} {{ tags.length === 1 ? 'tag' : 'tags' }}
             </span>
         </h3>
 
-        <!-- Empty state -->
-        <div v-if="tags.length === 0" class="text-center py-12">
+        <!-- No photos state -->
+        <div v-if="!hasPhotos" class="text-center py-12">
+            <p class="text-gray-400">You have nothing to tag.</p>
+        </div>
+
+        <!-- Empty tags state -->
+        <div v-else-if="tags.length === 0" class="text-center py-12">
             <svg class="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                     stroke-linecap="round"
@@ -50,6 +55,10 @@ import { useTagsStore } from '@stores/tags/index.js';
 const tagsStore = useTagsStore();
 
 defineProps({
+    hasPhotos: {
+        type: Boolean,
+        default: true,
+    },
     tags: {
         type: Array,
         default: () => [],

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Actions\Photos\DeletePhotoAction;
+use App\Actions\Tags\AddTagsToPhotoAction;
 use App\Enums\CategoryKey;
 use App\Enums\VerificationStatus;
 use App\Events\SchoolDataApproved;
@@ -41,7 +42,13 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
-        $query = Photo::with(['photoTags.category:id,key', 'photoTags.object:id,key', 'user:id,name,username'])
+        $query = Photo::with([
+                'photoTags.category:id,key',
+                'photoTags.object:id,key',
+                'photoTags.extraTags.extraTag',
+                'user:id,name,username',
+                'participant:id,slot_number,display_name',
+            ])
             ->where('team_id', $team->id)
             ->orderByDesc('created_at');
 
@@ -56,9 +63,19 @@ class TeamPhotosController extends Controller
         $photos = $query->paginate(20);
 
         // Safeguarding — mask student names at API level
-        if ($team->safeguarding && ! $team->isLeader($user->id) && ! $user->can('view student identities')) {
+        $applySafeguarding = $team->safeguarding
+            && ! $team->isLeader($user->id)
+            && ! $user->can('view student identities');
+
+        if ($applySafeguarding) {
             $this->applySafeguarding($photos->getCollection(), $team);
         }
+
+        // Transform to include new_tags format for frontend tag hydration
+        $photos->getCollection()->transform(function (Photo $photo) {
+            $photo->setAttribute('new_tags', $this->getNewTags($photo));
+            return $photo;
+        });
 
         return response()->json([
             'success' => true,
@@ -84,7 +101,14 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
-        $photo->load(['photoTags.category:id,key', 'photoTags.object:id,key', 'user:id,name,username']);
+        $photo->load([
+            'photoTags.category:id,key',
+            'photoTags.object:id,key',
+            'photoTags.extraTags.extraTag',
+            'user:id,name,username',
+        ]);
+
+        $photo->setAttribute('new_tags', $this->getNewTags($photo));
 
         return response()->json([
             'success' => true,
@@ -97,8 +121,11 @@ class TeamPhotosController extends Controller
      *
      * PATCH /api/teams/photos/{photo}/tags
      *
+     * Accepts CLO-based payload (same format as PhotoTagsController::store).
+     * Deletes existing tags, resets summary/xp/verified, then delegates
+     * to AddTagsToPhotoAction to recreate tags with proper summary + XP.
+     *
      * Only the team leader (teacher) or users with 'manage school team' permission.
-     * Wraps in transaction. Regenerates summary + XP so MetricsService has fresh data.
      */
     public function updateTags(Request $request, Photo $photo): JsonResponse
     {
@@ -111,69 +138,53 @@ class TeamPhotosController extends Controller
 
         $request->validate([
             'tags' => 'required|array|min:1',
-            'tags.*.id' => 'nullable|exists:photo_tags,id',
-            'tags.*.category' => 'required|string',
-            'tags.*.object' => 'required|string',
+            'tags.*.category_litter_object_id' => 'required|exists:category_litter_object,id',
+            'tags.*.litter_object_type_id' => 'nullable|exists:litter_object_types,id',
             'tags.*.quantity' => 'required|integer|min:1',
             'tags.*.picked_up' => 'nullable|boolean',
+            'tags.*.materials' => 'nullable|array',
+            'tags.*.materials.*.id' => 'required|exists:materials,id',
+            'tags.*.materials.*.quantity' => 'required|integer|min:1',
+            'tags.*.brands' => 'nullable|array',
+            'tags.*.brands.*.id' => 'required|exists:brands,id',
+            'tags.*.brands.*.quantity' => 'required|integer|min:1',
+            'tags.*.custom_tags' => 'nullable|array',
+            'tags.*.custom_tags.*.tag' => 'required|string|max:100',
+            'tags.*.custom_tags.*.quantity' => 'required|integer|min:1',
         ]);
 
-        DB::transaction(function () use ($request, $photo) {
-            // Delete existing tags
-            PhotoTag::where('photo_id', $photo->id)->delete();
+        DB::transaction(function () use ($request, $photo, $user) {
+            // Delete existing tags (extra_tags cascade via FK)
+            $photo->photoTags()->each(function ($tag) {
+                $tag->extraTags()->delete();
+                $tag->delete();
+            });
 
-            // Re-create from edited data
-            $totalTags = 0;
-
-            foreach ($request->tags as $tag) {
-                $category = Category::where('key', $tag['category'])->first();
-                $object = LitterObject::where('key', $tag['object'])->first();
-
-                $cloId = null;
-                if ($category && $object) {
-                    $clo = CategoryObject::where('category_id', $category->id)
-                        ->where('litter_object_id', $object->id)
-                        ->first();
-                    $cloId = $clo?->id;
-                }
-
-                if (! $cloId) {
-                    $cloId = CategoryObject::query()
-                        ->whereHas('category', fn($q) => $q->where('key', CategoryKey::Unclassified->value))
-                        ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
-                        ->value('id');
-                }
-
-                PhotoTag::create([
-                    'photo_id' => $photo->id,
-                    'category_id' => $category?->id,
-                    'litter_object_id' => $object?->id,
-                    'category_litter_object_id' => $cloId,
-                    'quantity' => $tag['quantity'],
-                    'picked_up' => $tag['picked_up'] ?? false,
-                ]);
-                $totalTags += $tag['quantity'];
-            }
-
-            // Update photo — keep as VERIFIED (not yet approved)
+            // Reset summary and XP so AddTagsToPhotoAction regenerates them
             $photo->update([
-                'total_tags' => $totalTags,
-                'verified' => VerificationStatus::VERIFIED->value,
+                'summary' => null,
+                'xp' => 0,
+                'verified' => VerificationStatus::UNVERIFIED->value,
             ]);
 
-            // Regenerate summary + XP.
-            // CRITICAL: MetricsService reads photo.summary for tag data and
-            // photo.xp for XP totals. Both must be current before approval.
-            if (method_exists($photo, 'generateSummary')) {
-                $photo->generateSummary();
-            }
-
-            // XP = sum of tag quantities (teacher edits don't have extra tags)
-            $photo->xp = $totalTags;
-            $photo->save();
+            // Add new tags via the standard action (generates summary, XP)
+            app(AddTagsToPhotoAction::class)->run(
+                $user->id,
+                $photo->id,
+                $request->tags
+            );
         });
 
-        $photo->load(['photoTags.category:id,key', 'photoTags.object:id,key']);
+        // Reload with full relationships for response
+        $photo->refresh();
+        $photo->load([
+            'photoTags.category:id,key',
+            'photoTags.object:id,key',
+            'photoTags.extraTags.extraTag',
+            'user:id,name,username',
+        ]);
+
+        $photo->setAttribute('new_tags', $this->getNewTags($photo));
 
         return response()->json([
             'success' => true,
@@ -287,6 +298,127 @@ class TeamPhotosController extends Controller
             'success' => true,
             'approved_count' => $affectedRows,
             'message' => "{$affectedRows} photos approved and published.",
+        ]);
+    }
+
+    /**
+     * Per-member stats for the team (leader/facilitator only).
+     *
+     * GET /api/teams/photos/member-stats?team_id=X
+     *
+     * Returns per-student: total photos, pending, approved, litter count, last active.
+     * Applies safeguarding pseudonyms when enabled.
+     */
+    public function memberStats(Request $request): JsonResponse
+    {
+        $request->validate([
+            'team_id' => 'required|exists:teams,id',
+        ]);
+
+        $user = auth()->user();
+        $team = Team::findOrFail($request->team_id);
+
+        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
+            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        }
+
+        // Get all members (excluding leader)
+        $members = $team->users()
+            ->where('users.id', '!=', $team->leader)
+            ->select('users.id', 'users.name', 'users.username')
+            ->get();
+
+        // Build safeguarding pseudonym map
+        $pseudonyms = [];
+        if ($team->safeguarding) {
+            $memberOrder = DB::table('team_user')
+                ->where('team_id', $team->id)
+                ->where('user_id', '!=', $team->leader)
+                ->orderBy('id')
+                ->pluck('user_id')
+                ->flip()
+                ->map(fn ($index) => 'Student ' . ($index + 1))
+                ->toArray();
+            $pseudonyms = $memberOrder;
+        }
+
+        // Per-member photo stats in a single query
+        $photoStats = DB::table('photos')
+            ->where('team_id', $team->id)
+            ->whereNull('deleted_at')
+            ->whereIn('user_id', $members->pluck('id'))
+            ->groupBy('user_id')
+            ->selectRaw('
+                user_id,
+                COUNT(*) as total_photos,
+                SUM(CASE WHEN is_public = 0 AND team_approved_at IS NULL THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN team_approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved,
+                COALESCE(SUM(total_tags), 0) as litter_count,
+                MAX(created_at) as last_active
+            ')
+            ->get()
+            ->keyBy('user_id');
+
+        $memberData = $members->map(function ($member) use ($photoStats, $pseudonyms, $team) {
+            $stats = $photoStats->get($member->id);
+
+            return [
+                'user_id' => $member->id,
+                'name' => ! empty($pseudonyms)
+                    ? ($pseudonyms[$member->id] ?? 'Student')
+                    : $member->name,
+                'username' => ! empty($pseudonyms) ? null : $member->username,
+                'is_participant' => false,
+                'total_photos' => $stats ? (int) $stats->total_photos : 0,
+                'pending' => $stats ? (int) $stats->pending : 0,
+                'approved' => $stats ? (int) $stats->approved : 0,
+                'litter_count' => $stats ? (int) $stats->litter_count : 0,
+                'last_active' => $stats?->last_active,
+            ];
+        });
+
+        // Include participant stats if participant sessions are enabled
+        if ($team->hasParticipantSessions()) {
+            $participantStats = DB::table('photos')
+                ->where('team_id', $team->id)
+                ->whereNull('deleted_at')
+                ->whereNotNull('participant_id')
+                ->groupBy('participant_id')
+                ->selectRaw('
+                    participant_id,
+                    COUNT(*) as total_photos,
+                    SUM(CASE WHEN is_public = 0 AND team_approved_at IS NULL THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN team_approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved,
+                    COALESCE(SUM(total_tags), 0) as litter_count,
+                    MAX(created_at) as last_active
+                ')
+                ->get()
+                ->keyBy('participant_id');
+
+            $participants = $team->participants()->orderBy('slot_number')->get();
+
+            $participantData = $participants->map(function ($p) use ($participantStats) {
+                $stats = $participantStats->get($p->id);
+
+                return [
+                    'participant_id' => $p->id,
+                    'name' => $p->display_name,
+                    'username' => null,
+                    'is_participant' => true,
+                    'total_photos' => $stats ? (int) $stats->total_photos : 0,
+                    'pending' => $stats ? (int) $stats->pending : 0,
+                    'approved' => $stats ? (int) $stats->approved : 0,
+                    'litter_count' => $stats ? (int) $stats->litter_count : 0,
+                    'last_active' => $p->last_active_at ?? $stats?->last_active,
+                ];
+            });
+
+            $memberData = $memberData->concat($participantData)->values();
+        }
+
+        return response()->json([
+            'success' => true,
+            'members' => $memberData,
         ]);
     }
 
@@ -459,12 +591,76 @@ class TeamPhotosController extends Controller
     // ─── Helpers ──────────────────────────────────────
 
     /**
+     * Transform PhotoTag relationships into the new_tags format.
+     *
+     * Same pattern as AdminQueueController::getNewTags().
+     */
+    private function getNewTags(Photo $photo): array
+    {
+        if (! $photo->photoTags || $photo->photoTags->count() === 0) {
+            return [];
+        }
+
+        $newTags = [];
+
+        foreach ($photo->photoTags as $photoTag) {
+            $tag = [
+                'id' => $photoTag->id,
+                'category_litter_object_id' => $photoTag->category_litter_object_id,
+                'litter_object_type_id' => $photoTag->litter_object_type_id,
+                'quantity' => $photoTag->quantity,
+                'picked_up' => $photoTag->picked_up,
+            ];
+
+            if ($photoTag->category) {
+                $tag['category'] = [
+                    'id' => $photoTag->category->id,
+                    'key' => $photoTag->category->key,
+                ];
+            }
+
+            if ($photoTag->object) {
+                $tag['object'] = [
+                    'id' => $photoTag->object->id,
+                    'key' => $photoTag->object->key,
+                ];
+            }
+
+            $extraTags = [];
+            foreach ($photoTag->extraTags as $extra) {
+                $extraTag = [
+                    'type' => $extra->tag_type,
+                    'quantity' => $extra->quantity,
+                ];
+
+                if ($extra->extraTag) {
+                    $extraTag['tag'] = [
+                        'id' => $extra->extraTag->id,
+                        'key' => $extra->extraTag->key,
+                    ];
+                }
+
+                $extraTags[] = $extraTag;
+            }
+
+            if (! empty($extraTags)) {
+                $tag['extra_tags'] = $extraTags;
+            }
+
+            $newTags[] = $tag;
+        }
+
+        return $newTags;
+    }
+
+    /**
      * Photo stats for a team — single query, no N+1.
      */
     protected function teamPhotoStats(int $teamId): array
     {
         $stats = DB::table('photos')
             ->where('team_id', $teamId)
+            ->whereNull('deleted_at')
             ->selectRaw('
                 COUNT(*) as total,
                 SUM(CASE WHEN is_public = 0 AND team_approved_at IS NULL THEN 1 ELSE 0 END) as pending,

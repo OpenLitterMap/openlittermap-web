@@ -331,11 +331,7 @@ const getShortDate = () => {
 };
 
 const getLevelTitle = () => {
-    if (userLevel.value < 5) return 'Beginner';
-    if (userLevel.value < 10) return 'Contributor';
-    if (userLevel.value < 20) return 'Expert';
-    if (userLevel.value < 50) return 'Master';
-    return 'Legend';
+    return userStore.user?.next_level?.title || 'Complete Noob';
 };
 
 const prepareTagsForUpload = () => {

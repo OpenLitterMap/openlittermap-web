@@ -70,7 +70,7 @@ class ProfileIndexTest extends TestCase
         $this->assertEquals(500, $data['stats']['xp']);
         $this->assertEquals(10, $data['stats']['uploads']);
         $this->assertEquals(42, $data['stats']['litter']);
-        $this->assertEquals(4, $data['level']['level']); // 500 XP → level 4 (cumulative: 100, 250, 475, 813)
+        $this->assertEquals(3, $data['level']['level']); // 500 XP → level 3 "Post-Noob" (thresholds: 0, 100, 500)
         $this->assertEquals(1, $data['rank']['global_position']);
         $this->assertEquals(1000, $data['global_stats']['total_photos']);
     }
@@ -117,5 +117,30 @@ class ProfileIndexTest extends TestCase
         $this->assertEquals(2, $response->json('locations.countries'));
         $this->assertEquals(3, $response->json('locations.states'));
         $this->assertEquals(3, $response->json('locations.cities'));
+    }
+
+    /** @test */
+    public function rank_total_is_full_user_count(): void
+    {
+        // Create some users with XP and one without
+        $activeUser = User::factory()->create(['xp' => 100]);
+        $zeroXpUser = User::factory()->create(['xp' => 0]);
+
+        $userScope = RedisKeys::user($activeUser->id);
+        Redis::hSet(RedisKeys::stats($userScope), 'xp', 100);
+        Redis::zAdd(RedisKeys::xpRanking(RedisKeys::global()), 100, (string) $activeUser->id);
+
+        $response = $this->actingAs($zeroXpUser)
+            ->getJson('/api/user/profile/index');
+
+        $response->assertOk();
+
+        $total = $response->json('rank.global_total');
+        $position = $response->json('rank.global_position');
+
+        // Total should be ALL users, not just those with XP
+        $this->assertEquals(User::count(), $total);
+        // 0 XP user is tied last — position equals count of users with more XP + 1
+        $this->assertLessThanOrEqual($total, $position);
     }
 }

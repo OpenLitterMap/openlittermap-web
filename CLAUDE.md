@@ -4,6 +4,11 @@ Open-source platform for mapping and tagging litter worldwide. Laravel 11 + Vue 
 
 ## Quick Reference
 
+```
+node v20.20.0
+npm v10.8.2
+```
+
 ```bash
 # Install
 composer install && npm install
@@ -29,6 +34,7 @@ php artisan migrate:rollback
 php artisan queue:work
 php artisan reverb:start
 php artisan horizon
+
 ```
 
 ## Tech Stack
@@ -108,7 +114,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator (delete/revoke/safeguarding), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, translations. 810 tests passing.
+Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations. 899 tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -116,8 +122,9 @@ UN-endorsed Digital Public Good for environmental citizen science.
 Built by a single developer over 17 years.
 
 ## Key Architectural Invariants
+- `photos.remaining` is deprecated — use `$photo->picked_up` accessor (returns `!remaining`). API responses include both fields; new code should use `picked_up`. `photo_tags.picked_up` is a separate nullable column for per-tag granularity.
 - School team photos: `is_public=false` until teacher approval (see `readme/SchoolPipeline.md`)
-- Teacher approval fires `TagsVerifiedByAdmin` → MetricsService processes metrics
+- `TagsVerifiedByAdmin` fires for ALL non-school users at tag time (leaderboard credit is immediate). Only school students wait for teacher approval
 - All public/global queries MUST use `Photo::public()` scope or `where('is_public', true)`
 - School teams must NOT be `is_trusted` (aggregate data would leak before teacher review)
 - `AddTagsToPhotoAction` generates summary + XP regardless of trust level (null summary = zero metrics)
@@ -125,36 +132,46 @@ Built by a single developer over 17 years.
 - `Photo.geom` column is binary spatial data — hidden from JSON via `$hidden` array
 - `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns
 - `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category
-- `ConvertV4TagsAction` is BUILT and deployed — mobile v4 tags convert to v5 PhotoTags via migration pipeline
+- Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only
 - `Photo` model uses `SoftDeletes` — `$photo->delete()` soft-deletes, `Photo::public()` auto-excludes
 - Locations API uses `locations`/`location_type` keys (not `children`/`children_type`)
 - `UsersUploadsController` returns tags under key `'new_tags'` (frontend reads `photo.new_tags`)
-- Untagged photo filter uses `WHERE verified = 0`, NOT `doesntHave('photoTags')`
+- Untagged photo filter uses `whereNull('summary')` — summary is set by `GeneratePhotoSummaryService` when tags are added, regardless of verification status
 - `clustering:update --all` flushes `clusters:v5:*` cache keys after regeneration
 - Map cluster layer MUST be added to Leaflet map unconditionally (not gated on initial feature count)
 - Teacher delete/revoke MUST call `MetricsService::deletePhoto()` before state change to reverse metrics
 - PointsController masks student identity on global map when `team.hasSafeguarding()` (name/username/social = null)
 - Points API returns `page` (not `current_page`) at root level — frontend normalizes to `current_page`
 - Nav.vue `isAdmin` check includes `'superadmin'` role (not just `'admin'` and `'helper'`)
+- `MetricsService` is the SINGLE WRITER for all metrics (MySQL `metrics` table + Redis). Never use `DB::table('metrics')->increment()` or `Redis::hincrby()` directly
+- Redis is a derived cache, rebuildable from `metrics` table. Never treat Redis as source of truth
+- Location tables store identity only (no aggregate counters). Stats live in Redis + `metrics` table
+- `auth:sanctum` routes in tests: use `actingAs($user)` with NO guard arg, NOT `actingAs($user, 'api')`
+- `result_string` and `total_litter` columns are write-only — all active endpoints use `summary` and `total_tags`
+- `PhotoTagsController::update()` (replace tags) MUST use `DB::transaction()` — delete+reset+add must be atomic
+- `UsersUploadsController::getNewTags()` returns `litter_object_type_id` — required for edit round-trips
+- `readme/API.md` is the API source of truth — consult before modifying any endpoint, update docs when changing response shapes
+- Admin roles: `superadmin` (all access), `admin` (photo review), `helper` (tag editing only) — Spatie Permission on `web` guard
+- Photo deletion must reverse metrics first: call `MetricsService::deletePhoto()` BEFORE `$photo->delete()`
+- Consistent API field naming: all list/leaderboard endpoints use `total_tags`, `total_images`, `total_members`, `created_at`, `updated_at` — never `total_litter`, `tags`, `photos`, `contributors`
+- `GET /api/global/stats-data` is public (no auth) — returns `total_tags`, `total_images`, `total_users`, `new_users_today`, `new_users_last_7_days`, `new_users_last_30_days` from metrics table + users table
+
+## Level System
+XP-threshold based levels defined in `config/levels.php`. `LevelService::getUserLevel($xp)` returns level info.
+- Thresholds: 0 (Complete Noob), 100 (Less of a Noob), 500 (Post-Noob), 1000 (Litter Wizard), 5000 (Trash Warrior), 10000 (Early Guardian), 15000 (Trashmonster), 50000 (Force of Nature), 100000 (Planet Protector), 200000 (Galactic Garbagething), 500000 (Interplanetary), 1000000 (SuperIntelligent LitterMaster)
+- User model `next_level` accessor calls `LevelService::getUserLevel()` — returns `level`, `title`, `xp_for_next`, `xp_into_level`, `progress_percent`
+- Frontend reads `user.next_level.title` and `user.next_level.xp_for_next` for display
 
 ## Verification Pipeline
-- 0 UNVERIFIED: uploaded, no tags
-- 1 VERIFIED: tagged (school students land here, awaiting teacher approval)
-- 2 ADMIN_APPROVED: verified by admin/trusted user OR teacher-approved
+- 0 UNVERIFIED: uploaded, no tags. After tagging by non-trusted user: stays at 0 (not on map) but metrics ARE processed (user appears on leaderboard)
+- 1 VERIFIED: tagged by school student (awaiting teacher approval). Metrics NOT processed yet
+- 2 ADMIN_APPROVED: verified by admin/trusted user OR teacher-approved. Photo visible on global map
 - 3 BBOX_APPLIED: bounding boxes drawn
 - 4 BBOX_VERIFIED: bounding boxes verified
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 810 tests passing (0 failures). All steps complete:
-- VerificationStatus enum + Photo model cast (step 10)
-- `is_public=true` filtering on all public-facing queries (step 9)
-- Frontend: Pinia stores, 12 Vue components, router updated (steps 11-12)
-- Tests: 7 test files, 4 factories, all passing (steps 13-14)
-- Production code fixes: PhotoObserver, TeamPhotosController, TeamsDataController, Photo model
-- Leaderboard system: Redis ZSETs for all-time, MySQL per-user metrics for time-filtered
-
-Reference files: `~/Code/teams-v5-files/`
+Fully deployed. 899 tests passing. Facilitator queue (3-panel admin-like UI for school teachers) complete. See `readme/Teams.md` and `readme/SchoolPipeline.md` for architecture.
 
 ## Code Preferences
 - Do not over-engineer
@@ -162,7 +179,7 @@ Reference files: `~/Code/teams-v5-files/`
 - Do not rename files unless asked
 
 ## Domain Documentation (read the relevant file before working in that area)
-- `readme/Achievements-Audit.md` — Achievements system audit and architecture
+- `readme/Achievements.md` — Achievements system audit and architecture
 - `readme/ArtisanCommands.md` — All custom artisan commands and scheduler config
 - `readme/Clustering.md` — Map clustering system (tile keys, zoom levels, dirty tiles, GeoJSON API)
 - `readme/Leaderboards.md` — Leaderboard system (Redis ZSETs + MySQL per-user metrics)
@@ -174,6 +191,15 @@ Reference files: `~/Code/teams-v5-files/`
 - `readme/Tags.md` — Tagging system and categories
 - `readme/Teams.md` — Teams architecture, permissions, safeguarding, API routes
 - `readme/Upload.md` — Photo upload pipeline
+- `readme/Admin.md` — Admin verification system, queue UI, roles/permissions
+- `readme/API.md` — Comprehensive API endpoint reference (source of truth for all request/response contracts)
+- `readme/Mobile.md` — Mobile app & v4-to-v5 tag conversion shim
+- `readme/Profile.md` — User profile, settings, privacy, public profiles, account deletion
+- `readme/Setup.md` — Local dev setup, HTTPS with Valet, Reverb TLS configuration
+- `readme/Translations.md` — Frontend i18n setup (vue-i18n v9)
+- `readme/XP.md` — XP scoring, quantity rules, special objects, levels, admin XP
+- `readme/Taggingarchitecturespec.md` — v5.1 tagging architecture spec (types dimension, CLO IDs)
+- `readme/TaggingAuditReport.md` — v5.1 smoke test audit report
 
 <laravel-boost-guidelines>
 === foundation rules ===
@@ -208,15 +234,20 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
+- `olm-architecture` — **Start here.** OpenLitterMap v5 architecture reference. Tag pipeline, MetricsService, VerificationStatus, school privacy, Redis keys, roles, clustering, levels. Use BEFORE writing any OLM code.
 - `tailwindcss-development` — Styles applications using Tailwind CSS v3 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
 - `achievements-system` — AchievementEngine, AchievementRepository, milestone checkers, AchievementsSeeder, user_achievements pivot, AchievementsController API, and achievement evaluation flow.
+- `admin-system` — AdminController, photo approval, tag editing, deletion, MetricsService integration, admin middleware, verification queue, and admin XP.
+- `api-endpoints` — REST API endpoints, route structure, auth guards, request/response contracts, error patterns, and the full API surface for web SPA and mobile clients.
 - `clustering-system` — ClusteringService, tile keys, dirty tiles/teams, clustering commands, ClusterController GeoJSON API, PhotoObserver dirty marking, and map cluster rendering.
+- `leaderboard-system` — LeaderboardController, Redis sorted sets for all-time XP rankings, per-user metrics rows for time-filtered rankings, rewardXpToAdmin, and leaderboard privacy.
 - `location-system` — Countries, states, cities, ResolveLocationAction, Location base model, LocationType enum, geocoding, and location-level Redis data.
 - `metrics-pipeline` — MetricsService, RedisMetricsCollector, ProcessPhotoMetrics, metrics table, Redis stats, leaderboards, XP processing, and photo processing state (processed_at/fp/tags/xp).
-- `mobile-shim` — Mobile API endpoints, v4 tag format conversion, AddTagsToUploadedImageController, old mobile tagging routes, and ConvertV4TagsAction shim design.
+- `mobile-shim` — Mobile API surface (v3 only), removed legacy endpoints, and the v5-native tag format for mobile clients.
 - `photo-pipeline` — Photo upload, tagging, verification status, summary generation, XP calculation, AddTagsToPhotoAction, UploadPhotoController, and the VerificationStatus enum.
+- `profile-system` — ProfileController, ApiSettingsController, DeleteAccountController, user stats, LevelService, privacy toggles, public profiles, and account deletion.
 - `tagging-system` — PhotoTag, PhotoTagExtraTags, categories, litter objects, materials, brands, ClassifyTagsService, GeneratePhotoSummaryService, tag migration, and the v4-to-v5 conversion.
-- `teams-safeguarding` — Teams, school teams, team photos, approval flow, TeamPhotosController, privacy, is_public, PhotoObserver, MasksStudentIdentity, and safeguarding.
+- `teams-safeguarding` — Teams, school teams, team photos, approval flow, TeamPhotosController, facilitator queue (3-panel), privacy, is_public, PhotoObserver, MasksStudentIdentity, and safeguarding.
 - `testing-patterns` — Writing and fixing tests, test factories, Event::fake patterns, auth guard testing, PHPUnit configuration, deprecated test groups, and common test pitfalls.
 - `v5-migration` — The olm:v5 migration script, UpdateTagsService, batch processing, migrated_at, ClassifyTagsService deprecated mappings, and data migration from v4 category tables.
 

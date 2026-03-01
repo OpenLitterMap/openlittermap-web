@@ -4,7 +4,6 @@ namespace App\Http\Controllers\User;
 
 use App\Actions\Photos\DeletePhotoAction;
 use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
 use App\Traits\Photos\FilterPhotos;
@@ -111,7 +110,7 @@ class UserPhotoController extends Controller
     {
         $query = Photo::select('id', 'filename', 'verified', 'datetime', 'created_at')
             ->where('user_id', auth()->user()->id)
-            ->where('verified', VerificationStatus::UNVERIFIED->value);
+            ->whereNull('summary');
 
         return [
             'paginate' => $query->simplePaginate($this->paginate),

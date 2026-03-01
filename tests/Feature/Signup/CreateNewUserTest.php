@@ -9,11 +9,8 @@ class CreateNewUserTest extends TestCase
     public function test_user_can_create_account_with_valid_password()
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'John Doe',
-            'username' => 'username_' . time(),
             'email' => 'test_' . time() . '@example.com',
-            'password' => 'pass5',
-            'password_confirmation' => 'pass5',
+            'password' => 'password8',
         ]);
 
         $response->assertOk();
@@ -22,11 +19,8 @@ class CreateNewUserTest extends TestCase
     public function test_user_cannot_create_account_with_short_password()
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'John Doe',
-            'username' => 'username_' . time(),
             'email' => 'test_' . time() . '@example.com',
-            'password' => 'pass',
-            'password_confirmation' => 'pass',
+            'password' => 'short',
         ]);
 
         $response->assertUnprocessable();

@@ -9,15 +9,55 @@ School teams enforce a private-by-default pipeline. Photos are invisible to the 
 
 ## Key Files
 
-- `app/Http/Controllers/Teams/TeamPhotosController.php` — Photo listing, approval, tag editing, map points, delete, revoke
+### Backend
+- `app/Http/Controllers/Teams/TeamPhotosController.php` — Photo listing (with `new_tags`), approval, CLO-based tag editing, map points, delete, revoke, member stats
 - `app/Observers/PhotoObserver.php` — Sets `is_public = false` on school team photo creation
 - `app/Traits/MasksStudentIdentity.php` — Masks student names as "Student N"
-- `app/Models/Teams/Team.php` — `isSchool()`, `isLeader()`, `hasSafeguarding()`
+- `app/Models/Teams/Team.php` — `isSchool()`, `isLeader()`, `hasSafeguarding()`, `hasParticipantSessions()`
 - `app/Models/Teams/TeamType.php` — `team` column: `'school'` or `'community'`
+- `app/Models/Teams/Participant.php` — Participant slot model (token, activation)
+- `app/Http/Middleware/ParticipantAuth.php` — Token auth middleware for participant workspace
+- `app/Http/Controllers/Teams/ParticipantController.php` — Facilitator CRUD for participant slots
+- `app/Http/Controllers/Teams/ParticipantSessionController.php` — Token validation + session entry
+- `app/Http/Controllers/Teams/ParticipantPhotoController.php` — Participant's own photos
 - `app/Actions/Teams/CreateTeamAction.php` — Team creation with school-specific fields
 - `app/Http/Requests/Teams/CreateTeamRequest.php` — Validation + `school_manager` role check
 - `app/Events/SchoolDataApproved.php` — Private broadcast on `team.{id}` channel
 - `app/Listeners/NotifyTeamOfApproval.php` — Notifies team members after approval
+
+### Frontend (Facilitator Queue)
+- `resources/js/views/Teams/FacilitatorQueue.vue` — 3-panel layout (filters | PhotoViewer | tag editor)
+- `resources/js/views/Teams/components/FacilitatorQueueHeader.vue` — Navigation, action buttons (Approve/Save Edits/Revoke/Delete)
+- `resources/js/views/Teams/components/FacilitatorQueueFilters.vue` — Status toggle (pending/approved/all), date range
+- `resources/js/views/Teams/components/TeamMembersList.vue` — Per-student stats table
+- `resources/js/stores/teamPhotos.js` — Team photos Pinia store (CRUD, approve, revoke, delete, updateTags, memberStats)
+- `resources/js/views/Teams/TeamDashboard.vue` — Tab container with Approval Queue + Members + Participants tabs
+- `resources/js/views/Teams/components/ParticipantGrid.vue` — Participant slot management grid
+- `resources/js/views/Teams/ParticipantEntry.vue` — Token entry page (`/session`)
+- `resources/js/views/Teams/ParticipantWorkspace.vue` — Participant upload/photos/tag workspace
+
+### Tests
+- `tests/Feature/Teams/TeamPhotosTest.php` — 35 tests (new_tags, CLO tag edits, member stats, safeguarding, delete, revoke, approval, map)
+- `tests/Feature/Teams/ParticipantSessionTest.php` — 28 tests (slots, token auth, photos, queue, metrics)
+
+## Authorization
+
+### Facilitator Queue access control
+```php
+// TeamPhotosController authorization pattern:
+// Team leader OR user with 'manage school team' permission
+if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
+    return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+}
+```
+
+### Roles involved
+| Role | How assigned | Facilitator access |
+|------|-------------|-------------------|
+| Team leader | `team.leader = user_id` | Yes — `$team->isLeader($userId)` |
+| `school_manager` | `php artisan school:assign-manager {email}` | Yes — has `manage school team` permission |
+
+**Critical:** School managers are NOT admins. They cannot access `/api/admin/*` endpoints. The admin queue and facilitator queue are completely separate systems with no overlap.
 
 ## Invariants
 
@@ -27,6 +67,10 @@ School teams enforce a private-by-default pipeline. Photos are invisible to the 
 4. **Teacher approval is atomic and idempotent.** The `WHERE is_public = false` clause prevents double-processing of already-approved photos.
 5. **Safeguarding uses deterministic numbering.** Student names are masked based on `team_user.id` (creation order), not photo data or pagination.
 6. **SchoolDataApproved broadcasts on a private channel** (`team.{id}`). School team names (e.g., "St. X 1st Years 2026") must never appear on public channels.
+7. **Admin queue excludes school photos.** `is_public = false` photos never appear in `/api/admin/photos`. School photos go through teacher approval only.
+8. **Participant photos: `user_id = facilitator`.** MetricsService, XP, leaderboards are untouched. `participant_id` is for attribution only.
+9. **Participant isolation.** `PhotoTagsRequest::authorize()` checks `$photo->participant_id === $participant->id` to prevent cross-participant tagging (all photos share `user_id = facilitator`).
+10. **`hasParticipantSessions()`** returns `participant_sessions_enabled && isSchool()` — community teams can never have participant sessions.
 
 ## Patterns
 
@@ -167,6 +211,52 @@ if ($photo->team_id && $photo->team && $photo->team->hasSafeguarding()) {
 // popup.js shows "Contributed by [Team Name]" when name/username are null but team exists
 ```
 
+### Facilitator Queue — CLO-based tag editing
+
+```php
+// TeamPhotosController::updateTags()
+// PATCH /api/teams/photos/{photo}/tags
+// Accepts CLO payload: { tags: [{ category_litter_object_id, litter_object_type_id?, quantity, picked_up?, materials?, brands?, custom_tags? }] }
+DB::transaction(function () use ($request, $photo, $user) {
+    $photo->photoTags()->each(function ($tag) {
+        $tag->extraTags()->delete();
+        $tag->delete();
+    });
+    $photo->update(['summary' => null, 'xp' => 0, 'verified' => VerificationStatus::UNVERIFIED->value]);
+    app(AddTagsToPhotoAction::class)->run($user->id, $photo->id, $request->tags);
+});
+```
+
+### Facilitator Queue — new_tags response format
+
+```php
+// TeamPhotosController::index() and show() return new_tags
+// Same format as UsersUploadsController::getNewTags() and AdminQueueController
+// Includes: category_litter_object_id, litter_object_type_id, category, object, extra_tags
+```
+
+### Member stats endpoint
+
+```php
+// TeamPhotosController::memberStats()
+// GET /api/teams/photos/member-stats?team_id=X
+// Returns per-student: total_photos, pending, approved, litter_count, last_active
+// Applies safeguarding pseudonyms via MasksStudentIdentity trait
+// Leader or 'manage school team' permission required
+```
+
+### Keyboard shortcuts (FacilitatorQueue.vue)
+
+| Key | Action |
+|-----|--------|
+| A | Approve current photo |
+| D | Delete (with confirmation) |
+| E | Save edits (when modified) |
+| R | Revoke approval (with confirmation) |
+| S / K / ArrowRight | Next photo |
+| J / ArrowLeft | Previous photo |
+| Escape | Clear search |
+
 ### Controllers/queries that must use `is_public = true`
 
 - `Maps/GlobalMapController` — global map points
@@ -187,3 +277,5 @@ if ($photo->team_id && $photo->team && $photo->team->hasSafeguarding()) {
 - **Using non-deterministic ordering for safeguarding masks.** Masks must be based on `team_user.id` (join order), not photo data.
 - **Forgetting `PhotoObserver` when creating photos in tests.** The observer auto-fires on `Photo::create()`. If testing non-school behavior, ensure `team_id` is null or team is community type.
 - **Double-approving photos.** The `WHERE is_public = false` clause in the approval query prevents this, but don't remove it.
+- **Using old category/object string format in updateTags.** `TeamPhotosController::updateTags()` uses CLO format (same as `PhotoTagsController::update`). Payload uses `category_litter_object_id`, NOT category/object key strings.
+- **Forgetting `new_tags` in team photo responses.** Both `index()` and `show()` must include `new_tags` with `category_litter_object_id`, `litter_object_type_id`, and `extra_tags` for the facilitator queue tag editor to work.

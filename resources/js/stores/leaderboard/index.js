@@ -6,6 +6,8 @@ export const useLeaderboardStore = defineStore('leaderboard', {
         currentPage: 1,
         hasNextPage: false,
         total: 0,
+        activeUsers: 0,
+        totalUsers: 0,
         currentUserRank: null,
         loading: false,
         error: null,

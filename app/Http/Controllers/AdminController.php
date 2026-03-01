@@ -171,10 +171,12 @@ class AdminController extends Controller
             PhotoTag::where('photo_id', $photo->id)->delete();
 
             // Create new tags via v5 action (generates summary + XP)
+            // skipVerification: admin controller handles approval + metrics itself
             $this->addTagsAction->run(
                 $photo->user_id,
                 $photo->id,
-                $request->tags ?? []
+                $request->tags ?? [],
+                skipVerification: true
             );
         });
 

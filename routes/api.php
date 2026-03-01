@@ -1,10 +1,8 @@
 <?php
 
 use App\Http\Controllers\Achievements\AchievementsController;
-use App\Http\Controllers\API\GetUntaggedUploadController;
 use App\Http\Controllers\API\Tags\GetTagsController;
 use App\Http\Controllers\API\Tags\PhotoTagsController;
-use App\Http\Controllers\ApiPhotosController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -18,9 +16,7 @@ use App\Http\Controllers\RedisDataController;
 use App\Http\Controllers\Uploads\UploadPhotoController;
 use App\Http\Controllers\User\Photos\UsersUploadsController;
 use App\Http\Controllers\WorldCup\GetDataForWorldCupController;
-use App\Models\Littercoin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::group(['prefix' => 'v3', 'middleware' => ['web', 'auth:api,web']], function () {
+Route::group(['prefix' => 'v3', 'middleware' => ['auth:sanctum']], function () {
     Route::post('/upload', UploadPhotoController::class);
     Route::post('/tags', [PhotoTagsController::class, 'store']);
     Route::put('/tags', [PhotoTagsController::class, 'update']);
@@ -50,6 +46,7 @@ Route::get('/points/stats', [PointsStatsController::class, 'index']);
 Route::get('/points/{id}', [PointsController::class, 'show'])->where('id', '[0-9]+');
 Route::get('/global/stats-data', 'API\GlobalStatsController@index');
 Route::get('/mobile-app-version', 'API\MobileAppVersionController');
+Route::get('/levels', fn () => response()->json(config('levels.thresholds')));
 
 /*
 |--------------------------------------------------------------------------
@@ -100,74 +97,41 @@ Route::post('/password/validate-token', [ResetPasswordController::class, 'valida
 Route::post('/password/reset', [ResetPasswordController::class, 'reset']);
 
 Route::post('/auth/login', [App\Http\Controllers\Auth\LoginController::class, 'login'])
-    ->middleware(['web', 'throttle:5,1']);
+    ->middleware(app()->isLocal() ? ['web'] : ['web', 'throttle:5,1']);
+
+Route::post('/auth/token', [App\Http\Controllers\Auth\AuthTokenController::class, 'login'])
+    ->middleware('throttle:5,1');
 
 Route::post('/auth/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])
     ->middleware(['web', 'auth:web']);
 
 Route::post('/validate-token', function (Request $request) {
     return ['message' => 'valid'];
-})->middleware('auth:api');
+})->middleware('auth:sanctum');
 
-Route::get('/user', function (Request $request) {
-    $user = Auth::guard('api')->user()->append('position', 'xp_redis');
-    $littercoin = Littercoin::where('user_id', $user->id)->count();
-    $user['littercoin_count'] = $littercoin;
-    return $user;
-})->middleware('auth:api');
-
-// Moved from web.php
-Route::get('/current-user', 'UsersController@getAuthUser');
-
-/*
-|--------------------------------------------------------------------------
-| Upload — Mobile (legacy, keep for old app versions)
-|--------------------------------------------------------------------------
-*/
-
-Route::post('/photos/submit', [ApiPhotosController::class, 'store'])
-    ->middleware('auth:api');
-
-Route::post('/photos/submit-with-tags', [ApiPhotosController::class, 'uploadWithOrWithoutTags'])
-    ->middleware('auth:api');
-
-Route::post('/photos/upload-with-tags', [ApiPhotosController::class, 'uploadWithOrWithoutTags'])
-    ->middleware('auth:api');
-
-Route::post('/photos/upload/with-or-without-tags', [ApiPhotosController::class, 'uploadWithOrWithoutTags'])
-    ->middleware('auth:api');
-
-Route::get('/check-web-photos', [ApiPhotosController::class, 'check'])
-    ->middleware('auth:api');
-
-Route::delete('/photos/delete', [ApiPhotosController::class, 'deleteImage'])
-    ->middleware('auth:api');
-
-// Legacy — also existed at top level in api.php
-Route::post('/upload', UploadPhotoController::class)
-    ->middleware(['web', 'auth:api,web']);
-
-/*
-|--------------------------------------------------------------------------
-| Tags — Mobile (legacy)
-|--------------------------------------------------------------------------
-*/
-
-Route::post('add-tags', 'API\AddTagsToUploadedImageController')
-    ->middleware('auth:api');
-
-Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function () {
-    Route::get('/photos/web/index', 'API\GetUntaggedUploadController');
-    Route::get('/photos/get-untagged-uploads', GetUntaggedUploadController::class);
-    Route::get('/photos/web/load-more', 'API\WebPhotosController@loadMore');
-    Route::post('/add-tags-to-uploaded-image', 'API\AddTagsToUploadedImageController');
-});
+// Deprecated routes removed:
+// GET /api/user — use GET /api/user/profile/index
+// GET /api/current-user — use GET /api/user/profile/index
+// POST /api/photos/submit — use POST /api/v3/upload
+// POST /api/photos/submit-with-tags — use POST /api/v3/upload + POST /api/v3/tags
+// POST /api/photos/upload-with-tags — duplicate of above
+// POST /api/photos/upload/with-or-without-tags — duplicate of above
+// GET /api/check-web-photos — orphan
+// DELETE /api/photos/delete — use POST /api/profile/photos/delete
+// POST /api/upload — use POST /api/v3/upload
+// POST /api/add-tags — use POST /api/v3/tags
+// GET /api/v2/photos/web/index — use GET /api/v3/user/photos
+// GET /api/v2/photos/get-untagged-uploads — use GET /api/v3/user/photos?tagged=false
+// GET /api/v2/photos/web/load-more — use GET /api/v3/user/photos
+// POST /api/v2/add-tags-to-uploaded-image — use POST /api/v3/tags
 
 /*
 |--------------------------------------------------------------------------
 | User Profile & Photos (moved from web.php)
 |--------------------------------------------------------------------------
 */
+
+Route::get('/user/profile/{id}', 'User\ProfileController@show')->where('id', '[0-9]+');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile/index', 'User\ProfileController@index');
@@ -179,7 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/profile/photos/tags/bulkTag', 'User\UserPhotoController@bulkTag');
     Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
     Route::post('/profile/upload-profile-photo', 'UsersController@uploadProfilePhoto');
-    Route::post('/profile/photos/remaining/{id}', 'PhotosController@remaining');
+    // Removed: POST /profile/photos/remaining/{id} — toggled deprecated `remaining` column
     Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
 });
 
@@ -189,7 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/details', 'UsersController@details');
     Route::patch('/settings/details/password', 'UsersController@changePassword');
     // Route removed: /settings/delete — had no relationship cleanup. Use /settings/delete-account.
@@ -227,8 +191,8 @@ Route::prefix('/teams')->group(function () {
     // Public — no auth required
     Route::get('/types', 'API\TeamsController@types');
 
-    // Authenticated — SPA (session) + mobile (Passport)
-    Route::middleware('auth:api,web')->group(function () {
+    // Authenticated — SPA (session) + mobile (Sanctum token)
+    Route::middleware('auth:sanctum')->group(function () {
         Route::get('/members', 'API\TeamsController@members');
         Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
         Route::get('/list', 'API\TeamsController@list');
@@ -250,13 +214,35 @@ Route::prefix('/teams')->group(function () {
         Route::prefix('/photos')->group(function () {
             Route::get('/', 'Teams\TeamPhotosController@index');
             Route::get('/map', 'Teams\TeamPhotosController@mapPoints');
+            Route::get('/member-stats', 'Teams\TeamPhotosController@memberStats');
             Route::get('/{photo}', 'Teams\TeamPhotosController@show');
             Route::patch('/{photo}/tags', 'Teams\TeamPhotosController@updateTags');
             Route::post('/approve', 'Teams\TeamPhotosController@approve');
             Route::post('/revoke', 'Teams\TeamPhotosController@revoke');
             Route::delete('/{photo}', 'Teams\TeamPhotosController@destroy');
         });
+
+        // Participant Management (facilitator — team leader)
+        Route::prefix('/{team}/participants')->group(function () {
+            Route::get('/', 'Teams\ParticipantController@index');
+            Route::post('/', 'Teams\ParticipantController@store');
+            Route::post('/{participant}/deactivate', 'Teams\ParticipantController@deactivate');
+            Route::post('/{participant}/activate', 'Teams\ParticipantController@activate');
+            Route::post('/{participant}/reset-token', 'Teams\ParticipantController@resetToken');
+            Route::delete('/{participant}', 'Teams\ParticipantController@destroy');
+        });
     });
+});
+
+// Participant Session — public (no auth, token-based)
+Route::post('/participant/session', 'Teams\ParticipantSessionController@enter');
+
+// Participant Workspace — token auth via middleware
+Route::prefix('/participant')->middleware('participant')->group(function () {
+    Route::post('/upload', \App\Http\Controllers\Uploads\UploadPhotoController::class);
+    Route::post('/tags', [\App\Http\Controllers\API\Tags\PhotoTagsController::class, 'store']);
+    Route::get('/photos', 'Teams\ParticipantPhotoController@index');
+    Route::delete('/photos/{photo}', 'Teams\ParticipantPhotoController@destroy');
 });
 
 /*
@@ -265,15 +251,17 @@ Route::prefix('/teams')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/leaderboard', LeaderboardController::class);
-    Route::get('/achievements', [AchievementsController::class, 'index']);
+Route::get('/leaderboard', LeaderboardController::class);
 
-    // Needs admin middleware
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/achievements', [AchievementsController::class, 'index']);
+});
+
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/redis-data', [RedisDataController::class, 'index']);
-    Route::get('/redis-data/{userId}', [RedisDataController::class, 'show']);
     Route::get('/redis-data/performance', [RedisDataController::class, 'performance']);
     Route::get('/redis-data/key-analysis', [RedisDataController::class, 'keyAnalysis']);
+    Route::get('/redis-data/{userId}', [RedisDataController::class, 'show']);
 });
 
 /*
@@ -316,7 +304,7 @@ Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
 |--------------------------------------------------------------------------
 */
 
-Route::get('/history/paginated', 'History\GetPaginatedHistoryController');
+// Removed: GET /history/paginated — deprecated, use GET /api/v3/user/photos
 
 /*
 |--------------------------------------------------------------------------
@@ -409,7 +397,24 @@ Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
     Route::post('/destroy', 'AdminController@destroy');
     Route::post('/merchants/approve', 'Littercoin\Merchants\ApproveMerchantController');
     Route::post('/merchants/delete', 'Littercoin\Merchants\DeleteMerchantController');
+
+    // Dashboard stats
+    Route::get('/stats', 'Admin\AdminStatsController');
+
+    // User management
+    Route::get('/users', 'Admin\AdminUsersController@index');
+    Route::post('/users/{user}/trust', 'Admin\AdminUsersController@trust');
+    Route::post('/users/{user}/approve-all', 'Admin\AdminUsersController@approveAll');
+    Route::post('/users/{user}/school-manager', 'Admin\AdminUsersController@toggleSchoolManager');
+    Route::patch('/users/{user}/username', 'Admin\AdminUsersController@updateUsername');
+
+    // Impersonation (start requires admin middleware — stop is below, outside this group)
+    Route::post('/users/{user}/impersonate', 'Admin\AdminImpersonateController@start');
 });
+
+// Impersonate stop — outside admin group since session is the impersonated user
+Route::post('/impersonate/stop', 'Admin\AdminImpersonateController@stop')
+    ->middleware('auth');
 
 /*
 |--------------------------------------------------------------------------

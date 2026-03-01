@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Photo;
 use Illuminate\Http\Request;
 use App\Models\Location\Country;
 use Illuminate\Support\Facades\Auth;
@@ -23,18 +22,6 @@ class SettingsController extends Controller
             ->pluck('country', 'shortcode');
     }
 
-    public function presense (Request $request)
-    {
-    	$photo = Photo::find($request->id);
-    	$photo->remaining = !$photo->remaining;
-    	$photo->save();
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     *
-     */
     public function saveFlag (Request $request)
     {
     	$user = Auth::user();

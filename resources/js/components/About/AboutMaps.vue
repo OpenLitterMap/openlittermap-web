@@ -184,17 +184,12 @@ async function loadSmokingData(placeId) {
         top: bounds.getNorth(),
     };
 
-    console.log(`Loading data for ${placeId}...`);
-    console.log('Bbox:', bbox);
-
     try {
         // Just load ALL data - single request
         const data = await pointsStore.GET_POINTS({
             zoom: Math.round(map.getZoom()),
             bbox,
         });
-
-        console.log(`Points loaded for ${placeId}: ${data?.features?.length || 0}`);
 
         // Store in categoryData for the component to access
         pointsStore.categoryData[`smoking:${placeId}`] = data;
@@ -243,9 +238,8 @@ async function loadSmokingData(placeId) {
             });
         }
 
-        console.log(`Finished rendering ${data?.features?.length || 0} markers for ${placeId}`);
     } catch (error) {
-        console.error(`Error loading data for ${placeId}:`, error);
+        // Silently fail — map section is non-critical
     } finally {
         // Always clear loading state
         loadingStates.value[placeId] = false;

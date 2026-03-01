@@ -38,7 +38,7 @@
         <main class="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
             <p v-if="loading" class="text-slate-500">{{ $t('Loading...') }}</p>
 
-            <component v-else :is="currentComponent" />
+            <component v-else :is="currentComponent" @navigate="(view) => activeView = view" />
         </main>
     </section>
 </template>

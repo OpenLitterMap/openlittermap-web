@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-810 tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
+943 tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
 
 ## Key Files
 
@@ -24,6 +24,11 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 - `database/factories/Litter/Tags/LitterObjectTypeFactory.php` — LitterObjectType with unique key + name
 - `tests/Feature/Tags/TaggingArchitecturePhase1Test.php` — 20 tests (seeding, relationships, API, idempotency)
 - `tests/Feature/Tags/ReplacePhotoTagsTest.php` — 5 tests (replace tags, ownership, auth, extra tags cleanup)
+- `tests/Feature/Teams/TeamPhotosTest.php` — 35 tests (new_tags format, CLO tag edits, member stats, safeguarding, delete, revoke, approval, map)
+- `tests/Feature/User/PublicProfileTest.php` — 4 tests (public profile data, private returns, privacy settings, 404)
+- `tests/Feature/Leaderboard/LeaderboardTest.php` — 14 tests (all paths: global, country, state, city scopes)
+- `tests/Feature/Auth/SanctumTokenAuthTest.php` — Mobile token auth tests
+- `tests/Feature/Signup/CreateNewUserTest.php` — Registration flow tests
 
 ## Invariants
 

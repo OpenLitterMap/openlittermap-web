@@ -180,6 +180,11 @@ The Vue frontend sends 4 distinct tag types to `AddTagsToPhotoAction`:
 ```
 Backend auto-resolves category from `object->categories()->first()`. Category need NOT be sent.
 
+**Materials and brands accept flexible formats:**
+- Materials: `[50, 51]` (plain IDs) or `[{"id": 50}]` (objects). Quantity inherits from parent tag.
+- Brands: `[10]` (plain IDs, quantity=1) or `[{"id": 10, "quantity": 3}]` (objects with per-brand quantity).
+- `attachMaterials()` and `attachBrands()` both check `is_array($item) ? $item['id'] : $item`.
+
 ### 2. Custom-only tag
 ```json
 { "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }
@@ -222,7 +227,8 @@ Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
 | `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with "Object · Category" display, type pills (replaces select dropdown), red border on unresolved CLO |
 | `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | XP bar, level titles (50 from config/levels.php), unresolved tags warning, submit disabled when unresolved |
 | `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags |
-| `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST /api/v3/tags |
+| `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST, `REPLACE_TAGS()` → PUT, `GET_SINGLE_PHOTO()` |
+| `resources/js/stores/user/requests.js` | `REFRESH_USER()` — refreshes user XP/level after tag submission |
 | `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → GET /api/tags/all |
 
 ### Frontend category disambiguation
@@ -246,3 +252,6 @@ The search index generates **one entry per (object, category) pair** with pre-re
 - **Checking `$tag['brands']` for brand-only tags.** Brand-only tags use `$tag['brand']` (singular) + `$tag['brand_only']` flag.
 - **Using `cot.id` for type entries.** The `category_object_types` API only returns `category_litter_object_id` and `litter_object_type_id` — no `id` column. Use composite key `type-${cot.category_litter_object_id}-${cot.litter_object_type_id}`.
 - **Relying on old localStorage recentTags.** Entries from before category disambiguation lack `cloId`. Filter them out on mount: `parsed.filter((t) => t.type !== 'object' || t.cloId)`.
+- **Losing `litter_object_type_id` on edit round-trip.** `UsersUploadsController::getNewTags()` must include `litter_object_type_id` in the response, and `convertExistingTags()` must read it into `typeId`. Without this, the type dimension (e.g., "beer" on a "bottle") is lost when editing tags.
+- **Replace tags without DB::transaction.** `PhotoTagsController::update()` must wrap delete + reset + add in `DB::transaction()`. If `AddTagsToPhotoAction::run()` throws after tags are deleted, the photo loses all data.
+- **Using `||` instead of `??` for counts that can be zero.** `photosStore.untaggedStats.leftToTag || fallback` treats `0` as falsy. Use `??` (nullish coalescing) to only fall through on `null`/`undefined`.

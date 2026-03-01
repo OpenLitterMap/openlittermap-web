@@ -1,12 +1,6 @@
 <template>
     <div class="space-y-6">
-        <!-- Success / Error banner -->
-        <div
-            v-if="settingsStore.successMessage"
-            class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg px-4 py-3 text-sm"
-        >
-            {{ settingsStore.successMessage }}
-        </div>
+        <!-- Error banner -->
         <div
             v-if="settingsStore.error"
             class="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg px-4 py-3 text-sm"
@@ -75,6 +69,12 @@
                     :label="$t('Show username on leaderboards')"
                     :value="userStore.user.show_username"
                     @toggle="settingsStore.TOGGLE_PRIVACY('/api/settings/privacy/leaderboard/username')"
+                />
+                <SettingsToggle
+                    :label="$t('Prevent others tagging my photos')"
+                    :description="$t('Only you can add or edit tags on your photos')"
+                    :value="profileStore.user.prevent_others_tagging_my_photos"
+                    @toggle="saveSetting('prevent_others_tagging_my_photos', !profileStore.user.prevent_others_tagging_my_photos)"
                 />
             </div>
         </div>
@@ -145,8 +145,8 @@ const email = computed(() => profileStore.user.email || userStore.user.email || 
 const saveSetting = async (key, value) => {
     settingsStore.clearMessages();
     const success = await settingsStore.UPDATE_SETTING(key, value);
-    if (success) {
-        profileStore.FETCH_PROFILE();
+    if (success && key in profileStore.user) {
+        profileStore.user[key] = value;
     }
 };
 

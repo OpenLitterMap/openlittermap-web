@@ -11,25 +11,28 @@ class FetchUserTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user, 'api')
-            ->getJson('/api/user')
+        $this->actingAs($user)
+            ->getJson('/api/user/profile/index')
             ->assertOk()
             ->assertJsonStructure([
-                "name",
-                "username",
-                "email",
-                "verified",
-                "images_remaining",
-                "token",
-                "sub_token",
-                "updated_at",
-                "created_at",
-                "id",
-                "total_categories",
-                "total_tags",
-                "total_brands_redis",
-                "position",
+                'user' => [
+                    'id',
+                    'name',
+                    'username',
+                    'email',
+                    'created_at',
+                    'picked_up',
+                ],
+                'stats' => [
+                    'uploads',
+                    'litter',
+                    'xp',
+                ],
+                'level',
+                'rank' => [
+                    'global_position',
+                    'global_total',
+                ],
             ]);
     }
-
 }

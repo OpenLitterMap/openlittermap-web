@@ -62,9 +62,9 @@ class MapController extends Controller
                 'lat' => $photo->lat,
                 'lon' => $photo->lon,
                 'verified' => $photo->verified,
-                'remaining' => $photo->remaining,
-                'display_name' => $photo->display_name,
                 'picked_up' => $photo->picked_up,
+                'remaining' => $photo->remaining, // @deprecated — use picked_up
+                'display_name' => $photo->display_name,
                 'summary' => $photo->summary,
             ];
 

@@ -105,7 +105,16 @@ export const useTeamsStore = defineStore('teams', {
             this.errors = {};
 
             try {
-                const { data } = await axios.post('/api/teams/create', payload);
+                const formData = new FormData();
+                for (const [key, value] of Object.entries(payload)) {
+                    if (value !== null && value !== undefined) {
+                        formData.append(key, value);
+                    }
+                }
+
+                const { data } = await axios.post('/api/teams/create', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
 
                 if (data.success) {
                     this.teams.push(data.team);

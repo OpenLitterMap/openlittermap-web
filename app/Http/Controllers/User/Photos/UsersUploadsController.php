@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\User\Photos;
 
-use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use App\Services\Redis\RedisMetricsCollector;
@@ -19,18 +18,16 @@ class UsersUploadsController extends Controller
     {
         $user = Auth::user();
 
-        $perPage = 8;
+        $perPage = min($request->integer('per_page', 8), 100);
 
         $query = Photo::where('user_id', $user->id)
             ->where('filename', '!=', '/assets/verified.jpg');
 
-        // Tagged/Untagged filter
+        // Tagged/Untagged filter — uses summary column (set by GeneratePhotoSummaryService on tagging)
         if ($request->has('tagged')) {
-            $tagged = $request->boolean('tagged');
-
-            $tagged
-                ? $query->where('verified', '>=', VerificationStatus::VERIFIED->value)
-                : $query->where('verified', VerificationStatus::UNVERIFIED->value);
+            $request->boolean('tagged')
+                ? $query->whereNotNull('summary')
+                : $query->whereNull('summary');
         }
 
         // ID filter
@@ -40,19 +37,22 @@ class UsersUploadsController extends Controller
             $query->where('id', $operator, $id);
         }
 
-        // Tag filter (search in PhotoTags)
+        // Tag filter (search by litter object key)
         if ($request->filled('tag')) {
             $tag = $request->input('tag');
-            $query->whereHas('photoTags', function($q) use ($tag) {
-                $q->where('tag_type', 'like', "%{$tag}%");
+            $query->whereHas('photoTags.object', function($q) use ($tag) {
+                $q->where('key', 'like', "%{$tag}%");
             });
         }
 
-        // Custom tag filter
+        // Custom tag filter (search through extra tags)
         if ($request->filled('custom_tag')) {
             $customTag = $request->input('custom_tag');
-            $query->whereHas('photoTags', function($q) use ($customTag) {
-                $q->where('custom_tag', 'like', "%{$customTag}%");
+            $query->whereHas('photoTags.extraTags', function($q) use ($customTag) {
+                $q->where('tag_type', 'custom_tag')
+                    ->whereHas('extraTag', function($q2) use ($customTag) {
+                        $q2->where('key', 'like', "%{$customTag}%");
+                    });
             });
         }
 
@@ -83,7 +83,8 @@ class UsersUploadsController extends Controller
                 'lat' => $photo->lat,
                 'lon' => $photo->lon,
                 'model' => $photo->model,
-                'remaining' => $photo->remaining,
+                'picked_up' => $photo->picked_up,
+                'remaining' => $photo->remaining, // @deprecated — use picked_up
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,
@@ -137,7 +138,8 @@ class UsersUploadsController extends Controller
                 'lat' => $photo->lat,
                 'lon' => $photo->lon,
                 'model' => $photo->model,
-                'remaining' => $photo->remaining,
+                'picked_up' => $photo->picked_up,
+                'remaining' => $photo->remaining, // @deprecated — use picked_up
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,
@@ -159,9 +161,9 @@ class UsersUploadsController extends Controller
         // Total photos for user
         $totalPhotos = Photo::where('user_id', $user->id)->count();
 
-        // Untagged photos count
+        // Untagged photos count — summary is null until tags are added
         $leftToTag = Photo::where('user_id', $user->id)
-            ->where('verified', VerificationStatus::UNVERIFIED->value)
+            ->whereNull('summary')
             ->count();
 
         // Get tag counts from Redis
@@ -200,6 +202,7 @@ class UsersUploadsController extends Controller
             $tag = [
                 'id' => $photoTag->id,
                 'category_litter_object_id' => $photoTag->category_litter_object_id,
+                'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
                 'picked_up' => $photoTag->picked_up,
             ];

@@ -93,11 +93,14 @@ class AdminQueueTest extends TestCase
             ->assertJsonPath('stats.total_pending', 1)
             ->assertJsonCount(1, 'photos.data');
 
-        // Check photo structure includes new_tags
+        // Check photo structure includes new_tags with CLO fields
         $photoData = $response->json('photos.data.0');
         $this->assertEquals($photo->id, $photoData['id']);
         $this->assertNotEmpty($photoData['new_tags']);
         $this->assertEquals('cigarette_butt', $photoData['new_tags'][0]['object']['key']);
+        $this->assertArrayHasKey('category_litter_object_id', $photoData['new_tags'][0]);
+        $this->assertNotNull($photoData['new_tags'][0]['category_litter_object_id']);
+        $this->assertArrayHasKey('litter_object_type_id', $photoData['new_tags'][0]);
     }
 
     public function test_response_includes_user_and_country(): void

@@ -21,9 +21,11 @@ export const requests = {
             this.leaderboard = data.users;
             this.hasNextPage = data.hasNextPage;
             this.total = data.total ?? 0;
+            this.activeUsers = data.activeUsers ?? 0;
+            this.totalUsers = data.totalUsers ?? 0;
             this.currentUserRank = data.currentUserRank ?? null;
         } catch (e) {
-            this.error = e.response?.status === 401 ? 'unauthenticated' : 'Failed to load leaderboard';
+            this.error = 'Failed to load leaderboard';
         } finally {
             this.loading = false;
         }

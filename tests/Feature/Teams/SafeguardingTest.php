@@ -69,7 +69,7 @@ class SafeguardingTest extends TestCase
 
     public function test_teacher_sees_real_names_as_team_leader()
     {
-        $response = $this->actingAs($this->teacher, 'api')->getJson('/api/teams/members?' . http_build_query([
+        $response = $this->actingAs($this->teacher)->getJson('/api/teams/members?' . http_build_query([
                 'team_id' => $this->schoolTeam->id,
             ]));
 
@@ -90,7 +90,7 @@ class SafeguardingTest extends TestCase
     {
         $student = $this->students[0];
 
-        $response = $this->actingAs($student, 'api')->getJson('/api/teams/members?' . http_build_query([
+        $response = $this->actingAs($student)->getJson('/api/teams/members?' . http_build_query([
                 'team_id' => $this->schoolTeam->id,
             ]));
 
@@ -122,7 +122,7 @@ class SafeguardingTest extends TestCase
         $admin->teams()->attach($this->schoolTeam->id);
         $this->schoolTeam->increment('members');
 
-        $response = $this->actingAs($admin, 'api')->getJson('/api/teams/members?' . http_build_query([
+        $response = $this->actingAs($admin)->getJson('/api/teams/members?' . http_build_query([
                 'team_id' => $this->schoolTeam->id,
             ]));
 
@@ -162,7 +162,7 @@ class SafeguardingTest extends TestCase
         ]);
         $communityTeam->update(['members' => 2]);
 
-        $response = $this->actingAs($member, 'api')->getJson('/api/teams/members?' . http_build_query([
+        $response = $this->actingAs($member)->getJson('/api/teams/members?' . http_build_query([
                 'team_id' => $communityTeam->id,
             ]));
 
@@ -177,7 +177,7 @@ class SafeguardingTest extends TestCase
     {
         $this->assertTrue((bool) $this->schoolTeam->safeguarding);
 
-        $this->actingAs($this->teacher, 'api')->patchJson('/api/teams/update/' . $this->schoolTeam->id, [
+        $this->actingAs($this->teacher)->patchJson('/api/teams/update/' . $this->schoolTeam->id, [
             'name' => $this->schoolTeam->name,
             'identifier' => $this->schoolTeam->identifier,
             'safeguarding' => false,
@@ -188,7 +188,7 @@ class SafeguardingTest extends TestCase
 
     public function test_non_leader_cannot_toggle_safeguarding()
     {
-        $this->actingAs($this->students[0], 'api')
+        $this->actingAs($this->students[0])
             ->patchJson('/api/teams/update/' . $this->schoolTeam->id, [
                 'name' => $this->schoolTeam->name,
                 'identifier' => $this->schoolTeam->identifier,

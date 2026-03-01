@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api;
 
 use App\Models\Photo;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ReplacePhotoTagsRequest extends FormRequest
 {
@@ -22,7 +23,7 @@ class ReplacePhotoTagsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo_id' => 'required|integer|exists:photos,id',
+            'photo_id' => ['required', 'integer', Rule::exists('photos', 'id')->whereNull('deleted_at')],
             'tags' => 'required|array|min:1',
 
             // New CLO-based format

@@ -23,7 +23,7 @@ class DownloadTeamDataTest extends TestCase
         $team = Team::factory()->create();
         $member->teams()->attach($team);
 
-        $response = $this->actingAs($member, 'api')->postJson("api/teams/download?team_id=$team->id");
+        $response = $this->actingAs($member)->postJson("api/teams/download?team_id=$team->id");
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
@@ -44,7 +44,7 @@ class DownloadTeamDataTest extends TestCase
         /** @var Team $team */
         $team = Team::factory()->create();
 
-        $response = $this->actingAs($nonMember, 'api')->postJson("api/teams/download?team_id=$team->id");
+        $response = $this->actingAs($nonMember)->postJson("api/teams/download?team_id=$team->id");
 
         $response->assertOk();
         $response->assertJsonFragment(['success' => false, 'message' => 'not-a-member']);

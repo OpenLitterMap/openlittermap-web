@@ -31,7 +31,7 @@ class ReplacePhotoTagsTest extends TestCase
         $cloId = $this->getCloId($alcohol->id, $can->id);
 
         // Add initial tags via POST
-        $this->actingAs($user, 'api')->postJson('/api/v3/tags', [
+        $this->actingAs($user)->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [
                 ['category_litter_object_id' => $cloId, 'quantity' => 2],
@@ -45,7 +45,7 @@ class ReplacePhotoTagsTest extends TestCase
         $butts = LitterObject::firstWhere('key', 'butts');
         $buttsCloId = $this->getCloId($smoking->id, $butts->id);
 
-        $this->actingAs($user, 'api')->putJson('/api/v3/tags', [
+        $this->actingAs($user)->putJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [
                 ['category_litter_object_id' => $buttsCloId, 'quantity' => 3],
@@ -77,7 +77,7 @@ class ReplacePhotoTagsTest extends TestCase
         $cloId = $this->getCloId($alcohol->id, $can->id);
 
         // PUT should work even on verified photos
-        $this->actingAs($user, 'api')->putJson('/api/v3/tags', [
+        $this->actingAs($user)->putJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [
                 ['category_litter_object_id' => $cloId, 'quantity' => 1],
@@ -95,7 +95,7 @@ class ReplacePhotoTagsTest extends TestCase
         $can = LitterObject::firstWhere('key', 'can');
         $cloId = $this->getCloId($alcohol->id, $can->id);
 
-        $this->actingAs($other, 'api')->putJson('/api/v3/tags', [
+        $this->actingAs($other)->putJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [
                 ['category_litter_object_id' => $cloId, 'quantity' => 1],
@@ -145,7 +145,7 @@ class ReplacePhotoTagsTest extends TestCase
         $butts = LitterObject::firstWhere('key', 'butts');
         $buttsCloId = $this->getCloId($smoking->id, $butts->id);
 
-        $this->actingAs($user, 'api')->putJson('/api/v3/tags', [
+        $this->actingAs($user)->putJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [
                 ['category_litter_object_id' => $buttsCloId, 'quantity' => 1],

@@ -9,25 +9,38 @@ Admin photo review: approve, edit tags, delete. Quality gate between user submis
 
 ## Key Files
 
+### Backend — Photo Review (Phase 1–2)
 - `app/Http/Controllers/AdminController.php` — 4 methods: verify, destroy, updateDelete, getCountriesWithPhotos
 - `app/Http/Controllers/Admin/AdminQueueController.php` — Paginated queue endpoint with filters + tag transform (`GET /api/admin/photos`)
+- `app/Http/Controllers/Admin/AdminResetTagsController.php` — Reset tags on a photo: reverse metrics, delete PhotoTags, reset state to unverified
 - `app/Http/Middleware/IsAdmin.php` — checks `hasRole('admin')` or `hasRole('superadmin')` on web guard
 - `app/Events/TagsVerifiedByAdmin.php` — event with full constructor (photo_id, user_id, country_id, state_id, city_id, team_id)
 - `app/Actions/Tags/AddTagsToPhotoAction.php` — v5 tag pipeline (creates PhotoTags, summary, XP)
 - `app/Services/Metrics/MetricsService.php` — `deletePhoto()` for metric reversal before soft delete
-- `app/Http/Controllers/Admin/AdminResetTagsController.php` — Reset tags on a photo: reverse metrics, delete PhotoTags, reset state to unverified
 - `app/Helpers/helpers.php` — `rewardXpToAdmin()`, `logAdminAction()`
+
+### Backend — User Management, Stats, Username Moderation (Phase 3)
+- `app/Http/Controllers/Admin/AdminStatsController.php` — Dashboard stats (cached 60s): queue totals, by-verification, by-country, user counts, flagged usernames
+- `app/Http/Controllers/Admin/AdminUsersController.php` — 4 methods: index (list/search/filter), trust (toggle), approveAll (bulk), updateUsername (moderation)
+- `app/Http/Requests/Admin/UpdateUsernameRequest.php` — Validation: 3–30 chars, alphanumeric + hyphens, unique. Superadmin auth gate.
+
+### Frontend
+- `resources/js/stores/admin.js` — Pinia store: fetchPhotos, fetchCountries, approvePhoto, deletePhoto, updateTagsAndApprove, fetchUsers, fetchStats, toggleTrust, approveAllForUser, updateUsername
+- `resources/js/views/Admin/AdminQueue.vue` — Photo review page (three-panel: filters | photo | tags)
+- `resources/js/views/Admin/AdminUsers.vue` — User management page (stats cards, search, filters, table)
+- `resources/js/views/Admin/components/AdminQueueHeader.vue` — Header bar with pending count, navigation, action buttons
+- `resources/js/views/Admin/components/AdminQueueFilters.vue` — Filter sidebar (country, photo ID, user ID, date range)
+- `resources/js/views/Admin/components/UserRow.vue` — Table row: trust toggle, approve all, username editor (superadmin gated)
+
+### Tests (49 tests total)
 - `tests/Feature/Admin/AdminVerificationTest.php` — 8 tests (approve, delete, edit+approve, retag, idempotency, auth, school exclusion)
 - `tests/Feature/Admin/AdminQueueTest.php` — 12 tests (queue endpoint: filters, pagination, exclusions, auth)
 - `tests/Feature/Admin/AdminResetTagsTest.php` — 4 tests (reset clears state, metrics reversal, skip approved, non-admin rejected)
-- `readme/Admin.md` — full spec (Phase 1 complete, Phase 2 queue UI complete)
-
-### Frontend (Admin Queue UI)
-
-- `resources/js/stores/admin.js` — Pinia store: fetchPhotos, fetchCountries, approvePhoto, deletePhoto, updateTagsAndApprove
-- `resources/js/views/Admin/AdminQueue.vue` — Main review page (three-panel: filters | photo | tags)
-- `resources/js/views/Admin/components/AdminQueueHeader.vue` — Header bar with pending count, navigation, action buttons
-- `resources/js/views/Admin/components/AdminQueueFilters.vue` — Filter sidebar (country, photo ID, user ID, date range)
+- `tests/Feature/Admin/AdminStatsTest.php` — 5 tests (cache, counts, by-verification, by-country, auth)
+- `tests/Feature/Admin/AdminUsersTest.php` — 7 tests (list, search, sort, trust filter, flagged filter, pagination, auth)
+- `tests/Feature/Admin/AdminTrustTest.php` — 10 tests (trust toggle, approve-all, superadmin-only, school exclusion, idempotency)
+- `tests/Feature/Admin/AdminUsernameModerationTest.php` — 13 tests (username edit, flagging lifecycle, validation rules, auth)
+- `readme/Admin.md` — full spec (Phase 1–3 complete)
 
 ## Invariants
 
@@ -113,18 +126,89 @@ Photo::query()
 // Includes new_tags[] with hydrated PhotoTag data for frontend tag editing
 ```
 
+### Stats endpoint pattern
+```php
+// GET /api/admin/stats — AdminStatsController (cached 60s)
+Cache::remember('admin:dashboard:stats', 60, function () {
+    // queue_total: is_public=true, verified=VERIFIED, summary NOT NULL
+    // queue_today: same + created_at >= today
+    // by_verification: grouped by VerificationStatus enum labels
+    // by_country: top 20 countries with pending photos
+    // total_users, users_today, flagged_usernames
+});
+```
+
+### User list endpoint pattern
+```php
+// GET /api/admin/users — AdminUsersController@index
+User::query()
+    ->withCount('photos')
+    ->with('roles:id,name')
+    ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
+        $q->where('name', 'LIKE', "%{$search}%")
+          ->orWhere('username', 'LIKE', "%{$search}%")
+          ->orWhere('email', 'LIKE', "%{$search}%");
+    }))
+    ->when($trustFilter === 'trusted', fn ($q) => $q->where('verification_required', false))
+    ->when($trustFilter === 'untrusted', fn ($q) => $q->where('verification_required', true))
+    ->when($flagged, fn ($q) => $q->where('username_flagged', true))
+    ->orderBy($sortBy, $sortDir)
+    ->paginate($perPage);
+// Response includes pending_photos count per user (is_public=true, verified < ADMIN_APPROVED)
+```
+
+### Trust toggle pattern
+```php
+// POST /api/admin/users/{user}/trust — superadmin only
+// Sets verification_required = !trusted
+// Does NOT retroactively approve existing photos
+// No logAdminAction() — schema needs target_type for user-target actions
+```
+
+### Approve-all pattern
+```php
+// POST /api/admin/users/{user}/approve-all — superadmin only, max 500
+// Same atomic WHERE as verify(): is_public=true AND verified < ADMIN_APPROVED
+// Fires TagsVerifiedByAdmin per photo + rewardXpToAdmin()
+```
+
+### Username moderation pattern
+```php
+// PATCH /api/admin/users/{user}/username — superadmin only
+// UpdateUsernameRequest: 3-30 chars, alphanumeric + hyphens, unique
+// Clears username_flagged after edit
+// username_flagged set to true when user self-changes username (in ApiSettingsController)
+```
+
 ## Routes
 
 All under `/api/admin/` prefix with `admin` middleware:
 
+### Photo review (admin + superadmin)
+
 | Method | Route | Controller Method |
 |--------|-------|-------------------|
 | GET | `/api/admin/photos` | `AdminQueueController` (paginated queue) |
-| POST | `/api/admin/verify` | `verify()` |
-| POST | `/api/admin/destroy` | `destroy()` |
-| POST | `/api/admin/contentsupdatedelete` | `updateDelete()` |
+| POST | `/api/admin/verify` | `AdminController@verify` |
+| POST | `/api/admin/destroy` | `AdminController@destroy` |
+| POST | `/api/admin/contentsupdatedelete` | `AdminController@updateDelete` |
 | POST | `/api/admin/reset-tags` | `AdminResetTagsController` (reset to unverified) |
-| GET | `/api/admin/get-countries-with-photos` | `getCountriesWithPhotos()` |
+| GET | `/api/admin/get-countries-with-photos` | `AdminController@getCountriesWithPhotos` |
+
+### Dashboard stats (admin + superadmin)
+
+| Method | Route | Controller Method |
+|--------|-------|-------------------|
+| GET | `/api/admin/stats` | `AdminStatsController` (cached 60s) |
+
+### User management
+
+| Method | Route | Controller Method | Auth |
+|--------|-------|-------------------|------|
+| GET | `/api/admin/users` | `AdminUsersController@index` | admin |
+| POST | `/api/admin/users/{user}/trust` | `AdminUsersController@trust` | superadmin |
+| POST | `/api/admin/users/{user}/approve-all` | `AdminUsersController@approveAll` | superadmin |
+| PATCH | `/api/admin/users/{user}/username` | `AdminUsersController@updateUsername` | superadmin |
 
 ### Deprecated routes (return 410 Gone)
 
@@ -140,15 +224,22 @@ All under `/api/admin/` prefix with `admin` middleware:
 | Path | Component | Purpose |
 |------|-----------|---------|
 | `/admin/queue` | `AdminQueue.vue` | Photo review queue UI |
+| `/admin/users` | `AdminUsers.vue` | User management + username moderation |
 | `/admin/redis/:userId?` | `Redis.vue` | Redis analytics |
 
 ## Roles (Spatie, web guard)
 
 | ID | Role | Access |
 |----|------|--------|
-| 1 | `superadmin` | All admin actions |
-| 2 | `admin` | Photo review (approve, edit, delete) |
-| 3 | `helper` | Tag editing only |
+| 1 | `superadmin` | All admin actions + trust management + username moderation + Horizon |
+| 2 | `admin` | Photo review (approve, edit, delete) + user list + stats |
+| 3 | `helper` | Tag editing only (bounding box annotation role) |
+
+### Superadmin-only actions
+- Toggle user trust (`POST /api/admin/users/{user}/trust`)
+- Bulk approve user's photos (`POST /api/admin/users/{user}/approve-all`)
+- Moderate usernames (`PATCH /api/admin/users/{user}/username`)
+- View Horizon dashboard
 
 ## Common Mistakes
 
@@ -166,9 +257,19 @@ All under `/api/admin/` prefix with `admin` middleware:
 - **Forgetting `whereNotNull('summary')` in queue query.** Untagged photos must not appear in the admin queue.
 - **Not capping `per_page`.** Always `min($request->per_page, 50)` to prevent abuse.
 
+## Common Mistakes (User Management)
+
+- **Allowing admin (not superadmin) to toggle trust.** Trust, approve-all, and username moderation are superadmin-only. Check `hasRole('superadmin')`.
+- **Expecting trust to auto-approve.** `trust()` sets `verification_required` but does NOT approve existing photos. Use `approveAll()` separately.
+- **Forgetting `username_flagged` lifecycle.** User self-change → flagged=true. Superadmin edit → flagged=false. The flag drives the `/api/admin/users?flagged=true` filter.
+- **Username validation.** Via `UpdateUsernameRequest`: 3–30 chars, `/^[a-zA-Z0-9-]+$/`, unique. Don't duplicate validation in controller.
+- **Stats cache key.** `admin:dashboard:stats` — 60s TTL. Don't forget to invalidate if adding manual cache busting.
+
 ## Phase Status
 
 - **Phase 1:** COMPLETE — 4 AdminController methods, 4 deprecated controllers retired (410), AdminResetTagsController v5-fixed
-- **Phase 2:** COMPLETE — Queue endpoint (`AdminQueueController`, 12 tests) + Queue UI (`AdminQueue.vue` with filters, tag editing, approve/edit/delete). Reuses existing tagging components. 24 total admin tests passing.
+- **Phase 2:** COMPLETE — Queue endpoint (`AdminQueueController`, 12 tests) + Queue UI (`AdminQueue.vue` with filters, tag editing, approve/edit/delete). Reuses existing tagging components.
+- **Phase 3:** COMPLETE — User management (`AdminUsersController`: list/search/filter, trust toggle, approve-all, username moderation), dashboard stats (`AdminStatsController`), username flagging system. 49 total admin tests passing across 7 test files.
 - **Bbox pipeline:** RETIRED — `BoundingBoxController` returns 410 Gone on all 5 endpoints (`/api/bbox/*`). Was entirely v4 with broken `TagsVerifiedByAdmin` signature. Routes left wired for clean 410 responses.
-- **Phase 3:** Future — AI pre-tagging, multi-admin claim queue, confidence scoring, batch approve, trust management, permission-granular access
+- **Facilitator Queue:** COMPLETE — Parallel system for school team teachers. Same 3-panel layout as admin queue, team-scoped. Reuses tagging v2 components (PhotoViewer, UnifiedTagSearch, ActiveTagsList). See `readme/Teams.md` and `teams-safeguarding` skill. Key differences from admin queue: status filter (pending/approved/all) instead of country filter, Revoke replaces Reset, member stats tab, safeguarding pseudonyms.
+- **Phase 4:** Future — AI pre-tagging, multi-admin claim queue, confidence scoring, batch approve endpoint, permission-granular access

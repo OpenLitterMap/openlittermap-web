@@ -69,19 +69,19 @@ class SettingsProfileTest extends TestCase
     }
 
     /** @test */
-    public function picked_up_key_is_remapped_to_items_remaining(): void
+    public function items_remaining_key_is_remapped_to_picked_up(): void
     {
-        $user = User::factory()->create(['items_remaining' => 0]);
+        $user = User::factory()->create(['picked_up' => true]);
 
         $response = $this->actingAs($user)
             ->postJson('/api/settings/update', [
-                'key' => 'picked_up',
-                'value' => false,
+                'key' => 'items_remaining',
+                'value' => true,
             ]);
 
         $response->assertOk();
-        // picked_up=false means items_remaining=true (inverted)
-        $this->assertEquals(1, $user->fresh()->items_remaining);
+        // items_remaining=true means picked_up=false (inverted for backward compat)
+        $this->assertFalse($user->fresh()->picked_up);
     }
 
     /** @test */
@@ -154,5 +154,120 @@ class SettingsProfileTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonPath('msg', 'This email is already taken.');
+    }
+
+    /** @test */
+    public function picked_up_can_be_set_directly(): void
+    {
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/update', [
+                'key' => 'picked_up',
+                'value' => false,
+            ]);
+
+        $response->assertOk();
+        $this->assertFalse($user->fresh()->picked_up);
+    }
+
+    /** @test */
+    public function privacy_toggle_maps_name_works(): void
+    {
+        $user = User::factory()->create(['show_name_maps' => 1]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/privacy/maps/name');
+
+        $response->assertOk();
+        $this->assertEquals(0, $user->fresh()->show_name_maps);
+    }
+
+    /** @test */
+    public function privacy_toggle_leaderboard_username_works(): void
+    {
+        $user = User::factory()->create(['show_username' => 1]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/privacy/leaderboard/username');
+
+        $response->assertOk();
+        $this->assertEquals(0, $user->fresh()->show_username);
+    }
+
+    /** @test */
+    public function toggle_previous_tags_works(): void
+    {
+        $user = User::factory()->create(['previous_tags' => 0]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/privacy/toggle-previous-tags');
+
+        $response->assertOk();
+        $this->assertEquals(1, $user->fresh()->previous_tags);
+    }
+
+    /** @test */
+    public function password_change_works(): void
+    {
+        // Factory mutator double-hashes pre-hashed passwords, so set plain text
+        $user = User::factory()->create(['password' => 'password']);
+
+        $response = $this->actingAs($user)
+            ->patchJson('/api/settings/details/password', [
+                'oldpassword' => 'password',
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ]);
+
+        $response->assertOk();
+        $this->assertEquals('success', $response->json('message'));
+        $this->assertTrue(\Hash::check('newpassword123', $user->fresh()->password));
+    }
+
+    /** @test */
+    public function password_change_rejects_wrong_old_password(): void
+    {
+        $user = User::factory()->create(['password' => 'password']);
+
+        $response = $this->actingAs($user)
+            ->patchJson('/api/settings/details/password', [
+                'oldpassword' => 'wrongpassword',
+                'password' => 'newpassword123',
+                'password_confirmation' => 'newpassword123',
+            ]);
+
+        $response->assertOk();
+        $this->assertEquals('fail', $response->json('message'));
+    }
+
+    /** @test */
+    public function social_links_can_be_updated(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->patchJson('/api/settings', [
+                'social_twitter' => 'https://twitter.com/testuser',
+            ]);
+
+        $response->assertOk();
+        $this->assertEquals('https://twitter.com/testuser', $user->fresh()->setting('social_twitter'));
+    }
+
+    /** @test */
+    public function username_change_flags_for_admin_review(): void
+    {
+        $user = User::factory()->create(['username_flagged' => false]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/update', [
+                'key' => 'username',
+                'value' => 'new-username',
+            ]);
+
+        $response->assertOk();
+        $this->assertEquals('new-username', $user->fresh()->username);
+        $this->assertTrue($user->fresh()->username_flagged);
     }
 }

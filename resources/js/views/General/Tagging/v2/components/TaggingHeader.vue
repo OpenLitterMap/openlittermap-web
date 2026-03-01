@@ -2,8 +2,8 @@
     <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 shadow-2xl">
         <!-- Header - wraps on mobile -->
         <div class="px-4 py-2 md:px-6 md:py-3 flex flex-wrap items-center gap-2 md:gap-4">
-            <!-- Photo ID -->
-            <div class="flex items-center gap-2">
+            <!-- Photo ID (only when a photo exists) -->
+            <div v-if="currentPhoto" class="flex items-center gap-2">
                 <div class="bg-blue-500/20 p-1.5 rounded-lg">
                     <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -15,8 +15,8 @@
                     </svg>
                 </div>
                 <div class="min-w-0">
-                    <div class="text-white font-semibold text-sm">#{{ currentPhoto?.id || '—' }}</div>
-                    <div class="text-gray-400 text-xs truncate">{{ formatDate(currentPhoto?.datetime) }}</div>
+                    <div class="text-white font-semibold text-sm">#{{ currentPhoto.id }}</div>
+                    <div class="text-gray-400 text-xs truncate">{{ formatDate(currentPhoto.datetime) }}</div>
                 </div>
             </div>
 
@@ -42,7 +42,7 @@
                 <div class="flex items-center justify-between text-xs">
                     <span class="text-gray-400">{{ tags.length }} {{ tags.length === 1 ? $t('tag') : $t('tags') }}</span>
                     <span class="text-gray-400">
-                        {{ formatNumber(currentXP)
+                        {{ formatNumber(xpIntoLevel)
                         }}<span v-if="xpPreview > 0" class="text-green-400 ml-0.5">+{{ xpPreview }}</span> /
                         {{ formatNumber(xpRequired) }} XP
                     </span>
@@ -78,8 +78,13 @@
                 </button>
 
                 <div class="text-center">
-                    <div class="text-white text-xs font-medium">{{ currentNumber }}/{{ totalPhotos }}</div>
-                    <div class="text-gray-400 text-xs">{{ untaggedCount }} {{ $t('left') }}</div>
+                    <template v-if="totalPhotos > 0">
+                        <div class="text-white text-xs font-medium">{{ currentNumber }}/{{ totalPhotos }}</div>
+                        <div class="text-gray-400 text-xs">{{ untaggedCount }} {{ $t('left') }}</div>
+                    </template>
+                    <template v-else>
+                        <div class="text-gray-400 text-xs">{{ $t('Nothing to tag') }}</div>
+                    </template>
                 </div>
 
                 <button
@@ -119,7 +124,8 @@
                 <button
                     v-if="!isEditMode"
                     @click="$emit('skip')"
-                    class="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg hover:bg-gray-600/50 transition-all text-xs text-center"
+                    :disabled="!canGoNext"
+                    class="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg hover:bg-gray-600/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs text-center"
                 >
                     {{ $t('Skip') }}
                 </button>
@@ -194,20 +200,22 @@ const currentNumber = computed(() => {
 
 const totalPhotos = computed(() => props.photos?.total || 0);
 
-const untaggedCount = computed(() => photosStore.untaggedStats.leftToTag || props.photos?.total || 0);
+const untaggedCount = computed(() => photosStore.untaggedStats.leftToTag ?? props.photos?.total ?? 0);
 
 const canGoPrevious = computed(() => props.currentIndex > 0 || props.photos?.current_page > 1);
 const canGoNext = computed(
     () => props.currentIndex < props.photos?.data?.length - 1 || props.photos?.current_page < props.photos?.last_page
 );
 
-// XP
+// XP — uses LevelService threshold data from next_level accessor
+const levelInfo = computed(() => userStore.user?.next_level || {});
 const currentXP = computed(() => userStore.user?.xp_redis || 0);
-const xpRequired = computed(() => userStore.user?.next_level?.xp || 1000);
-const userLevel = computed(() => userStore.user?.level || 1);
+const xpRequired = computed(() => levelInfo.value.xp_for_next || 1000);
+const userLevel = computed(() => levelInfo.value.level || 1);
+const xpIntoLevel = computed(() => levelInfo.value.xp_into_level || 0);
 
-const totalXPProgress = computed(() => Math.min(((currentXP.value + props.xpPreview) / xpRequired.value) * 100, 100));
-const existingXPProgress = computed(() => Math.min((currentXP.value / xpRequired.value) * 100, 100));
+const existingXPProgress = computed(() => xpRequired.value > 0 ? Math.min((xpIntoLevel.value / xpRequired.value) * 100, 100) : 100);
+const totalXPProgress = computed(() => xpRequired.value > 0 ? Math.min(((xpIntoLevel.value + props.xpPreview) / xpRequired.value) * 100, 100) : 100);
 
 // Helpers
 const formatDate = (datetime) => (datetime ? moment(datetime).format('MMM D, YYYY') : '—');
@@ -218,22 +226,7 @@ const formatNumber = (num) => {
     return num.toString();
 };
 
-const LEVEL_TITLES = {
-    1: 'Beginner', 2: 'Observer', 3: 'Field Observer', 4: 'Recorder', 5: 'Field Recorder',
-    6: 'Surveyor', 7: 'Field Surveyor', 8: 'Mapper', 9: 'Field Mapper', 10: 'Contributor',
-    11: 'Data Contributor', 12: 'Researcher', 13: 'Field Researcher', 14: 'Analyst',
-    15: 'Data Analyst', 16: 'Specialist', 17: 'Environmental Specialist', 18: 'Scientist',
-    19: 'Citizen Scientist', 20: 'Senior Scientist', 21: 'Lead Scientist', 22: 'Expert',
-    23: 'Senior Expert', 24: 'Advisor', 25: 'Senior Advisor', 26: 'Director',
-    27: 'Regional Director', 28: 'National Director', 29: 'International Director', 30: 'Ambassador',
-    31: 'Senior Ambassador', 32: 'Global Ambassador', 33: 'Fellow', 34: 'Senior Fellow',
-    35: 'Distinguished Fellow', 36: 'Champion', 37: 'National Champion', 38: 'Global Champion',
-    39: 'Pioneer', 40: 'Trailblazer', 41: 'Visionary', 42: 'Guardian', 43: 'Earth Guardian',
-    44: 'Steward', 45: 'Earth Steward', 46: 'Luminary', 47: 'Icon', 48: 'Legend',
-    49: 'Grandmaster', 50: 'Founder',
-};
-
 const getLevelTitle = () => {
-    return LEVEL_TITLES[userLevel.value] || 'Beginner';
+    return userStore.user?.next_level?.title || 'Complete Noob';
 };
 </script>

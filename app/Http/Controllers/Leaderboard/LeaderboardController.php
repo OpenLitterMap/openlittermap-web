@@ -80,11 +80,24 @@ class LeaderboardController extends Controller
             }
         }
 
+        // Global counts (independent of filters)
+        $activeUsers = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', 0)
+            ->where('location_id', 0)
+            ->where('user_id', '>', 0)
+            ->where('xp', '>', 0)
+            ->count();
+
+        $totalUsers = User::count();
+
         return [
             'success' => true,
             'users' => $users,
             'hasNextPage' => $total > $start + self::PER_PAGE,
             'total' => $total,
+            'activeUsers' => $activeUsers,
+            'totalUsers' => $totalUsers,
             'currentUserRank' => $currentUserRank,
         ];
     }
@@ -169,9 +182,11 @@ class LeaderboardController extends Controller
                     });
 
             $result[] = [
+                'user_id' => $data['id'],
+                'public_profile' => (bool) $user->public_profile,
                 'name' => $user->show_name ? $user->name : '',
                 'username' => $user->show_username ? ('@' . $user->username) : '',
-                'xp' => number_format($data['xp']),
+                'xp' => (int) $data['xp'],
                 'global_flag' => $user->global_flag,
                 'social' => !empty($user->social_links) ? $user->social_links : null,
                 'team' => $showTeamName && $user->team ? $user->team->name : '',

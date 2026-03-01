@@ -231,8 +231,8 @@ class MigrationScript extends Command
                 $this->info($status);
             });
 
-        // Evaluate achievements
-        $this->evaluateUserAchievements($userId);
+        // Achievements parked for post-release — skip evaluation during migration
+        // $this->evaluateUserAchievements($userId);
 
         // Display user summary
         $this->displayUserSummary($userId, $processedForUser, $failedForUser);

@@ -67,7 +67,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="bg-white rounded-lg shadow-sm mb-6">
+    <div v-if="totalPhotos > 0" class="bg-white rounded-lg shadow-sm mb-6">
         <!-- Stats Row -->
         <div class="grid grid-cols-4 px-6 py-2 border-b border-gray-100">
             <!-- Total Photos Column -->

@@ -3,11 +3,13 @@
 namespace Tests;
 
 use App\Services\Achievements\Tags\TagKeyCache;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Laravel\Sanctum\Sanctum;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -36,6 +38,26 @@ abstract class TestCase extends BaseTestCase
 
         // Clear all tag keys from cache
         TagKeyCache::forgetAll();
+    }
+
+    /**
+     * Authenticate as the given user for Sanctum-protected routes.
+     *
+     * When no guard is specified, uses Sanctum::actingAs so that both
+     * session-based (SPA) and token-based (mobile) auth work in tests.
+     */
+    public function actingAs(Authenticatable $user, $guard = null): static
+    {
+        if ($guard === null) {
+            Sanctum::actingAs($user);
+
+            // Also set the web guard so auth:web routes (e.g. logout) work.
+            parent::actingAs($user, 'web');
+
+            return $this;
+        }
+
+        return parent::actingAs($user, $guard);
     }
 
     /**

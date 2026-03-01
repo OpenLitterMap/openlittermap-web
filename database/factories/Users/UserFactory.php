@@ -28,6 +28,7 @@ class UserFactory extends Factory
             'show_name_maps' => 1,
             'show_username_maps' => 1,
             'show_name_createdby' => 1,
+            'picked_up' => true,
         ];
     }
 

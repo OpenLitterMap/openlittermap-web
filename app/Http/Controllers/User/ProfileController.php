@@ -71,6 +71,11 @@ class ProfileController extends Controller
      */
     public function geojson ()
     {
+        $allowedPeriods = ['created_at', 'datetime', 'updated_at'];
+        $period = in_array(request()->period, $allowedPeriods, true)
+            ? request()->period
+            : 'created_at';
+
         $photos = Photo::query()
             ->where('user_id', auth()->user()->id)
             ->where('verified', '>=', VerificationStatus::ADMIN_APPROVED->value)
@@ -80,9 +85,9 @@ class ProfileController extends Controller
                 'team:id,name',
                 'customTags:photo_id,tag',
             ])
-            ->whereDate(request()->period, '>=', request()->start)
-            ->whereDate(request()->period, '<=', request()->end)
-            ->orderBy(request()->period, 'asc')
+            ->whereDate($period, '>=', request()->start)
+            ->whereDate($period, '<=', request()->end)
+            ->orderBy($period, 'asc')
             ->get();
 
         // Populate geojson object
@@ -127,6 +132,76 @@ class ProfileController extends Controller
     }
 
     /**
+     * Get a public user profile by ID.
+     */
+    public function show(int $id): array
+    {
+        $user = User::findOrFail($id);
+
+        if (! $user->public_profile) {
+            return ['public' => false];
+        }
+
+        $metrics = RedisMetricsCollector::getUserMetrics($id);
+        $uploads = $metrics['uploads'] ?: (int) $user->total_images;
+        $litter = $metrics['litter'] ?: (int) $user->total_litter;
+        $xp = $metrics['xp'] ?: (int) $user->xp;
+
+        $levelInfo = LevelService::getUserLevel($xp);
+
+        $totalRanked = User::count();
+        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
+        $rank = Redis::zRevRank($globalXpKey, (string) $id);
+        $globalPosition = $rank !== false
+            ? $rank + 1
+            : User::where('xp', '>', $xp)->count() + 1;
+
+        $percentile = $totalRanked > 0
+            ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
+            : 0;
+
+        $locationCounts = Photo::where('user_id', $id)
+            ->whereNotNull('country_id')
+            ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
+            ->first();
+
+        $unlockedCount = DB::table('user_achievements')->where('user_id', $id)->count();
+        $totalAchievements = DB::table('achievements')->count();
+
+        return [
+            'public' => true,
+            'user' => [
+                'id' => $id,
+                'name' => $user->show_name ? $user->name : null,
+                'username' => $user->show_username ? $user->username : null,
+                'avatar' => $user->avatar,
+                'global_flag' => $user->global_flag,
+                'member_since' => $user->created_at->format('F Y'),
+            ],
+            'stats' => [
+                'uploads' => $uploads,
+                'litter' => $litter,
+                'xp' => $xp,
+            ],
+            'level' => $levelInfo,
+            'rank' => [
+                'global_position' => $globalPosition,
+                'global_total' => $totalRanked,
+                'percentile' => $percentile,
+            ],
+            'achievements' => [
+                'unlocked' => $unlockedCount,
+                'total' => $totalAchievements,
+            ],
+            'locations' => [
+                'countries' => (int) ($locationCounts->countries ?? 0),
+                'states' => (int) ($locationCounts->states ?? 0),
+                'cities' => (int) ($locationCounts->cities ?? 0),
+            ],
+        ];
+    }
+
+    /**
      * Get comprehensive profile data for the authenticated user.
      */
     public function index(): array
@@ -151,16 +226,16 @@ class ProfileController extends Controller
         }
 
         // Rank from Redis ZSET, with MySQL fallback
+        // Total is always the full user count — everyone is ranked
+        $totalRanked = User::count();
         $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
         $rank = Redis::zRevRank($globalXpKey, (string) $userId);
-        $totalRanked = (int) Redis::zCard($globalXpKey);
 
         if ($rank !== false) {
             $globalPosition = $rank + 1;
         } else {
-            // Fallback: count users with more XP in MySQL
+            // Not in ZSET (0 XP) — tied last with all other 0-XP users
             $globalPosition = User::where('xp', '>', $xp)->count() + 1;
-            $totalRanked = $totalRanked ?: User::where('xp', '>', 0)->count();
         }
 
         $percentile = $totalRanked > 0
@@ -217,8 +292,10 @@ class ProfileController extends Controller
                 'show_username' => (bool) $user->show_username,
                 'show_name_maps' => (bool) $user->show_name_maps,
                 'show_username_maps' => (bool) $user->show_username_maps,
+                'picked_up' => (bool) $user->picked_up,
                 'previous_tags' => (bool) $user->previous_tags,
                 'emailsub' => (bool) $user->emailsub,
+                'prevent_others_tagging_my_photos' => (bool) $user->prevent_others_tagging_my_photos,
             ],
             'stats' => [
                 'uploads' => $uploads,

@@ -38,7 +38,19 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return $this->success(['teams' => $user->teams]);
+        $teams = $user->teams->map(fn ($team) => [
+            'id' => $team->id,
+            'name' => $team->name,
+            'identifier' => $team->identifier,
+            'type_name' => $team->type_name,
+            'total_members' => $team->members,
+            'total_tags' => $team->total_litter,
+            'total_images' => $team->total_images,
+            'created_at' => $team->created_at,
+            'updated_at' => $team->updated_at,
+        ]);
+
+        return $this->success(['teams' => $teams]);
     }
 
     /**
@@ -53,7 +65,7 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $result = $action->run($user, $request->all());
+        $result = $action->run($user, $request->all(), $request->file('logo'));
 
         if (is_array($result)) {
             return $result;

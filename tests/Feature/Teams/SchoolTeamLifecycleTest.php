@@ -73,12 +73,11 @@ class SchoolTeamLifecycleTest extends TestCase
 
         $teacher = $this->createSchoolManager();
 
-        $createResponse = $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
+        $createResponse = $this->actingAs($teacher)->postJson('/api/teams/create', [
             'name' => 'Curraghboy NS',
             'identifier' => 'CurraghboyNS2026',
             'teamType' => $this->schoolTypeId,
             'contact_email' => 'teacher@curraghboyns.ie',
-            'school_roll_number' => '19456A',
             'county' => 'Roscommon',
         ]);
 
@@ -102,7 +101,7 @@ class SchoolTeamLifecycleTest extends TestCase
 
         $student = User::factory()->create(['name' => 'Test Student']);
 
-        $joinResponse = $this->actingAs($student, 'api')->postJson('/api/teams/join', [
+        $joinResponse = $this->actingAs($student)->postJson('/api/teams/join', [
             'identifier' => 'CurraghboyNS2026',
         ]);
 
@@ -142,6 +141,8 @@ class SchoolTeamLifecycleTest extends TestCase
         $photo->update([
             'total_tags' => 5,
             'verified' => VerificationStatus::VERIFIED->value,
+            'summary' => json_encode(['smoking' => ['cigarette_butt' => 5]]),
+            'xp' => 10,
         ]);
 
         // Photo must be private
@@ -156,7 +157,7 @@ class SchoolTeamLifecycleTest extends TestCase
 
         // ── Step 4: Teacher sees pending photos ──
 
-        $photosResponse = $this->actingAs($teacher, 'api')
+        $photosResponse = $this->actingAs($teacher)
             ->getJson('/api/teams/photos?team_id=' . $team->id . '&status=pending');
 
         $photosResponse->assertOk();
@@ -168,7 +169,7 @@ class SchoolTeamLifecycleTest extends TestCase
 
         Event::fake([TagsVerifiedByAdmin::class, SchoolDataApproved::class]);
 
-        $approveResponse = $this->actingAs($teacher, 'api')
+        $approveResponse = $this->actingAs($teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $team->id,
                 'photo_ids' => [$photo->id],
@@ -211,7 +212,7 @@ class SchoolTeamLifecycleTest extends TestCase
     {
         $user = User::factory()->create(['remaining_teams' => 5]);
 
-        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $this->actingAs($user)->postJson('/api/teams/create', [
             'name' => 'Unauthorized School',
             'identifier' => 'NoAuth1',
             'teamType' => $this->schoolTypeId,
@@ -228,7 +229,7 @@ class SchoolTeamLifecycleTest extends TestCase
     {
         $user = User::factory()->create(['remaining_teams' => 1]);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($user)->postJson('/api/teams/create', [
             'name' => 'Community Cleanup',
             'identifier' => 'CommClean2026',
             'teamType' => $this->communityTypeId,
@@ -264,7 +265,7 @@ class SchoolTeamLifecycleTest extends TestCase
         $team->users()->attach($student2->id);
 
         // Student sees masked names
-        $response = $this->actingAs($student1, 'api')
+        $response = $this->actingAs($student1)
             ->getJson('/api/teams/members?team_id=' . $team->id);
 
         $response->assertOk();
@@ -281,7 +282,7 @@ class SchoolTeamLifecycleTest extends TestCase
         }
 
         // Teacher sees real names
-        $response = $this->actingAs($teacher, 'api')
+        $response = $this->actingAs($teacher)
             ->getJson('/api/teams/members?team_id=' . $team->id);
 
         $members = collect($response->json('result.data'));
@@ -307,7 +308,7 @@ class SchoolTeamLifecycleTest extends TestCase
         $user = User::factory()->create();
 
         // Join
-        $this->actingAs($user, 'api')->postJson('/api/teams/join', [
+        $this->actingAs($user)->postJson('/api/teams/join', [
             'identifier' => $team->identifier,
         ])->assertOk()->assertJsonPath('success', true);
 
@@ -315,7 +316,7 @@ class SchoolTeamLifecycleTest extends TestCase
         $this->assertEquals($team->id, $user->fresh()->active_team);
 
         // Leave
-        $this->actingAs($user, 'api')->postJson('/api/teams/leave', [
+        $this->actingAs($user)->postJson('/api/teams/leave', [
             'team_id' => $team->id,
         ])->assertOk()->assertJsonPath('success', true);
 
@@ -336,7 +337,7 @@ class SchoolTeamLifecycleTest extends TestCase
         ]);
         $team->users()->attach($teacher->id);
 
-        $response = $this->actingAs($teacher, 'api')
+        $response = $this->actingAs($teacher)
             ->postJson('/api/teams/settings', [
                 'team_id' => $team->id,
                 'all' => false,
@@ -365,21 +366,23 @@ class SchoolTeamLifecycleTest extends TestCase
         $teacher = $this->createSchoolManager(['remaining_teams' => 1]);
 
         // First team — success
-        $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
+        $this->actingAs($teacher)->postJson('/api/teams/create', [
             'name' => 'First Team',
             'identifier' => 'First1',
             'teamType' => $this->schoolTypeId,
             'contact_email' => 'teacher@school.ie',
+            'county' => 'Galway',
         ])->assertOk()->assertJsonPath('success', true);
 
         $this->assertEquals(0, $teacher->fresh()->remaining_teams);
 
         // Second team — blocked
-        $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
+        $this->actingAs($teacher)->postJson('/api/teams/create', [
             'name' => 'Second Team',
             'identifier' => 'Second1',
             'teamType' => $this->schoolTypeId,
             'contact_email' => 'teacher@school.ie',
+            'county' => 'Galway',
         ])->assertOk()->assertJsonPath('success', false)->assertJsonPath('msg', 'max-created');
 
         $this->assertDatabaseMissing('teams', ['name' => 'Second Team']);

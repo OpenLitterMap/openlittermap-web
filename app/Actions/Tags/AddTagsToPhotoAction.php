@@ -38,20 +38,21 @@ class AddTagsToPhotoAction
      *
      * @throws \Exception
      */
-    public function run(int $userId, int $photoId, array $tags): array
+    public function run(int $userId, int $photoId, array $tags, bool $skipVerification = false): array
     {
         $photoTags = $this->addTagsToPhoto($userId, $photoId, $tags);
 
-        // Generate summary JSON — MetricsService reads from this
+        // Generate summary JSON + XP — MetricsService reads from these
         $photo = Photo::find($photoId);
         $photo->generateSummary();
+        $photo->refresh();
 
-        // Calculate and store XP on the photo
-        $photo->xp = $this->calculateXp($photoTags);
-        $photo->save();
-
-        // Handle verification + dispatch TagsVerifiedByAdmin if trusted
-        $this->updateVerification($userId, $photo);
+        // Handle verification + dispatch TagsVerifiedByAdmin if trusted.
+        // Admin controllers pass skipVerification=true because they handle
+        // verification and metrics themselves (atomic approve + event/processPhoto).
+        if (! $skipVerification) {
+            $this->updateVerification($userId, $photo);
+        }
 
         return $photoTags;
     }
@@ -203,8 +204,8 @@ class AddTagsToPhotoAction
             'picked_up' => $pickedUp,
         ]);
 
-        // Badge check for bagsLitter + picked_up
-        if ($object?->key === 'bagsLitter' && $pickedUp) {
+        // Badge check for bags_litter + picked_up
+        if ($object?->key === 'bags_litter' && $pickedUp) {
             $this->checkLocationTypeAward->checkLandUseAward($userId, $photoTag);
         }
 
@@ -419,7 +420,9 @@ class AddTagsToPhotoAction
         $category = null;
         $object = null;
 
-        if (isset($tag['category'])) {
+        if (isset($tag['category_id'])) {
+            $category = Category::find($tag['category_id']);
+        } elseif (isset($tag['category'])) {
             $category = is_array($tag['category']) && isset($tag['category']['id'])
                 ? Category::find($tag['category']['id'])
                 : Category::where('key', $tag['category'])->first();
@@ -430,9 +433,15 @@ class AddTagsToPhotoAction
                 ? LitterObject::find($tag['object']['id'])
                 : LitterObject::where('key', $tag['object'])->first();
 
-            // Auto-resolve category from object if not explicitly provided
-            if (! $category && $object) {
-                $category = $object->categories()->first();
+            if ($object) {
+                // Validate provided category belongs to this object, fall back otherwise
+                if ($category && ! $object->categories()->where('categories.id', $category->id)->exists()) {
+                    $category = null;
+                }
+
+                if (! $category) {
+                    $category = $object->categories()->first();
+                }
             }
         }
 
@@ -482,11 +491,16 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Set verification status and dispatch event if user is trusted.
+     * Set verification status and dispatch metrics event.
+     *
+     * All users get immediate leaderboard credit via TagsVerifiedByAdmin → ProcessPhotoMetrics.
+     * Only trusted users get ADMIN_APPROVED (photos visible on map).
+     * School students wait for teacher approval (safeguarding pipeline).
      */
     protected function updateVerification(int $userId, Photo $photo): void
     {
         $user = User::find($userId);
+        $isSchoolStudent = false;
 
         if ($user->verification_required) {
             $photo->verification = 0.1;
@@ -496,12 +510,19 @@ class AddTagsToPhotoAction
 
                 if ($team && $team->isSchool()) {
                     $photo->verified = VerificationStatus::VERIFIED->value;
+                    $isSchoolStudent = true;
                 }
             }
         } else {
             $photo->verification = 1;
             $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
+        }
 
+        $photo->save();
+
+        // Process metrics for all users except school students (teacher must approve first).
+        // Non-trusted users' photos stay at verified=0 (not on map) but still get leaderboard XP.
+        if (! $isSchoolStudent) {
             event(new TagsVerifiedByAdmin(
                 $photo->id,
                 $photo->user_id,
@@ -511,7 +532,5 @@ class AddTagsToPhotoAction
                 $photo->team_id
             ));
         }
-
-        $photo->save();
     }
 }

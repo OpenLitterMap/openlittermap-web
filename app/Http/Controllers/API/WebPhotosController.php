@@ -20,7 +20,7 @@ class WebPhotosController extends Controller
      */
     public function loadMore ()
     {
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
         return APIPhoto::where([
             'user_id' => $user->id,

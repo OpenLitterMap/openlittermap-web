@@ -15,39 +15,36 @@
             <!-- Header -->
             <h1 class="text-white text-2xl font-bold mb-6">{{ t('Leaderboard') }}</h1>
 
-            <!-- Auth Gate -->
-            <div v-if="!userStore.auth" class="text-center py-20">
-                <p class="text-white/60 text-lg mb-4">{{ t('Sign up to see the leaderboard') }}</p>
-                <router-link
-                    to="/signup"
-                    class="inline-block px-6 py-2.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg font-semibold hover:bg-emerald-500/30 transition"
-                >
-                    {{ t('Sign Up') }}
-                </router-link>
-            </div>
-
-            <template v-else>
-                <!-- Stats Bar -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                        <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">
-                            Your Rank
-                        </div>
-                        <div v-if="leaderboardStore.loading" class="inline-block w-16 h-7 bg-white/10 rounded animate-pulse"></div>
-                        <div v-else class="text-white text-2xl font-bold tabular-nums tracking-tight">
-                            {{ leaderboardStore.currentUserRank ? getPosition(leaderboardStore.currentUserRank) : '—' }}
-                        </div>
+            <!-- Stats Bar -->
+            <div :class="userStore.auth ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-4 mb-6">
+                <div v-if="userStore.auth" class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">
+                        {{ t('Your Rank') }}
                     </div>
-                    <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                        <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">
-                            Total Users
-                        </div>
-                        <div v-if="leaderboardStore.loading" class="inline-block w-16 h-7 bg-white/10 rounded animate-pulse"></div>
-                        <div v-else class="text-white text-2xl font-bold tabular-nums tracking-tight">
-                            {{ leaderboardStore.total.toLocaleString() }}
-                        </div>
+                    <div v-if="leaderboardStore.loading" class="inline-block w-16 h-7 bg-white/10 rounded animate-pulse"></div>
+                    <div v-else class="text-white text-2xl font-bold tabular-nums tracking-tight">
+                        {{ leaderboardStore.currentUserRank ? getPosition(leaderboardStore.currentUserRank) : '—' }}
                     </div>
                 </div>
+                <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">
+                        {{ t('Active Users') }}
+                    </div>
+                    <div v-if="leaderboardStore.loading" class="inline-block w-16 h-7 bg-white/10 rounded animate-pulse"></div>
+                    <div v-else class="text-white text-2xl font-bold tabular-nums tracking-tight">
+                        {{ leaderboardStore.activeUsers.toLocaleString() }}
+                    </div>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
+                    <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">
+                        {{ t('Total Users') }}
+                    </div>
+                    <div v-if="leaderboardStore.loading" class="inline-block w-16 h-7 bg-white/10 rounded animate-pulse"></div>
+                    <div v-else class="text-white text-2xl font-bold tabular-nums tracking-tight">
+                        {{ leaderboardStore.totalUsers.toLocaleString() }}
+                    </div>
+                </div>
+            </div>
 
                 <!-- Filters -->
                 <LeaderboardFilters class="mb-6" @change="onFilterChange" />
@@ -58,7 +55,7 @@
                 </div>
 
                 <!-- Error -->
-                <div v-else-if="leaderboardStore.error && leaderboardStore.error !== 'unauthenticated'" class="text-center py-16">
+                <div v-else-if="leaderboardStore.error" class="text-center py-16">
                     <p class="text-red-300 text-lg">{{ leaderboardStore.error }}</p>
                     <button
                         @click="retry"
@@ -96,7 +93,6 @@
                         </button>
                     </div>
                 </template>
-            </template>
         </div>
     </div>
 </template>
@@ -114,9 +110,7 @@ const leaderboardStore = useLeaderboardStore();
 const userStore = useUserStore();
 
 onMounted(async () => {
-    if (userStore.auth) {
-        await leaderboardStore.FETCH_LEADERBOARD({ timeFilter: 'all-time' });
-    }
+    await leaderboardStore.FETCH_LEADERBOARD({ timeFilter: 'all-time' });
 });
 
 const onFilterChange = async ({ timeFilter, locationType, locationId }) => {

@@ -1,4 +1,7 @@
 import { defineStore } from 'pinia';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 export const useTeamPhotosStore = defineStore('teamPhotos', {
     state: () => ({
@@ -15,8 +18,10 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
         },
         currentPhoto: null,
         mapPoints: [],
+        memberStats: [],
         filter: 'all', // 'all' | 'pending' | 'approved'
         loading: false,
+        submitting: false,
         approving: false,
         errors: {},
     }),
@@ -69,10 +74,11 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
         },
 
         /**
-         * Update tags on a photo (teacher edit).
+         * Update tags on a photo (teacher edit, CLO format).
          */
         async updateTags(photoId, tags) {
             this.errors = {};
+            this.submitting = true;
 
             try {
                 const { data } = await axios.patch(`/api/teams/photos/${photoId}/tags`, {
@@ -96,7 +102,48 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 if (e?.response?.status === 422) {
                     this.errors = e.response.data.errors || {};
                 }
+                toast.error('Failed to update tags');
                 return false;
+            } finally {
+                this.submitting = false;
+            }
+        },
+
+        /**
+         * Update tags then approve in sequence (save edits flow).
+         */
+        async updateTagsAndApprove(teamId, photoId, tags) {
+            this.submitting = true;
+
+            try {
+                // Step 1: Update tags
+                const { data: tagData } = await axios.patch(`/api/teams/photos/${photoId}/tags`, {
+                    tags,
+                });
+
+                if (!tagData.success) {
+                    toast.error('Failed to update tags');
+                    return false;
+                }
+
+                // Step 2: Approve
+                const { data: approveData } = await axios.post('/api/teams/photos/approve', {
+                    team_id: teamId,
+                    photo_ids: [photoId],
+                });
+
+                if (approveData.success) {
+                    await this.fetchPhotos(teamId, this.photos.current_page);
+                    return true;
+                }
+
+                return false;
+            } catch (e) {
+                console.error('updateTagsAndApprove', e);
+                toast.error('Failed to save edits');
+                return false;
+            } finally {
+                this.submitting = false;
             }
         },
 
@@ -105,6 +152,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
          */
         async approvePhotos(teamId, photoIds = null) {
             this.approving = true;
+            this.submitting = true;
 
             try {
                 const payload = { team_id: teamId };
@@ -118,7 +166,6 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 const { data } = await axios.post('/api/teams/photos/approve', payload);
 
                 if (data.success) {
-                    // Refresh the list
                     await this.fetchPhotos(teamId, this.photos.current_page);
                     return data.approved_count;
                 }
@@ -126,9 +173,11 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 return 0;
             } catch (e) {
                 console.error('approvePhotos', e);
+                toast.error('Failed to approve photos');
                 return 0;
             } finally {
                 this.approving = false;
+                this.submitting = false;
             }
         },
 
@@ -153,6 +202,8 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
          * Delete a team photo (teacher only).
          */
         async deletePhoto(teamId, photoId) {
+            this.submitting = true;
+
             try {
                 const { data } = await axios.delete(`/api/teams/photos/${photoId}`, {
                     params: { team_id: teamId },
@@ -167,7 +218,10 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 return false;
             } catch (e) {
                 console.error('deletePhoto', e);
+                toast.error('Failed to delete photo');
                 return false;
+            } finally {
+                this.submitting = false;
             }
         },
 
@@ -175,6 +229,8 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
          * Revoke approval on photos (teacher only).
          */
         async revokePhotos(teamId, photoIds = null) {
+            this.submitting = true;
+
             try {
                 const payload = { team_id: teamId };
 
@@ -194,7 +250,27 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 return 0;
             } catch (e) {
                 console.error('revokePhotos', e);
+                toast.error('Failed to revoke photos');
                 return 0;
+            } finally {
+                this.submitting = false;
+            }
+        },
+
+        /**
+         * Fetch per-member stats for the team.
+         */
+        async fetchMemberStats(teamId) {
+            try {
+                const { data } = await axios.get('/api/teams/photos/member-stats', {
+                    params: { team_id: teamId },
+                });
+
+                if (data.success) {
+                    this.memberStats = data.members;
+                }
+            } catch (e) {
+                console.error('fetchMemberStats', e);
             }
         },
 

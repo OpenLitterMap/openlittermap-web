@@ -89,9 +89,18 @@
             </button>
         </div>
 
-        <!-- Tab content -->
-        <component :is="currentTabComponent" v-bind="tabProps" />
+        <!-- Tab content (approval queue gets full width) -->
+        <component :is="currentTabComponent" v-bind="tabProps" v-if="activeTab !== 'approval'" />
+
+        <!-- Approval queue renders outside the max-width container below -->
     </div>
+
+    <!-- Full-width approval queue (needs viewport height, not constrained by max-w-7xl) -->
+    <component
+        v-if="activeTab === 'approval'"
+        :is="currentTabComponent"
+        v-bind="tabProps"
+    />
 </template>
 
 <script>
@@ -102,7 +111,9 @@ import { useTeamPhotosStore } from '@/stores/teamPhotos';
 import { useUserStore } from '@/stores/user';
 import TeamPhotoList from './TeamPhotoList.vue';
 import TeamPhotoMap from './TeamPhotoMap.vue';
-import TeamApprovalQueue from './TeamApprovalQueue.vue';
+import FacilitatorQueue from './FacilitatorQueue.vue';
+import TeamMembersList from './components/TeamMembersList.vue';
+import ParticipantGrid from './components/ParticipantGrid.vue';
 
 export default {
     name: 'TeamDashboard',
@@ -137,6 +148,20 @@ export default {
                     label: 'Approval Queue',
                     badge: photoStats.value.pending > 0 ? photoStats.value.pending : null,
                 });
+
+                list.push({
+                    id: 'members',
+                    label: 'Members',
+                    badge: null,
+                });
+
+                if (team.value?.participant_sessions_enabled) {
+                    list.push({
+                        id: 'participants',
+                        label: 'Participants',
+                        badge: null,
+                    });
+                }
             }
 
             return list;
@@ -145,7 +170,9 @@ export default {
         const tabComponents = {
             photos: markRaw(TeamPhotoList),
             map: markRaw(TeamPhotoMap),
-            approval: markRaw(TeamApprovalQueue),
+            approval: markRaw(FacilitatorQueue),
+            members: markRaw(TeamMembersList),
+            participants: markRaw(ParticipantGrid),
         };
 
         const currentTabComponent = computed(() => tabComponents[activeTab.value] || tabComponents.photos);
@@ -219,9 +246,8 @@ export default {
             if (tab === 'map' && selectedTeamId.value) {
                 photosStore.fetchMapPoints(selectedTeamId.value);
             }
-            if (tab === 'approval' && selectedTeamId.value) {
-                photosStore.setFilter('pending');
-                photosStore.fetchPhotos(selectedTeamId.value);
+            if (tab === 'members' && selectedTeamId.value) {
+                photosStore.fetchMemberStats(selectedTeamId.value);
             }
         });
 

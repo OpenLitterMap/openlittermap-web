@@ -29,7 +29,7 @@ class PointsController extends Controller
     {
         $photo = Photo::where('is_public', true)
             ->with([
-                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user:id,name,username,show_username_maps,show_name_maps,settings,global_flag',
                 'team:id,name,safeguarding',
             ])->findOrFail($id);
 
@@ -45,6 +45,7 @@ class PointsController extends Controller
             'username' => $isSafeguarded ? null : ($photo->user && $photo->user->show_username_maps ? $photo->user->username : null),
             'name' => $isSafeguarded ? null : ($photo->user && $photo->user->show_name_maps ? $photo->user->name : null),
             'social' => $isSafeguarded ? null : $photo->user?->social_links,
+            'flag' => $isSafeguarded ? null : $photo->user?->global_flag,
             'team' => $photo->team?->name,
             'summary' => $photo->summary,
         ];
@@ -159,7 +160,7 @@ class PointsController extends Controller
                 'photos.summary',
             ])
             ->with([
-                'user:id,name,username,show_username_maps,show_name_maps,settings',
+                'user:id,name,username,show_username_maps,show_name_maps,settings,global_flag',
                 'team:id,name,safeguarding'
             ])
             ->where('is_public', true)
@@ -369,9 +370,10 @@ class PointsController extends Controller
                 'team' => $photo->team ? $photo->team->name : null,
             ];
 
-            // Add social links if user exists
+            // Add social links and flag if user exists
             if ($photo->user) {
                 $properties['social'] = $photo->user->social_links;
+                $properties['flag'] = $photo->user->global_flag;
             }
 
             // Safeguard school team photos — hide student identity on global map
@@ -379,6 +381,7 @@ class PointsController extends Controller
                 $properties['name'] = null;
                 $properties['username'] = null;
                 $properties['social'] = null;
+                $properties['flag'] = null;
             }
 
             return [

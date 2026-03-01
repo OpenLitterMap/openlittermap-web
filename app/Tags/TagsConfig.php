@@ -377,6 +377,7 @@ class TagsConfig
 
             CategoryKey::Unclassified->value => [
                 'other' => [],
+                'bags_litter' => [],
             ],
         ];
     }

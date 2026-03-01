@@ -33,11 +33,9 @@ class UploadPhotoController extends Controller
     /**
      * Upload a photo with GPS coordinates.
      *
-     * 1. Process image & extract EXIF
-     * 2. Upload to S3 (full + bbox thumbnail)
-     * 3. Reverse geocode → resolve Country, State, City
-     * 4. Create Photo record (FKs only, no string duplication)
-     * 5. Broadcast events & new-location notifications
+     * Supports two modes:
+     * - Web: extracts lat/lon/date from EXIF (default)
+     * - Mobile: accepts explicit lat, lon, date fields (overrides EXIF)
      *
      * No metrics, XP, or leaderboard updates happen here.
      * MetricsService::processPhoto() runs at tag verification time.
@@ -46,14 +44,32 @@ class UploadPhotoController extends Controller
     {
         $user = Auth::user();
         $file = $request->file('photo');
+        $hasExplicit = $request->hasExplicitCoordinates();
 
         // 1. Process image & extract EXIF
         $imageAndExif = $this->makeImageAction->run($file);
         $image = $imageAndExif['image'];
         $exif = $imageAndExif['exif'];
-        $dateTime = getDateTimeForPhoto($exif) ?? Carbon::now();
 
-        // 2. Upload full image + bbox thumbnail to S3
+        // 2. Resolve coordinates and datetime
+        if ($hasExplicit) {
+            // Mobile: explicit lat/lon/date from request
+            $lat = (float) $request->input('lat');
+            $lon = (float) $request->input('lon');
+
+            $dateInput = $request->input('date');
+            $dateTime = is_numeric($dateInput)
+                ? Carbon::createFromTimestamp((int) $dateInput)
+                : Carbon::parse($dateInput);
+        } else {
+            // Web: extract from EXIF
+            $dateTime = getDateTimeForPhoto($exif) ?? Carbon::now();
+            $coordinates = getCoordinatesFromPhoto($exif);
+            $lat = $coordinates[0];
+            $lon = $coordinates[1];
+        }
+
+        // 3. Upload full image + bbox thumbnail to S3
         $imageName = $this->uploadPhotoAction->run(
             $image,
             $dateTime,
@@ -67,33 +83,37 @@ class UploadPhotoController extends Controller
             'bbox'
         );
 
-        // 3. Resolve location from GPS coordinates
-        $coordinates = getCoordinatesFromPhoto($exif);
-        $lat = $coordinates[0];
-        $lon = $coordinates[1];
-
+        // 4. Resolve location from GPS coordinates
         $location = $this->resolveLocationAction->run($lat, $lon);
 
-        // 4. Create Photo — FKs only, no string duplication
+        // 5. Determine remaining/picked_up and device model
+        $remaining = $request->has('picked_up')
+            ? ! $request->boolean('picked_up')
+            : ! $user->picked_up;
+
+        $deviceModel = $request->input('model', $exif['Model'] ?? 'Unknown');
+
+        // 6. Create Photo — FKs only, no string duplication
         $photo = Photo::create([
             'user_id' => $user->id,
             'filename' => $imageName,
             'datetime' => $dateTime,
-            'remaining' => $user->items_remaining,
+            'remaining' => $remaining,
             'lat' => $lat,
             'lon' => $lon,
-            'model' => $exif['Model'] ?? 'Unknown',
+            'model' => $deviceModel,
             'country_id' => $location->country->id,
             'state_id' => $location->state->id,
             'city_id' => $location->city->id,
-            'platform' => 'web',
+            'platform' => $hasExplicit ? 'mobile' : 'web',
             'geohash' => (new GeoHash())->encode($lat, $lon),
-            'team_id' => $user->active_team,
+            'team_id' => $request->attributes->get('participant_team')?->id ?? $user->active_team,
+            'participant_id' => $request->attributes->get('participant')?->id,
             'five_hundred_square_filepath' => $bboxImageName,
             'address_array' => $location->addressArray,
         ]);
 
-        // 5. Broadcast to real-time map
+        // 7. Broadcast to real-time map
         event(new ImageUploaded(
             $user,
             $photo,
@@ -102,7 +122,7 @@ class UploadPhotoController extends Controller
             $location->city,
         ));
 
-        // 6. Notify on new locations
+        // 8. Notify on new locations
         if ($location->country->wasRecentlyCreated) {
             event(new NewCountryAdded(
                 $location->country->country,

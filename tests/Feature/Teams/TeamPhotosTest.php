@@ -152,7 +152,7 @@ class TeamPhotosTest extends TestCase
             'is_public' => false,
         ]);
 
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $response->assertOk()
@@ -164,7 +164,7 @@ class TeamPhotosTest extends TestCase
     {
         $outsider = User::factory()->create();
 
-        $response = $this->actingAs($outsider, 'api')
+        $response = $this->actingAs($outsider)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $response->assertStatus(403)
@@ -188,12 +188,12 @@ class TeamPhotosTest extends TestCase
             'team_approved_at' => now(),
         ]);
 
-        $pending = $this->actingAs($this->teacher, 'api')
+        $pending = $this->actingAs($this->teacher)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id . '&status=pending');
 
         $pending->assertJsonCount(2, 'photos.data');
 
-        $approved = $this->actingAs($this->teacher, 'api')
+        $approved = $this->actingAs($this->teacher)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id . '&status=approved');
 
         $approved->assertJsonCount(1, 'photos.data');
@@ -210,9 +210,10 @@ class TeamPhotosTest extends TestCase
             'team_id' => $this->schoolTeam->id,
             'is_public' => false,
             'verified' => VerificationStatus::VERIFIED->value,
+            'summary' => json_encode(['smoking' => ['cigarette_butt' => 1]]),
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photos[0]->id, $photos[1]->id],
@@ -251,9 +252,10 @@ class TeamPhotosTest extends TestCase
             'team_id' => $this->schoolTeam->id,
             'is_public' => false,
             'verified' => VerificationStatus::VERIFIED->value,
+            'summary' => json_encode(['smoking' => ['cigarette_butt' => 1]]),
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'approve_all' => true,
@@ -280,7 +282,7 @@ class TeamPhotosTest extends TestCase
             'is_public' => false,
         ]);
 
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -289,21 +291,29 @@ class TeamPhotosTest extends TestCase
         $response->assertStatus(403);
     }
 
-    // ─── Tag Editing ──────────────────────────────────
+    // ─── Tag Editing (CLO format) ────────────────────
 
-    public function test_teacher_can_edit_tags_on_team_photo()
+    public function test_teacher_can_edit_tags_with_clo_format()
     {
+        $smokingCloId = CategoryObject::whereHas('category', fn($q) => $q->where('key', 'smoking'))
+            ->whereHas('litterObject', fn($q) => $q->where('key', 'cigarette_butt'))
+            ->value('id');
+
+        $alcoholCloId = CategoryObject::whereHas('category', fn($q) => $q->where('key', 'alcohol'))
+            ->whereHas('litterObject', fn($q) => $q->where('key', 'beer_can'))
+            ->value('id');
+
         $photo = Photo::factory()->create([
             'user_id' => $this->student->id,
             'team_id' => $this->schoolTeam->id,
             'is_public' => false,
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->patchJson("/api/teams/photos/{$photo->id}/tags", [
                 'tags' => [
-                    ['category' => 'smoking', 'object' => 'cigarette_butt', 'quantity' => 5, 'picked_up' => true],
-                    ['category' => 'alcohol', 'object' => 'beer_can', 'quantity' => 2, 'picked_up' => false],
+                    ['category_litter_object_id' => $smokingCloId, 'quantity' => 5, 'picked_up' => true],
+                    ['category_litter_object_id' => $alcoholCloId, 'quantity' => 2, 'picked_up' => false],
                 ],
             ]);
 
@@ -312,22 +322,36 @@ class TeamPhotosTest extends TestCase
 
         $fresh = $photo->fresh();
         $this->assertEquals(7, $fresh->total_tags);
-        $this->assertEquals(7, $fresh->xp);
+        // XP: Upload=5, Objects: 5×1 + 2×1 = 7 → Total = 12
+        $this->assertEquals(12, $fresh->xp);
         $this->assertCount(2, $fresh->photoTags);
+
+        // Response includes new_tags
+        $response->assertJsonStructure([
+            'photo' => [
+                'new_tags' => [
+                    '*' => ['id', 'category_litter_object_id', 'quantity', 'picked_up', 'category', 'object'],
+                ],
+            ],
+        ]);
     }
 
     public function test_student_cannot_edit_tags_on_team_photo()
     {
+        $smokingCloId = CategoryObject::whereHas('category', fn($q) => $q->where('key', 'smoking'))
+            ->whereHas('litterObject', fn($q) => $q->where('key', 'cigarette_butt'))
+            ->value('id');
+
         $photo = Photo::factory()->create([
             'user_id' => $this->student->id,
             'team_id' => $this->schoolTeam->id,
             'is_public' => false,
         ]);
 
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->patchJson("/api/teams/photos/{$photo->id}/tags", [
                 'tags' => [
-                    ['category' => 'smoking', 'object' => 'cigarette_butt', 'quantity' => 1],
+                    ['category_litter_object_id' => $smokingCloId, 'quantity' => 1],
                 ],
             ]);
 
@@ -346,7 +370,7 @@ class TeamPhotosTest extends TestCase
             'lon' => -8.4706,
         ]);
 
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->getJson('/api/teams/photos/map?team_id=' . $this->schoolTeam->id);
 
         $response->assertOk()
@@ -358,8 +382,162 @@ class TeamPhotosTest extends TestCase
     {
         $outsider = User::factory()->create();
 
-        $response = $this->actingAs($outsider, 'api')
+        $response = $this->actingAs($outsider)
             ->getJson('/api/teams/photos/map?team_id=' . $this->schoolTeam->id);
+
+        $response->assertStatus(403);
+    }
+
+    // ─── new_tags Format in Index ────────────────────
+
+    public function test_team_photos_index_returns_new_tags_format()
+    {
+        $smokingCloId = CategoryObject::whereHas('category', fn($q) => $q->where('key', 'smoking'))
+            ->whereHas('litterObject', fn($q) => $q->where('key', 'cigarette_butt'))
+            ->value('id');
+
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+
+        // Add a tag via the action so photo has real photoTags
+        app(\App\Actions\Tags\AddTagsToPhotoAction::class)->run(
+            $this->student->id,
+            $photo->id,
+            [['category_litter_object_id' => $smokingCloId, 'quantity' => 3, 'picked_up' => true]]
+        );
+
+        $response = $this->actingAs($this->teacher)
+            ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
+
+        $response->assertOk();
+
+        $photos = $response->json('photos.data');
+        $this->assertNotEmpty($photos);
+        $this->assertArrayHasKey('new_tags', $photos[0]);
+        $this->assertNotEmpty($photos[0]['new_tags']);
+        $this->assertArrayHasKey('category_litter_object_id', $photos[0]['new_tags'][0]);
+        $this->assertArrayHasKey('category', $photos[0]['new_tags'][0]);
+        $this->assertArrayHasKey('object', $photos[0]['new_tags'][0]);
+        $this->assertEquals('smoking', $photos[0]['new_tags'][0]['category']['key']);
+        $this->assertEquals('cigarette_butt', $photos[0]['new_tags'][0]['object']['key']);
+    }
+
+    public function test_show_returns_new_tags_format()
+    {
+        $smokingCloId = CategoryObject::whereHas('category', fn($q) => $q->where('key', 'smoking'))
+            ->whereHas('litterObject', fn($q) => $q->where('key', 'cigarette_butt'))
+            ->value('id');
+
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+
+        app(\App\Actions\Tags\AddTagsToPhotoAction::class)->run(
+            $this->student->id,
+            $photo->id,
+            [['category_litter_object_id' => $smokingCloId, 'quantity' => 2]]
+        );
+
+        $response = $this->actingAs($this->teacher)
+            ->getJson("/api/teams/photos/{$photo->id}");
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'photo' => [
+                    'new_tags' => [
+                        '*' => ['id', 'category_litter_object_id', 'quantity', 'category', 'object'],
+                    ],
+                ],
+            ]);
+    }
+
+    // ─── Member Stats ─────────────────────────────────
+
+    public function test_member_stats_returns_per_student_counts()
+    {
+        // Student has 3 photos: 2 pending, 1 approved
+        Photo::factory()->count(2)->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+            'team_approved_at' => null,
+            'total_tags' => 5,
+        ]);
+
+        Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => true,
+            'team_approved_at' => now(),
+            'total_tags' => 10,
+        ]);
+
+        $response = $this->actingAs($this->teacher)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $members = $response->json('members');
+        $this->assertCount(1, $members); // Only student (leader excluded)
+
+        $studentStats = $members[0];
+        $this->assertEquals($this->student->id, $studentStats['user_id']);
+        $this->assertEquals(3, $studentStats['total_photos']);
+        $this->assertEquals(2, $studentStats['pending']);
+        $this->assertEquals(1, $studentStats['approved']);
+        $this->assertEquals(20, $studentStats['litter_count']); // 2×5 + 1×10
+    }
+
+    public function test_member_stats_applies_safeguarding()
+    {
+        Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+
+        $response = $this->actingAs($this->teacher)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
+
+        $response->assertOk();
+
+        $members = $response->json('members');
+        // Safeguarding is enabled, so names are pseudonyms
+        $this->assertStringStartsWith('Student', $members[0]['name']);
+        $this->assertNull($members[0]['username']);
+    }
+
+    public function test_member_stats_shows_real_names_without_safeguarding()
+    {
+        // Disable safeguarding
+        $this->schoolTeam->update(['safeguarding' => false]);
+
+        Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+
+        $response = $this->actingAs($this->teacher)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
+
+        $response->assertOk();
+
+        $members = $response->json('members');
+        $this->assertEquals($this->student->name, $members[0]['name']);
+        $this->assertEquals($this->student->username, $members[0]['username']);
+    }
+
+    public function test_member_stats_requires_leader_or_permission()
+    {
+        $response = $this->actingAs($this->student)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
 
         $response->assertStatus(403);
     }
@@ -386,7 +564,7 @@ class TeamPhotosTest extends TestCase
             'total_tags' => 10,
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->getJson('/api/teams/data?team_id=' . $this->schoolTeam->id . '&period=all');
 
         $response->assertOk()
@@ -419,10 +597,11 @@ class TeamPhotosTest extends TestCase
             'is_public' => false,
             'verified' => VerificationStatus::VERIFIED->value,
             'total_tags' => 5,
+            'summary' => json_encode(['smoking' => ['cigarette_butt' => 5]]),
         ]);
 
         // Approve
-        $this->actingAs($this->teacher, 'api')
+        $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -494,7 +673,7 @@ class TeamPhotosTest extends TestCase
         ]);
 
         // Student sees masked names
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $response->assertOk();
@@ -511,7 +690,7 @@ class TeamPhotosTest extends TestCase
             'is_public' => false,
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $response->assertOk();
@@ -537,7 +716,7 @@ class TeamPhotosTest extends TestCase
         // Set student counters
         $this->student->update(['xp' => 10, 'total_images' => 5]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->deleteJson("/api/teams/photos/{$photo->id}", [
                 'team_id' => $this->schoolTeam->id,
             ]);
@@ -572,7 +751,7 @@ class TeamPhotosTest extends TestCase
 
         $this->student->update(['xp' => 20, 'total_images' => 3]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->deleteJson("/api/teams/photos/{$photo->id}", [
                 'team_id' => $this->schoolTeam->id,
             ]);
@@ -595,7 +774,7 @@ class TeamPhotosTest extends TestCase
             'is_public' => false,
         ]);
 
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->deleteJson("/api/teams/photos/{$photo->id}", [
                 'team_id' => $this->schoolTeam->id,
             ]);
@@ -630,7 +809,7 @@ class TeamPhotosTest extends TestCase
         $this->assertTrue((bool) $photo->fresh()->is_public);
 
         // Revoke
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/revoke', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -669,7 +848,7 @@ class TeamPhotosTest extends TestCase
             'processed_xp' => 8,
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/revoke', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -697,7 +876,7 @@ class TeamPhotosTest extends TestCase
             'team_approved_at' => null,
         ]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/revoke', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -723,7 +902,7 @@ class TeamPhotosTest extends TestCase
             'team_approved_by' => $this->teacher->id,
         ]);
 
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->postJson('/api/teams/photos/revoke', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],

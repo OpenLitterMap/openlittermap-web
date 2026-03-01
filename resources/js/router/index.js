@@ -15,9 +15,9 @@ import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
 import References from '../views/Academic/References.vue';
 import Upload from '../views/Upload/Upload.vue';
 import Welcome from '../views/Welcome/Welcome.vue';
-import Achievements from '../views/Achievements/Achievements.vue';
 import Redis from '../views/Admin/Redis.vue';
 import AdminQueue from '../views/Admin/AdminQueue.vue';
+import AdminUsers from '../views/Admin/AdminUsers.vue';
 import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
@@ -27,6 +27,9 @@ import Locations from '../views/Locations/Locations.vue';
 import TeamsLayout from '../views/Teams/TeamsLayout.vue';
 import TeamDashboard from '../views/Teams/TeamDashboard.vue';
 import Profile from '../views/Profile/Profile.vue';
+import PublicProfile from '../views/Profile/PublicProfile.vue';
+import ParticipantEntry from '../views/Teams/ParticipantEntry.vue';
+import ParticipantWorkspace from '../views/Teams/ParticipantWorkspace.vue';
 
 const routes = [
     // Public routes
@@ -163,16 +166,23 @@ const routes = [
         },
     },
     {
-        path: '/settings',
-        redirect: '/profile?tab=settings',
+        path: '/profile/:id',
+        name: 'PublicProfile',
+        component: PublicProfile,
     },
     {
-        path: '/achievements',
-        name: 'Achievements',
-        component: Achievements,
-        meta: {
-            middleware: [auth],
-        },
+        path: '/session',
+        name: 'ParticipantEntry',
+        component: ParticipantEntry,
+    },
+    {
+        path: '/session/workspace',
+        name: 'ParticipantWorkspace',
+        component: ParticipantWorkspace,
+    },
+    {
+        path: '/settings',
+        redirect: '/profile?tab=settings',
     },
     {
         path: '/admin/redis/:userId?',
@@ -186,6 +196,14 @@ const routes = [
         path: '/admin/queue',
         name: 'AdminQueue',
         component: AdminQueue,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/admin/users',
+        name: 'AdminUsers',
+        component: AdminUsers,
         meta: {
             middleware: [auth],
         },

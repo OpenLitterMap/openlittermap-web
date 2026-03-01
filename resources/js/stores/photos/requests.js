@@ -165,8 +165,6 @@ export const requests = {
 
             return response.data;
         } catch (error) {
-            const title = t('Failed to update tags');
-            toast.error(title);
             throw error;
         }
     },
@@ -185,21 +183,15 @@ export const requests = {
                 const title = t('Tags Added');
                 toast.success(title);
 
-                // Refresh stats after successful upload
-                await this.GET_UNTAGGED_STATS();
-
-                // Reload photos with current filters
-                if (this.pagination.total > 0) {
-                    await this.GET_USERS_PHOTOS(this.pagination.current_page, this.currentFilters);
-                } else {
-                    toast.info(t('No more photos left to tag'));
-                }
+                // Refresh stats and photos in parallel to avoid stale intermediate state
+                await Promise.all([
+                    this.GET_UNTAGGED_STATS(),
+                    this.GET_USERS_PHOTOS(this.pagination.current_page, this.currentFilters),
+                ]);
             }
 
             return response.data;
         } catch (error) {
-            const title = t('notifications.tags.uploaded-failed');
-            toast.error(title);
             throw error;
         }
     },

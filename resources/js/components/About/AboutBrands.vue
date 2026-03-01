@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -142,11 +142,11 @@ const calculateRates = () => {
     };
 };
 
+const rates = computed(() => calculateRates());
+
 // Initialize map
 async function initMap() {
     if (!mapContainer.value || map) return;
-
-    console.log('Initializing map...');
 
     map = L.map(mapContainer.value, {
         center: defaultLocation.center,
@@ -164,11 +164,8 @@ async function initMap() {
     // Create layer group for markers
     markersLayer = L.layerGroup().addTo(map);
 
-    console.log('Map initialized at:', defaultLocation.center, 'zoom:', defaultLocation.zoom);
-
     // Load points when map moves
     map.on('moveend zoomend', () => {
-        console.log('Map moved/zoomed, loading points...');
         loadPoints();
     });
 
@@ -178,10 +175,7 @@ async function initMap() {
 
 // Load points with brand data
 async function loadPoints() {
-    if (!map) {
-        console.log('No map available');
-        return;
-    }
+    if (!map) return;
 
     const bounds = map.getBounds();
     const bbox = {
@@ -191,13 +185,9 @@ async function loadPoints() {
         top: bounds.getNorth(),
     };
 
-    console.log('Loading points for bbox:', bbox);
-    console.log('Current zoom:', Math.round(map.getZoom()));
-
     // Check if zoom level meets minimum requirement (backend requires 15-20)
     const currentZoom = Math.round(map.getZoom());
     if (currentZoom < 15) {
-        console.log('Zoom level too low, minimum is 15');
         pointsStore.setError('Zoom in closer to see litter data (minimum zoom level 15)');
         clearMarkers();
         return;
@@ -206,20 +196,14 @@ async function loadPoints() {
     try {
         // Check if we already have data for these bounds
         if (pointsStore.hasDataForBounds(bbox, currentZoom)) {
-            console.log('Using cached data');
             renderPoints();
             return;
         }
 
-        // Fetch new data
-        console.log('Fetching new data...');
         const data = await pointsStore.GET_POINTS({
             zoom: currentZoom,
             bbox,
         });
-
-        console.log('Data received:', data);
-        console.log('Features count:', data?.features?.length || 0);
 
         // Update current bounds for caching
         pointsStore.updateCurrentBounds(bbox, currentZoom);
@@ -227,8 +211,6 @@ async function loadPoints() {
         // Render the points
         renderPoints();
     } catch (error) {
-        console.error('Failed to load points:', error);
-
         // Show user-friendly error
         if (error.response?.status === 422) {
             pointsStore.setError('Invalid request parameters - try zooming to a smaller area');
@@ -251,24 +233,15 @@ function clearMarkers() {
 function renderPoints() {
     const features = pointsStore.pointsGeojson?.features;
 
-    console.log('renderPoints called');
-    console.log('Features available:', features?.length || 0);
-
-    if (!map) {
-        console.log('No map available for rendering');
-        return;
-    }
+    if (!map) return;
 
     if (!features || features.length === 0) {
-        console.log('No features to render');
         clearMarkers();
         return;
     }
 
     // Clear existing markers
     clearMarkers();
-
-    console.log(`Rendering ${features.length} points`);
 
     // Group markers by proximity for better performance
     const zoom = map.getZoom();
@@ -306,16 +279,9 @@ function renderPoints() {
             marker.bindPopup(popupContent);
         }
 
-        // Add click handler
-        marker.on('click', () => {
-            console.log('Clicked point:', feature.properties);
-        });
-
         // Add to layer group
         markersLayer.addLayer(marker);
     });
-
-    console.log(`Rendered ${features.length} markers`);
 
     // Force a map update
     setTimeout(() => {
@@ -324,12 +290,10 @@ function renderPoints() {
 }
 
 onMounted(async () => {
-    console.log('Component mounted, initializing map...');
     await initMap();
 });
 
 onBeforeUnmount(() => {
-    console.log('Component unmounting...');
 
     if (markersLayer) {
         markersLayer.clearLayers();
@@ -479,30 +443,30 @@ onBeforeUnmount(() => {
 
                     <!-- Litter statistics box -->
                     <div
-                        v-if="pointsStore.pointsCount > 0 && calculateRates()"
+                        v-if="pointsStore.pointsCount > 0 && rates"
                         class="mb-6 bg-red-900/20 border border-red-500/20 rounded-lg p-4"
                     >
                         <div class="text-red-200 font-semibold mb-2">
                             <i class="fas fa-trash mr-2"></i>
                             {{ pointsStore.pointsCount }} {{ t('litter points found') }}
                         </div>
-                        <div v-if="!calculateRates().longTimeSpan" class="space-y-1">
+                        <div v-if="!rates.longTimeSpan" class="space-y-1">
                             <div class="text-red-300">
                                 <i class="fas fa-chart-line mr-2"></i>
                                 {{ t('Rate:') }}
-                                <span class="font-bold text-red-200">{{ calculateRates().perHour }}</span>
+                                <span class="font-bold text-red-200">{{ rates.perHour }}</span>
                                 {{ t('items/hour') }},
-                                <span class="font-bold text-red-200">{{ calculateRates().perMinute }}</span>
+                                <span class="font-bold text-red-200">{{ rates.perMinute }}</span>
                                 {{ t('items/minute') }}
                             </div>
                             <div class="text-sm text-red-400">
                                 <i class="fas fa-calendar-alt mr-2"></i>
-                                {{ calculateRates().dateRange }}
+                                {{ rates.dateRange }}
                             </div>
                         </div>
                         <div v-else class="text-sm text-red-400">
                             <i class="fas fa-calendar-alt mr-2"></i>
-                            {{ calculateRates().dateRange }}
+                            {{ rates.dateRange }}
                         </div>
                     </div>
 

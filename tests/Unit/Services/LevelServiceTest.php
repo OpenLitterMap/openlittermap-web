@@ -8,12 +8,12 @@ use Tests\TestCase;
 class LevelServiceTest extends TestCase
 {
     /** @test */
-    public function zero_xp_returns_level_1_beginner(): void
+    public function zero_xp_returns_level_1_complete_noob(): void
     {
         $result = LevelService::getUserLevel(0);
 
         $this->assertEquals(1, $result['level']);
-        $this->assertEquals('Beginner', $result['title']);
+        $this->assertEquals('Complete Noob', $result['title']);
         $this->assertEquals(0, $result['xp']);
         $this->assertEquals(0, $result['xp_into_level']);
         $this->assertEquals(100, $result['xp_for_next']);
@@ -22,33 +22,31 @@ class LevelServiceTest extends TestCase
     }
 
     /** @test */
-    public function exactly_100_xp_reaches_level_2(): void
+    public function exactly_100_xp_reaches_still_a_noob(): void
     {
-        // Level 1 requires 100 XP. At 100 XP, user is now working on level 2.
         $result = LevelService::getUserLevel(100);
 
         $this->assertEquals(2, $result['level']);
-        $this->assertEquals('Observer', $result['title']);
+        $this->assertEquals('Less of a Noob', $result['title']);
         $this->assertEquals(0, $result['xp_into_level']);
-        // Level 2 requires round(100 * 1.5^1) = 150
-        $this->assertEquals(150, $result['xp_for_next']);
+        // Next threshold is 500, so xp_for_next = 500 - 100 = 400
+        $this->assertEquals(400, $result['xp_for_next']);
     }
 
     /** @test */
-    public function level_3_at_250_xp(): void
+    public function post_noob_at_500_xp(): void
     {
-        // Level 1: 100, Level 2: 150. Cumulative = 250. At 250 → level 3.
-        $result = LevelService::getUserLevel(250);
+        $result = LevelService::getUserLevel(500);
 
         $this->assertEquals(3, $result['level']);
-        $this->assertEquals('Field Observer', $result['title']);
+        $this->assertEquals('Post-Noob', $result['title']);
         $this->assertEquals(0, $result['xp_into_level']);
     }
 
     /** @test */
     public function partial_progress_within_a_level(): void
     {
-        // 50 XP is halfway through level 1 (which requires 100)
+        // 50 XP is halfway through level 1 (0–100)
         $result = LevelService::getUserLevel(50);
 
         $this->assertEquals(1, $result['level']);
@@ -58,27 +56,24 @@ class LevelServiceTest extends TestCase
     }
 
     /** @test */
-    public function high_xp_returns_correct_level(): void
+    public function litter_wizard_at_1000_xp(): void
     {
-        // Test with a substantial XP value
-        // Level thresholds: 100, 150, 225, 338, 506, 759, ...
-        // Cumulative: 100, 250, 475, 813, 1319, 2078, ...
         $result = LevelService::getUserLevel(1000);
 
-        // 1000 is between cumulative 813 (level 4 complete) and 1319 (level 5 complete)
-        $this->assertEquals(5, $result['level']);
-        $this->assertEquals('Field Recorder', $result['title']);
-        $this->assertEquals(1000 - 813, $result['xp_into_level']); // 187
+        $this->assertEquals(4, $result['level']);
+        $this->assertEquals('Litter Wizard', $result['title']);
+        $this->assertEquals(0, $result['xp_into_level']);
+        // Next threshold is 5000, so xp_for_next = 4000
+        $this->assertEquals(4000, $result['xp_for_next']);
     }
 
     /** @test */
-    public function max_level_caps_at_50(): void
+    public function max_level_caps_at_superintelligent_littermaster(): void
     {
-        // Cumulative XP for all 50 levels is ~127.5 billion
-        $result = LevelService::getUserLevel(200000000000);
+        $result = LevelService::getUserLevel(5000000);
 
-        $this->assertEquals(50, $result['level']);
-        $this->assertEquals('Founder', $result['title']);
+        $this->assertEquals(12, $result['level']);
+        $this->assertEquals('SuperIntelligent LitterMaster', $result['title']);
         $this->assertEquals(100, $result['progress_percent']);
         $this->assertEquals(0, $result['xp_remaining']);
     }

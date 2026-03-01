@@ -19,12 +19,15 @@ class AdminQueueController extends Controller
     {
         $perPage = min((int) ($request->per_page ?? 20), 50);
 
+        // TODO: Delete all photos from user 5292 then remove this exclusion
         $query = Photo::query()
             ->where('is_public', true)
             ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value)
             ->whereNotNull('summary')
+            ->where('user_id', '!=', 5292)
+            ->whereHas('user', fn ($q) => $q->where('prevent_others_tagging_my_photos', false))
             ->with([
-                'user:id,name',
+                'user:id,name,username',
                 'countryRelation:id,country,shortcode',
                 'photoTags.category',
                 'photoTags.object',
@@ -56,6 +59,7 @@ class AdminQueueController extends Controller
                 'user' => $photo->user ? [
                     'id' => $photo->user->id,
                     'name' => $photo->user->name,
+                    'username' => $photo->user->username,
                 ] : null,
                 'country_relation' => $photo->countryRelation ? [
                     'id' => $photo->countryRelation->id,
@@ -98,6 +102,8 @@ class AdminQueueController extends Controller
         foreach ($photo->photoTags as $photoTag) {
             $tag = [
                 'id' => $photoTag->id,
+                'category_litter_object_id' => $photoTag->category_litter_object_id,
+                'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
                 'picked_up' => $photoTag->picked_up,
             ];

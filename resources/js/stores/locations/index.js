@@ -15,7 +15,7 @@ export const useLocationsStore = defineStore('locations', () => {
     const error = ref(null);
 
     // Sort & search (client-side)
-    const sortField = ref('tags');
+    const sortField = ref('total_tags');
     const sortDir = ref('desc');
     const search = ref('');
 

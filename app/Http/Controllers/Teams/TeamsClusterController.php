@@ -96,6 +96,12 @@ class TeamsClusterController extends Controller
      */
     public function points(Request $request, int $team): array
     {
+        $user = auth()->user();
+
+        if (! $user || ! $user->isMemberOfTeam($team)) {
+            abort(403, 'Not a member of this team.');
+        }
+
         $query = Photo::query()
             ->select(
                 'id',

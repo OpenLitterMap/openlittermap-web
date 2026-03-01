@@ -63,7 +63,7 @@ class TeamsTest extends TestCase
         $user = User::factory()->create(['remaining_teams' => 1]);
         $user->assignRole('school_manager');
 
-        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $this->actingAs($user)->postJson('/api/teams/create', [
             'name' => 'Event Team',
             'identifier' => 'EventTeam1',
             'teamType' => $this->communityType->id,
@@ -80,7 +80,7 @@ class TeamsTest extends TestCase
     {
         $this->assertEquals($this->team->id, $this->leader->active_team);
 
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->postJson('/api/teams/inactivate');
 
         $response->assertOk()
@@ -98,7 +98,7 @@ class TeamsTest extends TestCase
         $member->update(['active_team' => $this->team->id]);
         $this->team->increment('members');
 
-        $this->actingAs($member, 'api')->postJson('/api/teams/leave', [
+        $this->actingAs($member)->postJson('/api/teams/leave', [
             'team_id' => $this->team->id,
         ]);
 
@@ -110,7 +110,7 @@ class TeamsTest extends TestCase
     {
         $outsider = User::factory()->create();
 
-        $this->actingAs($outsider, 'api')
+        $this->actingAs($outsider)
             ->postJson('/api/teams/leave', ['team_id' => $this->team->id])
             ->assertStatus(403);
     }
@@ -119,7 +119,7 @@ class TeamsTest extends TestCase
 
     public function test_leader_can_update_team_name_and_identifier()
     {
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->patchJson('/api/teams/update/' . $this->team->id, [
                 'name' => 'Updated Name',
                 'identifier' => 'UpdatedID',
@@ -141,7 +141,7 @@ class TeamsTest extends TestCase
         $member = User::factory()->create();
         $member->teams()->attach($this->team->id);
 
-        $this->actingAs($member, 'api')
+        $this->actingAs($member)
             ->patchJson('/api/teams/update/' . $this->team->id, [
                 'name' => 'Hijacked Name',
                 'identifier' => 'Hijacked1',
@@ -163,7 +163,7 @@ class TeamsTest extends TestCase
             'created_by' => $this->leader->id,
         ]);
 
-        $this->actingAs($this->leader, 'api')
+        $this->actingAs($this->leader)
             ->patchJson('/api/teams/update/' . $this->team->id, [
                 'name' => 'Other Team',
                 'identifier' => 'Other1',
@@ -177,7 +177,7 @@ class TeamsTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')
+        $response = $this->actingAs($user)
             ->getJson('/api/teams/types');
 
         $response->assertOk();
@@ -192,7 +192,7 @@ class TeamsTest extends TestCase
 
     public function test_user_can_fetch_their_joined_teams()
     {
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->getJson('/api/teams/joined');
 
         $response->assertOk();
@@ -204,7 +204,7 @@ class TeamsTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'api')
+        $response = $this->actingAs($user)
             ->getJson('/api/teams/joined');
 
         $response->assertOk();
@@ -215,7 +215,7 @@ class TeamsTest extends TestCase
 
     public function test_member_can_view_team_members()
     {
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->getJson('/api/teams/members?' . http_build_query([
                 'team_id' => $this->team->id,
             ]));
@@ -230,7 +230,7 @@ class TeamsTest extends TestCase
     {
         $outsider = User::factory()->create();
 
-        $response = $this->actingAs($outsider, 'api')
+        $response = $this->actingAs($outsider)
             ->getJson('/api/teams/members?' . http_build_query([
                 'team_id' => $this->team->id,
             ]));
@@ -244,7 +244,7 @@ class TeamsTest extends TestCase
 
     public function test_member_can_fetch_dashboard_data()
     {
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->getJson('/api/teams/data?' . http_build_query([
                 'team_id' => $this->team->id,
                 'period' => 'all',
@@ -260,7 +260,7 @@ class TeamsTest extends TestCase
 
     public function test_dashboard_filters_by_period()
     {
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->getJson('/api/teams/data?' . http_build_query([
                 'team_id' => $this->team->id,
                 'period' => 'today',
@@ -277,7 +277,7 @@ class TeamsTest extends TestCase
     {
         $outsider = User::factory()->create();
 
-        $response = $this->actingAs($outsider, 'api')
+        $response = $this->actingAs($outsider)
             ->getJson('/api/teams/data?' . http_build_query([
                 'team_id' => $this->team->id,
                 'period' => 'all',
@@ -292,7 +292,7 @@ class TeamsTest extends TestCase
 
     public function test_member_can_update_privacy_settings_for_one_team()
     {
-        $response = $this->actingAs($this->leader, 'api')
+        $response = $this->actingAs($this->leader)
             ->postJson('/api/teams/settings', [
                 'team_id' => $this->team->id,
                 'all' => false,
@@ -327,7 +327,7 @@ class TeamsTest extends TestCase
         ]);
         $this->leader->teams()->attach($team2->id);
 
-        $this->actingAs($this->leader, 'api')
+        $this->actingAs($this->leader)
             ->postJson('/api/teams/settings', [
                 'team_id' => $this->team->id,
                 'all' => true,

@@ -50,22 +50,19 @@ class HomeController extends Controller
             }
         }
 
+        $impersonating = false;
+
         if ($auth)
         {
             $user = Auth::user();
             $user->roles;
+            $impersonating = session()->has('impersonating_from');
         }
-
-        // We set this to true when user verifies their email
-        $verified = false;
-        // or when a user unsubscribes from emails
-        $unsub = false;
 
         return view('app', compact(
             'auth',
             'user',
-            'verified',
-            'unsub'
+            'impersonating'
         ));
     }
 }

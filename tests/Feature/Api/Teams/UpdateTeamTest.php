@@ -22,7 +22,7 @@ class UpdateTeamTest extends TestCase
         $newTeamName = 'New team name';
         $newTeamIdentifier = 'New identifier';
 
-        $this->actingAs($leader, 'api');
+        $this->actingAs($leader);
 
         $response = $this->patchJson("/api/teams/update/{$team->id}", [
             'name' => $newTeamName,
@@ -55,7 +55,7 @@ class UpdateTeamTest extends TestCase
         $newTeamIdentifier = 'New identifier';
 
         // Random users can't update a team
-        $this->actingAs(User::factory()->create(), 'api');
+        $this->actingAs(User::factory()->create());
 
         $response = $this->patchJson("/api/teams/update/{$team->id}", [
             'name' => $newTeamName,
@@ -86,7 +86,7 @@ class UpdateTeamTest extends TestCase
 
         $leader->teams()->attach($team);
 
-        $this->actingAs($leader, 'api');
+        $this->actingAs($leader);
 
         // Empty input
         $response = $this->patchJson("/api/teams/update/{$team->id}", [

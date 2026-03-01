@@ -50,7 +50,7 @@ class LocationControllerTest extends TestCase
         $locations = $response->json('locations');
         $this->assertCount(1, $locations);
         $this->assertEquals($country->id, $locations[0]['id']);
-        $this->assertGreaterThan(0, $locations[0]['tags']);
+        $this->assertGreaterThan(0, $locations[0]['total_tags']);
     }
 
     public function test_locations_index_returns_correct_structure()

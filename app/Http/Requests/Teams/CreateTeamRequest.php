@@ -26,10 +26,12 @@ class CreateTeamRequest extends FormRequest
 
         if ($this->isSchoolTeam()) {
             $rules['contact_email'] = 'required|email|max:255';
-            $rules['school_roll_number'] = 'nullable|string|max:50';
-            $rules['county'] = 'nullable|string|max:100';
+            $rules['county'] = 'required|string|max:100';
             $rules['academic_year'] = 'nullable|string|max:20';
             $rules['class_group'] = 'nullable|string|max:100';
+            $rules['logo'] = 'nullable|image|max:2048';
+            $rules['max_participants'] = 'nullable|integer|min:1|max:500';
+            $rules['participant_sessions_enabled'] = 'nullable|boolean';
         }
 
         return $rules;

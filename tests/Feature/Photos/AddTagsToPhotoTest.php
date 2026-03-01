@@ -274,7 +274,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $this->assertEquals(0.1, $photo->verification);
 
-        Event::assertNotDispatched(TagsVerifiedByAdmin::class);
+        // All non-school users get immediate leaderboard credit via TagsVerifiedByAdmin
+        Event::assertDispatched(TagsVerifiedByAdmin::class);
     }
 
     // ─── Authorization ───

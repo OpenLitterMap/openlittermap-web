@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\Users\User;
-use App\Mail\NewUserRegMail;
+use App\Mail\WelcomeToOpenLitterMap;
 use App\Events\UserSignedUp;
+use App\Services\UsernameGeneratorService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -19,14 +21,18 @@ class RegisterController extends Controller
 
     public function __construct()
     {
-        $this->middleware('guest')->except([]);
+        $this->middleware('guest')->except(['confirmEmail']);
     }
 
     protected function create(array $data): User
     {
+        $username = ! empty($data['username'])
+            ? $data['username']
+            : UsernameGeneratorService::generate();
+
         return User::create([
-            'name' => $data['name'] ?? '',
-            'username' => $data['username'],
+            'name' => null,
+            'username' => $username,
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
@@ -35,20 +41,24 @@ class RegisterController extends Controller
     /**
      * Handle a registration request for both web and API.
      *
+     * Returns a Sanctum token for mobile clients and also logs in
+     * the session for SPA clients.
+     *
      * @throws ValidationException
      */
-    public function register(Request $request): array
+    public function register(Request $request): JsonResponse
     {
         $this->validate($request, [
-            'name' => 'sometimes|nullable|string|max:25',
-            'username' => 'required|min:3|max:20|unique:users|different:password',
+            'username' => 'sometimes|nullable|string|min:3|max:255|unique:users|regex:/^[a-zA-Z0-9_-]+$/',
             'email' => 'required|email|max:75|unique:users',
-            'password' => ['required', Password::min(5)],
+            'password' => ['required', Password::min(8)],
         ]);
 
         event(new Registered($user = $this->create($request->all())));
 
-        Mail::to($request->email)->send(new NewUserRegMail($user));
+        if ($user->emailsub !== 0) {
+            Mail::to($request->email)->send(new WelcomeToOpenLitterMap($user));
+        }
 
         event(new UserSignedUp(now()));
 
@@ -58,10 +68,12 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        return [
-            'user_id' => $user->id,
-            'email' => $user->email,
-        ];
+        $token = $user->createToken('mobile');
+
+        return response()->json([
+            'token' => $token->plainTextToken,
+            'user' => $user,
+        ]);
     }
 
     /**
@@ -74,10 +86,6 @@ class RegisterController extends Controller
 
         $verified = $user && $user->confirmEmail();
 
-        $auth = false;
-        $user = null;
-        $unsub = false;
-
-        return view('root', compact('auth', 'user', 'verified', 'unsub'));
+        return redirect('/?verified=' . ($verified ? '1' : '0'));
     }
 }

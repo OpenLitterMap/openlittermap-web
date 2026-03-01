@@ -56,11 +56,11 @@ enum XpScore
     public static function getObjectXp(string $key): int
     {
         return match ($key) {
-            'small'      => self::Small->xp(),
-            'medium'     => self::Medium->xp(),
-            'large'      => self::Large->xp(),
-            'bagsLitter' => self::BagsLitter->xp(),
-            default      => self::Object->xp(),
+            'dumping_small'  => self::Small->xp(),
+            'dumping_medium' => self::Medium->xp(),
+            'dumping_large'  => self::Large->xp(),
+            'bags_litter'    => self::BagsLitter->xp(),
+            default          => self::Object->xp(),
         };
     }
 }

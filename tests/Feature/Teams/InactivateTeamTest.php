@@ -15,7 +15,7 @@ class InactivateTeamTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create(['active_team' => $team->id]);
 
-        $response = $this->actingAs($user, 'api')->postJson('api/teams/inactivate');
+        $response = $this->actingAs($user)->postJson('api/teams/inactivate');
 
         $response->assertOk();
         $response->assertJson(['success' => true]);

@@ -103,7 +103,7 @@ class SchoolMetricsIntegrationTest extends TestCase
         // ─── Step 4: Teacher approves → TagsVerifiedByAdmin fires ───────────
         //     → ProcessPhotoMetrics listener → MetricsService::processPhoto()
 
-        $response = $this->actingAs($teacher, 'api')
+        $response = $this->actingAs($teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $schoolTeam->id,
                 'photo_ids' => [$photo->id],

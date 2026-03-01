@@ -30,16 +30,26 @@ class DeletePhotoAction
 
     /**
      * Delete a photo from a specified disk
-     *
-     * @param string $filename
-     * @param string $disk
      */
-    protected function deletePhoto (string $filename, string $disk) :void
+    protected function deletePhoto(string $filename, string $disk): void
     {
-        $baseUrl = Storage::disk($disk)->url('');
-        $path = str_starts_with($filename, $baseUrl)
-            ? str_replace($baseUrl, '', $filename)
-            : $filename;
+        // Use a placeholder to avoid AWS SDK crash on empty key with url('')
+        $baseUrl = str_replace('__placeholder__', '', Storage::disk($disk)->url('__placeholder__'));
+
+        if (str_starts_with($filename, $baseUrl)) {
+            // Full URL matching this disk — strip the base to get the S3 key
+            $path = substr($filename, strlen($baseUrl));
+        } elseif (! str_starts_with($filename, 'http://') && ! str_starts_with($filename, 'https://')) {
+            // Relative path (no URL prefix) — use as-is
+            $path = $filename;
+        } else {
+            // Full URL belonging to a different host (e.g., production S3 on local dev) — skip
+            return;
+        }
+
+        if ($path === '' || $path === false) {
+            return;
+        }
 
         if (Storage::disk($disk)->exists($path)) {
             Storage::disk($disk)->delete($path);

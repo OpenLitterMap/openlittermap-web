@@ -123,15 +123,22 @@ cities    (id, city, country_id, state_id, created_by, timestamps, UNIQUE(countr
 ### Response keys
 ```json
 {
-    "stats": { "countries": 120, "states": 450, "cities": 1200, ... },
-    "locations": [ ... ],
+    "stats": { "countries": 120, "photos": 50000, "tags": 150000, ... },
+    "locations": [
+        {
+            "id": 1, "name": "Ireland", "shortcode": "IE",
+            "total_tags": 5000, "total_images": 1200, "total_members": 45,
+            "xp": 15000, "created_at": "...", "updated_at": "...",
+            "pct_tags": 3.3, "pct_photos": 2.4, "avg_tags_per_person": 111.1
+        }
+    ],
     "location_type": "country",
     "breadcrumbs": [ ... ],
-    "activity": [ ... ]
+    "activity": { "today": { ... }, "this_month": { ... } }
 }
 ```
 
-**Key naming:** Response uses `locations` (not `children`) and `location_type` (not `children_type`). The Pinia store `useLocationsStore` reads these exact keys.
+**Key naming:** Response uses `locations` (not `children`) and `location_type` (not `children_type`). Children use `total_tags`, `total_images`, `total_members` (not `tags`, `photos`, `contributors`). The Pinia store `useLocationsStore` reads these exact keys.
 
 ### Time filtering
 Supports `?period=today|yesterday|this_month|last_month|this_year` and `?year=2024` query params. Mutually exclusive — year clears period and vice versa.

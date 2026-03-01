@@ -148,9 +148,8 @@ class SchoolPhotoPipelineTest extends TestCase
         $photo->update([
             'total_tags' => 8,
             'verified' => VerificationStatus::VERIFIED->value,
-            // summary and xp should be generated here too
-            // 'summary' => json_encode([...]),
-            // 'xp' => json_encode([...]),
+            'summary' => json_encode(['smoking' => ['cigarette_butt' => 5], 'alcohol' => ['beer_can' => 3]]),
+            'xp' => 13,
         ]);
 
         // ─── Step 3: Verify photo is private ──────────────────────────────────
@@ -181,7 +180,7 @@ class SchoolPhotoPipelineTest extends TestCase
         // Fake events to prevent real listeners (notifications, metrics) from running
         Event::fake([TagsVerifiedByAdmin::class, SchoolDataApproved::class]);
 
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -250,10 +249,11 @@ class SchoolPhotoPipelineTest extends TestCase
             'team_id' => $this->schoolTeam->id,
             'is_public' => false,
             'verified' => VerificationStatus::VERIFIED->value,
+            'summary' => json_encode(['smoking' => ['cigarette_butt' => 1]]),
         ]);
 
         // First approval
-        $this->actingAs($this->teacher, 'api')
+        $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -267,7 +267,7 @@ class SchoolPhotoPipelineTest extends TestCase
 
         // Second approval — same photo (already is_public=true)
 
-        $this->actingAs($this->teacher, 'api')
+        $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -358,7 +358,7 @@ class SchoolPhotoPipelineTest extends TestCase
         ]);
 
         // Student view — names masked
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $response->assertOk();
@@ -374,7 +374,7 @@ class SchoolPhotoPipelineTest extends TestCase
         }
 
         // Teacher view — real names visible
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $photos = $response->json('photos.data');

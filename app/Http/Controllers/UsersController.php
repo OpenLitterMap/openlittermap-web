@@ -9,30 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
 {
-    /*
-    * Apply middleware to all of these routes
-    */
-    public function __construct ()
-    {
-        return $this->middleware('auth');
-    }
+    // Auth middleware applied via route groups in routes/api.php (auth:sanctum).
+    // Constructor middleware removed — it used the 'web' guard which conflicts
+    // with Sanctum token auth from mobile apps.
 
     /**
-     * Get the currently authenticated user on login
+     * Update the users name, username and email.
      *
-     * Eager load any roles assigned to the user
-     */
-    public function getAuthUser ()
-    {
-        return Auth::user()->load('roles')->append('xp_redis');
-    }
-
-    /**
-     * Update the users name, username and email
-     *
-     * Todo - invalidate email
-     *      - send new email
-     *      - notify the user
+     * @deprecated Use POST /api/settings/update with key/value pairs instead.
+     *             This endpoint does not flag username changes for admin review.
      */
     public function details (Request $request)
     {
@@ -95,7 +80,10 @@ class UsersController extends Controller
     // destroy — removed: had no relationship cleanup. Use DeleteAccountController instead.
 
     /**
-     * Toggle a Users privacy
+     * Toggle a Users privacy.
+     *
+     * @deprecated Use individual POST /api/settings/privacy/{toggle} endpoints instead.
+     *             This bulk endpoint has no response body and no validation.
      */
     public function togglePrivacy (Request $request)
     {
@@ -136,7 +124,7 @@ class UsersController extends Controller
         $user->emailsub = 0;
         $user->save();
 
-        Alert::message('You are now unsubscribed');
+        return redirect('/?unsub=1');
     }
 
     /**
@@ -163,20 +151,19 @@ class UsersController extends Controller
     }
 
     /**
-     * Toggle the users items_remaining value (Default = True == Remaining)
+     * Toggle the user's picked_up preference.
      *
-     * Todo - move settings to new table
-     * and use new picked_up column
+     * @deprecated Use POST /api/settings/update with key='picked_up' instead.
      */
     public function togglePresence (Request $request)
     {
         $user = Auth::user();
-        $user->items_remaining = ! $user->items_remaining;
+        $user->picked_up = ! $user->picked_up;
         $user->save();
 
         return [
             'message' => 'success',
-            'value' => $user->items_remaining
+            'picked_up' => $user->picked_up,
         ];
     }
 

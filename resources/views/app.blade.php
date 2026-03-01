@@ -9,10 +9,9 @@
 
     <script>
         window.initialProps = {!! json_encode([
-            'auth'     => $auth ?? false,
-            'user'     => $user ?? null,
-            'verified' => $verified ?? false,
-            'unsub'    => $unsub ?? false,
+            'auth'           => $auth ?? false,
+            'user'           => $user ?? null,
+            'impersonating'  => $impersonating ?? false,
         ]) !!};
     </script>
 

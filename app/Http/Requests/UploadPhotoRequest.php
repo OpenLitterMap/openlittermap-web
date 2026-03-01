@@ -22,11 +22,24 @@ class UploadPhotoRequest extends FormRequest
             'photo' => [
                 'required',
                 'image',
-                'mimes:jpg,png,jpeg,heif,heic',
+                'mimes:jpg,png,jpeg,heif,heic,webp',
                 'dimensions:min_width=1,min_height=1',
                 'max:20480'
-            ]
+            ],
+            'lat' => ['sometimes', 'numeric', 'between:-90,90'],
+            'lon' => ['sometimes', 'numeric', 'between:-180,180'],
+            'date' => ['sometimes'],
+            'picked_up' => ['sometimes', 'boolean'],
+            'model' => ['sometimes', 'string', 'max:255'],
         ];
+    }
+
+    /**
+     * Whether explicit coordinates are provided (mobile upload).
+     */
+    public function hasExplicitCoordinates(): bool
+    {
+        return $this->has('lat') && $this->has('lon') && $this->has('date');
     }
 
     public function failedValidation(Validator|\Illuminate\Contracts\Validation\Validator $validator)
@@ -43,6 +56,38 @@ class UploadPhotoRequest extends FormRequest
                 if (!$photo || !$photo->isValid()) {
                     return;
                 }
+
+                $hasExplicit = $this->hasExplicitCoordinates();
+
+                // Reject (0, 0) — Null Island is not a real litter location
+                if ($hasExplicit && (float) $this->input('lat') == 0 && (float) $this->input('lon') == 0) {
+                    $validator->errors()->add('lat', 'Invalid coordinates: (0, 0) is not accepted.');
+                    return;
+                }
+
+                // When explicit coords are provided, EXIF is optional (mobile may strip it)
+                if ($hasExplicit) {
+                    // Parse the explicit date for duplicate check
+                    $dateInput = $this->input('date');
+                    $dateTime = is_numeric($dateInput)
+                        ? \Carbon\Carbon::createFromTimestamp((int) $dateInput)
+                        : \Carbon\Carbon::parse($dateInput);
+
+                    if (! $this->attributes->get('participant')) {
+                        $photoExists = Photo::where([
+                            'user_id' => auth()->id(),
+                            'datetime' => $dateTime,
+                        ])->exists();
+
+                        if ($photoExists) {
+                            $validator->errors()->add('photo', 'You have already uploaded this photo');
+                        }
+                    }
+
+                    return;
+                }
+
+                // --- EXIF-based validation (web uploads) ---
 
                 try {
                     $exif = @exif_read_data($photo->getRealPath()) ?: [];
@@ -64,15 +109,18 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // Duplicate photo check
-                $photoExists = Photo::where([
-                    'user_id' => auth()->id(),
-                    'datetime' => $dateTime
-                ])->exists();
+                // Duplicate photo check (skip for participant sessions —
+                // different students may share the same EXIF datetime)
+                if (! $this->attributes->get('participant')) {
+                    $photoExists = Photo::where([
+                        'user_id' => auth()->id(),
+                        'datetime' => $dateTime,
+                    ])->exists();
 
-                if ($photoExists) {
-                    $validator->errors()->add('photo', 'You have already uploaded this photo');
-                    return;
+                    if ($photoExists) {
+                        $validator->errors()->add('photo', 'You have already uploaded this photo');
+                        return;
+                    }
                 }
 
                 // GPS validation
@@ -95,8 +143,6 @@ class UploadPhotoRequest extends FormRequest
                 if ($lat === null || $lon === null) {
                     $validator->errors()->add('photo', $this->gpsError2);
                 }
-
-                // Note: 0,0 coordinates are accepted. Future feature: manual coordinate assignment.
             }
         ];
     }

@@ -21,6 +21,7 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 - `app/Enums/XpScore.php` — XP values per tag type
 - `app/Http/Requests/Api/PhotoTagsRequest.php` — V5 tag request validation (POST — blocks already-verified photos)
 - `app/Http/Requests/Api/ReplacePhotoTagsRequest.php` — V5 replace tag request validation (PUT — ownership only, no verification gate)
+- `app/Http/Controllers/API/GetUntaggedUploadController.php` — Mobile untagged photos (supports `?platform=web|mobile` filter)
 - `app/Observers/PhotoObserver.php` — Sets `is_public = false` for school team photos
 - `app/Helpers/helpers.php` — `getDateTimeForPhoto()`, `getCoordinatesFromPhoto()`, `dmsToDec()`
 - `tests/Feature/UploadValidationTest.php` — 11 tests (EXIF datetime, GPS DMS conversion, edge cases)
@@ -29,13 +30,14 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 ## Invariants
 
 1. **Upload creates observation only.** No tags, no XP, no summary, no metrics. Just the photo record with location FKs.
-2. **EXIF datetime is required for web uploads.** `UploadPhotoRequest` rejects images without EXIF datetime. Controller has `?? Carbon::now()` safety fallback. `UploadPhotoAction::run()` type-hints `Carbon $datetime` — null will crash.
+2. **EXIF datetime is required for web uploads.** `UploadPhotoRequest` rejects images without EXIF datetime. Controller has `?? Carbon::now()` safety fallback. `UploadPhotoAction::run()` type-hints `Carbon $datetime` — null will crash. Mobile uploads send explicit `lat`, `lon`, `date` — EXIF validation is skipped.
 3. **GPS DMS conversion guards against division by zero.** `dmsToDec()` validates all 6 denominator values before dividing. Returns `null` on malformed data.
-4. **0,0 coordinates are accepted.** Photos at latitude 0, longitude 0 are valid. Future: manual coordinate reassignment.
+4. **(0,0) coordinates rejected for explicit mode.** Mobile uploads with `lat=0, lon=0` get 422 (Null Island guard). Web uploads accept 0,0 from EXIF.
 5. **Summary generation is unconditional.** `GeneratePhotoSummaryService::run()` MUST run regardless of trust level. School photos need a summary at tag time so it exists when the teacher approves later. Gating summary behind a trust check causes null summary at approval = zero metrics.
 6. **XP calculation is unconditional.** Runs for all users, before verification.
-7. **`TagsVerifiedByAdmin` only fires for trusted users.** School students' photos stop at `VERIFIED(1)` and wait for teacher approval.
+7. **`TagsVerifiedByAdmin` fires for ALL non-school users.** This ensures all users get immediate leaderboard credit. Trusted users also get `ADMIN_APPROVED` (visible on map). Non-trusted users stay at `verified=0` (not on map). School students' photos stop at `VERIFIED(1)` and wait for teacher approval — event does NOT fire for them.
 8. **VerificationStatus is an enum cast.** `$photo->verified` returns the enum, not an int. Use `->value` for `>=`/`<` comparisons, `===` for equality checks. Never compare enum to raw int.
+9. **`remaining` is deprecated — use `picked_up`.** DB column is `photos.remaining` (`tinyint(1) NOT NULL DEFAULT 1`). Photo model has `getPickedUpAttribute()` accessor returning `!$this->remaining`. API responses include both fields. New code should read/write `picked_up`. Per-tag `photo_tags.picked_up` is a separate nullable column (true/false/null) for granular per-item tracking.
 
 ## VerificationStatus Enum
 
@@ -62,14 +64,14 @@ enum VerificationStatus: int
 1. EXIF must exist and be non-empty
 2. DateTime must exist (DateTimeOriginal → DateTime → FileDateTime fallback)
 3. GPS fields must exist and `dmsToDec()` must succeed (guards zero denominators)
-4. Duplicate check (same user + same EXIF datetime)
+4. Duplicate check (same user + same EXIF datetime). **Skipped for participant uploads** (different students may share EXIF datetime since `user_id = facilitator` for all).
 
 `UploadPhotoController::__invoke()` flow:
 1. `MakeImageAction::run($file)` — extract EXIF
 2. `getDateTimeForPhoto($exif) ?? Carbon::now()` — EXIF datetime with safety fallback
 3. `UploadPhotoAction::run()` x2 — S3 full image + bbox thumbnail
 4. `getCoordinatesFromPhoto($exif)` → `ResolveLocationAction::run($lat, $lon)` — Country/State/City FKs
-5. `Photo::create()` — observation record with FKs only
+5. `Photo::create()` — observation record with FKs only. For participant uploads: `team_id` from participant's team, `participant_id` from participant slot
 6. `event(new ImageUploaded(...))` — real-time broadcast
 
 ### Phase 2: Tagging
@@ -109,26 +111,34 @@ The web frontend sends 4 distinct tag types. `resolveTag()` handles each:
 protected function updateVerification(int $userId, Photo $photo): void
 {
     $user = User::find($userId);
+    $isSchoolStudent = false;
 
     if ($user->verification_required) {
+        $photo->verification = 0.1;
         if ($photo->team_id) {
             $team = Team::find($photo->team_id);
             if ($team && $team->isSchool()) {
                 $photo->verified = VerificationStatus::VERIFIED->value;
-                // STOP here — no TagsVerifiedByAdmin, no metrics
+                $isSchoolStudent = true;
             }
         }
     } else {
-        // Trusted user — immediate approval
+        // Trusted user — immediate approval + map visibility
+        $photo->verification = 1;
         $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
-        event(new TagsVerifiedByAdmin(
-            $photo->id, $photo->user_id,
-            $photo->country_id, $photo->state_id,
-            $photo->city_id, $photo->team_id
-        ));
+    }
+
+    $photo->save();
+
+    // ALL users get leaderboard credit immediately (except school students).
+    // Non-trusted photos stay at verified=0 (not on map) but metrics are processed.
+    if (! $isSchoolStudent) {
+        event(new TagsVerifiedByAdmin(...));
     }
 }
 ```
+
+**Key distinction:** `TagsVerifiedByAdmin` fires for ALL non-school users. Trusted users also get `verified = ADMIN_APPROVED` (photo visible on map). Non-trusted users stay at `verified = 0` (photo NOT on map, but user IS on leaderboard).
 
 ### XP calculation
 
@@ -139,23 +149,25 @@ Object    => 1   // Per litter item (default)
 Material  => 2   // Per material tag
 Brand     => 3   // Per brand tag
 CustomTag => 1   // Per custom tag
-PickedUp  => 5   // Bonus if photo.remaining = false
-Small     => 10  // Special objects: 'small'
-Medium    => 25  // Special objects: 'medium'
-Large     => 50  // Special objects: 'large'
-BagsLitter => 10 // Special objects: 'bagsLitter'
+PickedUp  => 5   // Bonus if picked_up = true
+Small     => 10  // Special objects: 'dumping_small'
+Medium    => 25  // Special objects: 'dumping_medium'
+Large     => 50  // Special objects: 'dumping_large'
+BagsLitter => 10 // Special objects: 'bags_litter'
 ```
 
 ### Phase 2b: Replace Tags (edit mode)
 
-`PhotoTagsController::update()` handles `PUT /api/v3/tags` for replacing all tags on an already-tagged photo:
+`PhotoTagsController::update()` handles `PUT /api/v3/tags` for replacing all tags on an already-tagged photo. The entire operation is wrapped in `DB::transaction()`:
 
 1. Delete all existing PhotoTags + PhotoTagExtraTags
 2. Reset photo: `summary=null, xp=0, verified=0`
 3. Call `AddTagsToPhotoAction::run()` — regenerates summary, XP, fires `TagsVerifiedByAdmin`
 4. `MetricsService::processPhoto()` detects prior processing (has `processed_at`), calls `doUpdate()` which calculates deltas between old `processed_tags` and new summary, applies adjustments to all metrics
 
-**Frontend edit mode:** `/tag?photo=<id>` loads a specific photo. If it has existing tags, `isEditMode=true` → uses PUT. If untagged, uses POST. `convertExistingTags()` transforms API `new_tags` format back to frontend format.
+**Frontend edit mode:** `/tag?photo=<id>` loads a specific photo. If it has existing tags, `isEditMode=true` → uses PUT. If untagged, uses POST. `convertExistingTags()` transforms API `new_tags` format back to frontend format (including `litter_object_type_id` for the type dimension).
+
+**Frontend guards:** Double-submit prevention via `isSubmitting` ref. After success, `REFRESH_USER()` updates the nav XP bar (non-blocking). Stats and photos refresh in parallel via `Promise.all()`.
 
 **Security:** `ReplacePhotoTagsRequest` checks `$photo->user_id === $this->user()->id`. `GET_SINGLE_PHOTO` calls `/api/v3/user/photos` which filters by authenticated user.
 
@@ -213,4 +225,6 @@ Always ensure `geom` stays in `$hidden`. If you need coordinates, use `lat`/`lon
 - **Forgetting `city_id` in factory.** PhotoFactory doesn't include `city_id` by default. Add `'city_id' => City::factory()` when testing location-dependent features.
 - **Confusing `category_litter_object_id` with `category_id`.** Phase 1 adds `category_litter_object_id` (FK to `category_litter_object` pivot) and `litter_object_type_id` (FK to `litter_object_types`) to `photo_tags`. Both are nullable in Phase 1. The existing `category_id` and `litter_object_id` columns remain and are still the authoritative source until Phase 3.
 - **Returning `'tags'` instead of `'new_tags'` in upload controller.** `UsersUploadsController` must return tags under the key `'new_tags'` — the `Uploads.vue` frontend reads `photo.new_tags` for tag counts and objects list.
-- **Using `doesntHave('photoTags')` for untagged filter.** The `/tag` page filter must use `WHERE verified = 0` (VerificationStatus::UNVERIFIED), not `doesntHave('photoTags')`. V4-migrated photos may have `verified >= 1` but no v5 photoTags records, or photoTags can exist without the photo being fully tagged.
+- **Using `where('verified', 0)` or `doesntHave('photoTags')` for untagged filter.** Use `whereNull('summary')` — summary is set by `GeneratePhotoSummaryService` when tags are added, regardless of verification status. After "leaderboard immediate credit," untrusted users' `verified` stays at 0 after tagging, so `where('verified', 0)` includes tagged photos.
+- **Not including `litter_object_type_id` in photo response.** `UsersUploadsController::getNewTags()` must include `litter_object_type_id` so the frontend can preserve the type dimension on edit round-trips.
+- **Replace tags without `DB::transaction()`.** If `AddTagsToPhotoAction::run()` fails after old tags are deleted, the photo loses all tag data. The entire delete-reset-add sequence must be atomic.

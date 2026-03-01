@@ -121,6 +121,7 @@ const timeline = [
         year: '2026',
         title: 'Earn Littercoin',
         description: 'The worlds first climate currency',
+        icon: '🪙',
         color: 'from-green-500 to-orange-500',
     },
 ];

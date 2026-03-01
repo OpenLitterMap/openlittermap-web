@@ -408,11 +408,9 @@ const dataFields = ref([
 @keyframes fade-in {
     from {
         opacity: 0;
-        transform: inherit scale(0.9);
     }
     to {
         opacity: 1;
-        transform: inherit scale(1);
     }
 }
 

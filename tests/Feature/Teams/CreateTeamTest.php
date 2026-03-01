@@ -6,6 +6,8 @@ use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -64,7 +66,7 @@ class CreateTeamTest extends TestCase
     {
         $manager = $this->createSchoolManager();
 
-        $response = $this->actingAs($manager, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($manager)->postJson('/api/teams/create', [
             'name' => 'Cork Litter Pickers',
             'identifier' => 'CorkLP2026',
             'teamType' => $this->communityTypeId,
@@ -93,7 +95,7 @@ class CreateTeamTest extends TestCase
         $user = User::factory()->create(['remaining_teams' => 1]);
         // No school_manager role needed for community teams
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($user)->postJson('/api/teams/create', [
             'name' => 'Regular Team',
             'identifier' => 'Regular1',
             'teamType' => $this->communityTypeId,
@@ -111,7 +113,7 @@ class CreateTeamTest extends TestCase
     {
         $user = User::factory()->create(['remaining_teams' => 0]);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($user)->postJson('/api/teams/create', [
             'name' => 'No Quota Team',
             'identifier' => 'NoQuota1',
             'teamType' => $this->communityTypeId,
@@ -128,7 +130,7 @@ class CreateTeamTest extends TestCase
     {
         $manager = $this->createSchoolManager(['remaining_teams' => 0]);
 
-        $response = $this->actingAs($manager, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($manager)->postJson('/api/teams/create', [
             'name' => 'No Quota',
             'identifier' => 'NoQuota1',
             'teamType' => $this->communityTypeId,
@@ -143,7 +145,7 @@ class CreateTeamTest extends TestCase
     {
         $manager = $this->createSchoolManager();
 
-        $this->actingAs($manager, 'api')
+        $this->actingAs($manager)
             ->postJson('/api/teams/create', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'identifier', 'teamType']);
@@ -162,7 +164,7 @@ class CreateTeamTest extends TestCase
             'created_by' => $manager->id,
         ]);
 
-        $this->actingAs($manager, 'api')
+        $this->actingAs($manager)
             ->postJson('/api/teams/create', [
                 'name' => 'Taken Name',
                 'identifier' => 'TakenID',
@@ -187,12 +189,11 @@ class CreateTeamTest extends TestCase
     {
         $teacher = $this->createSchoolManager();
 
-        $response = $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
+        $response = $this->actingAs($teacher)->postJson('/api/teams/create', [
             'name' => 'Curraghboy NS',
             'identifier' => 'CurraghboyNS2026',
             'teamType' => $this->schoolTypeId,
             'contact_email' => 'teacher@curraghboyns.ie',
-            'school_roll_number' => '19456A',
             'county' => 'Roscommon',
             'academic_year' => '2025/2026',
             'class_group' => '5th Class',
@@ -205,7 +206,6 @@ class CreateTeamTest extends TestCase
         $this->assertDatabaseHas('teams', [
             'name' => 'Curraghboy NS',
             'safeguarding' => true,
-            'school_roll_number' => '19456A',
             'contact_email' => 'teacher@curraghboyns.ie',
             'county' => 'Roscommon',
             'academic_year' => '2025/2026',
@@ -217,11 +217,12 @@ class CreateTeamTest extends TestCase
     {
         $teacher = $this->createSchoolManager();
 
-        $this->actingAs($teacher, 'api')->postJson('/api/teams/create', [
+        $this->actingAs($teacher)->postJson('/api/teams/create', [
             'name' => 'Safe School',
             'identifier' => 'SafeSchool1',
             'teamType' => $this->schoolTypeId,
             'contact_email' => 'teacher@school.ie',
+            'county' => 'Cork',
         ]);
 
         $this->assertTrue((bool) Team::where('name', 'Safe School')->value('safeguarding'));
@@ -232,7 +233,7 @@ class CreateTeamTest extends TestCase
         $user = User::factory()->create(['remaining_teams' => 3]);
         // No school_manager role
 
-        $this->actingAs($user, 'api')->postJson('/api/teams/create', [
+        $this->actingAs($user)->postJson('/api/teams/create', [
             'name' => 'Unauthorized School',
             'identifier' => 'NoAuth1',
             'teamType' => $this->schoolTypeId,
@@ -246,7 +247,7 @@ class CreateTeamTest extends TestCase
     {
         $teacher = $this->createSchoolManager();
 
-        $this->actingAs($teacher, 'api')
+        $this->actingAs($teacher)
             ->postJson('/api/teams/create', [
                 'name' => 'No Email School',
                 'identifier' => 'NoEmail1',
@@ -255,5 +256,48 @@ class CreateTeamTest extends TestCase
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['contact_email']);
+    }
+
+    public function test_school_team_can_have_logo_and_max_participants(): void
+    {
+        Storage::fake('logos');
+
+        $teacher = $this->createSchoolManager();
+        $logo = UploadedFile::fake()->image('school-logo.png', 200, 200);
+
+        $response = $this->actingAs($teacher)->postJson('/api/teams/create', [
+            'name' => 'Logo School',
+            'identifier' => 'LogoSchool1',
+            'teamType' => $this->schoolTypeId,
+            'contact_email' => 'teacher@logoschool.ie',
+            'county' => 'Dublin',
+            'logo' => $logo,
+            'max_participants' => 30,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $team = Team::where('name', 'Logo School')->first();
+        $this->assertNotNull($team->logo);
+        $this->assertEquals(30, $team->max_participants);
+
+        Storage::disk('logos')->assertExists($team->logo);
+    }
+
+    public function test_school_team_logo_must_be_an_image(): void
+    {
+        $teacher = $this->createSchoolManager();
+        $file = UploadedFile::fake()->create('document.pdf', 100);
+
+        $this->actingAs($teacher)->postJson('/api/teams/create', [
+            'name' => 'Bad Logo School',
+            'identifier' => 'BadLogo1',
+            'teamType' => $this->schoolTypeId,
+            'contact_email' => 'teacher@school.ie',
+            'county' => 'Cork',
+            'logo' => $file,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['logo']);
     }
 }

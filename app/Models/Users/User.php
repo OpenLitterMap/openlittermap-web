@@ -4,6 +4,7 @@ namespace App\Models\Users;
 
 use App\Level;
 use App\Models\Achievements\Achievement;
+use App\Services\LevelService;
 use App\Models\Badges\Badge;
 use App\Payment;
 use App\Models\Photo;
@@ -15,7 +16,7 @@ use App\Models\Cleanups\Cleanup;
 use App\Models\Cleanups\CleanupUser;
 
 use Laravel\Cashier\Billable;
-use Laravel\Passport\HasApiTokens;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
@@ -93,6 +94,7 @@ class User extends Authenticatable
         'active_team',
         'link_instagram',
         'verification_required',
+        'username_flagged',
         'prevent_others_tagging_my_photos',
         'littercoin_owed',
         'littercoin_paid',
@@ -119,10 +121,12 @@ class User extends Authenticatable
 
     protected $casts = [
         'verified' => 'boolean',
+        'picked_up' => 'boolean',
         'show_name' => 'boolean',
         'show_username' => 'boolean',
         'public_profile' => 'boolean',
         'verification_required' => 'boolean',
+        'username_flagged' => 'boolean',
         'prevent_others_tagging_my_photos' => 'boolean',
         'settings' => 'array',
     ];
@@ -131,7 +135,6 @@ class User extends Authenticatable
         'total_categories',
         'total_tags',
         'total_brands_redis',
-        'picked_up',
         'user_verification_count',
         'littercoin_progress',
         'total_littercoin',
@@ -172,15 +175,7 @@ class User extends Authenticatable
         return !$this->verification_required || $this->team && $this->team->is_trusted;
     }
 
-    /**
-     * @deprecated
-     * Wrapper around default setting for items_remaining,
-     * for better readability
-     */
-    public function getPickedUpAttribute ()
-    {
-        return !$this->items_remaining;
-    }
+    // picked_up is now a real column (was items_remaining, renamed + inverted)
 
     /**
      * @deprecated
@@ -277,10 +272,9 @@ class User extends Authenticatable
         return (int) Redis::zscore("leaderboard:users:$year", $this->id);
     }
 
-    // @deprecated
-    public function getNextLevelAttribute (): ?Level
+    public function getNextLevelAttribute(): array
     {
-        return Level::find($this->level + 1);
+        return LevelService::getUserLevel($this->xp_redis);
     }
 
     /**
@@ -606,6 +600,11 @@ class User extends Authenticatable
         $this->save();
 
         return $this;
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->name ?? $this->username;
     }
 
     public function getSocialLinksAttribute(): array

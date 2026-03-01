@@ -18,7 +18,7 @@ class SetActiveTeamTest extends TestCase
         $user->teams()->attach($team);
         $this->assertNull($user->active_team);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/active', [
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
             'team_id' => $team->id,
         ]);
 
@@ -35,7 +35,7 @@ class SetActiveTeamTest extends TestCase
         $team = Team::factory()->create();
         $this->assertNull($user->active_team);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/active', [
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
             'team_id' => $team->id,
         ]);
 
@@ -50,7 +50,7 @@ class SetActiveTeamTest extends TestCase
         $user = User::factory()->create();
         $this->assertNull($user->active_team);
 
-        $response = $this->actingAs($user, 'api')->postJson('/api/teams/active', [
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
             'team_id' => 0,
         ]);
 

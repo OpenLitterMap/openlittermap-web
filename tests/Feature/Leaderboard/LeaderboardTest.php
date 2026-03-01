@@ -72,11 +72,11 @@ class LeaderboardTest extends TestCase
         $this->assertTrue($response['success']);
         $this->assertCount(3, $response['users']);
         $this->assertEquals(1, $response['users'][0]['rank']);
-        $this->assertEquals('300', $response['users'][0]['xp']);
+        $this->assertEquals(300, $response['users'][0]['xp']);
         $this->assertEquals(2, $response['users'][1]['rank']);
-        $this->assertEquals('200', $response['users'][1]['xp']);
+        $this->assertEquals(200, $response['users'][1]['xp']);
         $this->assertEquals(3, $response['users'][2]['rank']);
-        $this->assertEquals('100', $response['users'][2]['xp']);
+        $this->assertEquals(100, $response['users'][2]['xp']);
         $this->assertEquals(3, $response['total']);
     }
 
@@ -96,8 +96,8 @@ class LeaderboardTest extends TestCase
 
         $this->assertTrue($response['success']);
         $this->assertCount(2, $response['users']);
-        $this->assertEquals('150', $response['users'][0]['xp']);
-        $this->assertEquals('50', $response['users'][1]['xp']);
+        $this->assertEquals(150, $response['users'][0]['xp']);
+        $this->assertEquals(50, $response['users'][1]['xp']);
     }
 
     public function test_time_filtered_leaderboard_returns_users_for_that_period(): void
@@ -118,8 +118,8 @@ class LeaderboardTest extends TestCase
 
         $this->assertTrue($response['success']);
         $this->assertCount(2, $response['users']);
-        $this->assertEquals('400', $response['users'][0]['xp']);
-        $this->assertEquals('250', $response['users'][1]['xp']);
+        $this->assertEquals(400, $response['users'][0]['xp']);
+        $this->assertEquals(250, $response['users'][1]['xp']);
         $this->assertEquals(2, $response['currentUserRank']);
     }
 
@@ -172,9 +172,12 @@ class LeaderboardTest extends TestCase
         $this->assertEquals('', $response['users'][0]['username']);
     }
 
-    public function test_unauthenticated_user_cannot_access_leaderboard(): void
+    public function test_unauthenticated_user_can_access_leaderboard_without_rank(): void
     {
-        $this->getJson('/api/leaderboard')->assertUnauthorized();
+        $response = $this->getJson('/api/leaderboard');
+
+        $response->assertOk();
+        $response->assertJsonFragment(['currentUserRank' => null]);
     }
 
     public function test_current_user_rank_is_included_in_all_time_response(): void
@@ -258,7 +261,7 @@ class LeaderboardTest extends TestCase
 
         $this->assertTrue($response['success']);
         $this->assertCount(1, $response['users']);
-        $this->assertEquals('100', $response['users'][0]['xp']);
+        $this->assertEquals(100, $response['users'][0]['xp']);
 
         // "yesterday" filter should only return user2
         $response = $this
@@ -269,7 +272,7 @@ class LeaderboardTest extends TestCase
 
         $this->assertTrue($response['success']);
         $this->assertCount(1, $response['users']);
-        $this->assertEquals('500', $response['users'][0]['xp']);
+        $this->assertEquals(500, $response['users'][0]['xp']);
     }
 
     public function test_deleted_photo_removes_user_from_redis_leaderboard_when_xp_hits_zero(): void
@@ -319,8 +322,8 @@ class LeaderboardTest extends TestCase
 
         $this->assertTrue($response['success']);
         $this->assertCount(2, $response['users']);
-        $this->assertEquals('120', $response['users'][0]['xp']);
-        $this->assertEquals('80', $response['users'][1]['xp']);
+        $this->assertEquals(120, $response['users'][0]['xp']);
+        $this->assertEquals(80, $response['users'][1]['xp']);
         $this->assertEquals(2, $response['total']);
     }
 
@@ -341,7 +344,7 @@ class LeaderboardTest extends TestCase
         $this->assertTrue($response['success']);
         $this->assertCount(2, $response['users']);
         $this->assertEquals('200', $response['users'][0]['xp']);
-        $this->assertEquals('75', $response['users'][1]['xp']);
+        $this->assertEquals(75, $response['users'][1]['xp']);
         $this->assertEquals(2, $response['total']);
     }
 
@@ -398,6 +401,24 @@ class LeaderboardTest extends TestCase
         $this->assertEquals(1, $response['total']);
     }
 
+    public function test_response_includes_active_and_total_user_counts(): void
+    {
+        // 3 users total, 2 with global all-time XP
+        $users = User::factory(3)->create();
+
+        $this->seedMetric($users[0]->id, 300);
+        $this->seedMetric($users[1]->id, 100);
+
+        $response = $this
+            ->actingAs($users[0])
+            ->getJson('/api/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $this->assertEquals(2, $response['activeUsers']);
+        $this->assertEquals(3, $response['totalUsers']);
+    }
+
     public function test_all_time_country_filtered_leaderboard(): void
     {
         $country1 = Country::factory()->create();
@@ -418,7 +439,7 @@ class LeaderboardTest extends TestCase
 
         $this->assertCount(2, $response['users']);
         $this->assertEquals(2, $response['total']);
-        $this->assertEquals('500', $response['users'][0]['xp']);
+        $this->assertEquals(500, $response['users'][0]['xp']);
         $this->assertEquals('300', $response['users'][1]['xp']);
     }
 }

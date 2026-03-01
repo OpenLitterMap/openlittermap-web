@@ -118,7 +118,7 @@ class SchoolApprovalPipelineTest extends TestCase
         ]);
 
         // Simulate tagging via API
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->postJson('/api/v3/tags', [
                 'photo_id' => $photo->id,
                 'tags' => [
@@ -188,7 +188,7 @@ class SchoolApprovalPipelineTest extends TestCase
         ]);
 
         // Tag the photo
-        $this->actingAs($this->student, 'api')
+        $this->actingAs($this->student)
             ->postJson('/api/v3/tags', [
                 'photo_id' => $photo->id,
                 'tags' => [
@@ -210,7 +210,7 @@ class SchoolApprovalPipelineTest extends TestCase
         $photo = $this->createTaggedSchoolPhoto();
 
         // Teacher approves
-        $response = $this->actingAs($this->teacher, 'api')
+        $response = $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -270,7 +270,7 @@ class SchoolApprovalPipelineTest extends TestCase
             ->count());
 
         // Approve
-        $this->actingAs($this->teacher, 'api')
+        $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -295,7 +295,7 @@ class SchoolApprovalPipelineTest extends TestCase
         $photo = $this->createTaggedSchoolPhoto();
 
         // First approval
-        $this->actingAs($this->teacher, 'api')
+        $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -305,7 +305,7 @@ class SchoolApprovalPipelineTest extends TestCase
         Event::assertDispatched(TagsVerifiedByAdmin::class, 1);
 
         // Second approval — same photo
-        $this->actingAs($this->teacher, 'api')
+        $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
                 'photo_ids' => [$photo->id],
@@ -325,7 +325,7 @@ class SchoolApprovalPipelineTest extends TestCase
         $this->createTaggedSchoolPhoto();
 
         // Student sees masked names
-        $response = $this->actingAs($this->student, 'api')
+        $response = $this->actingAs($this->student)
             ->getJson('/api/teams/photos?team_id=' . $this->schoolTeam->id);
 
         $response->assertOk();

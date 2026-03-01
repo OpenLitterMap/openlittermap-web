@@ -49,11 +49,4 @@ class PhotosController extends Controller
         return response()->json(['message' => 'Photo deleted successfully!']);
     }
 
-    /**
-     * @deprecated No route references this method. Uses v4 category tables and verification float.
-     */
-    public function addTags(): void
-    {
-        abort(410, 'This endpoint has been removed.');
-    }
 }

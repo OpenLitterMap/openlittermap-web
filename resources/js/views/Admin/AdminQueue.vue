@@ -13,6 +13,7 @@
             @navigate="handleNavigation"
             @approve="handleApprove"
             @save-edits="handleSaveEdits"
+            @reset-tags="handleResetTags"
             @delete="handleDelete"
         />
 
@@ -122,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useAdminStore } from '@stores/admin.js';
 import { useTagsStore } from '@stores/tags/index.js';
 
@@ -389,6 +390,17 @@ const handleSaveEdits = async () => {
     }
 };
 
+const handleResetTags = async () => {
+    if (!currentPhoto.value) return;
+    const photoId = currentPhoto.value.id;
+
+    const success = await adminStore.resetTags(photoId);
+    if (success) {
+        cleanupPhotoState(photoId);
+        clampIndex();
+    }
+};
+
 const handleDelete = async () => {
     if (!currentPhoto.value) return;
     const photoId = currentPhoto.value.id;
@@ -566,6 +578,74 @@ const resetFilters = async () => {
     currentIndex.value = 0;
     await adminStore.fetchPhotos(1);
 };
+
+// ─── Keyboard Shortcuts ───────────────────────────────
+
+const isInputFocused = () => {
+    const el = document.activeElement;
+    if (!el) return false;
+    const tag = el.tagName.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+};
+
+const handleKeydown = (e) => {
+    if (isInputFocused()) return;
+    if (adminStore.submitting) return;
+    if (!currentPhoto.value) return;
+
+    switch (e.key) {
+        case 'a':
+        case 'A':
+            e.preventDefault();
+            handleApprove();
+            break;
+
+        case 'd':
+        case 'D':
+            e.preventDefault();
+            if (window.confirm('Delete this photo?')) {
+                handleDelete();
+            }
+            break;
+
+        case 'e':
+        case 'E':
+            if (hasEdits.value) {
+                e.preventDefault();
+                handleSaveEdits();
+            }
+            break;
+
+        case 's':
+        case 'S':
+        case 'ArrowRight':
+        case 'k':
+        case 'K':
+            e.preventDefault();
+            handleNavigation('next');
+            break;
+
+        case 'ArrowLeft':
+        case 'j':
+        case 'J':
+            e.preventDefault();
+            handleNavigation('prev');
+            break;
+
+        case 'Escape':
+            e.preventDefault();
+            searchQuery.value = '';
+            break;
+    }
+};
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown);
+});
 
 // ─── Build upload payload ──────────────────────────────
 

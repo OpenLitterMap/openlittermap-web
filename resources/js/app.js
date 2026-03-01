@@ -41,7 +41,7 @@ app.component('RecycleScroller', RecycleScroller);
 app.use(i18n);
 app.use(router);
 app.use(pinia);
-app.use(Toast);
+app.use(Toast, { position: 'bottom-right' });
 app.use(LoadingPlugin);
 app.use(FloatingVue);
 app.mount('#app');

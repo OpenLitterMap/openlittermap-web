@@ -47,17 +47,32 @@
                                         id="username"
                                         v-model.trim="username"
                                         @focus="activeField = 'username'"
-                                        @blur="
-                                            validateField('username');
-                                            activeField = null;
-                                        "
-                                        @input="clearError('username')"
+                                        @blur="activeField = null"
+                                        @input="onUsernameInput"
                                         type="text"
-                                        placeholder="LitterNinja"
+                                        placeholder="Type your own or hit refresh"
+                                        autocomplete="username"
                                         :class="inputClass('username')"
-                                        class="w-full rounded-lg border pl-10 pr-3 py-2 focus:outline-none focus:ring-2"
-                                        required
+                                        class="username-input w-full rounded-lg border pl-10 pr-10 py-2 focus:outline-none focus:ring-2"
                                     />
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <button
+                                            type="button"
+                                            @click="refreshUsername"
+                                            class="p-1 text-gray-400 hover:text-green-600 focus:outline-none transition-colors"
+                                            aria-label="Generate new username"
+                                            :title="$t('Generate new username')"
+                                        >
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </span>
                                 </div>
                                 <p v-if="errorFor('username')" class="mt-1 text-xs text-red-600">
                                     {{ errorFor('username') }}
@@ -134,7 +149,7 @@
                                         "
                                         @input="onPasswordInput"
                                         :type="showPassword ? 'text' : 'password'"
-                                        placeholder="Your password (min 5 characters)"
+                                        placeholder="Your password (min 8 characters)"
                                         autocomplete="new-password"
                                         :class="inputClass('password')"
                                         class="w-full rounded-lg border pl-10 pr-10 py-2 focus:outline-none focus:ring-2"
@@ -284,6 +299,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { useUserStore } from '@/stores/user';
 import { useModalStore } from '@/stores/modal';
 import { RecaptchaV2 } from 'vue3-recaptcha-v2';
@@ -291,11 +307,48 @@ import mountainsBg from '@/assets/pixel_art/mountains.JPG';
 import mountainsWideBg from '@/assets/pixel_art/boy1.jpg';
 
 const router = useRouter();
+const toast = useToast();
 const userStore = useUserStore();
 const modalStore = useModalStore();
 
+// Username generator — mirrors UsernameGeneratorService.php word lists
+const ADJECTIVES = [
+    'violently-enthusiastic', 'aggressively-hydrated', 'emotionally-overprepared',
+    'deeply-unsettled', 'mildly-feral', 'chronically-committed',
+    'irrationally-motivated', 'profoundly-bored', 'environmentally-triggered',
+    'dangerously-caffeinated', 'excessively-alert', 'spiritually-activated',
+    'socially-unnecessary', 'aggressively-helpful', 'suspiciously-vigilant',
+    'inexplicably-determined', 'disturbingly-cheerful', 'unreasonably-passionate',
+    'legally-distinct', 'professionally-nosy', 'catastrophically-invested',
+    'excessively-wholesome', 'morally-exhausted', 'stubborn-beyond-reason',
+    'permanently-busy', 'recreationally-serious', 'accidentally-legendary',
+    'uncomfortably-efficient', 'wildly-overqualified', 'borderline-evangelical',
+    'environmentally-unhinged', 'existentially-concerned', 'unlicensed',
+    'lightly-supervised', 'unnecessarily-brave',
+];
+
+const NOUNS = [
+    'bin-overlord', 'crumb-interrogator', 'bottle-whisperer', 'cap-harvester',
+    'gum-evangelist', 'wrapper-warden', 'drain-lurker', 'crisp-packet-historian',
+    'pavement-enforcer', 'roundabout-oracle', 'curb-tyrant', 'seagull-negotiator',
+    'lid-archaeologist', 'debris-wrangler', 'litter-interventionist',
+    'microplastic-detective', 'waste-summoner', 'compost-influencer',
+    'drain-purifier', 'refuse-enthusiast', 'bottle-apologist', 'gum-hunter',
+    'street-diplomat', 'plastic-prosecutor', 'crumb-collector-general',
+    'wrapper-therapist', 'bin-strategist', 'cap-overseer', 'drain-warden',
+    'civic-disruptor', 'litter-mystic', 'pavement-auditor', 'beach-activator',
+    'rubbish-savant', 'field-chaos-coordinator',
+];
+
+function generateUsername() {
+    const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+    const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+    const num = Math.floor(Math.random() * 9990) + 10;
+    return `${adj}-${noun}-${num}`;
+}
+
 // Form fields
-const username = ref('');
+const username = ref(generateUsername());
 const email = ref('');
 const password = ref('');
 const acceptedTerms = ref(false);
@@ -326,8 +379,7 @@ function errorFor(field) {
 }
 
 const canSubmit = computed(() => {
-    const basicRequirements =
-        username.value && email.value && password.value && acceptedTerms.value && !isSubmitting.value;
+    const basicRequirements = email.value && password.value && acceptedTerms.value && !isSubmitting.value;
 
     if (showRecaptcha.value) {
         return basicRequirements && g_recaptcha_response.value;
@@ -352,19 +404,7 @@ function validateField(field) {
     const newErrors = { ...fieldErrors.value };
 
     switch (field) {
-        case 'username':
-            if (!username.value) {
-                newErrors.username = 'Username is required';
-            } else if (username.value.length < 3) {
-                newErrors.username = 'Username must be at least 3 characters';
-            } else if (!/^[a-zA-Z0-9_-]+$/.test(username.value)) {
-                newErrors.username = 'Username can only contain letters, numbers, - and _';
-            } else {
-                delete newErrors.username;
-            }
-            break;
-
-        case 'email':
+        case 'email': {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!email.value) {
                 newErrors.email = 'Email is required';
@@ -374,16 +414,18 @@ function validateField(field) {
                 delete newErrors.email;
             }
             break;
+        }
 
         case 'password':
             if (!password.value) {
                 newErrors.password = 'Password is required';
-            } else if (password.value.length < 5) {
-                newErrors.password = 'Password must be at least 5 characters';
+            } else if (password.value.length < 8) {
+                newErrors.password = 'Password must be at least 8 characters';
             } else {
                 delete newErrors.password;
             }
             break;
+
     }
 
     fieldErrors.value = newErrors;
@@ -395,6 +437,15 @@ function clearError(field) {
     fieldErrors.value = newErrors;
 
     userStore.clearError(field);
+}
+
+function onUsernameInput() {
+    clearError('username');
+}
+
+function refreshUsername() {
+    username.value = generateUsername();
+    clearError('username');
 }
 
 function onPasswordInput() {
@@ -409,7 +460,7 @@ function inputClass(field) {
 }
 
 async function submit() {
-    ['username', 'email', 'password'].forEach(validateField);
+    ['email', 'password'].forEach(validateField);
 
     if (Object.keys(fieldErrors.value).length > 0) {
         return;
@@ -419,9 +470,9 @@ async function submit() {
 
     try {
         const payload = {
-            username: username.value,
             email: email.value,
             password: password.value,
+            username: username.value || undefined,
         };
 
         if (g_recaptcha_response.value) {
@@ -431,6 +482,8 @@ async function submit() {
         const result = await userStore.REGISTER(payload);
 
         if (result !== false) {
+            toast.success('Welcome Aboard! Your Litter Mapping Adventure Awaits!', { timeout: 6000 });
+
             password.value = '';
             await router.push('/upload');
         }
@@ -480,5 +533,9 @@ a,
 button {
     position: relative;
     z-index: 1;
+}
+
+.username-input {
+    text-overflow: ellipsis;
 }
 </style>

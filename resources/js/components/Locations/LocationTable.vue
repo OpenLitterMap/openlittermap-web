@@ -66,7 +66,7 @@
 
                     <!-- Tags + % -->
                     <td class="px-4 py-3 text-right">
-                        <div class="text-white/80 tabular-nums">{{ fmt(loc.tags) }}</div>
+                        <div class="text-white/80 tabular-nums">{{ fmt(loc.total_tags) }}</div>
                         <div v-if="loc.pct_tags != null" class="text-[11px] text-white/25 tabular-nums">
                             {{ loc.pct_tags }}%
                         </div>
@@ -74,7 +74,7 @@
 
                     <!-- Photos + % -->
                     <td class="px-4 py-3 text-right">
-                        <div class="text-white/80 tabular-nums">{{ fmt(loc.photos) }}</div>
+                        <div class="text-white/80 tabular-nums">{{ fmt(loc.total_images) }}</div>
                         <div v-if="loc.pct_photos != null" class="text-[11px] text-white/25 tabular-nums">
                             {{ loc.pct_photos }}%
                         </div>
@@ -82,7 +82,7 @@
 
                     <!-- Contributors -->
                     <td v-if="hasMeta" class="px-4 py-3 text-right text-white/80 tabular-nums">
-                        {{ fmt(loc.contributors) }}
+                        {{ fmt(loc.total_members) }}
                     </td>
 
                     <!-- Avg tags/person -->
@@ -120,7 +120,7 @@ import { computed } from 'vue';
 const props = defineProps({
     locations: { type: Array, required: true },
     type: { type: String, default: 'country' },
-    sortField: { type: String, default: 'tags' },
+    sortField: { type: String, default: 'total_tags' },
     sortDir: { type: String, default: 'desc' },
 });
 
@@ -128,16 +128,16 @@ defineEmits(['sort', 'navigate']);
 
 const medals = ['🥇', '🥈', '🥉'];
 
-const hasMeta = computed(() => props.locations.some((l) => l.contributors != null));
+const hasMeta = computed(() => props.locations.some((l) => l.total_members != null));
 
 const baseColumns = [
     { field: 'name', label: 'Name', align: 'left' },
-    { field: 'tags', label: 'Tags', align: 'right' },
-    { field: 'photos', label: 'Photos', align: 'right' },
+    { field: 'total_tags', label: 'Tags', align: 'right' },
+    { field: 'total_images', label: 'Photos', align: 'right' },
 ];
 
 const metaColumns = [
-    { field: 'contributors', label: 'Contributors', align: 'right' },
+    { field: 'total_members', label: 'Contributors', align: 'right' },
     { field: 'avg_tags_per_person', label: 'Avg / Person', align: 'right' },
 ];
 

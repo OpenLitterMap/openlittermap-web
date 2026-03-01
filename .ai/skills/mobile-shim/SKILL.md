@@ -1,129 +1,106 @@
 ---
 name: mobile-shim
-description: Mobile API endpoints, v4 tag format conversion, AddTagsToUploadedImageController, old mobile tagging routes, and ConvertV4TagsAction shim design.
+description: Mobile API surface (v3 only), removed legacy endpoints, and the v5-native tag format for mobile clients.
 ---
 
-# Mobile API Shim
+# Mobile API (v3 Only)
 
-The mobile app sends v4 tag format (`{smoking: {butts: 3}}`) to old endpoints. The backend must convert this to v5 PhotoTags. Zero mobile app changes — the shim is backend-only.
+All legacy v1/v2/v4 mobile endpoints and the `ConvertV4TagsAction` shim have been **removed** (2026-03-01). The mobile app uses v3 endpoints exclusively.
 
 ## Key Files
 
-- `app/Actions/Tags/ConvertV4TagsAction.php` — Shim: v4 payload → UpdateTagsService → v5 PhotoTags
-- `app/Http/Controllers/API/AddTagsToUploadedImageController.php` — Mobile tag endpoint (wired to shim)
-- `app/Http/Controllers/ApiPhotosController.php` — Upload-with-tags endpoint (wired to shim)
-- `app/Http/Requests/Api/AddTagsRequest.php` — Validation for old mobile format
-- `app/Services/Tags/UpdateTagsService.php` — Reused: same pipeline as olm:v5 migration
-- `app/Services/Tags/ClassifyTagsService.php` — Tag classification + deprecated key mapping
-- `tests/Feature/Mobile/ConvertV4TagsTest.php` — 7 tests (payload, summary, idempotency, verification)
-- `readme/Mobile.md` — Design document for the shim
+- `app/Http/Controllers/Uploads/UploadPhotoController.php` — v3 upload (EXIF-based)
+- `app/Http/Controllers/API/Tags/PhotoTagsController.php` — v3 tag CRUD (CLO format)
+- `app/Http/Controllers/User/Photos/UsersUploadsController.php` — v3 user photos listing
+- `app/Http/Controllers/Auth/AuthTokenController.php` — Mobile token login (Sanctum)
+- `readme/Mobile.md` — Mobile documentation
 
-## Current State — DEPLOYED + AUDITED
+## Active Mobile Endpoints
 
-The `ConvertV4TagsAction` shim is built and wired into both mobile tagging controllers. Mobile users contribute to v5 metrics immediately without an app update. The shim reuses the same `UpdateTagsService` pipeline as the `olm:v5` migration script (battle-tested against 500k+ photos).
+| Action | Method | Endpoint |
+|--------|--------|----------|
+| Auth (token) | `POST` | `/api/auth/token` |
+| Validate token | `POST` | `/api/validate-token` |
+| Upload photo | `POST` | `/api/v3/upload` |
+| Add tags | `POST` | `/api/v3/tags` |
+| Replace tags | `PUT` | `/api/v3/tags` |
+| List photos | `GET` | `/api/v3/user/photos` |
+| Photo stats | `GET` | `/api/v3/user/photos/stats` |
+| Delete photo | `POST` | `/api/profile/photos/delete` (body: `{ "photoid": 123 }`) |
+| Tag catalog | `GET` | `/api/tags/all` |
+| Profile | `GET` | `/api/user/profile/index` |
+| Global stats | `GET` | `/api/global/stats-data` (no auth) |
+| Levels | `GET` | `/api/levels` (no auth) |
 
-**Audit (2026-02-26):** Confirmed v5-correct. Removed deprecated `verification` float writes (`$photo->verification = 0.1` / `1`) — the `verified` VerificationStatus enum column handles this. `TagsVerifiedByAdmin` fires with correct 6-arg signature. Both `AddTagsToUploadedImageController` and `ApiPhotosController` confirmed v5-correct.
+## Upload: Explicit Coordinates (Mobile Mode)
 
-### Old endpoints (routes/api.php)
+`POST /api/v3/upload` supports two modes:
+- **Web (default):** Only `photo` required. GPS + datetime from EXIF.
+- **Mobile:** Send `lat` + `lon` + `date` alongside `photo`. All three must be present. EXIF validation skipped. Platform set to `'mobile'`.
 
-```php
-// Root API (legacy)
-Route::post('add-tags', 'API\AddTagsToUploadedImageController')
-    ->middleware('auth:api');
+Optional fields: `picked_up` (boolean, overrides user default), `model` (string, device name).
 
-// V2 (still active for mobile)
-Route::group(['prefix' => 'v2', 'middleware' => 'auth:api'], function () {
-    Route::post('/add-tags-to-uploaded-image', 'API\AddTagsToUploadedImageController');
-});
+Date accepts Unix timestamp (seconds) or ISO 8601 string. `(0, 0)` coordinates rejected.
 
-// Upload endpoints that accept optional tags
-Route::post('photos/submit-with-tags', ...);
-Route::post('photos/upload-with-tags', ...);
-Route::post('photos/upload/with-or-without-tags', ...);
-```
+## User Photos: Configurable Pagination
 
-### Old request format (v4)
+`GET /api/v3/user/photos?tagged=false&per_page=100` — fetches untagged photos. `per_page` default 8, max 100.
+
+## Invariants
+
+1. **v3 only.** No legacy endpoints exist. Mobile must use v5 CLO tag format.
+2. **Sanctum token auth.** `POST /api/auth/token` returns a Bearer token. All subsequent requests include `Authorization: Bearer <token>`.
+3. **`identifier` field for login.** `AuthTokenController` accepts `identifier`, `email`, or `username` for backward compatibility.
+4. **CLO tag format.** Tags use `category_litter_object_id` + optional `litter_object_type_id`, not category/object string pairs.
+5. **`picked_up` not `remaining`.** Photo responses include `picked_up` (boolean, never null) and `remaining` (deprecated, inverse). Per-tag `picked_up` in `new_tags[]` is nullable (true/false/null). The `remaining` column will be removed after the v5 migration script runs.
+6. **Delete uses `photoid` (lowercase, no underscore).** `POST /api/profile/photos/delete` body: `{ "photoid": 123 }`. Response: `{ "message": "Photo deleted successfully!" }`.
+
+## Tag Submission Format
 
 ```json
 {
     "photo_id": 123,
-    "tags": {
-        "smoking": { "butts": 5, "cigaretteBox": 1 },
-        "softdrinks": { "tinCan": 2 },
-        "brands": { "marlboro": 3 }
-    },
-    "picked_up": true,
-    "custom_tags": ["my_custom_tag"]
+    "tags": [
+        {
+            "category_litter_object_id": 42,
+            "litter_object_type_id": 3,
+            "quantity": 2,
+            "picked_up": true,
+            "materials": [{ "id": 1, "quantity": 1 }],
+            "brands": [{ "id": 5, "quantity": 1 }]
+        }
+    ]
 }
 ```
 
-### AddTagsRequest validation
+## Building Search Index
 
-```php
-// photo_id: required, exists:photos,id
-// tags: required_without_all:litter,custom_tags, array, min:1
-// picked_up: nullable, boolean
-// custom_tags: array, max:3
-// custom_tags.*: distinct, min:3, max:100
-```
+`GET /api/tags/all` returns 7 flat collections. Mobile must join them:
+1. Object entries: `category_objects[].id` = `cloId`
+2. Type entries: `category_object_types` → `types` for display names
+3. Standalone: brands and materials can be submitted alone
 
-## Invariants
+## Removed (2026-03-01)
 
-1. **Zero mobile app changes.** The shim converts v4 payloads to v5 on the backend.
-2. **Must handle mobile retries (idempotency).** Mobile may re-send the same tags.
-3. **Must handle trust/verification gating.** Same rules as v5: trusted users get immediate `TagsVerifiedByAdmin`, school students stop at `VERIFIED(1)`.
-4. **Brand matching is deferred.** Same as migration — brands extracted but not attached to specific objects.
-5. **Summary must be generated.** After converting to PhotoTags, call `GeneratePhotoSummaryService::run()`.
-6. **Endpoints eventually deprecated** when mobile app refactored to send v5 format to `POST /api/v3/tags`.
+### Deleted endpoints
+- `POST /api/photos/submit` (and all aliases)
+- `POST /api/add-tags`
+- `POST /api/v2/add-tags-to-uploaded-image`
+- `GET /api/v2/photos/get-untagged-uploads`
+- `GET /api/v2/photos/web/*`
+- `DELETE /api/photos/delete`
+- `POST /api/upload`
+- `GET /api/user` (closure), `GET /api/current-user`
 
-## Patterns
-
-### Conversion flow (ConvertV4TagsAction — BUILT)
-
-```php
-class ConvertV4TagsAction
-{
-    public function __construct(
-        private OldAddTagsToPhotoAction $oldAddTagsAction,     // Writes v4 data to category columns
-        private AddCustomTagsToPhotoAction $oldAddCustomTagsAction,
-        private UpdateTagsService $updateTagsService,           // v4→v5 conversion (same as olm:v5)
-    ) {}
-
-    public function run(int $userId, int $photoId, array $v4Tags, bool $pickedUp, array $customTags = []): void
-    {
-        // Idempotency: skip if already converted
-        if ($photo->migrated_at !== null || $photo->photoTags()->exists()) return;
-
-        // Step 1: Set remaining (affects XP picked_up bonus)
-        // Step 2: Filter to known categories via Photo::categories()
-        // Step 3: Old action writes v4 data to category columns
-        // Step 4: UpdateTagsService reads back, creates v5 PhotoTags + summary + XP
-        // Step 5: Handle verification (trusted/school/untrusted)
-    }
-}
-```
-
-### Key deprecated mappings used by mobile
-
-```php
-ClassifyTagsService::normalizeDeprecatedTag('beerBottle')
-// → ['object' => 'beer_bottle', 'materials' => ['glass']]
-
-ClassifyTagsService::normalizeDeprecatedTag('tinCan')
-// → ['object' => 'soda_can', 'materials' => ['aluminium']]
-
-ClassifyTagsService::normalizeDeprecatedTag('coffeeCups')
-// → ['object' => 'cup', 'materials' => ['paper']]
-```
-
-### Old AddTags job flow (REPLACED by ConvertV4TagsAction)
-
-The old `AddTags` job has been replaced. Both `AddTagsToUploadedImageController` and `ApiPhotosController::uploadWithOrWithoutTags()` now call `ConvertV4TagsAction::run()` synchronously instead of dispatching the old job.
+### Deleted code
+- `app/Actions/Tags/ConvertV4TagsAction.php` — v4→v5 conversion shim (no longer needed)
+- `app/Http/Controllers/ApiPhotosController.php` — legacy mobile upload/delete
+- `app/Http/Controllers/API/AddTagsToUploadedImageController.php` — legacy mobile tagging
+- `app/Http/Controllers/API/GetUntaggedUploadController.php` — legacy untagged photos list
 
 ## Common Mistakes
 
-- **Building ConvertV4TagsAction without handling the `brands` category.** Mobile sends brands under `tags.brands.{brandKey}`. These need brand-only PhotoTags.
-- **Not using `ClassifyTagsService::normalizeDeprecatedTag()`.** Old mobile keys like `beerBottle`, `tinCan` must be normalized before lookup.
-- **Skipping summary generation.** Without summary, MetricsService processes zero metrics.
-- **Duplicating tag records on retry.** Use `PhotoTag::firstOrCreate()` or check existing tags before creating.
-- **Modifying the mobile API contract.** The shim must accept the exact same request format. No new required fields.
+- **Sending v4 tag format.** `{ smoking: { butts: 3 } }` is no longer accepted. Use CLO format.
+- **Using old upload endpoint.** `POST /api/photos/submit` no longer exists. Use `POST /api/v3/upload`.
+- **Using old delete endpoint.** `DELETE /api/photos/delete` no longer exists. Use `POST /api/profile/photos/delete`.
+- **Not building search index from `/api/tags/all`.** The 7 flat collections must be joined client-side.

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api;
 use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PhotoTagsRequest extends FormRequest
 {
@@ -22,6 +23,13 @@ class PhotoTagsRequest extends FormRequest
             return false;
         }
 
+        // Participant isolation — can only tag own photos
+        if ($participant = $this->attributes->get('participant')) {
+            if ((int) $photo->participant_id !== (int) $participant->id) {
+                return false;
+            }
+        }
+
         // Already verified check (403)
         if ($photo->verified->value >= VerificationStatus::VERIFIED->value) {
             return false;
@@ -33,7 +41,7 @@ class PhotoTagsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo_id' => 'required|integer|exists:photos,id',
+            'photo_id' => ['required', 'integer', Rule::exists('photos', 'id')->whereNull('deleted_at')],
             'tags' => 'required|array|min:1',
 
             // New CLO-based format
@@ -46,6 +54,7 @@ class PhotoTagsRequest extends FormRequest
             'tags.*.custom_tags' => 'sometimes|array',
 
             // Legacy format fields (backward compat — action handles validation)
+            'tags.*.category_id' => 'sometimes|integer|exists:categories,id',
             'tags.*.category' => 'sometimes',
             'tags.*.object' => 'sometimes',
             'tags.*.brand_only' => 'sometimes',

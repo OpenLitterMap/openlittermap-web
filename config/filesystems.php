@@ -66,6 +66,18 @@ return [
             'use_path_style_endpoint' => env('MINIO_PATH_STYLE_ENDPOINT', false), // Required for MinIO
         ],
 
+        'logos' => [
+            'driver'   => 's3',
+            'key'      => env('AWS_KEY'),
+            'secret'   => env('AWS_SECRET'),
+            'region'   => env('AWS_REGION'),
+            'bucket'   => env('AWS_LOGOS_BUCKET', 'openlittermap-logos'),
+            'url'      => env('AWS_LOGOS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('MINIO_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
+        ],
+
         'bbox' => [
             'driver'   => 's3',
             'key'      => env('x500_AWS_KEY'),

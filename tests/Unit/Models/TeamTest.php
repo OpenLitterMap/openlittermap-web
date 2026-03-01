@@ -30,11 +30,13 @@ class TeamTest extends TestCase
                 'leaderboards',
                 'is_trusted',
                 'safeguarding',
-                'school_roll_number',
                 'contact_email',
                 'academic_year',
                 'class_group',
                 'county',
+                'logo',
+                'max_participants',
+                'participant_sessions_enabled',
             ],
             Schema::getColumnListing('teams')
         );

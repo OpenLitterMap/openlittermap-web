@@ -81,18 +81,22 @@ class CalculatePhotoXpTest extends TestCase
     }
 
     /** @test */
-    public function small_medium_large_and_bagsLitter_override_object_xp()
+    public function dumping_and_bags_litter_override_object_xp()
     {
-        $category = Category::firstOrCreate(['key' => CategoryKey::Industrial->value]);
+        $industrialCat = Category::firstOrCreate(['key' => CategoryKey::Industrial->value]);
+        $unclassifiedCat = Category::firstOrCreate(['key' => CategoryKey::Unclassified->value]);
 
         $specialObjects = [
-            'small' => 10,
-            'medium' => 25,
-            'large' => 50,
-            'bagsLitter' => 10
+            ['key' => 'dumping_small', 'xp' => 10, 'category' => $industrialCat],
+            ['key' => 'dumping_medium', 'xp' => 25, 'category' => $industrialCat],
+            ['key' => 'dumping_large', 'xp' => 50, 'category' => $industrialCat],
+            ['key' => 'bags_litter', 'xp' => 10, 'category' => $unclassifiedCat],
         ];
 
-        foreach ($specialObjects as $key => $xpPerUnit) {
+        foreach ($specialObjects as $spec) {
+            $key = $spec['key'];
+            $xpPerUnit = $spec['xp'];
+            $category = $spec['category'];
             $object = LitterObject::firstOrCreate(['key' => $key]);
 
             $photo = Photo::factory()->create([
@@ -470,7 +474,7 @@ class CalculatePhotoXpTest extends TestCase
         $bottleObj = LitterObject::where('key', 'bottle')->first();
         $softdrinksCat = Category::where('key', CategoryKey::Softdrinks->value)->first();
         $industrialCat = Category::where('key', CategoryKey::Industrial->value)->first();
-        $largeObj = LitterObject::firstOrCreate(['key' => 'large']);
+        $largeObj = LitterObject::firstOrCreate(['key' => 'dumping_large']);
 
         // Add regular object with material and brand
         $pt1 = $photo->photoTags()->create([

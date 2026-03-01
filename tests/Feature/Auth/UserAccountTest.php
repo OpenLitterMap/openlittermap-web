@@ -3,8 +3,9 @@
 namespace Tests\Feature\Auth;
 
 use App\Events\UserSignedUp;
-use App\Mail\NewUserRegMail;
+use App\Mail\WelcomeToOpenLitterMap;
 use App\Models\Users\User;
+use App\Services\UsernameGeneratorService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -19,18 +20,11 @@ class UserAccountTest extends TestCase
     private function validPayload(array $overrides = []): array
     {
         return array_merge([
-            'name' => 'Test User',
-            'username' => 'testuser',
             'email' => 'test@example.com',
-            'password' => 'secret123',
+            'password' => 'secret1234',
         ], $overrides);
     }
 
-    /**
-     * Both web and API registration hit the same controller.
-     * Web:  POST /register
-     * API:  POST /api/auth/register
-     */
     private function registerRoute(): string
     {
         return '/api/auth/register';
@@ -40,7 +34,7 @@ class UserAccountTest extends TestCase
      *  Successful Registration
      * ------------------------------------------------------------------ */
 
-    public function test_user_can_register_with_valid_data(): void
+    public function test_user_can_register_with_email_and_password(): void
     {
         Mail::fake();
         Event::fake();
@@ -48,29 +42,94 @@ class UserAccountTest extends TestCase
         $response = $this->postJson($this->registerRoute(), $this->validPayload());
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['user_id', 'email']);
+            ->assertJsonStructure(['token', 'user']);
 
-        $this->assertDatabaseHas('users', [
-            'name' => 'Test User',
-            'username' => 'testuser',
-            'email' => 'test@example.com',
-        ]);
+        $user = User::where('email', 'test@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertNull($user->name);
+        $this->assertNotEmpty($user->username);
     }
 
-    public function test_user_can_register_without_name(): void
+    public function test_registration_creates_user_with_null_name_and_generated_username(): void
     {
         Mail::fake();
         Event::fake();
 
-        $response = $this->postJson($this->registerRoute(), $this->validPayload(['name' => null]));
+        $this->postJson($this->registerRoute(), $this->validPayload());
+
+        $user = User::where('email', 'test@example.com')->first();
+
+        $this->assertNull($user->name);
+        $this->assertMatchesRegularExpression('/^[a-z-]+-[a-z-]+-\d{2,4}$/', $user->username);
+    }
+
+    public function test_registration_with_optional_username_uses_it(): void
+    {
+        Mail::fake();
+        Event::fake();
+
+        $response = $this->postJson($this->registerRoute(), $this->validPayload([
+            'username' => 'my_chosen_name',
+        ]));
 
         $response->assertStatus(200);
 
-        $this->assertDatabaseHas('users', [
-            'username' => 'testuser',
-            'email' => 'test@example.com',
-            'name' => '',
-        ]);
+        $user = User::where('email', 'test@example.com')->first();
+
+        $this->assertNull($user->name);
+        $this->assertEquals('my_chosen_name', $user->username);
+    }
+
+    public function test_registration_without_username_generates_one(): void
+    {
+        Mail::fake();
+        Event::fake();
+
+        $response = $this->postJson($this->registerRoute(), $this->validPayload());
+
+        $response->assertStatus(200);
+
+        $user = User::where('email', 'test@example.com')->first();
+
+        $this->assertMatchesRegularExpression('/^[a-z-]+-[a-z-]+-\d{2,4}$/', $user->username);
+    }
+
+    public function test_optional_username_must_be_unique(): void
+    {
+        User::factory()->create(['username' => 'taken_name']);
+
+        $response = $this->postJson($this->registerRoute(), $this->validPayload([
+            'username' => 'taken_name',
+        ]));
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('username');
+    }
+
+    public function test_optional_username_must_be_at_least_3_chars(): void
+    {
+        $response = $this->postJson($this->registerRoute(), $this->validPayload([
+            'username' => 'ab',
+        ]));
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('username');
+    }
+
+    public function test_old_mobile_payload_with_name_is_ignored(): void
+    {
+        Mail::fake();
+        Event::fake();
+
+        $response = $this->postJson($this->registerRoute(), $this->validPayload([
+            'name' => 'Old Mobile User',
+        ]));
+
+        $response->assertStatus(200);
+
+        $user = User::where('email', 'test@example.com')->first();
+
+        $this->assertNull($user->name);
     }
 
     public function test_registered_user_has_correct_initial_limits(): void
@@ -97,8 +156,8 @@ class UserAccountTest extends TestCase
         $user = User::where('email', 'test@example.com')->first();
 
         $this->assertNotNull($user);
-        $this->assertNotEquals('secret123', $user->password);
-        $this->assertTrue(\Hash::check('secret123', $user->password));
+        $this->assertNotEquals('secret1234', $user->password);
+        $this->assertTrue(\Hash::check('secret1234', $user->password));
     }
 
     /* ------------------------------------------------------------------
@@ -134,63 +193,9 @@ class UserAccountTest extends TestCase
 
         $this->postJson($this->registerRoute(), $this->validPayload());
 
-        Mail::assertSent(NewUserRegMail::class, function ($mail) {
+        Mail::assertQueued(WelcomeToOpenLitterMap::class, function ($mail) {
             return $mail->hasTo('test@example.com');
         });
-    }
-
-    /* ------------------------------------------------------------------
-     *  Username Validation
-     * ------------------------------------------------------------------ */
-
-    public function test_username_is_required(): void
-    {
-        $response = $this->postJson($this->registerRoute(), $this->validPayload(['username' => '']));
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('username');
-    }
-
-    public function test_username_minimum_length(): void
-    {
-        $response = $this->postJson($this->registerRoute(), $this->validPayload(['username' => 'ab']));
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('username');
-    }
-
-    public function test_username_maximum_length(): void
-    {
-        $response = $this->postJson($this->registerRoute(), $this->validPayload([
-            'username' => str_repeat('a', 21),
-        ]));
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('username');
-    }
-
-    public function test_username_must_be_unique(): void
-    {
-        Mail::fake();
-        Event::fake();
-
-        User::factory()->create(['username' => 'testuser']);
-
-        $response = $this->postJson($this->registerRoute(), $this->validPayload());
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('username');
-    }
-
-    public function test_username_cannot_match_password(): void
-    {
-        $response = $this->postJson($this->registerRoute(), $this->validPayload([
-            'username' => 'secret123',
-            'password' => 'secret123',
-        ]));
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('username');
     }
 
     /* ------------------------------------------------------------------
@@ -248,9 +253,9 @@ class UserAccountTest extends TestCase
             ->assertJsonValidationErrors('password');
     }
 
-    public function test_password_minimum_length(): void
+    public function test_password_minimum_length_is_8(): void
     {
-        $response = $this->postJson($this->registerRoute(), $this->validPayload(['password' => 'abcd']));
+        $response = $this->postJson($this->registerRoute(), $this->validPayload(['password' => 'abcdefg']));
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors('password');
@@ -289,7 +294,7 @@ class UserAccountTest extends TestCase
         Auth::logout();
 
         $response = $this->postJson($this->registerRoute(), $this->validPayload([
-            'username' => 'different',
+            'email' => 'test@example.com',
         ]));
 
         $response->assertStatus(422)
@@ -298,23 +303,7 @@ class UserAccountTest extends TestCase
         $this->assertEquals(1, User::where('email', 'test@example.com')->count());
     }
 
-    public function test_duplicate_username_is_rejected(): void
-    {
-        Mail::fake();
-        Event::fake();
-
-        $this->postJson($this->registerRoute(), $this->validPayload());
-        Auth::logout();
-
-        $response = $this->postJson($this->registerRoute(), $this->validPayload([
-            'email' => 'different@example.com',
-        ]));
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors('username');
-    }
-
-    public function test_response_contains_user_id_and_email(): void
+    public function test_response_contains_token_and_user(): void
     {
         Mail::fake();
         Event::fake();
@@ -322,9 +311,31 @@ class UserAccountTest extends TestCase
         $response = $this->postJson($this->registerRoute(), $this->validPayload());
 
         $response->assertStatus(200)
-            ->assertJson([
-                'email' => 'test@example.com',
-            ])
-            ->assertJsonStructure(['user_id', 'email']);
+            ->assertJsonStructure(['token', 'user'])
+            ->assertJsonPath('user.email', 'test@example.com');
+    }
+
+    /* ------------------------------------------------------------------
+     *  Display Name Accessor
+     * ------------------------------------------------------------------ */
+
+    public function test_display_name_returns_name_when_set(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Sean Lynch',
+            'username' => 'mildly-feral-lid-archaeologist-333',
+        ]);
+
+        $this->assertEquals('Sean Lynch', $user->display_name);
+    }
+
+    public function test_display_name_returns_username_when_name_is_null(): void
+    {
+        $user = User::factory()->create([
+            'name' => null,
+            'username' => 'mildly-feral-lid-archaeologist-333',
+        ]);
+
+        $this->assertEquals('mildly-feral-lid-archaeologist-333', $user->display_name);
     }
 }

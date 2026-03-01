@@ -17,15 +17,16 @@
             <!-- Links -->
             <div :class="['md:space-x-6', mobileNavOpen ? 'md:block' : 'hidden md:flex items-center']">
                 <router-link to="/about" class="nav-item">{{ t('About') }}</router-link>
+                <router-link to="/global" class="nav-item">{{ t('Global Map') }}</router-link>
                 <!--                <router-link to="/cleanups" class="nav-item">Cleanups</router-link>-->
                 <!--                <router-link to="/history" class="nav-item">History</router-link>-->
                 <router-link to="/leaderboard" class="nav-item">{{ t('Leaderboard') }}</router-link>
-                <router-link to="/global" class="nav-item">{{ t('Global Map') }}</router-link>
                 <!--                <router-link to="/community" class="nav-item">Community</router-link>-->
                 <router-link to="/locations" class="nav-item">{{ t('Locations') }}</router-link>
 
                 <div v-if="auth" class="flex items-center space-x-4">
                     <router-link to="/upload" class="nav-item">{{ t('Upload') }}</router-link>
+                    <router-link to="/tag" class="nav-item">{{ t('Add Tags') }}</router-link>
                 </div>
             </div>
 
@@ -60,25 +61,16 @@
                                 >{{ t('Admin - Queue') }}</router-link
                             >
                             <router-link
+                                to="/admin/users"
+                                class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                                >{{ t('Admin - Users') }}</router-link
+                            >
+                            <router-link
                                 to="/admin/redis"
                                 class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                                 >{{ t('Admin - Redis') }}</router-link
                             >
                         </template>
-
-                        <router-link to="/tag" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >{{ t('Add Tags') }}</router-link
-                        >
-
-                        <router-link
-                            to="/achievements"
-                            class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >{{ t('Achievements') }}</router-link
-                        >
-
-                        <router-link to="/uploads" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            >{{ t('My Uploads') }}</router-link
-                        >
 
                         <router-link to="/profile" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >{{ t('Profile') }}</router-link
@@ -86,6 +78,10 @@
 
                         <router-link to="/teams" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
                             >{{ t('Teams') }}</router-link
+                        >
+
+                        <router-link to="/settings" class="block rounded-md px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            >{{ t('Settings') }}</router-link
                         >
                     </div>
                 </div>

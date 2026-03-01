@@ -5,6 +5,7 @@ namespace App\Models\Teams;
 use App\Models\Teams\TeamType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
 {
@@ -30,17 +31,20 @@ class Team extends Model
         'leaderboards',
         'is_trusted',
         'safeguarding',
-        'school_roll_number',
         'contact_email',
         'academic_year',
         'class_group',
         'county',
+        'logo',
+        'max_participants',
+        'participant_sessions_enabled',
     ];
 
     protected $casts = [
         'safeguarding' => 'boolean',
         'is_trusted' => 'boolean',
         'leaderboards' => 'boolean',
+        'participant_sessions_enabled' => 'boolean',
     ];
 
     /**
@@ -83,6 +87,21 @@ class Team extends Model
     public function hasSafeguarding(): bool
     {
         return (bool) $this->safeguarding;
+    }
+
+    public function participants(): HasMany
+    {
+        return $this->hasMany(Participant::class);
+    }
+
+    public function activeParticipants(): HasMany
+    {
+        return $this->hasMany(Participant::class)->where('is_active', true);
+    }
+
+    public function hasParticipantSessions(): bool
+    {
+        return $this->participant_sessions_enabled && $this->isSchool();
     }
 
     // ─── Accessors ───

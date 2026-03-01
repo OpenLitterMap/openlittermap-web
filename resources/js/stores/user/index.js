@@ -6,6 +6,7 @@ export const useUserStore = defineStore('user', {
         admin: false,
         auth: false,
         countries: {},
+        emailConfirmed: false,
         errorLogin: '',
         errors: {},
         geojson: {
@@ -19,6 +20,7 @@ export const useUserStore = defineStore('user', {
         totalPhotos: 0,
         totalTags: 0,
         totalUsers: 0,
+        unsubscribed: false,
         user: {},
     }),
 

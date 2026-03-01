@@ -2,8 +2,16 @@
     <div :class="['rounded-lg p-3', tag.object && !tag.cloId ? 'bg-red-900/30 border border-red-500/50' : 'bg-gray-700']">
         <!-- Line 1: Tag name, quantity, actions -->
         <div class="flex items-center gap-3">
-            <!-- Tag name (truncated) -->
-            <span class="text-white font-medium truncate max-w-[200px]" :title="tagDisplay">
+            <!-- Custom tag badge -->
+            <span
+                v-if="tag.custom"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-600/30 text-amber-200 flex-shrink-0"
+            >
+                Custom
+            </span>
+
+            <!-- Tag name -->
+            <span class="text-white font-medium" :title="tagDisplay">
                 {{ tagDisplay }}
             </span>
 

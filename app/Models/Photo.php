@@ -9,6 +9,7 @@ use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
+use App\Models\Teams\Participant;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
 use App\Services\Tags\GeneratePhotoSummaryService;
@@ -62,6 +63,11 @@ class Photo extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'team_id');
+    }
+
+    public function participant(): BelongsTo
+    {
+        return $this->belongsTo(Participant::class);
     }
 
     public function countryRelation(): BelongsTo

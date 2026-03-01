@@ -306,9 +306,11 @@ class LocationController extends Controller
         $columns = [
             "{$alias}.id",
             "{$alias}.{$nameCol} as name",
-            DB::raw('COALESCE(m.uploads, 0) as photos'),
-            DB::raw('COALESCE(m.tags, 0) as tags'),
+            DB::raw('COALESCE(m.uploads, 0) as total_images'),
+            DB::raw('COALESCE(m.tags, 0) as total_tags'),
             DB::raw('COALESCE(m.xp, 0) as xp'),
+            "{$alias}.created_at",
+            "{$alias}.updated_at",
         ];
 
         // Include shortcode for countries
@@ -500,11 +502,11 @@ class LocationController extends Controller
             $first = $firstUploaders[$id] ?? null;
             $last = $lastUploaders[$id] ?? null;
 
-            $child->contributors = $contribs;
-            $child->pct_tags = round(($child->tags / $parentTags) * 100, 1);
-            $child->pct_photos = round(($child->photos / $parentPhotos) * 100, 1);
-            $child->avg_tags_per_person = $contribs > 0 ? round($child->tags / $contribs, 1) : 0;
-            $child->avg_photos_per_person = $contribs > 0 ? round($child->photos / $contribs, 1) : 0;
+            $child->total_members = $contribs;
+            $child->pct_tags = round(($child->total_tags / $parentTags) * 100, 1);
+            $child->pct_photos = round(($child->total_images / $parentPhotos) * 100, 1);
+            $child->avg_tags_per_person = $contribs > 0 ? round($child->total_tags / $contribs, 1) : 0;
+            $child->avg_photos_per_person = $contribs > 0 ? round($child->total_images / $contribs, 1) : 0;
             $child->created_at = $first?->created_at;
             $child->created_by = $first?->username;
             $child->last_updated_at = $last?->created_at;

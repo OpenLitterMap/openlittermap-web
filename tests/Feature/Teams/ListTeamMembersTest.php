@@ -19,7 +19,7 @@ class ListTeamMembersTest extends TestCase
         $otherMember = User::factory()->create();
         $otherMember->teams()->attach($otherTeam);
 
-        $response = $this->actingAs($users->first(), 'api')->getJson('api/teams/members?team_id=' . $team->id);
+        $response = $this->actingAs($users->first())->getJson('api/teams/members?team_id=' . $team->id);
 
         $response->assertOk();
         $response->assertJsonFragment(['success' => true]);
@@ -40,7 +40,7 @@ class ListTeamMembersTest extends TestCase
             'show_username_leaderboards' => true
         ]);
 
-        $response = $this->actingAs($user, 'api')->getJson('api/teams/members?team_id=' . $team->id);
+        $response = $this->actingAs($user)->getJson('api/teams/members?team_id=' . $team->id);
 
         $member = $response->json('result.data.0');
         $this->assertEquals($user->id, $member['id']);
@@ -58,7 +58,7 @@ class ListTeamMembersTest extends TestCase
             'show_username_leaderboards' => true
         ]);
 
-        $response = $this->actingAs($user, 'api')->getJson('api/teams/members?team_id=' . $team->id);
+        $response = $this->actingAs($user)->getJson('api/teams/members?team_id=' . $team->id);
         $member = $response->json('result.data.0');
         $this->assertArrayHasKey('id', $member);
         $this->assertArrayHasKey('name', $member);
@@ -80,7 +80,7 @@ class ListTeamMembersTest extends TestCase
             'show_username_leaderboards' => false,
         ]);
 
-        $response = $this->actingAs($leader, 'api')->getJson('api/teams/members?team_id=' . $team->id);
+        $response = $this->actingAs($leader)->getJson('api/teams/members?team_id=' . $team->id);
 
         $response->assertOk();
         $members = collect($response->json('result.data'));
@@ -98,7 +98,7 @@ class ListTeamMembersTest extends TestCase
         $user->teams()->attach($team);
         $nonMember = User::factory()->create();
 
-        $response = $this->actingAs($nonMember, 'api')->getJson('api/teams/members?team_id=' . $team->id);
+        $response = $this->actingAs($nonMember)->getJson('api/teams/members?team_id=' . $team->id);
 
         $response->assertOk();
         $response->assertJson(['success' => false, 'message' => 'not-a-member']);

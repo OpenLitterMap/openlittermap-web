@@ -6,19 +6,26 @@ use App\Events\TeamCreated;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class CreateTeamAction
 {
     /**
      * @return Team|array Team on success, error array on failure.
      */
-    public function run(User $user, array $data): Team|array
+    public function run(User $user, array $data, ?UploadedFile $logo = null): Team|array
     {
         if ($user->remaining_teams <= 0) {
             return ['success' => false, 'msg' => 'max-created'];
         }
 
         $isSchool = $this->isSchoolType($data['teamType'] ?? null);
+
+        $logoPath = null;
+        if ($isSchool && $logo) {
+            $logoPath = $logo->store('school-logos', 'logos');
+        }
 
         $team = Team::create([
             'name' => $data['name'],
@@ -30,11 +37,13 @@ class CreateTeamAction
 
             // School-specific fields
             'safeguarding' => $isSchool,
-            'school_roll_number' => $isSchool ? ($data['school_roll_number'] ?? null) : null,
             'contact_email' => $isSchool ? ($data['contact_email'] ?? null) : null,
             'county' => $isSchool ? ($data['county'] ?? null) : null,
             'academic_year' => $isSchool ? ($data['academic_year'] ?? null) : null,
             'class_group' => $isSchool ? ($data['class_group'] ?? null) : null,
+            'logo' => $logoPath,
+            'max_participants' => $isSchool ? ($data['max_participants'] ?? null) : null,
+            'participant_sessions_enabled' => $isSchool ? (bool) ($data['participant_sessions_enabled'] ?? false) : false,
         ]);
 
         // Leader auto-joins the team

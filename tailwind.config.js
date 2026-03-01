@@ -1,3 +1,5 @@
+import headlessui from '@headlessui/tailwindcss';
+
 export default {
     content: [
         './resources/views/**/*.blade.php',
@@ -18,7 +20,7 @@ export default {
         },
     },
     plugins: [
-        require('@headlessui/tailwindcss'),
+        headlessui,
 
         function ({ addBase }) {
             addBase({

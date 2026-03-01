@@ -7,21 +7,6 @@
         </div>
 
         <div class="relative container mx-auto px-4 py-8 max-w-4xl">
-            <!-- Header -->
-            <div class="flex items-center gap-4 mb-8">
-                <div
-                    class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl font-bold"
-                >
-                    {{ userInitial }}
-                </div>
-                <div>
-                    <h1 class="text-white text-2xl font-bold">{{ profileStore.user.name || 'Your Profile' }}</h1>
-                    <p v-if="profileStore.user.username" class="text-white/50 text-sm">
-                        @{{ profileStore.user.username }}
-                    </p>
-                </div>
-            </div>
-
             <!-- Tabs -->
             <div class="flex gap-1 mb-6 bg-white/5 rounded-lg p-1">
                 <button
@@ -64,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProfileStore } from '@stores/profile.js';
 import ProfileDashboard from './components/ProfileDashboard.vue';
@@ -82,11 +67,6 @@ const tabs = [
 ];
 
 const activeTab = ref(route.query.tab || 'dashboard');
-
-const userInitial = computed(() => {
-    const name = profileStore.user.name || '';
-    return name.charAt(0).toUpperCase() || '?';
-});
 
 const switchTab = (key) => {
     activeTab.value = key;

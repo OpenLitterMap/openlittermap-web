@@ -77,7 +77,7 @@
                         />
 
                         <!-- Quick suggestions -->
-                        <div v-if="recentTags.length > 0">
+                        <div v-if="recentTags.length > 0 && hasPhotos">
                             <span class="text-xs text-gray-400 mr-2">{{ $t('Recent:') }}</span>
                             <div class="flex flex-wrap gap-2 mt-1">
                                 <button
@@ -95,6 +95,7 @@
 
                     <div class="flex-1 min-h-0">
                         <ActiveTagsList
+                            :has-photos="hasPhotos"
                             :tags="activeTags"
                             :searchable-tags="searchableTags"
                             :brands="brandsList"
@@ -119,6 +120,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { usePhotosStore } from '@stores/photos/index.js';
 import { useTagsStore } from '@stores/tags/index.js';
+import { useUserStore } from '@stores/user/index.js';
 
 import TaggingHeader from './components/TaggingHeader.vue';
 import UnifiedTagSearch from './components/UnifiedTagSearch.vue';
@@ -132,6 +134,14 @@ const router = useRouter();
 // Stores
 const photosStore = usePhotosStore();
 const tagsStore = useTagsStore();
+const userStore = useUserStore();
+
+// User's default picked_up preference (items_remaining=false means picked_up=true)
+const defaultPickedUp = computed(() => {
+    const val = userStore.user?.picked_up;
+    if (val === true || val === false) return val;
+    return null;
+});
 
 // Helpers
 const formatKey = (key) => {
@@ -154,6 +164,7 @@ const editPhotoId = ref(null);
 const paginatedPhotos = computed(() => photosStore.paginated);
 const currentPhoto = computed(() => paginatedPhotos.value?.data?.[currentPhotoIndex.value]);
 const currentPhotoSrc = computed(() => currentPhoto.value?.filename);
+const hasPhotos = computed(() => !!currentPhoto.value);
 
 // Get current photo's tags
 const activeTags = computed(() => {
@@ -253,15 +264,19 @@ const searchableTags = computed(() => {
 const brandsList = computed(() => tagsStore.brands || []);
 const materialsList = computed(() => tagsStore.materials || []);
 
-// XP Calculation — matches backend XpCalculator enum values:
+// XP Calculation — matches backend XpScore enum values:
 // Upload=5, Object=1, Brand=3, Material=2, CustomTag=1
-const calculateXP = computed(() => {
-    if (activeTags.value.length === 0) return 0;
+// Special objects: dumping_small=10, dumping_medium=25, dumping_large=50, bags_litter=10
+const SPECIAL_OBJECT_XP = { dumping_small: 10, dumping_medium: 25, dumping_large: 50, bags_litter: 10 };
 
-    let xp = 5; // Base upload XP (XpScore::Upload)
+const calculateXP = computed(() => {
+    if (!hasPhotos.value) return 0;
+
+    let xp = 5; // Base upload XP (XpScore::Upload) — always earned per photo
 
     activeTags.value.forEach((tag) => {
         const qty = tag.quantity || 1;
+        const objectXp = SPECIAL_OBJECT_XP[tag.object?.key] || 1;
 
         if (tag.type === 'brand-only') {
             xp += qty; // Object (unclassified.other): qty × 1
@@ -273,7 +288,7 @@ const calculateXP = computed(() => {
             xp += qty; // Object: qty × 1
             xp += qty; // Custom tag: qty × 1
         } else {
-            xp += qty; // Object: qty × 1
+            xp += qty * objectXp; // Object XP (with special overrides)
 
             if (tag.brands?.length) {
                 tag.brands.forEach((b) => (xp += (b.quantity || 1) * 3));
@@ -367,7 +382,7 @@ const convertExistingTags = (photo) => {
             cloId: cloId,
             categoryId: apiTag.category?.id || null,
             categoryKey: apiTag.category?.key || null,
-            typeId: null,
+            typeId: apiTag.litter_object_type_id || null,
             quantity: apiTag.quantity || 1,
             pickedUp: apiTag.picked_up ?? true,
             brands,
@@ -409,6 +424,11 @@ onMounted(async () => {
         }
     } else {
         await photosStore.fetchUntaggedData(1, { tagged: false });
+    }
+
+    // If no photos available after fetch, stop showing loading state
+    if (!currentPhoto.value) {
+        imageLoading.value = false;
     }
 
     const stored = localStorage.getItem('recentTags');
@@ -475,7 +495,8 @@ const handleNavigation = async (direction) => {
             currentPhotoIndex.value = paginatedPhotos.value.data.length - 1;
         }
     }
-    imageLoading.value = true;
+    // Only show loading skeleton if there's actually a photo to load
+    imageLoading.value = !!currentPhoto.value;
 };
 
 const skipPhoto = () => {
@@ -487,17 +508,37 @@ const hideTaggingHelp = () => {
     localStorage.setItem('hideTaggingHelp', 'true');
 };
 
-// Tag handling
+// Tag handling — increments quantity if an identical tag already exists
 const handleTagSelection = (selected) => {
     if (!selected || !selected.raw) return;
     const photoId = ensurePhotoTags();
     if (!photoId) return;
 
+    const tags = tagsByPhoto.value[photoId];
+
+    // Check for existing duplicate and increment quantity instead of adding a new entry
+    let existing = null;
+    if (selected.type === 'object') {
+        existing = tags.find((t) => t.cloId && t.cloId === selected.cloId && !t.typeId);
+    } else if (selected.type === 'type') {
+        existing = tags.find((t) => t.cloId === selected.cloId && t.typeId === selected.typeId);
+    } else if (selected.type === 'brand') {
+        existing = tags.find((t) => t.type === 'brand-only' && t.brand?.id === selected.raw.id);
+    } else if (selected.type === 'material') {
+        existing = tags.find((t) => t.type === 'material-only' && t.material?.id === selected.raw.id);
+    }
+
+    if (existing) {
+        existing.quantity = Math.min(100, existing.quantity + 1);
+        updateRecentTags(selected);
+        return;
+    }
+
     const tagId = Math.random().toString(16).slice(2);
 
     if (selected.type === 'object') {
         // Use pre-resolved cloId and categoryKey from the search index entry
-        tagsByPhoto.value[photoId].push({
+        tags.push({
             id: tagId,
             object: selected.raw,
             cloId: selected.cloId || null,
@@ -505,7 +546,7 @@ const handleTagSelection = (selected) => {
             categoryKey: selected.categoryKey || null,
             typeId: null,
             quantity: 1,
-            pickedUp: true,
+            pickedUp: defaultPickedUp.value,
             brands: [],
             materials: [],
             customTags: [],
@@ -513,7 +554,7 @@ const handleTagSelection = (selected) => {
     } else if (selected.type === 'type') {
         // Type selection: pre-fill both CLO and type, use parent object from raw
         const parentObject = selected.raw?.object;
-        tagsByPhoto.value[photoId].push({
+        tags.push({
             id: tagId,
             object: parentObject,
             cloId: selected.cloId,
@@ -521,25 +562,25 @@ const handleTagSelection = (selected) => {
             categoryKey: selected.raw?.category?.key || null,
             typeId: selected.typeId,
             quantity: 1,
-            pickedUp: true,
+            pickedUp: defaultPickedUp.value,
             brands: [],
             materials: [],
             customTags: [],
         });
     } else if (selected.type === 'brand') {
-        tagsByPhoto.value[photoId].push({
+        tags.push({
             id: tagId,
             brand: selected.raw,
             quantity: 1,
-            pickedUp: null,
+            pickedUp: defaultPickedUp.value,
             type: 'brand-only',
         });
     } else if (selected.type === 'material') {
-        tagsByPhoto.value[photoId].push({
+        tags.push({
             id: tagId,
             material: selected.raw,
             quantity: 1,
-            pickedUp: null,
+            pickedUp: defaultPickedUp.value,
             type: 'material-only',
         });
     }
@@ -551,13 +592,20 @@ const handleCustomTag = (customTag) => {
     const photoId = ensurePhotoTags();
     if (!photoId) return;
 
+    const tags = tagsByPhoto.value[photoId];
+    const existing = tags.find((t) => t.custom && t.key === customTag.key);
+    if (existing) {
+        existing.quantity = Math.min(100, existing.quantity + 1);
+        return;
+    }
+
     const tagId = Math.random().toString(16).slice(2);
-    tagsByPhoto.value[photoId].push({
+    tags.push({
         id: tagId,
         custom: true,
         key: customTag.key,
         quantity: 1,
-        pickedUp: null,
+        pickedUp: defaultPickedUp.value,
     });
 };
 
@@ -644,7 +692,7 @@ const clearAllTags = () => {
 
 // Submit tags
 const submitTags = async () => {
-    if (activeTags.value.length === 0 || hasUnresolvedTags.value) return;
+    if (isSubmitting.value || activeTags.value.length === 0 || hasUnresolvedTags.value) return;
 
     isSubmitting.value = true;
     const photoId = currentPhoto.value.id;
@@ -704,13 +752,16 @@ const submitTags = async () => {
                 tags: tagsForUpload,
             });
 
-            // Navigate back to uploads page after successful edit
+            userStore.REFRESH_USER();
             router.push('/uploads');
         } else {
             await photosStore.UPLOAD_TAGS({
                 photoId: photoId,
                 tags: tagsForUpload,
             });
+
+            // Refresh user XP/level (non-blocking)
+            userStore.REFRESH_USER();
 
             // Clear only this photo's tags after successful submit
             delete tagsByPhoto.value[photoId];

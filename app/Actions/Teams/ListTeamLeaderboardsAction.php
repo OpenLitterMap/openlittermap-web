@@ -17,9 +17,18 @@ class ListTeamLeaderboardsAction
     public function run()
     {
         return Team::query()
-            ->select('id', 'name', 'total_litter', 'total_images', 'created_at')
             ->where('leaderboards', true)
-            ->orderBy('total_litter', 'desc')
-            ->get();
+            ->orderByDesc('total_litter')
+            ->get()
+            ->map(fn ($team) => [
+                'id' => $team->id,
+                'name' => $team->name,
+                'type_name' => $team->type_name,
+                'total_members' => $team->members,
+                'total_tags' => $team->total_litter,
+                'total_images' => $team->total_images,
+                'created_at' => $team->created_at,
+                'updated_at' => $team->updated_at,
+            ]);
     }
 }

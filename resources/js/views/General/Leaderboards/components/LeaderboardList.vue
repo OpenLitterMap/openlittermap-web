@@ -6,10 +6,13 @@
         </p>
 
         <!-- Leaderboard Cards -->
-        <div
+        <component
+            :is="leader.public_profile ? 'router-link' : 'div'"
             v-for="(leader, index) in leaders"
             :key="index"
+            :to="leader.public_profile ? `/profile/${leader.user_id}` : undefined"
             class="relative bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-3 flex items-center gap-3 transition-all duration-150 hover:bg-white/[0.08] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
+            :class="{ 'cursor-pointer': leader.public_profile }"
         >
             <!-- Medal -->
             <div class="absolute -top-2.5 -left-2.5 w-7">
@@ -58,10 +61,10 @@
 
             <!-- XP -->
             <div class="shrink-0 text-right">
-                <span class="text-white font-bold tabular-nums">{{ leader.xp }}</span>
+                <span class="text-white font-bold tabular-nums">{{ Number(leader.xp).toLocaleString() }}</span>
                 <span class="text-white/40 text-xs ml-1">XP</span>
             </div>
-        </div>
+        </component>
     </div>
 </template>
 

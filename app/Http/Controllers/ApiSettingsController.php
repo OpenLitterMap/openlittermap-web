@@ -14,13 +14,14 @@ class ApiSettingsController extends Controller
      */
     private const ALLOWED_SETTINGS = [
         'name' => 'string|min:3|max:25',
-        'username' => 'string|min:3|max:75',
+        'username' => 'string|min:3|max:30|regex:/^[a-zA-Z0-9-]+$/',
         'email' => 'email|max:75',
         'global_flag' => 'nullable|string|max:10',
-        'items_remaining' => 'boolean',
+        'picked_up' => 'boolean',
         'previous_tags' => 'boolean',
         'emailsub' => 'boolean',
         'public_profile' => 'boolean',
+        'prevent_others_tagging_my_photos' => 'boolean',
     ];
 
     /**
@@ -105,9 +106,9 @@ class ApiSettingsController extends Controller
         $key = $request->input('key');
         $value = $request->input('value');
 
-        // Remap legacy mobile key
-        if ($key === 'picked_up') {
-            $key = 'items_remaining';
+        // Remap legacy key (items_remaining was the inverted column name)
+        if ($key === 'items_remaining') {
+            $key = 'picked_up';
             $value = ! $value;
         }
 
@@ -146,6 +147,12 @@ class ApiSettingsController extends Controller
         }
 
         $user->$key = $value;
+
+        // Flag username for admin review when user changes it
+        if ($key === 'username') {
+            $user->username_flagged = true;
+        }
+
         $user->save();
 
         return response()->json(['success' => true]);

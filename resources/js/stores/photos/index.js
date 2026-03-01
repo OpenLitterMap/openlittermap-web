@@ -6,6 +6,9 @@ export const usePhotosStore = defineStore('photos', {
         // Photos array
         photos: [],
 
+        // Paginated response (used by tagging page)
+        paginated: null,
+
         // Pagination data
         pagination: {
             current_page: 1,

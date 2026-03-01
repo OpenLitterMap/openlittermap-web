@@ -79,6 +79,23 @@ export const requests = {
     },
 
     /**
+     * Refresh user data (XP, level, position)
+     */
+    async REFRESH_USER() {
+        try {
+            const { data } = await axios.get('/api/user/profile/index');
+            this.user = {
+                ...this.user,
+                ...data.user,
+                xp: data.stats.xp,
+                next_level: data.level,
+            };
+        } catch (error) {
+            // Silent — non-critical refresh
+        }
+    },
+
+    /**
      * Register a new account via the API
      */
     async REGISTER(payload) {
@@ -88,7 +105,7 @@ export const requests = {
             const { data } = await axios.post('/api/auth/register', payload);
 
             this.auth = true;
-            this.user = { id: data.user_id, email: data.email };
+            this.user = data.user ?? { id: data.user_id, email: data.email };
 
             return data;
         } catch (error) {
