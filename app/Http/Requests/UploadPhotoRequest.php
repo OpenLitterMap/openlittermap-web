@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Photo;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -44,7 +45,29 @@ class UploadPhotoRequest extends FormRequest
 
     public function failedValidation(Validator|\Illuminate\Contracts\Validation\Validator $validator)
     {
-        throw new \Illuminate\Validation\ValidationException($validator);
+        $firstMessage = $validator->errors()->first();
+        $errorCode = $this->resolveErrorCode($firstMessage);
+
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'error' => $errorCode,
+            'message' => $firstMessage,
+            'errors' => $validator->errors()->toArray(),
+        ], 422));
+    }
+
+    /**
+     * Map validation messages to typed error codes for the frontend.
+     */
+    private function resolveErrorCode(string $message): string
+    {
+        if (str_contains($message, 'EXIF')) return 'no_exif';
+        if (str_contains($message, 'GPS') || str_contains($message, 'no GPS')) return 'no_gps';
+        if (str_contains($message, 'date')) return 'no_datetime';
+        if (str_contains($message, 'already uploaded')) return 'duplicate';
+        if (str_contains($message, 'coordinates')) return 'invalid_coordinates';
+
+        return 'validation_error';
     }
 
     public function after(): array

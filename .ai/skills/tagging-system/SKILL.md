@@ -222,11 +222,11 @@ Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
 ### Frontend files
 | File | Purpose |
 |---|---|
-| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page — search index with per-(object,category) entries, type entries, formatKey, keyboard guards, hasUnresolvedTags validation |
-| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced (100ms) search combobox, grouped results (object/type/material/brand/customTag), formatKey display, category breadcrumbs |
-| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with "Object · Category" display, type pills (replaces select dropdown), red border on unresolved CLO |
-| `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | XP bar, level titles (50 from config/levels.php), unresolved tags warning, submit disabled when unresolved |
-| `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags |
+| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page — dark glass UI, 55/45 split layout, search index with per-(object,category) entries, progress bar, auto-advance, success flash, keyboard shortcuts (/, Escape, J/K/←/→, Enter, Ctrl+Enter, ?), empty state |
+| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced (100ms) search combobox, grouped results (object/type/material/brand/customTag), formatKey display, category breadcrumbs, emerald accent |
+| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with "Object · Category" display, type pills, picked-up pills, dark glass styling, red border on unresolved CLO |
+| `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | XP bar (emerald), level titles, unresolved tags warning, submit disabled when unresolved, edit mode badge |
+| `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags, keyboard hint in empty state |
 | `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST, `REPLACE_TAGS()` → PUT, `GET_SINGLE_PHOTO()` |
 | `resources/js/stores/user/requests.js` | `REFRESH_USER()` — refreshes user XP/level after tag submission |
 | `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → GET /api/tags/all |
@@ -238,6 +238,18 @@ The search index generates **one entry per (object, category) pair** with pre-re
 `formatKey(key)` converts `snake_case` → `Title Case` (e.g., `six_pack_rings` → "Six Pack Rings"). Used everywhere in the tagging UI.
 
 `hasUnresolvedTags` computed blocks submit when any object tag lacks a `cloId`. Keyboard shortcuts guard against firing inside form inputs (INPUT/SELECT/TEXTAREA).
+
+### Dark glass design system
+
+All tagging components use a dark glass UI with emerald accent:
+- **Background:** `bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900`
+- **Glass panels:** `bg-white/5 border border-white/10 rounded-xl`
+- **Accent:** Emerald (`text-emerald-400`, `bg-emerald-500`, `focus:border-emerald-500/50`)
+- **Text:** `text-white` / `text-white/60` / `text-white/40` / `text-white/30`
+
+**Auto-advance flow:** Submit → success flash (green border pulse, 400ms) → clear tags → advance to next photo.
+
+**Keyboard shortcuts:** `/` focus search, `Escape` blur/close, `J/←` prev, `K/→` next, `Enter` confirm (bare), `Ctrl+Enter` confirm (in input), `?` toggle hints.
 
 ## Common Mistakes
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teams;
 
 use App\Http\Controllers\Controller;
+use App\Models\Teams\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +40,8 @@ class TeamsSettingsController extends Controller
         if ($request->boolean('all')) {
             // Apply to all teams the user belongs to
             foreach ($user->teams as $team) {
-                $user->teams()->updateExistingPivot($team->id, $pivotData);
+                $data = $this->enforceSafeguarding($team, $pivotData);
+                $user->teams()->updateExistingPivot($team->id, $data);
             }
         } else {
             // Verify membership, then update single team
@@ -47,9 +49,26 @@ class TeamsSettingsController extends Controller
                 return response()->json(['message' => 'Not a member of this team.'], 403);
             }
 
+            $team = Team::find($request->team_id);
+            $pivotData = $this->enforceSafeguarding($team, $pivotData);
             $user->teams()->updateExistingPivot($request->team_id, $pivotData);
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * School teams with safeguarding: user names and usernames are never visible.
+     */
+    private function enforceSafeguarding(?Team $team, array $pivotData): array
+    {
+        if ($team && $team->hasSafeguarding()) {
+            $pivotData['show_name_maps'] = false;
+            $pivotData['show_username_maps'] = false;
+            $pivotData['show_name_leaderboards'] = false;
+            $pivotData['show_username_leaderboards'] = false;
+        }
+
+        return $pivotData;
     }
 }

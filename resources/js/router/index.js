@@ -10,7 +10,7 @@ import CreateAccount from '../views/Account/CreateAccount.vue';
 import ForgotPassword from '../views/Auth/ForgotPassword.vue';
 import ResetPassword from '../views/Auth/ResetPassword.vue';
 import GlobalMap from '../views/Maps/GlobalMap.vue';
-import History from '../views/General/History.vue';
+
 import Leaderboard from '../views/General/Leaderboards/Leaderboard.vue';
 import References from '../views/Academic/References.vue';
 import Upload from '../views/Upload/Upload.vue';
@@ -24,8 +24,8 @@ import Uploads from '../views/User/Uploads/Uploads.vue';
 import Changelog from '../views/General/Changelog.vue';
 import AddTags from '../views/General/Tagging/v2/AddTags.vue';
 import Locations from '../views/Locations/Locations.vue';
-import TeamsLayout from '../views/Teams/TeamsLayout.vue';
-import TeamDashboard from '../views/Teams/TeamDashboard.vue';
+import TeamsHub from '../views/Teams/TeamsHub.vue';
+import CreateTeam from '../views/Teams/CreateTeam.vue';
 import Profile from '../views/Profile/Profile.vue';
 import PublicProfile from '../views/Profile/PublicProfile.vue';
 import ParticipantEntry from '../views/Teams/ParticipantEntry.vue';
@@ -76,12 +76,7 @@ const routes = [
         component: Locations,
         props: (route) => ({ type: 'city', id: route.params.id }),
     },
-    {
-        path: '/history',
-        name: 'History',
-        component: History,
-    },
-    {
+{
         path: '/global',
         name: 'GlobalMap',
         component: GlobalMap,
@@ -144,15 +139,15 @@ const routes = [
     {
         path: '/teams',
         name: 'Teams',
-        component: TeamsLayout,
+        component: TeamsHub,
         meta: {
             middleware: [auth],
         },
     },
     {
-        path: '/teams/:id',
-        name: 'TeamDashboard',
-        component: TeamDashboard,
+        path: '/teams/create',
+        name: 'CreateTeam',
+        component: CreateTeam,
         meta: {
             middleware: [auth],
         },

@@ -1,115 +1,151 @@
 <template>
     <div>
-        <!-- Create Slots -->
-        <div class="flex items-center gap-4 mb-6">
-            <input
-                v-model.number="slotCount"
-                type="number"
-                min="1"
-                max="100"
-                placeholder="5"
-                class="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            />
-            <button
-                :disabled="creating"
-                class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
-                :class="creating ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
-                @click="createSlots"
-            >
-                {{ creating ? 'Creating...' : 'Create Slots' }}
-            </button>
-            <button
-                v-if="participants.length > 0"
-                class="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                @click="showPrintView"
-            >
-                Print Session Cards
-            </button>
-        </div>
-
         <p v-if="error" class="text-red-500 text-sm mb-4">{{ error }}</p>
 
-        <!-- Empty state -->
-        <div v-if="!loading && participants.length === 0" class="text-center py-12 text-slate-400">
-            No participant slots created yet. Create slots above to get started.
-        </div>
-
         <!-- Loading -->
-        <div v-else-if="loading" class="text-center py-12 text-slate-400">Loading...</div>
+        <div v-if="loading" class="text-center py-12 text-white/40">{{ $t('Loading...') }}</div>
 
-        <!-- Grid -->
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-                v-for="p in participants"
-                :key="p.id"
-                class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
-                :class="!p.is_active ? 'opacity-50' : ''"
-            >
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <span class="text-xs font-mono text-slate-400">Slot {{ p.slot_number }}</span>
-                        <h3 class="font-medium text-slate-800">{{ p.display_name }}</h3>
-                    </div>
-                    <span
-                        class="text-xs px-2 py-0.5 rounded-full"
-                        :class="p.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-                    >
-                        {{ p.is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </div>
+        <!-- Empty state with guided setup -->
+        <div v-else-if="participants.length === 0" class="max-w-lg mx-auto py-8">
+            <div class="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
+                <svg class="w-12 h-12 text-white/20 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <h3 class="text-lg font-semibold text-white mb-2">{{ $t('Create participant slots') }}</h3>
+                <p class="text-sm text-white/40 mb-6">
+                    {{ $t('Each slot gets a unique session code that a student enters to start uploading photos. No accounts needed.') }}
+                </p>
 
-                <div class="text-sm text-slate-500 space-y-1 mb-3">
-                    <p>Photos: {{ p.photo_count ?? 0 }}</p>
-                    <p v-if="p.last_active_at">Last active: {{ formatDate(p.last_active_at) }}</p>
-                </div>
-
-                <!-- Token display (only after create/reset) -->
-                <div v-if="revealedTokens[p.id]" class="mb-3">
-                    <p class="text-xs text-slate-500 mb-1">Session Code:</p>
-                    <div class="flex items-center gap-2">
-                        <code class="text-xs bg-slate-100 px-2 py-1 rounded font-mono break-all flex-1">
-                            {{ revealedTokens[p.id] }}
-                        </code>
-                        <button
-                            class="text-xs text-blue-600 hover:text-blue-700 whitespace-nowrap"
-                            @click="copyToken(p.id)"
-                        >
-                            Copy
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex gap-2 flex-wrap">
+                <div class="flex items-center justify-center gap-3">
+                    <label class="text-sm text-white/50">{{ $t('How many students?') }}</label>
+                    <input
+                        v-model.number="slotCount"
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="30"
+                        class="w-20 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white text-center focus:border-emerald-500/50 focus:outline-none"
+                    />
                     <button
-                        v-if="p.is_active"
-                        class="text-xs px-2 py-1 text-amber-600 border border-amber-200 rounded hover:bg-amber-50"
-                        @click="deactivate(p.id)"
+                        :disabled="creating"
+                        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                        :class="creating
+                            ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'"
+                        @click="createSlots"
                     >
-                        Deactivate
-                    </button>
-                    <button
-                        v-else
-                        class="text-xs px-2 py-1 text-green-600 border border-green-200 rounded hover:bg-green-50"
-                        @click="activate(p.id)"
-                    >
-                        Activate
-                    </button>
-                    <button
-                        class="text-xs px-2 py-1 text-blue-600 border border-blue-200 rounded hover:bg-blue-50"
-                        @click="resetToken(p.id)"
-                    >
-                        Reset Token
-                    </button>
-                    <button
-                        class="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50"
-                        @click="deleteParticipant(p.id)"
-                    >
-                        Delete
+                        {{ creating ? $t('Creating...') : $t('Create Slots') }}
                     </button>
                 </div>
             </div>
         </div>
+
+        <!-- Has participants: toolbar + grid -->
+        <template v-else>
+            <!-- Toolbar -->
+            <div class="flex items-center gap-4 mb-6">
+                <input
+                    v-model.number="slotCount"
+                    type="number"
+                    min="1"
+                    max="100"
+                    placeholder="5"
+                    class="w-24 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
+                />
+                <button
+                    :disabled="creating"
+                    class="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                    :class="creating
+                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30'"
+                    @click="createSlots"
+                >
+                    {{ creating ? $t('Creating...') : $t('Add More Slots') }}
+                </button>
+                <button
+                    class="px-4 py-2 text-sm font-medium text-white/60 border border-white/20 rounded-lg hover:bg-white/5 transition-colors"
+                    @click="showPrintView"
+                >
+                    {{ $t('Print Session Cards') }}
+                </button>
+            </div>
+
+            <!-- Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div
+                    v-for="p in participants"
+                    :key="p.id"
+                    class="bg-white/5 border border-white/10 rounded-xl p-4"
+                    :class="!p.is_active ? 'opacity-50' : ''"
+                >
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <span class="text-xs font-mono text-white/30">Slot {{ p.slot_number }}</span>
+                            <h3 class="font-medium text-white">{{ p.display_name }}</h3>
+                        </div>
+                        <span
+                            class="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider"
+                            :class="p.is_active
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-red-500/20 text-red-400 border border-red-500/30'"
+                        >
+                            {{ p.is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
+
+                    <div class="text-sm text-white/40 space-y-1 mb-3">
+                        <p>{{ $t('Photos') }}: {{ p.photo_count ?? 0 }}</p>
+                        <p v-if="p.last_active_at">{{ $t('Last active') }}: {{ formatDate(p.last_active_at) }}</p>
+                    </div>
+
+                    <!-- Token display (only after create/reset) -->
+                    <div v-if="revealedTokens[p.id]" class="mb-3">
+                        <p class="text-xs text-white/30 mb-1">{{ $t('Session Code') }}:</p>
+                        <div class="flex items-center gap-2">
+                            <code class="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded font-mono break-all flex-1 text-white/70">
+                                {{ revealedTokens[p.id] }}
+                            </code>
+                            <button
+                                class="text-xs text-emerald-400 hover:text-emerald-300 whitespace-nowrap"
+                                @click="copyToken(p.id)"
+                            >
+                                {{ $t('Copy') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-2 flex-wrap">
+                        <button
+                            v-if="p.is_active"
+                            class="text-xs px-2 py-1 text-amber-400 border border-amber-500/30 rounded hover:bg-amber-500/10"
+                            @click="deactivate(p.id)"
+                        >
+                            {{ $t('Deactivate') }}
+                        </button>
+                        <button
+                            v-else
+                            class="text-xs px-2 py-1 text-emerald-400 border border-emerald-500/30 rounded hover:bg-emerald-500/10"
+                            @click="activate(p.id)"
+                        >
+                            {{ $t('Activate') }}
+                        </button>
+                        <button
+                            class="text-xs px-2 py-1 text-blue-400 border border-blue-500/30 rounded hover:bg-blue-500/10"
+                            @click="resetToken(p.id)"
+                        >
+                            {{ $t('Reset Token') }}
+                        </button>
+                        <button
+                            class="text-xs px-2 py-1 text-red-400 border border-red-500/30 rounded hover:bg-red-500/10"
+                            @click="deleteParticipant(p.id)"
+                        >
+                            {{ $t('Delete') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
 
         <!-- Print modal -->
         <div
@@ -119,19 +155,19 @@
         >
             <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-slate-800">Session Cards</h2>
+                    <h2 class="text-lg font-semibold text-slate-800">{{ $t('Session Cards') }}</h2>
                     <div class="flex gap-2">
                         <button
                             class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                             @click="printCards"
                         >
-                            Print
+                            {{ $t('Print') }}
                         </button>
                         <button
                             class="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
                             @click="showPrint = false"
                         >
-                            Close
+                            {{ $t('Close') }}
                         </button>
                     </div>
                 </div>
@@ -147,7 +183,7 @@
                         <p v-if="revealedTokens[p.id]" class="text-xs font-mono mt-2 break-all text-slate-600">
                             {{ revealedTokens[p.id] }}
                         </p>
-                        <p v-else class="text-xs mt-2 text-slate-400 italic">Token not available — reset to reveal</p>
+                        <p v-else class="text-xs mt-2 text-slate-400 italic">{{ $t('Token not available — reset to reveal') }}</p>
                     </div>
                 </div>
             </div>
@@ -165,6 +201,7 @@ const props = defineProps({
         type: Number,
         required: true,
     },
+    team: Object,
     isLeader: Boolean,
     isSchoolTeam: Boolean,
 });
@@ -176,13 +213,8 @@ const revealedTokens = ref({});
 const loading = ref(false);
 const creating = ref(false);
 const error = ref('');
-const slotCount = ref(5);
+const slotCount = ref(30);
 const showPrint = ref(false);
-
-const team = computed(() => {
-    // Minimal team info for print view
-    return { name: 'Team' };
-});
 
 const activeParticipants = computed(() => participants.value.filter((p) => p.is_active));
 

@@ -3,8 +3,12 @@
 namespace Tests\Feature\Teams;
 
 use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Illuminate\Testing\Fluent\AssertableJson;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class ListLeaderboardsTest extends TestCase
@@ -24,20 +28,22 @@ class ListLeaderboardsTest extends TestCase
             ->actingAs($user)
             ->getJson('/api/teams/leaderboard')
             ->assertOk()
-            ->assertJsonCount(3)
+            ->assertJsonPath('current_page', 1)
+            ->assertJsonCount(3, 'data')
             ->assertJson(function (AssertableJson $json) {
-                $json->has('0.name');
-                $json->has('0.type_name');
-                $json->has('0.total_members');
-                $json->has('0.total_tags');
-                $json->has('0.total_images');
-                $json->has('0.created_at');
-                $json->missing('0.total_litter');
+                $json->has('data.0.name');
+                $json->has('data.0.type_name');
+                $json->has('data.0.total_members');
+                $json->has('data.0.total_tags');
+                $json->has('data.0.total_images');
+                $json->has('data.0.created_at');
+                $json->missing('data.0.total_litter');
+                $json->etc();
             })
             ->json();
 
-        $this->assertEquals([3, 2, 1], array_column($result, 'total_tags'));
-        $this->assertEquals([8, 3, 5], array_column($result, 'total_members'));
+        $this->assertEquals([3, 2, 1], array_column($result['data'], 'total_tags'));
+        $this->assertEquals([8, 3, 5], array_column($result['data'], 'total_members'));
     }
 
     public function test_it_does_not_include_teams_that_dont_want_to_be_in_leaderboards()
@@ -55,9 +61,93 @@ class ListLeaderboardsTest extends TestCase
             ->actingAs($user)
             ->getJson('/api/teams/leaderboard')
             ->assertOk()
-            ->assertJsonCount(2)
+            ->assertJsonCount(2, 'data')
             ->json();
 
-        $this->assertEquals([3, 1], array_column($result, 'total_tags'));
+        $this->assertEquals([3, 1], array_column($result['data'], 'total_tags'));
+    }
+
+    public function test_leaderboard_is_paginated()
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+
+        Team::factory(30)->create(['total_litter' => 1]);
+
+        $this->actingAs($user)
+            ->getJson('/api/teams/leaderboard')
+            ->assertOk()
+            ->assertJsonPath('current_page', 1)
+            ->assertJsonPath('last_page', 2)
+            ->assertJsonPath('total', 30)
+            ->assertJsonCount(25, 'data');
+
+        $this->actingAs($user)
+            ->getJson('/api/teams/leaderboard?page=2')
+            ->assertOk()
+            ->assertJsonPath('current_page', 2)
+            ->assertJsonCount(5, 'data');
+    }
+
+    public function test_school_teams_are_hidden_from_leaderboard_by_default()
+    {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $schoolType = TeamType::create([
+            'team' => 'school', 'price' => 0, 'description' => 'School',
+        ]);
+
+        $permissions = collect([
+            'create school team', 'manage school team',
+            'toggle safeguarding', 'view student identities',
+        ])->map(fn ($name) => Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']));
+
+        $role = Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
+        $role->syncPermissions($permissions);
+
+        $teacher = User::factory()->create(['remaining_teams' => 1]);
+        $teacher->assignRole('school_manager');
+
+        $this->actingAs($teacher)->postJson('/api/teams/create', [
+            'name' => 'Hidden School',
+            'identifier' => 'HiddenSchool1',
+            'teamType' => $schoolType->id,
+            'contact_email' => 'teacher@school.ie',
+            'county' => 'Cork',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('teams', [
+            'name' => 'Hidden School',
+            'leaderboards' => false,
+        ]);
+
+        // Verify it does not appear on the leaderboard
+        $result = $this->actingAs($teacher)
+            ->getJson('/api/teams/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $names = array_column($result['data'], 'name');
+        $this->assertNotContains('Hidden School', $names);
+    }
+
+    public function test_community_teams_are_hidden_from_leaderboard_by_default()
+    {
+        $communityType = TeamType::create([
+            'team' => 'community', 'price' => 0, 'description' => 'Community',
+        ]);
+
+        $user = User::factory()->create(['remaining_teams' => 1]);
+
+        $this->actingAs($user)->postJson('/api/teams/create', [
+            'name' => 'Private Community',
+            'identifier' => 'PrivCom1',
+            'teamType' => $communityType->id,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('teams', [
+            'name' => 'Private Community',
+            'leaderboards' => false,
+        ]);
     }
 }

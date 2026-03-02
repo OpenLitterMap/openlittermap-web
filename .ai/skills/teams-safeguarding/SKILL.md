@@ -22,6 +22,7 @@ School teams enforce a private-by-default pipeline. Photos are invisible to the 
 - `app/Http/Controllers/Teams/ParticipantPhotoController.php` — Participant's own photos
 - `app/Actions/Teams/CreateTeamAction.php` — Team creation with school-specific fields
 - `app/Http/Requests/Teams/CreateTeamRequest.php` — Validation + `school_manager` role check
+- `app/Mail/SchoolManagerInvite.php` — Queued email sent when `school_manager` role is granted (two CTAs: Upload + Create Team)
 - `app/Events/SchoolDataApproved.php` — Private broadcast on `team.{id}` channel
 - `app/Listeners/NotifyTeamOfApproval.php` — Notifies team members after approval
 
@@ -31,7 +32,9 @@ School teams enforce a private-by-default pipeline. Photos are invisible to the 
 - `resources/js/views/Teams/components/FacilitatorQueueFilters.vue` — Status toggle (pending/approved/all), date range
 - `resources/js/views/Teams/components/TeamMembersList.vue` — Per-student stats table
 - `resources/js/stores/teamPhotos.js` — Team photos Pinia store (CRUD, approve, revoke, delete, updateTags, memberStats)
-- `resources/js/views/Teams/TeamDashboard.vue` — Tab container with Approval Queue + Members + Participants tabs
+- `resources/js/views/Teams/TeamsHub.vue` — Main teams page (replaces TeamsLayout sidebar + TeamDashboard)
+- `resources/js/views/Teams/TeamOverview.vue` — Overview tab (stats, team info, all teams list)
+- `resources/js/views/Teams/TeamSettingsTab.vue` — Consolidated settings tab (privacy, edit, download, leave)
 - `resources/js/views/Teams/components/ParticipantGrid.vue` — Participant slot management grid
 - `resources/js/views/Teams/ParticipantEntry.vue` — Token entry page (`/session`)
 - `resources/js/views/Teams/ParticipantWorkspace.vue` — Participant upload/photos/tag workspace
@@ -55,7 +58,7 @@ if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
 | Role | How assigned | Facilitator access |
 |------|-------------|-------------------|
 | Team leader | `team.leader = user_id` | Yes — `$team->isLeader($userId)` |
-| `school_manager` | `php artisan school:assign-manager {email}` | Yes — has `manage school team` permission |
+| `school_manager` | `php artisan school:assign-manager {email}` or admin toggle | Yes — has `manage school team` permission |
 
 **Critical:** School managers are NOT admins. They cannot access `/api/admin/*` endpoints. The admin queue and facilitator queue are completely separate systems with no overlap.
 
@@ -71,6 +74,8 @@ if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
 8. **Participant photos: `user_id = facilitator`.** MetricsService, XP, leaderboards are untouched. `participant_id` is for attribution only.
 9. **Participant isolation.** `PhotoTagsRequest::authorize()` checks `$photo->participant_id === $participant->id` to prevent cross-participant tagging (all photos share `user_id = facilitator`).
 10. **`hasParticipantSessions()`** returns `participant_sessions_enabled && isSchool()` — community teams can never have participant sessions.
+11. **Privacy defaults.** All new teams: `leaderboards = false`. School teams: `safeguarding = true` enforced, `is_trusted = false` enforced.
+12. **SchoolManagerInvite email.** Queued on role grant (both artisan command and admin toggle). Not sent on revoke.
 
 ## Patterns
 

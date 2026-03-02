@@ -285,6 +285,28 @@ class CreateTeamTest extends TestCase
         Storage::disk('logos')->assertExists($team->logo);
     }
 
+    public function test_school_team_accepts_participant_sessions_as_string(): void
+    {
+        $teacher = $this->createSchoolManager();
+
+        $response = $this->actingAs($teacher)->post('/api/teams/create', [
+            'name' => 'String Bool School',
+            'identifier' => 'StringBool1',
+            'teamType' => $this->schoolTypeId,
+            'contact_email' => 'teacher@school.ie',
+            'county' => 'Cork',
+            'participant_sessions_enabled' => 'true', // String from multipart form data
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('teams', [
+            'name' => 'String Bool School',
+            'participant_sessions_enabled' => true,
+        ]);
+    }
+
     public function test_school_team_logo_must_be_an_image(): void
     {
         $teacher = $this->createSchoolManager();

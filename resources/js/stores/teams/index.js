@@ -1,4 +1,7 @@
 import { defineStore } from 'pinia';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 export const useTeamsStore = defineStore('teams', {
     state: () => ({
@@ -16,7 +19,12 @@ export const useTeamsStore = defineStore('teams', {
             litter_count: 0,
             members_count: 0,
         },
-        leaderboard: [],
+        leaderboard: {
+            data: [],
+            current_page: 1,
+            last_page: 1,
+            total: 0,
+        },
         errors: {},
         loading: false,
     }),
@@ -90,10 +98,17 @@ export const useTeamsStore = defineStore('teams', {
             }
         },
 
-        async fetchLeaderboard() {
+        async fetchLeaderboard(page = 1) {
             try {
-                const { data } = await axios.get('/api/teams/leaderboard');
-                this.leaderboard = data;
+                const { data } = await axios.get('/api/teams/leaderboard', {
+                    params: { page },
+                });
+                this.leaderboard = {
+                    data: data.data,
+                    current_page: data.current_page,
+                    last_page: data.last_page,
+                    total: data.total,
+                };
             } catch (e) {
                 console.error('fetchLeaderboard', e);
             }
@@ -185,6 +200,7 @@ export const useTeamsStore = defineStore('teams', {
                 }
             } catch (e) {
                 console.error('leaveTeam', e);
+                toast.error('Failed to leave team.');
             }
         },
 
@@ -199,9 +215,14 @@ export const useTeamsStore = defineStore('teams', {
                     const userStore = useUserStore();
                     userStore.user.active_team = teamId;
                     userStore.user.team = data.team;
+
+                    // Refresh dependent data for the new active team
+                    this.fetchDashboard({ teamId });
+                    this.fetchMembers(teamId);
                 }
             } catch (e) {
                 console.error('setActiveTeam', e);
+                toast.error('Failed to switch team.');
             }
         },
 
@@ -218,16 +239,18 @@ export const useTeamsStore = defineStore('teams', {
                 }
             } catch (e) {
                 console.error('clearActiveTeam', e);
+                toast.error('Failed to clear active team.');
             }
         },
 
-        async updateTeam({ teamId, name, identifier }) {
+        async updateTeam({ teamId, name, identifier, ...extra }) {
             this.errors = {};
 
             try {
                 const { data } = await axios.patch(`/api/teams/update/${teamId}`, {
                     name,
                     identifier,
+                    ...extra,
                 });
 
                 if (data.success) {
@@ -263,6 +286,7 @@ export const useTeamsStore = defineStore('teams', {
                 }
             } catch (e) {
                 console.error('savePrivacySettings', e);
+                toast.error('Failed to save privacy settings.');
             }
         },
 
@@ -286,6 +310,7 @@ export const useTeamsStore = defineStore('teams', {
                 }
             } catch (e) {
                 console.error('toggleLeaderboardVisibility', e);
+                toast.error('Failed to update leaderboard visibility.');
             }
         },
     },

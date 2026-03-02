@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\SchoolManagerInvite;
 use App\Models\Users\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Mail;
 
 class AssignSchoolManager extends Command
 {
@@ -37,8 +39,11 @@ class AssignSchoolManager extends Command
             $user->save();
         }
 
+        Mail::to($user)->queue(new SchoolManagerInvite($user));
+
         $this->info("{$user->name} ({$user->email}) is now a school manager.");
         $this->line("  They can now create 1 team and manage safeguarding settings.");
+        $this->line("  Invitation email queued.");
 
         return self::SUCCESS;
     }

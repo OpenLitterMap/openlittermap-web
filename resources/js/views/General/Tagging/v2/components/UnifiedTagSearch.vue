@@ -7,11 +7,12 @@
                     @change="query = $event.target.value"
                     :displayValue="(item) => item?.key || ''"
                     :placeholder="placeholder"
-                    class="w-full rounded-lg bg-gray-700 border border-gray-600 text-white px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-gray-400"
+                    inputmode="search"
+                    class="w-full rounded-lg bg-white/5 border border-white/10 text-white px-4 py-3 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 placeholder-white/30"
                 />
 
                 <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="h-5 w-5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </ComboboxButton>
@@ -20,12 +21,12 @@
             <transition leave="transition ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0">
                 <ComboboxOptions
                     v-if="debouncedQuery.length > 0 && (groupedTags.length > 0 || debouncedQuery.length > 2)"
-                    class="absolute z-10 mt-1 w-full max-h-[30rem] overflow-auto rounded-lg bg-gray-700 py-1 shadow-lg ring-1 ring-black ring-opacity-25 focus:outline-none"
+                    class="absolute z-10 mt-1 w-full max-h-[30rem] overflow-auto rounded-lg bg-slate-800/95 backdrop-blur border border-white/10 py-1 shadow-xl focus:outline-none"
                 >
                     <!-- Grouped tag sections -->
                     <template v-for="group in groupedTags" :key="group.type">
                         <li
-                            class="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 sticky top-0 bg-gray-700/95 backdrop-blur-sm border-b border-gray-600/30"
+                            class="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/40 sticky top-0 bg-slate-800/95 backdrop-blur-sm border-b border-white/10"
                         >
                             {{ groupLabel(group.type) }}
                         </li>
@@ -40,7 +41,7 @@
                             <li
                                 :class="[
                                     'relative select-none py-2 pl-4 pr-9',
-                                    active ? 'bg-blue-600 text-white' : 'text-gray-200',
+                                    active ? 'bg-emerald-500/20 text-white' : 'text-white/80',
                                 ]"
                             >
                                 <span class="flex items-center gap-2">
@@ -52,14 +53,14 @@
                                     <!-- Parent object context for type results -->
                                     <span
                                         v-if="tag.type === 'type' && tag.objectKey"
-                                        :class="['text-xs shrink-0', active ? 'text-blue-200' : 'text-gray-400']"
+                                        :class="['text-xs shrink-0', active ? 'text-emerald-200' : 'text-white/40']"
                                         v-html="'(' + highlightMatch(formatKey(tag.objectKey)) + ')'"
                                     />
 
                                     <!-- Category breadcrumb -->
                                     <span
                                         v-if="tag.categoryKey"
-                                        :class="['text-xs shrink-0', active ? 'text-blue-200' : 'text-gray-500']"
+                                        :class="['text-xs shrink-0', active ? 'text-emerald-200' : 'text-white/30']"
                                         v-html="'&middot; ' + highlightMatch(formatKey(tag.categoryKey))"
                                     />
 
@@ -67,7 +68,7 @@
                                     <span
                                         :class="[
                                             'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0 ml-auto',
-                                            active ? 'bg-blue-500/40 text-blue-100' : typeBadgeClass(tag.type),
+                                            active ? 'bg-emerald-500/30 text-emerald-100' : typeBadgeClass(tag.type),
                                         ]"
                                     >
                                         {{ tag.type }}
@@ -78,7 +79,7 @@
                                     v-if="selected"
                                     :class="[
                                         'absolute inset-y-0 right-0 flex items-center pr-3',
-                                        active ? 'text-white' : 'text-blue-600',
+                                        active ? 'text-white' : 'text-emerald-400',
                                     ]"
                                 >
                                     <CheckIcon class="h-5 w-5" />
@@ -96,7 +97,7 @@
                         <li
                             :class="[
                                 'relative select-none py-2 pl-4 pr-9 italic',
-                                active ? 'bg-blue-600 text-white' : 'text-gray-300',
+                                active ? 'bg-emerald-500/20 text-white' : 'text-white/60',
                             ]"
                         >
                             <span class="flex items-center gap-2">
@@ -104,7 +105,7 @@
                                 <span
                                     :class="[
                                         'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium not-italic ml-auto',
-                                        active ? 'bg-blue-500/40 text-blue-100' : 'bg-purple-500/20 text-purple-300',
+                                        active ? 'bg-emerald-500/30 text-emerald-100' : 'bg-purple-500/20 text-purple-300',
                                     ]"
                                 >
                                     customTag
@@ -242,7 +243,7 @@ const highlightMatch = (text) => {
     const before = text.slice(0, idx);
     const match = text.slice(idx, idx + q.length);
     const after = text.slice(idx + q.length);
-    return `${before}<span class="font-bold text-white underline decoration-blue-400/50">${match}</span>${after}`;
+    return `${before}<span class="font-bold text-white underline decoration-emerald-400/50">${match}</span>${after}`;
 };
 
 const handleSelection = (value) => {

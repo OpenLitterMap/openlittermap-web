@@ -166,6 +166,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 const { data } = await axios.post('/api/teams/photos/approve', payload);
 
                 if (data.success) {
+                    this.memberStats = [];
                     await this.fetchPhotos(teamId, this.photos.current_page);
                     return data.approved_count;
                 }
@@ -211,6 +212,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
 
                 if (data.success) {
                     this.stats = data.stats;
+                    this.memberStats = [];
                     await this.fetchPhotos(teamId, this.photos.current_page);
                     return true;
                 }
@@ -243,6 +245,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 const { data } = await axios.post('/api/teams/photos/revoke', payload);
 
                 if (data.success) {
+                    this.memberStats = [];
                     await this.fetchPhotos(teamId, this.photos.current_page);
                     return data.revoked_count;
                 }

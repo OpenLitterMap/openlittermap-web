@@ -18,6 +18,10 @@ class UpdateTeamAction
             $updateData['safeguarding'] = $data['safeguarding'];
         }
 
+        if (array_key_exists('participant_sessions_enabled', $data)) {
+            $updateData['participant_sessions_enabled'] = $data['participant_sessions_enabled'];
+        }
+
         $team->update($updateData);
 
         return $team;

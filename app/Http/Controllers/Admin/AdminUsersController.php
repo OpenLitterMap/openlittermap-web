@@ -6,10 +6,12 @@ use App\Enums\VerificationStatus;
 use App\Events\TagsVerifiedByAdmin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateUsernameRequest;
+use App\Mail\SchoolManagerInvite;
 use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class AdminUsersController extends Controller
 {
@@ -201,6 +203,8 @@ class AdminUsersController extends Controller
             if ($user->remaining_teams < 1) {
                 $user->update(['remaining_teams' => 1]);
             }
+
+            Mail::to($user)->queue(new SchoolManagerInvite($user));
         } else {
             $user->removeRole('school_manager');
         }

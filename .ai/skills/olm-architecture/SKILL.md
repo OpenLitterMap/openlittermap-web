@@ -222,7 +222,7 @@ Laravel Permission 6, `web` guard.
 | `superadmin` | Everything + trust management + Horizon |
 | `admin` | Photo review, approve, edit tags, delete |
 | `helper` | Tag editing only |
-| `school_manager` | Manage school team, approve student photos |
+| `school_manager` | Manage school team, approve student photos (invite email sent on grant) |
 
 Check with: `$user->hasRole('admin')` or `$user->hasRole('superadmin')`
 
@@ -278,6 +278,14 @@ School team leaders have a 3-panel verification queue (same layout as admin queu
 
 Backend: `TeamPhotosController` returns `new_tags` (CLO format), accepts CLO-based tag edits, provides member stats with safeguarding.
 
+### Teams Frontend — TeamsHub
+
+`/teams` route uses `TeamsHub.vue` (replaces old sidebar layout). Three states: no teams (create/join landing), active team (header + stats + tabs), no active team (team picker). Tabs: Overview, Photos, Map, Members, Settings, Leaderboard, Approval Queue (school), Participants (school+sessions). Privacy defaults: `leaderboards = false` for all new teams, `safeguarding = true` enforced for school.
+
+### SchoolManagerInvite Email
+
+`SchoolManagerInvite` mailable queued when `school_manager` role is granted (artisan command or admin toggle). Two CTAs: Upload → `/upload`, Create Team → `/teams/create`. Not sent on revoke.
+
 ## Level System
 
 Config-driven thresholds in `config/levels.php`. 12 levels from "Complete Noob" (0 XP) to "SuperIntelligent LitterMaster" (1M+ XP).
@@ -324,7 +332,7 @@ Photos need `verified >= ADMIN_APPROVED` and `is_public = true` to appear in clu
 - Reset Spatie permissions cache: `app()[PermissionRegistrar::class]->forgetCachedPermissions()`
 - `TeamType::create(['team' => 'community', 'price' => 0])` — `price` has no default
 
-943 tests passing (1 skipped). See `testing-patterns` skill for full details.
+973+ tests passing (1 skipped). See `testing-patterns` skill for full details.
 
 ## Common Mistakes
 

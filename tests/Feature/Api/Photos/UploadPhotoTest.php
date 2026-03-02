@@ -7,7 +7,9 @@ use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
+use App\Services\Redis\RedisKeys;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
 use Tests\TestCase;
@@ -53,7 +55,11 @@ class UploadPhotoTest extends TestCase
         ]);
 
         $response->assertOk();
-        $response->assertJsonStructure(['success', 'photo_id']);
+        $response->assertJsonStructure([
+            'success', 'photo_id', 'lat', 'lon',
+            'city', 'state', 'country', 'display_name',
+            'xp_awarded', 'user_xp_total',
+        ]);
 
         $photoId = $response->json('photo_id');
         $this->assertDatabaseHas('photos', [
@@ -61,6 +67,11 @@ class UploadPhotoTest extends TestCase
             'user_id' => $user->id,
             'platform' => 'web',
         ]);
+
+        $this->assertEquals(1, $response->json('xp_awarded'));
+        $this->assertNotNull($response->json('city'));
+        $this->assertNotNull($response->json('state'));
+        $this->assertNotNull($response->json('country'));
     }
 
     public function test_upload_attaches_photo_to_active_team()
@@ -328,5 +339,102 @@ class UploadPhotoTest extends TestCase
 
         $response->assertOk();
         $this->assertEquals(8, $response->json('pagination.per_page'));
+    }
+
+    // ---------------------------------------------------------------
+    // Upload XP and enriched response
+    // ---------------------------------------------------------------
+
+    public function test_upload_awards_one_xp()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['xp' => 100, 'picked_up' => true]);
+
+        $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ])->assertOk();
+
+        $this->assertEquals(101, $user->fresh()->xp);
+    }
+
+    public function test_upload_xp_updates_redis_leaderboard()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['xp' => 50, 'picked_up' => true]);
+
+        // Clear any existing Redis state for this user
+        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
+        Redis::zRem($globalKey, (string) $user->id);
+
+        $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ])->assertOk();
+
+        $score = Redis::zScore($globalKey, (string) $user->id);
+        $this->assertEquals(1, (int) $score);
+    }
+
+    public function test_upload_returns_location_data()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+        $this->assertIsFloat($response->json('lat'));
+        $this->assertIsFloat($response->json('lon'));
+        $this->assertIsString($response->json('city'));
+        $this->assertIsString($response->json('state'));
+        $this->assertIsString($response->json('country'));
+    }
+
+    public function test_duplicate_upload_returns_typed_error()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['picked_up' => true]);
+        $file = new UploadedFile(
+            storage_path('framework/testing/img_with_exif.JPG'),
+            'photo.jpg',
+            'image/jpeg',
+            null,
+            true
+        );
+
+        // First upload succeeds
+        $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file])->assertOk();
+
+        // Second upload returns typed error
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file]);
+        $response->assertStatus(422);
+        $response->assertJson(['error' => 'duplicate']);
     }
 }

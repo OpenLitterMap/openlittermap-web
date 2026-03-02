@@ -1,5 +1,10 @@
 <template>
-    <div class="h-[calc(100vh-80px)] bg-gray-900 flex flex-col overflow-hidden">
+    <div class="h-[calc(100vh-73px)] bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900 flex flex-col overflow-hidden">
+        <!-- Success flash overlay -->
+        <transition name="flash">
+            <div v-if="showSuccessFlash" class="absolute inset-0 z-40 pointer-events-none border-2 border-emerald-400/60 rounded-xl" />
+        </transition>
+
         <!-- Enhanced Header with integrated actions and XP display -->
         <TaggingHeader
             :current-photo="currentPhoto"
@@ -16,12 +21,33 @@
             @submit="submitTags"
         />
 
-        <!-- Main Content Area - Scrollable -->
-        <div class="flex-1 overflow-hidden">
-            <div class="flex flex-col lg:flex-row p-6 gap-6 h-full">
-                <!-- Left Column -->
-                <div class="lg:w-1/3 h-full">
-                    <!-- Photo Viewer -->
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-hidden relative">
+            <!-- Empty state (no untagged photos) -->
+            <div v-if="!hasPhotos && !imageLoading" class="flex items-center justify-center h-full">
+                <div class="text-center max-w-md px-6">
+                    <div class="w-16 h-16 mx-auto mb-6 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center">
+                        <svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">{{ $t('All photos tagged!') }}</h2>
+                    <p class="text-white/50 text-sm mb-6">{{ $t('Upload more photos or review your tagged photos.') }}</p>
+                    <div class="flex items-center justify-center gap-3">
+                        <router-link to="/upload" class="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-sm font-medium hover:bg-emerald-500/30 transition-colors">
+                            {{ $t('Upload Photos') }}
+                        </router-link>
+                        <router-link to="/uploads" class="px-4 py-2 bg-white/5 text-white/60 border border-white/10 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
+                            {{ $t('My Photos') }}
+                        </router-link>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two-panel layout -->
+            <div v-else class="flex flex-col lg:flex-row p-4 lg:p-6 gap-4 lg:gap-6 h-full overflow-hidden">
+                <!-- Left Panel: Photo Viewer (50-60%) -->
+                <div class="lg:w-[55%] h-[35vh] lg:h-full flex-shrink-0">
                     <PhotoViewer
                         :photo-src="currentPhotoSrc"
                         :loading="imageLoading"
@@ -29,14 +55,14 @@
                     />
                 </div>
 
-                <!-- Right Column: Active Tags (2/3 on desktop) -->
-                <div class="lg:w-2/3 h-full flex flex-col overflow-hidden">
+                <!-- Right Panel: Tag Panel (40-50%) -->
+                <div class="lg:w-[45%] flex-1 min-h-0 flex flex-col overflow-hidden">
                     <!-- Search Section -->
                     <div class="space-y-3 mb-4 flex-shrink-0">
                         <!-- Learn about tagging prompt -->
                         <div
                             v-if="showTaggingHelp"
-                            class="bg-blue-900/30 border border-blue-700/50 rounded-lg px-4 py-2 flex items-center justify-between"
+                            class="bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-2 flex items-center justify-between"
                         >
                             <a
                                 href="/faq/tagging"
@@ -53,7 +79,7 @@
                                 </svg>
                                 {{ $t('Learn about tagging') }}
                             </a>
-                            <button @click="hideTaggingHelp" class="text-gray-400 hover:text-gray-300">
+                            <button @click="hideTaggingHelp" class="text-white/30 hover:text-white/60 transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
                                         stroke-linecap="round"
@@ -67,6 +93,7 @@
 
                         <!-- Main Search Bar -->
                         <UnifiedTagSearch
+                            ref="searchRef"
                             v-model="searchQuery"
                             :tags="searchableTags"
                             :brands="brandsList"
@@ -78,16 +105,16 @@
 
                         <!-- Quick suggestions -->
                         <div v-if="recentTags.length > 0 && hasPhotos">
-                            <span class="text-xs text-gray-400 mr-2">{{ $t('Recent:') }}</span>
+                            <span class="text-xs text-white/40 mr-2">{{ $t('Recent:') }}</span>
                             <div class="flex flex-wrap gap-2 mt-1">
                                 <button
                                     v-for="tag in recentTags"
                                     :key="tag.id"
                                     @click="quickAddTag(tag)"
-                                    class="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
+                                    class="text-xs px-2 py-1 bg-white/5 text-white/60 border border-white/10 rounded hover:bg-white/10 transition-colors"
                                 >
                                     {{ formatKey(tag.key) }}
-                                    <span v-if="tag.categoryKey" class="text-gray-500">· {{ formatKey(tag.categoryKey) }}</span>
+                                    <span v-if="tag.categoryKey" class="text-white/30">· {{ formatKey(tag.categoryKey) }}</span>
                                 </button>
                             </div>
                         </div>
@@ -108,7 +135,52 @@
                             @remove-detail="removeTagDetail"
                         />
                     </div>
+
+                    <!-- Confirm button (sticky bottom of tag panel) -->
+                    <div class="flex-shrink-0 pt-3 mt-auto">
+                        <button
+                            @click="submitTags"
+                            :disabled="activeTags.length === 0 || isSubmitting || hasUnresolvedTags"
+                            class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-white/5 disabled:text-white/20 disabled:border-white/10 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+                        >
+                            <template v-if="!isSubmitting">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                {{ isEditMode ? $t('Update Tags') : $t('Confirm Tags') }}
+                                <span v-if="activeTags.length > 0" class="text-emerald-200/80 text-xs">({{ activeTags.length }})</span>
+                            </template>
+                            <template v-else>
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                {{ $t('Saving...') }}
+                            </template>
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Keyboard shortcuts hint -->
+        <div class="absolute bottom-4 left-4 z-30">
+            <button
+                @click="showShortcuts = !showShortcuts"
+                class="w-7 h-7 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/10 transition-colors text-xs font-mono"
+                :title="$t('Keyboard shortcuts')"
+            >?</button>
+            <div
+                v-if="showShortcuts"
+                class="absolute bottom-9 left-0 bg-slate-800/95 backdrop-blur border border-white/10 rounded-xl p-4 text-xs space-y-1.5 w-56 shadow-xl"
+            >
+                <p class="text-white/50 text-[10px] font-semibold uppercase tracking-widest mb-2">{{ $t('Keyboard shortcuts') }}</p>
+                <div class="flex justify-between"><span class="text-white/60">{{ $t('Confirm tags') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">Enter</kbd></div>
+                <div class="flex justify-between"><span class="text-white/60">{{ $t('Focus search') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">/</kbd></div>
+                <div class="flex justify-between"><span class="text-white/60">{{ $t('Clear search') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">Esc</kbd></div>
+                <div class="flex justify-between"><span class="text-white/60">{{ $t('Previous photo') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">J / ←</kbd></div>
+                <div class="flex justify-between"><span class="text-white/60">{{ $t('Next photo') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">K / →</kbd></div>
+                <div class="flex justify-between"><span class="text-white/60">{{ $t('Set quantity') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">1–9</kbd></div>
             </div>
         </div>
     </div>
@@ -159,6 +231,9 @@ const isSubmitting = ref(false);
 const showTaggingHelp = ref(true);
 const isEditMode = ref(false);
 const editPhotoId = ref(null);
+const showShortcuts = ref(false);
+const showSuccessFlash = ref(false);
+const searchRef = ref(null);
 
 // Computed
 const paginatedPhotos = computed(() => photosStore.paginated);
@@ -263,6 +338,18 @@ const searchableTags = computed(() => {
 
 const brandsList = computed(() => tagsStore.brands || []);
 const materialsList = computed(() => tagsStore.materials || []);
+
+// Progress tracking
+const untaggedTotal = computed(() => photosStore.untaggedStats.leftToTag ?? paginatedPhotos.value?.total ?? 0);
+const taggedCount = computed(() => {
+    const initial = photosStore.untaggedStats.totalPhotos ?? 0;
+    return Math.max(0, initial - untaggedTotal.value);
+});
+const progressPercent = computed(() => {
+    const total = photosStore.untaggedStats.totalPhotos ?? 0;
+    if (total === 0) return 0;
+    return Math.min(100, (taggedCount.value / total) * 100);
+});
 
 // XP Calculation — matches backend XpScore enum values:
 // Upload=5, Object=1, Brand=3, Material=2, CustomTag=1
@@ -453,7 +540,7 @@ onUnmounted(() => {
 
 // Keyboard shortcuts
 const handleKeyDown = (event) => {
-    // Ctrl/Cmd+Enter: always works (even in inputs), but check for unresolved tags
+    // Ctrl/Cmd+Enter or bare Enter (when not in input): confirm tags
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
         if (activeTags.value.length > 0 && !hasUnresolvedTags.value) {
@@ -464,10 +551,52 @@ const handleKeyDown = (event) => {
 
     // All other shortcuts: skip if user is typing in a form field
     const target = event.target;
-    if (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA') {
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA';
+
+    // Escape: clear search or close shortcuts panel
+    if (event.key === 'Escape') {
+        if (showShortcuts.value) {
+            showShortcuts.value = false;
+            return;
+        }
+        if (isInput) {
+            target.blur();
+            return;
+        }
+    }
+
+    if (isInput) return;
+
+    // Enter (bare, not in input): confirm tags
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        if (activeTags.value.length > 0 && !hasUnresolvedTags.value) {
+            submitTags();
+        }
         return;
     }
 
+    // / : focus search
+    if (event.key === '/') {
+        event.preventDefault();
+        const input = searchRef.value?.$el?.querySelector('input') || document.getElementById('unified-tag-search-input');
+        input?.focus();
+        return;
+    }
+
+    // J or ArrowLeft: previous photo
+    if (event.key === 'j' || event.key === 'J' || event.key === 'ArrowLeft') {
+        handleNavigation('prev');
+        return;
+    }
+
+    // K or ArrowRight: next photo
+    if (event.key === 'k' || event.key === 'K' || event.key === 'ArrowRight') {
+        handleNavigation('next');
+        return;
+    }
+
+    // 1-9: set quantity on last tag
     if (event.key >= '1' && event.key <= '9' && !event.ctrlKey && !event.metaKey) {
         if (activeTags.value.length > 0) {
             const photoId = currentPhoto.value?.id;
@@ -770,6 +899,10 @@ const submitTags = async () => {
             if (editPhotoId.value) {
                 router.push('/uploads');
             } else {
+                // Show success flash then auto-advance
+                showSuccessFlash.value = true;
+                setTimeout(() => { showSuccessFlash.value = false; }, 400);
+
                 // UPLOAD_TAGS already reloaded photos — the tagged photo is removed
                 // from the untagged list, so currentPhotoIndex now points to the next
                 // photo. Just clamp if we were at the end.
@@ -796,3 +929,21 @@ watch(currentPhotoSrc, () => {
     imageLoading.value = true;
 });
 </script>
+
+<style scoped>
+.flash-enter-active {
+    animation: flash-in 0.4s ease-out;
+}
+.flash-leave-active {
+    animation: flash-out 0.3s ease-in;
+}
+@keyframes flash-in {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
+}
+@keyframes flash-out {
+    from { opacity: 0; }
+    to { opacity: 0; }
+}
+</style>

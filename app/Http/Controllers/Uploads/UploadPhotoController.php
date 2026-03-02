@@ -18,9 +18,11 @@ use App\Actions\Locations\ResolveLocationAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadPhotoRequest;
 
+use App\Services\Redis\RedisKeys;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redis;
 
 class UploadPhotoController extends Controller
 {
@@ -37,8 +39,8 @@ class UploadPhotoController extends Controller
      * - Web: extracts lat/lon/date from EXIF (default)
      * - Mobile: accepts explicit lat, lon, date fields (overrides EXIF)
      *
-     * No metrics, XP, or leaderboard updates happen here.
-     * MetricsService::processPhoto() runs at tag verification time.
+     * Awards 1 XP per upload (direct increment, not via MetricsService).
+     * Full tag-based XP flows through MetricsService::processPhoto() at verification time.
      */
     public function __invoke(UploadPhotoRequest $request): JsonResponse
     {
@@ -152,9 +154,28 @@ class UploadPhotoController extends Controller
             ));
         }
 
+        // 9. Award upload XP (1 XP per observation, direct increment)
+        $user->increment('xp', 1);
+
+        $userId = (string) $user->id;
+        $userScope = RedisKeys::user($user->id);
+
+        Redis::pipeline(function ($pipe) use ($userId, $userScope) {
+            $pipe->zIncrBy(RedisKeys::xpRanking(RedisKeys::global()), 1, $userId);
+            $pipe->hIncrBy(RedisKeys::stats($userScope), 'xp', 1);
+        });
+
         return response()->json([
             'success' => true,
             'photo_id' => $photo->id,
+            'lat' => $photo->lat,
+            'lon' => $photo->lon,
+            'city' => $location->city->city,
+            'state' => $location->state->state,
+            'country' => $location->country->country,
+            'display_name' => $location->displayName,
+            'xp_awarded' => 1,
+            'user_xp_total' => $user->fresh()->xp,
         ]);
     }
 }

@@ -37,6 +37,15 @@ class CreateTeamRequest extends FormRequest
         return $rules;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('participant_sessions_enabled')) {
+            $this->merge([
+                'participant_sessions_enabled' => filter_var($this->participant_sessions_enabled, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            ]);
+        }
+    }
+
     protected function isSchoolTeam(): bool
     {
         return TeamType::where('id', $this->input('teamType'))

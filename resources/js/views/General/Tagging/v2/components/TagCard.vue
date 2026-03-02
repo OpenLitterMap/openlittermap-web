@@ -1,11 +1,11 @@
 <template>
-    <div :class="['rounded-lg p-3', tag.object && !tag.cloId ? 'bg-red-900/30 border border-red-500/50' : 'bg-gray-700']">
+    <div :class="['rounded-xl p-3', tag.object && !tag.cloId ? 'bg-red-500/10 border border-red-500/30' : 'bg-white/5 border border-white/10']">
         <!-- Line 1: Tag name, quantity, actions -->
         <div class="flex items-center gap-3">
             <!-- Custom tag badge -->
             <span
                 v-if="tag.custom"
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-600/30 text-amber-200 flex-shrink-0"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0"
             >
                 Custom
             </span>
@@ -18,7 +18,7 @@
             <!-- Type badge (when type is selected) -->
             <span
                 v-if="selectedTypeName"
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-indigo-600/30 text-indigo-200 flex-shrink-0"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex-shrink-0"
             >
                 {{ selectedTypeName }}
             </span>
@@ -29,9 +29,9 @@
                     @click="decreaseQuantity"
                     :disabled="tag.quantity <= 1"
                     aria-label="Decrease quantity"
-                    class="w-9 h-9 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-8 h-8 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
-                    <span class="text-white text-lg">−</span>
+                    <span class="text-white text-sm">−</span>
                 </button>
 
                 <input
@@ -43,16 +43,16 @@
                     min="1"
                     max="100"
                     aria-label="Quantity"
-                    class="w-12 h-9 text-center bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
+                    class="w-12 h-8 text-center bg-white/5 border border-white/10 rounded-lg text-white text-sm tabular-nums focus:outline-none focus:border-emerald-500/50"
                 />
 
                 <button
                     @click="increaseQuantity"
                     :disabled="tag.quantity >= 100"
                     aria-label="Increase quantity"
-                    class="w-9 h-9 bg-gray-600 rounded hover:bg-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-8 h-8 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
-                    <span class="text-white text-lg">+</span>
+                    <span class="text-white text-sm">+</span>
                 </button>
             </div>
 
@@ -65,7 +65,7 @@
                 <button
                     v-if="!showDetails"
                     @click="openDetails"
-                    class="px-2 py-1.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                    class="px-2 py-1.5 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors"
                 >
                     Add more tags
                 </button>
@@ -76,17 +76,17 @@
                     @change="setPickedUp($event.target.value)"
                     aria-label="Picked up status"
                     :class="[
-                        'px-2 py-1.5 rounded text-xs font-medium transition-colors appearance-none cursor-pointer',
+                        'px-2 py-1.5 rounded-lg text-xs font-medium transition-colors appearance-none cursor-pointer border',
                         tag.pickedUp === true
-                            ? 'bg-green-600 text-white'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                             : tag.pickedUp === false
-                              ? 'bg-red-600/60 text-red-100'
-                              : 'bg-gray-600 text-gray-300',
+                              ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                              : 'bg-white/5 text-white/50 border-white/10',
                     ]"
                 >
-                    <option :value="null" class="bg-gray-800 text-white">? Unknown</option>
-                    <option :value="true" class="bg-gray-800 text-white">✓ Picked up</option>
-                    <option :value="false" class="bg-gray-800 text-white">✗ Not picked</option>
+                    <option :value="null" class="bg-slate-800 text-white">? Unknown</option>
+                    <option :value="true" class="bg-slate-800 text-white">✓ Picked up</option>
+                    <option :value="false" class="bg-slate-800 text-white">✗ Not picked</option>
                 </select>
 
                 <!-- Type pills (only for objects with valid types) -->
@@ -96,10 +96,10 @@
                         :key="t.id"
                         @click="setType(tag.typeId === t.id ? null : t.id)"
                         :class="[
-                            'px-2 py-1 rounded text-xs font-medium transition-colors',
+                            'px-2 py-1 rounded-lg text-xs font-medium transition-colors border',
                             tag.typeId === t.id
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/40',
+                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                                : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10',
                         ]"
                     >
                         {{ formatKey(t.key) }}
@@ -111,7 +111,7 @@
                     @click="$emit('remove')"
                     aria-label="Delete all tags"
                     title="Delete all tags"
-                    class="w-9 h-9 flex items-center justify-center text-red-500 bg-red-500/10 rounded transition-colors"
+                    class="w-8 h-8 flex items-center justify-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -128,10 +128,10 @@
         <!-- Line 2: Detail badges (when panel closed and has details) -->
         <div
             v-if="!showDetails && hasDetails"
-            class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 pt-2 border-t border-gray-600/50"
+            class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 pt-2 border-t border-white/10"
         >
             <div v-if="tag.brands?.length" class="flex items-center gap-1">
-                <span class="text-gray-400 text-xs">Brands:</span>
+                <span class="text-white/40 text-xs">Brands:</span>
                 <span
                     v-for="brand in tag.brands"
                     :key="'b-' + brand.id"
@@ -148,7 +148,7 @@
                 </span>
             </div>
             <div v-if="tag.materials?.length" class="flex items-center gap-1">
-                <span class="text-gray-400 text-xs">Materials:</span>
+                <span class="text-white/40 text-xs">Materials:</span>
                 <span
                     v-for="material in tag.materials"
                     :key="'m-' + material.id"
@@ -165,7 +165,7 @@
                 </span>
             </div>
             <div v-if="tag.objects?.length" class="flex items-center gap-1">
-                <span class="text-gray-400 text-xs">Objects:</span>
+                <span class="text-white/40 text-xs">Objects:</span>
                 <span
                     v-for="obj in tag.objects"
                     :key="'o-' + obj.id"
@@ -182,7 +182,7 @@
                 </span>
             </div>
             <div v-if="tag.customTags?.length" class="flex items-center gap-1">
-                <span class="text-gray-400 text-xs">Custom:</span>
+                <span class="text-white/40 text-xs">Custom:</span>
                 <span
                     v-for="custom in tag.customTags"
                     :key="'c-' + custom"
@@ -201,9 +201,9 @@
         </div>
 
         <!-- Detail inputs section (collapsible) -->
-        <div v-if="showDetails" class="space-y-2 pt-3 mt-3 border-t border-gray-600">
+        <div v-if="showDetails" class="space-y-2 pt-3 mt-3 border-t border-white/10">
             <!-- Hint text -->
-            <p v-if="!hasDetails" class="text-xs text-gray-400 mb-2">
+            <p v-if="!hasDetails" class="text-xs text-white/40 mb-2">
                 Add optional details: brand, material, related objects, or custom tags.
             </p>
 
@@ -309,10 +309,10 @@
                 v-model="customTagInput"
                 @keydown.enter="addCustomTag"
                 placeholder="Custom tag (press Enter)"
-                class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                class="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:border-emerald-500/50"
             />
 
-            <button @click="showDetails = false" class="text-xs text-gray-400 hover:text-gray-300 transition-colors">
+            <button @click="showDetails = false" class="text-xs text-white/40 hover:text-white/60 transition-colors">
                 Hide Tagging Menu
             </button>
         </div>

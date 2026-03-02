@@ -1,9 +1,9 @@
 <template>
-    <div class="bg-gray-800 rounded-lg p-4">
-        <div class="relative">
+    <div class="bg-white/5 border border-white/10 rounded-xl p-4 h-full flex items-center justify-center">
+        <div class="relative w-full">
             <!-- Empty state: no photo available -->
-            <div v-if="!photoSrc && !loading" class="bg-gray-700 rounded-lg aspect-video flex flex-col items-center justify-center">
-                <svg class="w-16 h-16 text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div v-if="!photoSrc && !loading" class="bg-white/5 border border-white/10 rounded-lg aspect-video flex flex-col items-center justify-center">
+                <svg class="w-16 h-16 text-white/10 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -11,13 +11,13 @@
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                 </svg>
-                <div class="text-gray-500 text-sm">Your image will appear here for tagging</div>
+                <div class="text-white/30 text-sm">Your image will appear here for tagging</div>
             </div>
 
             <!-- Loading skeleton -->
             <div v-else-if="loading" class="animate-pulse">
-                <div class="bg-gray-700 rounded-lg aspect-video flex flex-col items-center justify-center">
-                    <svg class="w-16 h-16 text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-white/10 rounded-lg aspect-video flex flex-col items-center justify-center">
+                    <svg class="w-16 h-16 text-white/10 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -25,7 +25,7 @@
                             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                     </svg>
-                    <div class="text-gray-500 text-sm">Loading photo...</div>
+                    <div class="text-white/30 text-sm">Loading photo...</div>
                 </div>
             </div>
 
@@ -43,9 +43,9 @@
             <!-- Error state -->
             <div
                 v-if="error && !loading"
-                class="bg-gray-700 rounded-lg aspect-video flex flex-col items-center justify-center"
+                class="bg-white/5 border border-white/10 rounded-lg aspect-video flex flex-col items-center justify-center"
             >
-                <svg class="w-16 h-16 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-16 h-16 text-red-400/50 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -53,7 +53,7 @@
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                 </svg>
-                <p class="text-gray-400">Failed to load image</p>
+                <p class="text-white/40">Failed to load image</p>
             </div>
         </div>
 
@@ -61,7 +61,7 @@
         <div
             v-if="zoomed"
             @click="toggleZoom"
-            class="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center cursor-zoom-out"
+            class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center cursor-zoom-out"
         >
             <img :src="photoSrc" alt="Zoomed photo" class="max-w-[90vw] max-h-[90vh] object-contain" />
         </div>

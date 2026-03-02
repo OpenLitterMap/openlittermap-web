@@ -12,33 +12,33 @@
                 alt=""
                 class="h-full w-full object-cover pointer-events-none select-none hidden md:block"
             />
-            <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/15"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-blue-900/60 to-emerald-900/70"></div>
         </div>
 
         <!-- Content layer with higher z-index -->
         <div class="relative z-10 flex min-h-[calc(100vh-80px)] flex-col">
             <section class="flex-1 flex items-center justify-center flex-col p-4">
                 <div class="w-full max-w-md">
-                    <div class="rounded-xl bg-white p-4 shadow-xl md:p-6">
-                        <h2 class="mb-4 text-xl font-bold text-gray-900">
+                    <div class="rounded-xl bg-slate-900/80 backdrop-blur-xl border border-white/10 p-4 shadow-xl md:p-6">
+                        <h2 class="mb-4 text-xl font-bold text-white">
                             {{ $t('Sign up to tell your story about litter & plastic pollution.') }}
                         </h2>
 
                         <!-- General server error -->
-                        <p v-if="serverErrors.general" class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                        <p v-if="serverErrors.general" class="mb-3 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
                             {{ serverErrors.general[0] }}
                         </p>
 
                         <form @submit.prevent="submit" novalidate>
                             <!-- Username -->
                             <div class="mb-3">
-                                <label for="username" class="mb-1 block text-sm font-medium text-gray-700">
+                                <label for="username" class="mb-1 block text-sm font-medium text-white/70">
                                     {{ $t('Username') }}
                                 </label>
                                 <div class="relative">
                                     <span
                                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-                                        :style="{ color: activeField === 'username' ? '#4a4a4a' : '#dbdbdb' }"
+                                        :style="{ color: activeField === 'username' ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }"
                                         aria-hidden="true"
                                     >
                                         <span class="text-base font-medium">@</span>
@@ -59,7 +59,7 @@
                                         <button
                                             type="button"
                                             @click="refreshUsername"
-                                            class="p-1 text-gray-400 hover:text-green-600 focus:outline-none transition-colors"
+                                            class="p-1 text-white/30 hover:text-emerald-400 focus:outline-none transition-colors"
                                             aria-label="Generate new username"
                                             :title="$t('Generate new username')"
                                         >
@@ -74,20 +74,20 @@
                                         </button>
                                     </span>
                                 </div>
-                                <p v-if="errorFor('username')" class="mt-1 text-xs text-red-600">
+                                <p v-if="errorFor('username')" class="mt-1 text-xs text-red-400">
                                     {{ errorFor('username') }}
                                 </p>
                             </div>
 
                             <!-- Email -->
                             <div class="mb-3">
-                                <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
+                                <label for="email" class="mb-1 block text-sm font-medium text-white/70">
                                     {{ $t('E-Mail Address') }}
                                 </label>
                                 <div class="relative">
                                     <span
                                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-                                        :style="{ color: activeField === 'email' ? '#4a4a4a' : '#dbdbdb' }"
+                                        :style="{ color: activeField === 'email' ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }"
                                         aria-hidden="true"
                                     >
                                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -114,20 +114,20 @@
                                         required
                                     />
                                 </div>
-                                <p v-if="errorFor('email')" class="mt-1 text-xs text-red-600">
+                                <p v-if="errorFor('email')" class="mt-1 text-xs text-red-400">
                                     {{ errorFor('email') }}
                                 </p>
                             </div>
 
                             <!-- Password -->
                             <div class="mb-3">
-                                <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
+                                <label for="password" class="mb-1 block text-sm font-medium text-white/70">
                                     {{ $t('Create a password') }}
                                 </label>
                                 <div class="relative">
                                     <span
                                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"
-                                        :style="{ color: activeField === 'password' ? '#4a4a4a' : '#dbdbdb' }"
+                                        :style="{ color: activeField === 'password' ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }"
                                         aria-hidden="true"
                                     >
                                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -160,7 +160,7 @@
                                         <button
                                             type="button"
                                             @click="showPassword = !showPassword"
-                                            class="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                            class="text-white/30 hover:text-white/60 focus:outline-none"
                                             :aria-label="showPassword ? 'Hide password' : 'Show password'"
                                         >
                                             <svg
@@ -201,7 +201,7 @@
                                     </span>
                                 </div>
 
-                                <p v-if="errorFor('password')" class="mt-1 text-xs text-red-600">
+                                <p v-if="errorFor('password')" class="mt-1 text-xs text-red-400">
                                     {{ errorFor('password') }}
                                 </p>
                             </div>
@@ -212,15 +212,15 @@
                                     <input
                                         v-model="acceptedTerms"
                                         type="checkbox"
-                                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600"
+                                        class="mt-0.5 h-4 w-4 rounded bg-white/5 border-white/20 text-emerald-500 focus:ring-emerald-500"
                                     />
-                                    <span class="text-sm text-gray-600">
+                                    <span class="text-sm text-white/60">
                                         {{ $t('I agree to the') }}
-                                        <router-link to="/terms" class="text-green-600 hover:underline"
+                                        <router-link to="/terms" class="text-emerald-400 hover:underline"
                                             >{{ $t('Terms') }}</router-link
                                         >
                                         {{ $t('and') }}
-                                        <router-link to="/privacy" class="text-green-600 hover:underline"
+                                        <router-link to="/privacy" class="text-emerald-400 hover:underline"
                                             >{{ $t('Privacy Policy') }}</router-link
                                         >
                                     </span>
@@ -239,7 +239,7 @@
                             </div>
                             <p
                                 v-if="serverErrors['g-recaptcha-response']"
-                                class="mb-2 text-center text-xs text-red-600"
+                                class="mb-2 text-center text-xs text-red-400"
                             >
                                 {{ $t('Please complete the reCAPTCHA') }}
                             </p>
@@ -248,7 +248,7 @@
                             <button
                                 type="submit"
                                 :disabled="!canSubmit"
-                                class="w-full rounded-lg bg-green-600 py-2.5 font-medium text-white transition-all hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                                class="w-full rounded-lg py-2.5 font-medium text-white transition-all disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 bg-emerald-500 hover:bg-emerald-400"
                             >
                                 <span v-if="!isSubmitting">{{ $t('Create Account') }}</span>
                                 <span v-else class="flex items-center justify-center gap-2">
@@ -271,18 +271,18 @@
                                 </span>
                             </button>
 
-                            <p class="mt-2 text-center text-xs text-gray-500">
+                            <p class="mt-2 text-center text-xs text-white/30">
                                 {{ $t("Check spam folder if verification email doesn't arrive") }}
                             </p>
 
                             <!-- Sign in link -->
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <p class="text-center text-sm text-gray-600">
+                            <div class="mt-4 pt-4 border-t border-white/10">
+                                <p class="text-center text-sm text-white/50">
                                     {{ $t('Have an account?') }}
                                     <button
                                         type="button"
                                         @click="navigateToLogin"
-                                        class="text-gray-900 hover:underline"
+                                        class="text-emerald-400 hover:underline"
                                     >
                                         {{ $t('Sign in') }}
                                     </button>
@@ -454,9 +454,9 @@ function onPasswordInput() {
 
 function inputClass(field) {
     if (errorFor(field)) {
-        return 'border-red-300 focus:border-red-400 focus:ring-red-200';
+        return 'bg-white/5 border-red-400/50 text-white placeholder-white/30 focus:border-red-400 focus:ring-red-400/30';
     }
-    return 'border-gray-300 focus:border-green-400 focus:ring-green-200';
+    return 'bg-white/5 border-white/20 text-white placeholder-white/30 focus:border-emerald-500/50 focus:ring-emerald-500/30';
 }
 
 async function submit() {
@@ -485,7 +485,9 @@ async function submit() {
             toast.success('Welcome Aboard! Your Litter Mapping Adventure Awaits!', { timeout: 6000 });
 
             password.value = '';
-            await router.push('/upload');
+            const intended = sessionStorage.getItem('intended_route');
+            sessionStorage.removeItem('intended_route');
+            await router.push(intended || '/upload');
         }
     } finally {
         isSubmitting.value = false;

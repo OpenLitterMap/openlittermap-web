@@ -35,7 +35,8 @@ class CreateTeamAction
             'leader' => $user->id,
             'created_by' => $user->id,
 
-            // School-specific fields
+            // All teams hidden from public leaderboard by default
+            'leaderboards' => false,
             'safeguarding' => $isSchool,
             'contact_email' => $isSchool ? ($data['contact_email'] ?? null) : null,
             'county' => $isSchool ? ($data['county'] ?? null) : null,

@@ -348,4 +348,89 @@ class TeamsTest extends TestCase
             $this->assertTrue((bool) $pivot->show_username_maps);
         }
     }
+
+    // ── School Team Privacy Enforcement ──
+
+    public function test_school_team_privacy_settings_always_force_names_hidden()
+    {
+        $schoolType = TeamType::create([
+            'team' => 'school', 'price' => 0, 'description' => 'School',
+        ]);
+
+        $schoolTeam = Team::create([
+            'name' => 'Privacy School',
+            'identifier' => 'PrivSchool1',
+            'type_id' => $schoolType->id,
+            'type_name' => 'school',
+            'leader' => $this->leader->id,
+            'created_by' => $this->leader->id,
+            'safeguarding' => true,
+        ]);
+        $this->leader->teams()->attach($schoolTeam->id);
+
+        // Attempt to enable all name/username visibility
+        $this->actingAs($this->leader)
+            ->postJson('/api/teams/settings', [
+                'team_id' => $schoolTeam->id,
+                'all' => false,
+                'settings' => [
+                    'show_name_maps' => true,
+                    'show_username_maps' => true,
+                    'show_name_leaderboards' => true,
+                    'show_username_leaderboards' => true,
+                ],
+            ])
+            ->assertOk();
+
+        // All should be forced to false due to safeguarding
+        $pivot = $this->leader->teams()->where('team_id', $schoolTeam->id)->first()->pivot;
+        $this->assertFalse((bool) $pivot->show_name_maps);
+        $this->assertFalse((bool) $pivot->show_username_maps);
+        $this->assertFalse((bool) $pivot->show_name_leaderboards);
+        $this->assertFalse((bool) $pivot->show_username_leaderboards);
+    }
+
+    public function test_apply_all_respects_safeguarding_per_team()
+    {
+        $schoolType = TeamType::create([
+            'team' => 'school', 'price' => 0, 'description' => 'School',
+        ]);
+
+        $schoolTeam = Team::create([
+            'name' => 'Mixed School',
+            'identifier' => 'MixedSchool1',
+            'type_id' => $schoolType->id,
+            'type_name' => 'school',
+            'leader' => $this->leader->id,
+            'created_by' => $this->leader->id,
+            'safeguarding' => true,
+        ]);
+        $this->leader->teams()->attach($schoolTeam->id);
+
+        // Apply to all teams — community should get settings, school should be forced off
+        $this->actingAs($this->leader)
+            ->postJson('/api/teams/settings', [
+                'team_id' => $this->team->id,
+                'all' => true,
+                'settings' => [
+                    'show_name_maps' => true,
+                    'show_username_maps' => true,
+                    'show_name_leaderboards' => true,
+                    'show_username_leaderboards' => true,
+                ],
+            ])
+            ->assertOk();
+
+        // Community team: settings applied
+        $communityPivot = $this->leader->teams()->where('team_id', $this->team->id)->first()->pivot;
+        $this->assertTrue((bool) $communityPivot->show_name_maps);
+        $this->assertTrue((bool) $communityPivot->show_username_maps);
+
+        // School team: forced to false
+        $schoolPivot = $this->leader->teams()->where('team_id', $schoolTeam->id)->first()->pivot;
+        $this->assertFalse((bool) $schoolPivot->show_name_maps);
+        $this->assertFalse((bool) $schoolPivot->show_username_maps);
+        $this->assertFalse((bool) $schoolPivot->show_name_leaderboards);
+        $this->assertFalse((bool) $schoolPivot->show_username_leaderboards);
+    }
 }

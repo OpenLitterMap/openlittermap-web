@@ -17,6 +17,24 @@
             @delete="handleDelete"
         />
 
+        <!-- First-time explainer banner -->
+        <div
+            v-if="showApprovalGuide"
+            class="mx-4 mt-3 bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 flex items-start gap-3"
+        >
+            <svg class="w-5 h-5 text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-sm text-blue-300 flex-1">
+                {{ $t('Photos from your students are private until you approve them. Review each photo, check the tags, then press A to approve. You can also edit tags (E), revoke approval (R), or delete (D).') }}
+            </p>
+            <button class="text-blue-400/60 hover:text-blue-400 shrink-0" @click="dismissGuide">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
         <!-- Loading -->
         <div v-if="photosStore.loading" class="flex-1 flex items-center justify-center">
             <div class="text-gray-400">Loading photos...</div>
@@ -157,6 +175,15 @@ const toast = useToast();
 
 const currentIndex = ref(0);
 const searchQuery = ref('');
+
+// ── Approval guide banner ──
+const showApprovalGuide = ref(
+    !localStorage.getItem(`approval-guide-dismissed-${props.teamId}`),
+);
+const dismissGuide = () => {
+    showApprovalGuide.value = false;
+    localStorage.setItem(`approval-guide-dismissed-${props.teamId}`, 'true');
+};
 const tagsByPhoto = ref({});
 const imageLoading = ref(true);
 const originalTagsJson = ref({});

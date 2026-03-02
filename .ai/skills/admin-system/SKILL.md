@@ -23,6 +23,7 @@ Admin photo review: approve, edit tags, delete. Quality gate between user submis
 - `app/Http/Controllers/Admin/AdminStatsController.php` — Dashboard stats (cached 60s): queue totals, by-verification, by-country, user counts, flagged usernames
 - `app/Http/Controllers/Admin/AdminUsersController.php` — 4 methods: index (list/search/filter), trust (toggle), approveAll (bulk), updateUsername (moderation)
 - `app/Http/Requests/Admin/UpdateUsernameRequest.php` — Validation: 3–30 chars, alphanumeric + hyphens, unique. Superadmin auth gate.
+- `app/Mail/SchoolManagerInvite.php` — Queued email sent when `school_manager` role is granted via `toggleSchoolManager()`
 
 ### Frontend
 - `resources/js/stores/admin.js` — Pinia store: fetchPhotos, fetchCountries, approvePhoto, deletePhoto, updateTagsAndApprove, fetchUsers, fetchStats, toggleTrust, approveAllForUser, updateUsername
@@ -37,7 +38,7 @@ Admin photo review: approve, edit tags, delete. Quality gate between user submis
 - `tests/Feature/Admin/AdminQueueTest.php` — 12 tests (queue endpoint: filters, pagination, exclusions, auth)
 - `tests/Feature/Admin/AdminResetTagsTest.php` — 4 tests (reset clears state, metrics reversal, skip approved, non-admin rejected)
 - `tests/Feature/Admin/AdminStatsTest.php` — 5 tests (cache, counts, by-verification, by-country, auth)
-- `tests/Feature/Admin/AdminUsersTest.php` — 7 tests (list, search, sort, trust filter, flagged filter, pagination, auth)
+- `tests/Feature/Admin/AdminUsersTest.php` — 9 tests (list, search, sort, trust filter, flagged filter, pagination, auth, school manager invite email on grant, no email on revoke)
 - `tests/Feature/Admin/AdminTrustTest.php` — 10 tests (trust toggle, approve-all, superadmin-only, school exclusion, idempotency)
 - `tests/Feature/Admin/AdminUsernameModerationTest.php` — 13 tests (username edit, flagging lifecycle, validation rules, auth)
 - `readme/Admin.md` — full spec (Phase 1–3 complete)
@@ -209,6 +210,7 @@ All under `/api/admin/` prefix with `admin` middleware:
 | POST | `/api/admin/users/{user}/trust` | `AdminUsersController@trust` | superadmin |
 | POST | `/api/admin/users/{user}/approve-all` | `AdminUsersController@approveAll` | superadmin |
 | PATCH | `/api/admin/users/{user}/username` | `AdminUsersController@updateUsername` | superadmin |
+| POST | `/api/admin/users/{user}/school-manager` | `AdminUsersController@toggleSchoolManager` | superadmin |
 
 ### Deprecated routes (return 410 Gone)
 
@@ -269,7 +271,7 @@ All under `/api/admin/` prefix with `admin` middleware:
 
 - **Phase 1:** COMPLETE — 4 AdminController methods, 4 deprecated controllers retired (410), AdminResetTagsController v5-fixed
 - **Phase 2:** COMPLETE — Queue endpoint (`AdminQueueController`, 12 tests) + Queue UI (`AdminQueue.vue` with filters, tag editing, approve/edit/delete). Reuses existing tagging components.
-- **Phase 3:** COMPLETE — User management (`AdminUsersController`: list/search/filter, trust toggle, approve-all, username moderation), dashboard stats (`AdminStatsController`), username flagging system. 49 total admin tests passing across 7 test files.
+- **Phase 3:** COMPLETE — User management (`AdminUsersController`: list/search/filter, trust toggle, approve-all, username moderation, school manager toggle + invite email), dashboard stats (`AdminStatsController`), username flagging system. 51 total admin tests passing across 7 test files.
 - **Bbox pipeline:** RETIRED — `BoundingBoxController` returns 410 Gone on all 5 endpoints (`/api/bbox/*`). Was entirely v4 with broken `TagsVerifiedByAdmin` signature. Routes left wired for clean 410 responses.
 - **Facilitator Queue:** COMPLETE — Parallel system for school team teachers. Same 3-panel layout as admin queue, team-scoped. Reuses tagging v2 components (PhotoViewer, UnifiedTagSearch, ActiveTagsList). See `readme/Teams.md` and `teams-safeguarding` skill. Key differences from admin queue: status filter (pending/approved/all) instead of country filter, Revoke replaces Reset, member stats tab, safeguarding pseudonyms.
 - **Phase 4:** Future — AI pre-tagging, multi-admin claim queue, confidence scoring, batch approve endpoint, permission-granular access

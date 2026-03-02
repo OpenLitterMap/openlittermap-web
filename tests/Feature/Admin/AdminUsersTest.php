@@ -3,9 +3,11 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\VerificationStatus;
+use App\Mail\SchoolManagerInvite;
 use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -323,5 +325,43 @@ class AdminUsersTest extends TestCase
                 'enabled' => true,
             ])
             ->assertForbidden();
+    }
+
+    public function test_granting_school_manager_sends_invite_email(): void
+    {
+        Mail::fake();
+
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        $this->actingAs($superadmin)
+            ->postJson("/api/admin/users/{$this->userA->id}/school-manager", [
+                'enabled' => true,
+            ])
+            ->assertOk();
+
+        Mail::assertQueued(SchoolManagerInvite::class, function ($mail) {
+            return $mail->hasTo($this->userA->email)
+                && $mail->user->id === $this->userA->id;
+        });
+    }
+
+    public function test_revoking_school_manager_does_not_send_email(): void
+    {
+        Mail::fake();
+
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
+        $this->userA->assignRole('school_manager');
+
+        $this->actingAs($superadmin)
+            ->postJson("/api/admin/users/{$this->userA->id}/school-manager", [
+                'enabled' => false,
+            ])
+            ->assertOk();
+
+        Mail::assertNothingQueued();
     }
 }

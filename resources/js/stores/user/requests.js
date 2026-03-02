@@ -1,4 +1,5 @@
 import { useModalStore } from '../modal/index.js';
+import router from '../../router/index.js';
 
 export const requests = {
     async CHECK_AUTH() {
@@ -50,8 +51,10 @@ export const requests = {
             this.auth = true;
             this.user = response.data.user;
 
-            // Session cookie is set automatically — redirect to upload
-            window.location.href = '/upload';
+            // Redirect to intended route (if auth middleware stored one) or /upload
+            const intended = sessionStorage.getItem('intended_route');
+            sessionStorage.removeItem('intended_route');
+            router.push(intended || '/upload');
         } catch (error) {
             if (error?.response?.status === 422) {
                 this.errorLogin =

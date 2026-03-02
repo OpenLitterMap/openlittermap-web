@@ -1,11 +1,11 @@
 <template>
-    <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 shadow-2xl">
+    <div class="bg-white/5 border-b border-white/10">
         <!-- Header - wraps on mobile -->
         <div class="px-4 py-2 md:px-6 md:py-3 flex flex-wrap items-center gap-2 md:gap-4">
             <!-- Photo ID (only when a photo exists) -->
             <div v-if="currentPhoto" class="flex items-center gap-2">
-                <div class="bg-blue-500/20 p-1.5 rounded-lg">
-                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-emerald-500/20 p-1.5 rounded-lg">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -16,11 +16,11 @@
                 </div>
                 <div class="min-w-0">
                     <div class="text-white font-semibold text-sm">#{{ currentPhoto.id }}</div>
-                    <div class="text-gray-400 text-xs truncate">{{ formatDate(currentPhoto.datetime) }}</div>
+                    <div class="text-white/40 text-xs truncate">{{ formatDate(currentPhoto.datetime) }}</div>
                 </div>
             </div>
 
-            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-white/10"></div>
 
             <!-- Level -->
             <div class="hidden md:flex items-center gap-2">
@@ -31,30 +31,30 @@
                 </div>
                 <div>
                     <div class="text-white font-semibold text-sm">{{ $t('Lvl') }} {{ userLevel }}</div>
-                    <div class="text-gray-400 text-xs truncate">{{ getLevelTitle() }}</div>
+                    <div class="text-white/40 text-xs truncate">{{ getLevelTitle() }}</div>
                 </div>
             </div>
 
-            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-white/10"></div>
 
             <!-- XP Bar - takes remaining space on desktop, full width on mobile -->
             <div class="flex-1 min-w-[120px] flex flex-col gap-1 px-1 md:px-2">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="text-gray-400">{{ tags.length }} {{ tags.length === 1 ? $t('tag') : $t('tags') }}</span>
-                    <span class="text-gray-400">
+                    <span class="text-white/40">{{ tags.length }} {{ tags.length === 1 ? $t('tag') : $t('tags') }}</span>
+                    <span class="text-white/40">
                         {{ formatNumber(xpIntoLevel)
-                        }}<span v-if="xpPreview > 0" class="text-green-400 ml-0.5">+{{ xpPreview }}</span> /
+                        }}<span v-if="xpPreview > 0" class="text-emerald-400 ml-0.5">+{{ xpPreview }}</span> /
                         {{ formatNumber(xpRequired) }} XP
                     </span>
                 </div>
-                <div class="relative h-1.5 bg-gray-900/70 rounded-full overflow-hidden">
+                <div class="relative h-1.5 bg-white/5 rounded-full overflow-hidden">
                     <div
-                        class="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500"
+                        class="absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-500"
                         :style="{ width: existingXPProgress + '%' }"
                     />
                     <div
                         v-if="xpPreview > 0"
-                        class="absolute top-0 h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500"
+                        class="absolute top-0 h-full bg-emerald-400/70 transition-all duration-500"
                         :style="{
                             left: existingXPProgress + '%',
                             width: Math.max(0, totalXPProgress - existingXPProgress) + '%',
@@ -63,34 +63,34 @@
                 </div>
             </div>
 
-            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-white/10"></div>
 
             <!-- Pagination (hidden in edit mode) -->
             <div v-if="!isEditMode" class="flex items-center justify-center gap-2">
                 <button
                     @click="$emit('navigate', 'prev')"
                     :disabled="!canGoPrevious"
-                    class="p-1.5 bg-white/10 rounded-lg hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    class="p-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
 
-                <div class="text-center">
+                <div class="text-center min-w-[60px]">
                     <template v-if="totalPhotos > 0">
-                        <div class="text-white text-xs font-medium">{{ currentNumber }}/{{ totalPhotos }}</div>
-                        <div class="text-gray-400 text-xs">{{ untaggedCount }} {{ $t('left') }}</div>
+                        <div class="text-white text-xs font-medium tabular-nums">{{ currentNumber }}/{{ totalPhotos }}</div>
+                        <div class="text-white/40 text-xs">{{ untaggedCount }} {{ $t('left') }}</div>
                     </template>
                     <template v-else>
-                        <div class="text-gray-400 text-xs">{{ $t('Nothing to tag') }}</div>
+                        <div class="text-white/40 text-xs">{{ $t('Nothing to tag') }}</div>
                     </template>
                 </div>
 
                 <button
                     @click="$emit('navigate', 'next')"
                     :disabled="!canGoNext"
-                    class="p-1.5 bg-white/10 rounded-lg hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    class="p-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -100,7 +100,7 @@
 
             <!-- Edit mode label -->
             <div v-if="isEditMode" class="flex items-center gap-1">
-                <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs font-semibold rounded">
+                <span class="inline-flex items-center px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold rounded-full">
                     {{ $t('Editing') }}
                 </span>
             </div>
@@ -117,7 +117,7 @@
                 <span class="hidden sm:inline">{{ $t('Unresolved') }}</span>
             </span>
 
-            <div class="hidden md:block h-8 w-px bg-gray-700"></div>
+            <div class="hidden md:block h-8 w-px bg-white/10"></div>
 
             <!-- Actions -->
             <div class="flex items-center gap-2">
@@ -125,7 +125,7 @@
                     v-if="!isEditMode"
                     @click="$emit('skip')"
                     :disabled="!canGoNext"
-                    class="px-3 py-1.5 bg-gray-700/50 text-gray-300 rounded-lg hover:bg-gray-600/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs text-center"
+                    class="px-3 py-1.5 bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-xs text-center"
                 >
                     {{ $t('Skip') }}
                 </button>
@@ -135,8 +135,8 @@
                     :class="[
                         'px-3 py-1.5 rounded-lg transition-all text-xs font-semibold text-center',
                         tags.length > 0
-                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                            : 'bg-gray-700/30 text-gray-500 cursor-not-allowed',
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
+                            : 'bg-white/5 text-white/20 border border-white/10 cursor-not-allowed',
                     ]"
                     :disabled="tags.length === 0"
                 >
@@ -146,7 +146,7 @@
                 <button
                     @click="$emit('submit')"
                     :disabled="tags.length === 0 || submitting || hasUnresolvedTags"
-                    class="px-4 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold text-sm disabled:opacity-50 hover:from-green-600 hover:to-green-700 transition-all flex items-center justify-center gap-1"
+                    class="px-4 py-1.5 bg-emerald-500 text-white rounded-lg font-semibold text-sm disabled:opacity-30 disabled:bg-white/5 hover:bg-emerald-600 transition-all flex items-center justify-center gap-1"
                 >
                     <template v-if="!submitting">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

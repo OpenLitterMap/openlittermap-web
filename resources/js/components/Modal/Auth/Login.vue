@@ -1,10 +1,10 @@
 <template>
-    <div class="p-6 bg-[#f5f5f5] rounded-lg">
-        <p v-if="errorLogin" class="text-red-500">{{ errorLogin }}</p>
+    <div class="p-6">
+        <p v-if="errorLogin" class="text-red-400 text-sm mb-4 text-center">{{ errorLogin }}</p>
 
         <form class="space-y-4 text-center" @submit.prevent="login">
             <input
-                class="input border border-gray-300 rounded px-4 py-2 w-full text-lg"
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                 :placeholder="$t('Email or username')"
                 type="text"
                 name="identifier"
@@ -15,7 +15,7 @@
             />
 
             <input
-                class="input border border-gray-300 rounded px-4 py-2 w-full text-lg"
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                 :placeholder="$t('Your Password')"
                 type="password"
                 name="password"
@@ -26,26 +26,26 @@
             />
 
             <button
-                class="px-6 py-2 rounded text-white font-semibold"
-                :class="processing ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'"
+                class="w-full px-6 py-2.5 rounded-lg text-white font-medium transition-colors"
+                :class="processing ? 'bg-white/10 text-white/30 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400'"
                 :disabled="processing"
             >
                 {{ $t('Login') }}
             </button>
         </form>
 
-        <footer class="mt-6 border-t border-gray-200 pt-4">
+        <footer class="mt-6 border-t border-white/10 pt-4">
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <router-link
                     to="/signup"
-                    class="inline-flex items-center justify-center px-4 py-2 text-blue-600 hover:underline"
+                    class="inline-flex items-center justify-center px-4 py-2 text-emerald-400 hover:text-emerald-300 transition-colors"
                     @click="closeModal"
                 >
                     {{ $t('Sign up') }}
                 </router-link>
                 <router-link
                     to="/password/reset"
-                    class="inline-flex items-center justify-center px-4 py-2 text-blue-600 hover:underline"
+                    class="inline-flex items-center justify-center px-4 py-2 text-white/40 hover:text-white/60 transition-colors"
                     @click="closeModal"
                 >
                     {{ $t('Forgot Password') }}
