@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Metrics;
 
 use App\Enums\LocationType;
+use App\Enums\XpScore;
 use App\Models\Photo;
+use App\Models\Users\User;
 use App\Services\Redis\RedisKeys;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Support\Facades\{DB, Log, Redis};
@@ -97,6 +99,10 @@ final class MetricsService
                 'processed_xp' => null,
             ]);
 
+            // Reverse users.xp — processed_xp includes upload base + tag XP
+            User::where('id', $photo->user_id)
+                ->update(['xp' => DB::raw("GREATEST(CAST(xp AS SIGNED) - {$oldXp}, 0)")]);
+
             // FIX #3: Use unified Redis update (pass positive values, collector will negate)
             $this->updateRedis($photo, [
                 'tags' => $oldTags,
@@ -104,6 +110,49 @@ final class MetricsService
                 'xp' => $oldXp,
             ], 'delete');
         });
+    }
+
+    /**
+     * Record upload-time metrics (XP + 1 upload) so the user appears
+     * on time-filtered leaderboards immediately, before tagging.
+     * When MetricsService::processPhoto() runs later at tag time,
+     * it will upsert over these rows with the full XP (which already
+     * includes the upload base via XpCalculator).
+     */
+    public function recordUploadMetrics(Photo $photo, int $uploadXp): void
+    {
+        $metrics = [
+            'tags_count' => 0,
+            'brands_count' => 0,
+            'materials_count' => 0,
+            'custom_tags_count' => 0,
+            'litter' => 0,
+            'xp' => $uploadXp,
+        ];
+
+        // Write to MySQL metrics table (upload appears on time-filtered leaderboards)
+        $rows = $this->buildTimeSeriesRows($photo, $metrics, 1);
+        $this->upsertTimeSeriesRows($rows);
+
+        // Mark photo as "processed" with upload-only metrics so processPhoto()
+        // at tag time routes to doUpdate() (delta-based) instead of doCreate()
+        // which would double-count uploads and XP.
+        $photo->update([
+            'processed_at' => now('UTC'),
+            'processed_fp' => '',
+            'processed_tags' => json_encode([], JSON_NUMERIC_CHECK),
+            'processed_xp' => $uploadXp,
+        ]);
+
+        // Update Redis: user stats, leaderboard ZSETs, scope stats, HLLs.
+        // Called directly (not via DB::afterCommit) because recordUploadMetrics
+        // is not wrapped in DB::transaction — afterCommit callbacks at the
+        // outermost transaction level would not fire in RefreshDatabase tests.
+        RedisMetricsCollector::processPhoto($photo, [
+            'tags' => [],
+            'litter' => 0,
+            'xp' => $uploadXp,
+        ], 'create');
     }
 
     /**
@@ -173,6 +222,13 @@ final class MetricsService
             'processed_xp' => $newMetrics['xp'],
         ]);
 
+        // Sync users.xp with tag XP delta (upload XP cancels out in delta).
+        // Use GREATEST to prevent unsigned underflow on users.xp column.
+        if ($xpDelta !== 0) {
+            User::where('id', $photo->user_id)
+                ->update(['xp' => DB::raw("GREATEST(CAST(xp AS SIGNED) + {$xpDelta}, 0)")]);
+        }
+
         $this->updateRedis($photo, [
             'tags' => $tagDeltas,
             'litter' => $deltaMetrics['litter'],
@@ -198,10 +254,16 @@ final class MetricsService
 
         // Detect format: flat array (list) vs nested dict (associative)
         if (is_array($summaryTags) && array_is_list($summaryTags)) {
-            return $this->extractFromFlatSummary($summaryTags, $photo);
+            $metrics = $this->extractFromFlatSummary($summaryTags, $photo);
+        } else {
+            $metrics = $this->extractFromNestedSummary($summaryTags, $photo);
         }
 
-        return $this->extractFromNestedSummary($summaryTags, $photo);
+        // photo.xp is tag-only; add upload base so effective XP matches
+        // what's stored in processed_xp and metrics table (upload + tag)
+        $metrics['xp'] = (int) ($photo->xp ?? 0) + XpScore::Upload->xp();
+
+        return $metrics;
     }
 
     /**
@@ -279,7 +341,7 @@ final class MetricsService
             'materials_count' => $totalMaterials,
             'custom_tags_count' => $totalCustom,
             'litter' => $totalLitter,
-            'xp' => (int) ($photo->xp ?? 0),
+            'xp' => 0, // placeholder — caller adds upload base
         ];
     }
 
@@ -355,7 +417,7 @@ final class MetricsService
             'materials_count' => $totalMaterials,
             'custom_tags_count' => $totalCustom,
             'litter' => $totalLitter,
-            'xp' => (int) ($photo->xp ?? 0),
+            'xp' => 0, // placeholder — caller adds upload base
         ];
     }
 

@@ -125,4 +125,53 @@ class ProfileSettingsTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_picked_up_can_be_set_to_true(): void
+    {
+        $user = User::factory()->create(['picked_up' => null]);
+
+        $response = $this->actingAs($user)->postJson('/api/settings/update', [
+            'key' => 'picked_up',
+            'value' => true,
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(1, $user->fresh()->picked_up);
+    }
+
+    public function test_picked_up_can_be_set_to_false(): void
+    {
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $response = $this->actingAs($user)->postJson('/api/settings/update', [
+            'key' => 'picked_up',
+            'value' => false,
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals(0, $user->fresh()->picked_up);
+    }
+
+    public function test_picked_up_can_be_set_to_null(): void
+    {
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $response = $this->actingAs($user)->postJson('/api/settings/update', [
+            'key' => 'picked_up',
+            'value' => null,
+        ]);
+
+        $response->assertOk();
+        $this->assertNull($user->fresh()->picked_up);
+    }
+
+    public function test_profile_index_returns_picked_up_null(): void
+    {
+        $user = User::factory()->create(['picked_up' => null]);
+
+        $response = $this->actingAs($user)->getJson('/api/user/profile/index');
+
+        $response->assertOk();
+        $this->assertNull($response->json('user.picked_up'));
+    }
 }

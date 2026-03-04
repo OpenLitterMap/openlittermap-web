@@ -169,24 +169,57 @@ onUnmounted(() => {
     clearTimeout(debounceTimer);
 });
 
+/**
+ * Score a match: lower = better.
+ *  0 — key starts with query (e.g. "bot" → "bottle")
+ *  1 — a word boundary starts with query (e.g. "bot" → "wine_bottle")
+ *  2 — substring match anywhere
+ */
+const scoreMatch = (lowerKey, term, normalizedTerm) => {
+    if (lowerKey.startsWith(term) || lowerKey.startsWith(normalizedTerm)) return 0;
+    // Check word boundaries (after _ or space)
+    const words = lowerKey.split(/[_ ]/);
+    if (words.some((w) => w.startsWith(term) || w.startsWith(normalizedTerm))) return 1;
+    return 2;
+};
+
 const filteredTags = computed(() => {
     if (debouncedQuery.value === '') return [];
 
     const searchTerm = debouncedQuery.value.toLowerCase();
-    return props.tags.filter((tag) => {
+    // Normalize spaces to underscores so "wine bottle" matches "wine_bottle"
+    const normalizedTerm = searchTerm.replace(/\s+/g, '_');
+    const scored = [];
+
+    for (const tag of props.tags) {
         // Use precomputed lowerKey when available
-        if (tag.lowerKey?.includes(searchTerm)) return true;
-        // Fallback for tags without lowerKey
-        if (tag.key.toLowerCase().includes(searchTerm)) return true;
+        const lowerKey = tag.lowerKey || tag.key.toLowerCase();
+        const lowerCat = tag.categoryKey?.toLowerCase();
 
-        // Match by category name
-        if (tag.categoryKey?.toLowerCase().includes(searchTerm)) return true;
+        let matched = false;
+        let score = 3;
 
-        // Match types by parent object name
-        if (tag.type === 'type' && tag.objectKey?.toLowerCase().includes(searchTerm)) return true;
+        if (lowerKey.includes(searchTerm) || lowerKey.includes(normalizedTerm)) {
+            matched = true;
+            score = scoreMatch(lowerKey, searchTerm, normalizedTerm);
+        } else if (lowerCat?.includes(searchTerm) || lowerCat?.includes(normalizedTerm)) {
+            matched = true;
+            score = 2;
+        } else if (tag.type === 'type') {
+            const lowerObj = tag.objectKey?.toLowerCase();
+            if (lowerObj?.includes(searchTerm) || lowerObj?.includes(normalizedTerm)) {
+                matched = true;
+                score = 2;
+            }
+        }
 
-        return false;
-    });
+        if (matched) {
+            scored.push({ tag, score });
+        }
+    }
+
+    scored.sort((a, b) => a.score - b.score);
+    return scored.map((s) => s.tag);
 });
 
 const groupedTags = computed(() => {
@@ -197,7 +230,7 @@ const groupedTags = computed(() => {
         groups[type].tags.push(tag);
     }
 
-    const order = ['object', 'type', 'category', 'material', 'brand', 'customTag'];
+    const order = ['object', 'category', 'material', 'brand', 'customTag'];
     return order
         .map((t) => {
             if (!groups[t]) return null;

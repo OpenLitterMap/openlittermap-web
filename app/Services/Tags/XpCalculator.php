@@ -25,7 +25,7 @@ final class XpCalculator
      */
     public static function calculateFromTags(array $tags, ?array $objectKeys = null): int
     {
-        $xp = XpScore::Upload->xp(); // Base XP: 5
+        $xp = 0; // Tag XP only — upload XP is awarded separately by UploadPhotoController
 
         // Objects: Check for special objects, otherwise use standard XP
         foreach ($tags['objects'] ?? [] as $id => $quantity) {
@@ -78,7 +78,7 @@ final class XpCalculator
      */
     private static function calculateFromFlatSummary(array $tags, array $objectKeys): int
     {
-        $xp = XpScore::Upload->xp();
+        $xp = 0;
 
         foreach ($tags as $tag) {
             $quantity = $tag['quantity'] ?? 0;
@@ -115,7 +115,7 @@ final class XpCalculator
      */
     private static function calculateFromNestedSummary(array $tags, array $objectKeys): int
     {
-        $xp = XpScore::Upload->xp();
+        $xp = 0;
 
         foreach ($tags as $categoryId => $objects) {
             foreach ($objects as $objectId => $data) {

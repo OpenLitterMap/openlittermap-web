@@ -198,6 +198,7 @@ import TaggingHeader from './components/TaggingHeader.vue';
 import UnifiedTagSearch from './components/UnifiedTagSearch.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import ActiveTagsList from './components/ActiveTagsList.vue';
+import { calculateTotalXp, getToastSummary } from './useXpCalculator.js';
 
 const toast = useToast();
 const route = useRoute();
@@ -211,7 +212,8 @@ const userStore = useUserStore();
 // User's default picked_up preference (items_remaining=false means picked_up=true)
 const defaultPickedUp = computed(() => {
     const val = userStore.user?.picked_up;
-    if (val === true || val === false) return val;
+    if (val === true || val === 1) return true;
+    if (val === false || val === 0) return false;
     return null;
 });
 
@@ -252,12 +254,18 @@ const activeTags = computed(() => {
 // One entry per (object, category) pair to disambiguate objects that appear in multiple categories
 const searchableTags = computed(() => {
     const tags = [];
+    const seenCompound = new Set();
 
-    // Objects: one entry per (object, category) pair
+    // Build set of all base object keys so compound entries don't duplicate them
+    const baseObjectKeys = new Set(tagsStore.objects.map((o) => o.key));
+
+    // Objects: one entry per (object, category) pair + compound entries for types
     tagsStore.objects.forEach((obj) => {
         if (obj.categories?.length) {
             obj.categories.forEach((cat) => {
                 const cloId = tagsStore.getCloId(cat.id, obj.id);
+
+                // Base object entry (always present)
                 tags.push({
                     id: `obj-${obj.id}-cat-${cat.id}`,
                     key: obj.key,
@@ -269,6 +277,33 @@ const searchableTags = computed(() => {
                     cloId: cloId,
                     raw: obj,
                 });
+
+                // Compound entries: one per type valid for this CLO (skip 'unknown')
+                if (cloId) {
+                    const cloTypes = tagsStore.getTypesForClo(cloId);
+                    cloTypes.forEach((typeObj) => {
+                        if (typeObj.key === 'unknown') return;
+                        if (obj.key.includes(typeObj.key)) return;
+                        const compoundKey = `${typeObj.key}_${obj.key}`;
+                        if (seenCompound.has(compoundKey)) return;
+                        if (baseObjectKeys.has(compoundKey)) return; // skip if old object with same key exists
+                        seenCompound.add(compoundKey);
+                        tags.push({
+                            id: `obj-${obj.id}-cat-${cat.id}-type-${typeObj.key}`,
+                            key: `${typeObj.key}_${obj.key}`,
+                            lowerKey: `${typeObj.key} ${obj.key} ${typeObj.key}_${obj.key} ${cat.key}`.toLowerCase(),
+                            text: `${typeObj.key}_${obj.key}`,
+                            type: 'object',
+                            objectId: obj.id,
+                            objectKey: obj.key,
+                            preselectedType: typeObj.key,
+                            categoryId: cat.id,
+                            categoryKey: cat.key,
+                            cloId: cloId,
+                            raw: obj,
+                        });
+                    });
+                }
             });
         } else {
             tags.push({
@@ -283,32 +318,6 @@ const searchableTags = computed(() => {
                 raw: obj,
             });
         }
-    });
-
-    // Types: one entry per category_object_type, with parent object context
-    tagsStore.categoryObjectTypes.forEach((cot) => {
-        const typeObj = tagsStore.types.find((t) => t.id === cot.litter_object_type_id);
-        if (!typeObj) return;
-
-        const clo = tagsStore.categoryObjects.find((co) => co.id === cot.category_litter_object_id);
-        if (!clo) return;
-
-        const obj = tagsStore.objects.find((o) => o.id === clo.litter_object_id);
-        const cat = tagsStore.categories.find((c) => c.id === clo.category_id);
-        if (!obj || !cat) return;
-
-        tags.push({
-            id: `type-${cot.category_litter_object_id}-${cot.litter_object_type_id}`,
-            key: typeObj.key,
-            lowerKey: typeObj.key.toLowerCase(),
-            text: typeObj.key,
-            type: 'type',
-            cloId: clo.id,
-            typeId: typeObj.id,
-            objectKey: obj.key,
-            categoryKey: cat.key,
-            raw: { type: typeObj, object: obj, category: cat, clo: clo },
-        });
     });
 
     tagsStore.brands.forEach((brand) => {
@@ -351,45 +360,10 @@ const progressPercent = computed(() => {
     return Math.min(100, (taggedCount.value / total) * 100);
 });
 
-// XP Calculation — matches backend XpScore enum values:
-// Upload=5, Object=1, Brand=3, Material=2, CustomTag=1
-// Special objects: dumping_small=10, dumping_medium=25, dumping_large=50, bags_litter=10
-const SPECIAL_OBJECT_XP = { dumping_small: 10, dumping_medium: 25, dumping_large: 50, bags_litter: 10 };
-
+// XP Calculation — delegates to shared composable (useXpCalculator.js)
 const calculateXP = computed(() => {
     if (!hasPhotos.value) return 0;
-
-    let xp = 5; // Base upload XP (XpScore::Upload) — always earned per photo
-
-    activeTags.value.forEach((tag) => {
-        const qty = tag.quantity || 1;
-        const objectXp = SPECIAL_OBJECT_XP[tag.object?.key] || 1;
-
-        if (tag.type === 'brand-only') {
-            xp += qty; // Object (unclassified.other): qty × 1
-            xp += qty * 3; // Brand: qty × 3
-        } else if (tag.type === 'material-only') {
-            xp += qty; // Object: qty × 1
-            xp += qty * 2; // Material: qty × 2
-        } else if (tag.custom) {
-            xp += qty; // Object: qty × 1
-            xp += qty; // Custom tag: qty × 1
-        } else {
-            xp += qty * objectXp; // Object XP (with special overrides)
-
-            if (tag.brands?.length) {
-                tag.brands.forEach((b) => (xp += (b.quantity || 1) * 3));
-            }
-            if (tag.materials?.length) {
-                xp += tag.materials.length * qty * 2;
-            }
-            if (tag.customTags?.length) {
-                xp += tag.customTags.length * qty;
-            }
-        }
-    });
-
-    return xp;
+    return calculateTotalXp(activeTags.value);
 });
 
 // Validation: check if any object tag is missing its CLO id
@@ -645,12 +619,22 @@ const handleTagSelection = (selected) => {
 
     const tags = tagsByPhoto.value[photoId];
 
+    // Resolve preselectedType name to a type ID
+    let resolvedTypeId = null;
+    if (selected.preselectedType && selected.cloId) {
+        const availableTypes = tagsStore.getTypesForClo(selected.cloId);
+        const matched = availableTypes.find((t) => t.key === selected.preselectedType);
+        resolvedTypeId = matched?.id || null;
+    }
+
     // Check for existing duplicate and increment quantity instead of adding a new entry
     let existing = null;
     if (selected.type === 'object') {
-        existing = tags.find((t) => t.cloId && t.cloId === selected.cloId && !t.typeId);
-    } else if (selected.type === 'type') {
-        existing = tags.find((t) => t.cloId === selected.cloId && t.typeId === selected.typeId);
+        if (resolvedTypeId) {
+            existing = tags.find((t) => t.cloId === selected.cloId && t.typeId === resolvedTypeId);
+        } else {
+            existing = tags.find((t) => t.cloId && t.cloId === selected.cloId && !t.typeId);
+        }
     } else if (selected.type === 'brand') {
         existing = tags.find((t) => t.type === 'brand-only' && t.brand?.id === selected.raw.id);
     } else if (selected.type === 'material') {
@@ -673,23 +657,7 @@ const handleTagSelection = (selected) => {
             cloId: selected.cloId || null,
             categoryId: selected.categoryId || null,
             categoryKey: selected.categoryKey || null,
-            typeId: null,
-            quantity: 1,
-            pickedUp: defaultPickedUp.value,
-            brands: [],
-            materials: [],
-            customTags: [],
-        });
-    } else if (selected.type === 'type') {
-        // Type selection: pre-fill both CLO and type, use parent object from raw
-        const parentObject = selected.raw?.object;
-        tags.push({
-            id: tagId,
-            object: parentObject,
-            cloId: selected.cloId,
-            categoryId: selected.raw?.category?.id || null,
-            categoryKey: selected.raw?.category?.key || null,
-            typeId: selected.typeId,
+            typeId: resolvedTypeId,
             quantity: 1,
             pickedUp: defaultPickedUp.value,
             brands: [],
@@ -826,6 +794,10 @@ const submitTags = async () => {
     isSubmitting.value = true;
     const photoId = currentPhoto.value.id;
 
+    // Snapshot XP before tags are cleared
+    const submittedXp = calculateXP.value;
+    const submittedTags = [...activeTags.value];
+
     const tagsForUpload = activeTags.value.map((tag) => {
         // Use CLO-based payload when we have a CLO id
         if (tag.cloId) {
@@ -891,6 +863,9 @@ const submitTags = async () => {
 
             // Refresh user XP/level (non-blocking)
             userStore.REFRESH_USER();
+
+            // Show XP toast
+            toast.success(`+${submittedXp} XP earned\n${getToastSummary(submittedTags)}`, { timeout: 3000 });
 
             // Clear only this photo's tags after successful submit
             delete tagsByPhoto.value[photoId];

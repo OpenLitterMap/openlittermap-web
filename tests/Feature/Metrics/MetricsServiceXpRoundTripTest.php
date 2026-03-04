@@ -46,9 +46,11 @@ class MetricsServiceXpRoundTripTest extends TestCase
         $photo->refresh();
 
         $this->assertNotNull($photo->processed_at);
-        $this->assertEquals($xp, (int) $photo->processed_xp, 'processed_xp should store XP > 255 without overflow');
+        // processed_xp = photo.xp + upload base (5)
+        $effectiveXp = $xp + 5;
+        $this->assertEquals($effectiveXp, (int) $photo->processed_xp, 'processed_xp should store XP > 255 without overflow');
 
-        // Metrics table should also have the correct XP
+        // Metrics table should also have the correct effective XP
         $globalRow = DB::table('metrics')
             ->where('timescale', 0)
             ->where('location_type', 0)
@@ -56,7 +58,7 @@ class MetricsServiceXpRoundTripTest extends TestCase
             ->first();
 
         $this->assertNotNull($globalRow);
-        $this->assertEquals($xp, (int) $globalRow->xp);
+        $this->assertEquals($effectiveXp, (int) $globalRow->xp);
         $this->assertEquals(500, (int) $globalRow->litter);
     }
 

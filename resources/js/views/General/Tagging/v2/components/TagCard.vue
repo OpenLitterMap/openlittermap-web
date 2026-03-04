@@ -1,7 +1,7 @@
 <template>
     <div :class="['rounded-xl p-3', tag.object && !tag.cloId ? 'bg-red-500/10 border border-red-500/30' : 'bg-white/5 border border-white/10']">
-        <!-- Line 1: Tag name, quantity, actions -->
-        <div class="flex items-center gap-3">
+        <!-- Row 1: Tag name, quantity, actions -->
+        <div class="flex items-center gap-2">
             <!-- Custom tag badge -->
             <span
                 v-if="tag.custom"
@@ -11,17 +11,20 @@
             </span>
 
             <!-- Tag name -->
-            <span class="text-white font-medium" :title="tagDisplay">
+            <span class="text-white font-medium truncate min-w-0" :title="tagDisplay">
                 {{ tagDisplay }}
             </span>
 
             <!-- Type badge (when type is selected) -->
             <span
                 v-if="selectedTypeName"
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex-shrink-0"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-emerald-500/30 text-white border border-emerald-400/50 flex-shrink-0"
             >
                 {{ selectedTypeName }}
             </span>
+
+            <!-- Spacer -->
+            <div class="flex-1 min-w-0"></div>
 
             <!-- Quantity controls -->
             <div class="flex items-center gap-1 flex-shrink-0">
@@ -29,7 +32,7 @@
                     @click="decreaseQuantity"
                     :disabled="tag.quantity <= 1"
                     aria-label="Decrease quantity"
-                    class="w-8 h-8 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-7 h-7 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                     <span class="text-white text-sm">−</span>
                 </button>
@@ -43,86 +46,87 @@
                     min="1"
                     max="100"
                     aria-label="Quantity"
-                    class="w-12 h-8 text-center bg-white/5 border border-white/10 rounded-lg text-white text-sm tabular-nums focus:outline-none focus:border-emerald-500/50"
+                    class="w-10 h-7 text-center bg-white/5 border border-white/10 rounded-lg text-white text-sm tabular-nums focus:outline-none focus:border-emerald-500/50"
                 />
 
                 <button
                     @click="increaseQuantity"
                     :disabled="tag.quantity >= 100"
                     aria-label="Increase quantity"
-                    class="w-8 h-8 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-7 h-7 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                     <span class="text-white text-sm">+</span>
                 </button>
             </div>
 
-            <!-- Spacer -->
-            <div class="flex-1"></div>
+            <!-- Picked up dropdown -->
+            <select
+                :value="tag.pickedUp"
+                @change="setPickedUp($event.target.value)"
+                aria-label="Picked up status"
+                :class="[
+                    'px-2 py-1 rounded-lg text-xs font-medium transition-colors appearance-none cursor-pointer border flex-shrink-0',
+                    tag.pickedUp === true
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        : tag.pickedUp === false
+                          ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                          : 'bg-white/5 text-white/50 border-white/10',
+                ]"
+            >
+                <option :value="null" class="bg-slate-800 text-white">? Unknown</option>
+                <option :value="true" class="bg-slate-800 text-white">✓ Picked up</option>
+                <option :value="false" class="bg-slate-800 text-white">✗ Not picked</option>
+            </select>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <!-- Add details button -->
-                <button
-                    v-if="!showDetails"
-                    @click="openDetails"
-                    class="px-2 py-1.5 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                >
-                    Add more tags
-                </button>
+            <!-- Add details button -->
+            <button
+                v-if="!showDetails"
+                @click="openDetails"
+                class="px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors flex-shrink-0"
+            >
+                +
+            </button>
 
-                <!-- Picked up dropdown -->
-                <select
-                    :value="tag.pickedUp"
-                    @change="setPickedUp($event.target.value)"
-                    aria-label="Picked up status"
-                    :class="[
-                        'px-2 py-1.5 rounded-lg text-xs font-medium transition-colors appearance-none cursor-pointer border',
-                        tag.pickedUp === true
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                            : tag.pickedUp === false
-                              ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                              : 'bg-white/5 text-white/50 border-white/10',
-                    ]"
-                >
-                    <option :value="null" class="bg-slate-800 text-white">? Unknown</option>
-                    <option :value="true" class="bg-slate-800 text-white">✓ Picked up</option>
-                    <option :value="false" class="bg-slate-800 text-white">✗ Not picked</option>
-                </select>
+            <!-- Remove button -->
+            <button
+                @click="$emit('remove')"
+                aria-label="Remove tag"
+                title="Remove tag"
+                class="w-7 h-7 flex items-center justify-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors flex-shrink-0"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                    />
+                </svg>
+            </button>
+        </div>
 
-                <!-- Type pills (only for objects with valid types) -->
-                <div v-if="props.availableTypes.length > 0" class="flex items-center gap-1 flex-shrink-0">
-                    <button
-                        v-for="t in props.availableTypes"
-                        :key="t.id"
-                        @click="setType(tag.typeId === t.id ? null : t.id)"
-                        :class="[
-                            'px-2 py-1 rounded-lg text-xs font-medium transition-colors border',
-                            tag.typeId === t.id
-                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-                                : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10',
-                        ]"
-                    >
-                        {{ formatKey(t.key) }}
-                    </button>
-                </div>
+        <!-- XP breakdown -->
+        <div class="flex items-center gap-2 mt-1 text-[11px]">
+            <span class="text-emerald-400 font-medium">+{{ tagXp }} XP</span>
+            <span class="text-white/30">{{ tagBreakdown }}</span>
+        </div>
 
-                <!-- Remove button -->
-                <button
-                    @click="$emit('remove')"
-                    aria-label="Delete all tags"
-                    title="Delete all tags"
-                    class="w-8 h-8 flex items-center justify-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
-                </button>
-            </div>
+        <!-- Row 2: Type pills (only for objects with valid types) -->
+        <div v-if="props.availableTypes.length > 0" class="flex flex-wrap items-center gap-1 mt-2 pt-2 border-t border-white/5">
+            <span class="text-[10px] text-white/30 mr-1">Type:</span>
+            <button
+                v-for="t in props.availableTypes"
+                :key="t.id"
+                @click="setType(tag.typeId === t.id ? null : t.id)"
+                :class="[
+                    'px-2 py-0.5 rounded-lg text-[11px] font-medium transition-colors border',
+                    tag.typeId === t.id
+                        ? 'bg-emerald-500/30 text-white border-emerald-400/50 ring-1 ring-emerald-400/30'
+                        : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10',
+                ]"
+            >
+                {{ formatKey(t.key) }}
+            </button>
         </div>
 
         <!-- Line 2: Detail badges (when panel closed and has details) -->
@@ -322,6 +326,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
 import UnifiedTagSearch from './UnifiedTagSearch.vue';
+import { calculateTagXp, getTagBreakdownParts } from '../useXpCalculator.js';
 
 const props = defineProps({
     tag: {
@@ -456,6 +461,9 @@ const selectedTypeName = computed(() => {
     const t = props.availableTypes.find((t) => t.id === props.tag.typeId);
     return t ? formatKey(t.key) : null;
 });
+
+const tagXp = computed(() => calculateTagXp(props.tag));
+const tagBreakdown = computed(() => getTagBreakdownParts(props.tag).join(' \u00B7 '));
 
 const hasDetails = computed(() => {
     return (

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Enums\LocationType;
 use App\Enums\VerificationStatus;
 use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
@@ -150,11 +151,7 @@ class ProfileController extends Controller
         $levelInfo = LevelService::getUserLevel($xp);
 
         $totalRanked = User::count();
-        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
-        $rank = Redis::zRevRank($globalXpKey, (string) $id);
-        $globalPosition = $rank !== false
-            ? $rank + 1
-            : User::where('xp', '>', $xp)->count() + 1;
+        $globalPosition = $this->getGlobalRank($id, $xp);
 
         $percentile = $totalRanked > 0
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
@@ -213,6 +210,11 @@ class ProfileController extends Controller
         // Stats from Redis, with MySQL fallback for pre-v5 users
         $metrics = RedisMetricsCollector::getUserMetrics($userId);
 
+        // Refresh user to pick up any query-builder updates (e.g. MetricsService
+        // syncs users.xp via User::where()->increment(), which doesn't update
+        // the cached model attributes)
+        $user->refresh();
+
         $uploads = $metrics['uploads'] ?: (int) $user->total_images;
         $litter = $metrics['litter'] ?: (int) $user->total_litter;
         $xp = $metrics['xp'] ?: (int) $user->xp;
@@ -225,18 +227,9 @@ class ProfileController extends Controller
             $user->save();
         }
 
-        // Rank from Redis ZSET, with MySQL fallback
-        // Total is always the full user count — everyone is ranked
+        // Rank from metrics table (all-time), consistent with LeaderboardController
         $totalRanked = User::count();
-        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
-        $rank = Redis::zRevRank($globalXpKey, (string) $userId);
-
-        if ($rank !== false) {
-            $globalPosition = $rank + 1;
-        } else {
-            // Not in ZSET (0 XP) — tied last with all other 0-XP users
-            $globalPosition = User::where('xp', '>', $xp)->count() + 1;
-        }
+        $globalPosition = $this->getGlobalRank($userId, (int) $user->xp);
 
         $percentile = $totalRanked > 0
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
@@ -292,7 +285,7 @@ class ProfileController extends Controller
                 'show_username' => (bool) $user->show_username,
                 'show_name_maps' => (bool) $user->show_name_maps,
                 'show_username_maps' => (bool) $user->show_username_maps,
-                'picked_up' => (bool) $user->picked_up,
+                'picked_up' => $user->picked_up === null ? null : (bool) $user->picked_up,
                 'previous_tags' => (bool) $user->previous_tags,
                 'emailsub' => (bool) $user->emailsub,
                 'prevent_others_tagging_my_photos' => (bool) $user->prevent_others_tagging_my_photos,
@@ -327,6 +320,36 @@ class ProfileController extends Controller
             ],
             'team' => $team,
         ];
+    }
+
+    /**
+     * Get the user's global rank position from the all-time metrics table.
+     * Falls back to users.xp count if no metrics row exists yet.
+     */
+    private function getGlobalRank(int $userId, int $fallbackXp): int
+    {
+        $metricsRow = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('year', 0)
+            ->where('month', 0)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($metricsRow && $metricsRow->xp > 0) {
+            return DB::table('metrics')
+                ->where('timescale', 0)
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('year', 0)
+                ->where('month', 0)
+                ->where('user_id', '>', 0)
+                ->where('xp', '>', $metricsRow->xp)
+                ->count() + 1;
+        }
+
+        return User::where('xp', '>', $fallbackXp)->count() + 1;
     }
 
     /**

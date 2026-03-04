@@ -9,6 +9,7 @@ use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
+use App\Tags\TagsConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -47,10 +48,18 @@ class GetTagsController extends Controller
             ->orderBy('key')
             ->get();
 
+        $objectTypesMap = $this->buildObjectTypesMap();
+
         $litterObjects = LitterObject::with(['categories:id,key'])
             ->select('id', 'key')
             ->orderBy('key')
-            ->get();
+            ->get()
+            ->map(function (LitterObject $obj) use ($objectTypesMap) {
+                $data = $obj->toArray();
+                $data['types'] = $objectTypesMap[$obj->key] ?? [];
+
+                return $data;
+            });
 
         $materials = Materials::select('id', 'key')->orderBy('key')->get();
 
@@ -73,6 +82,33 @@ class GetTagsController extends Controller
             'category_objects' => $categoryObjects,
             'category_object_types' => $categoryObjectTypes,
         ]);
+    }
+
+    /**
+     * Build a map of object key → merged type keys from TagsConfig.
+     *
+     * If the same object appears in multiple categories, types are merged and deduplicated.
+     */
+    protected function buildObjectTypesMap(): array
+    {
+        $map = [];
+
+        foreach (TagsConfig::get() as $objects) {
+            foreach ($objects as $objectKey => $config) {
+                $types = $config['types'] ?? [];
+
+                if (empty($types)) {
+                    $map[$objectKey] ??= [];
+                    continue;
+                }
+
+                $map[$objectKey] = array_values(array_unique(
+                    array_merge($map[$objectKey] ?? [], $types)
+                ));
+            }
+        }
+
+        return $map;
     }
 
     /**

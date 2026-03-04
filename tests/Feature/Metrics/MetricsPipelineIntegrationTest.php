@@ -107,7 +107,7 @@ class MetricsPipelineIntegrationTest extends TestCase
 
         // Photo processed state
         $this->assertNotNull($photo->processed_at);
-        $this->assertEquals(10, (int) $photo->processed_xp);
+        $this->assertEquals(15, (int) $photo->processed_xp);
         $this->assertNotNull($photo->processed_fp);
 
         // MySQL: global aggregate
@@ -115,13 +115,13 @@ class MetricsPipelineIntegrationTest extends TestCase
         $this->assertNotNull($global);
         $this->assertEquals(1, (int) $global->uploads);
         $this->assertEquals(5, (int) $global->litter); // 3 + 2
-        $this->assertEquals(10, (int) $global->xp);
+        $this->assertEquals(15, (int) $global->xp);
 
         // MySQL: per-user row
         $userRow = $this->getGlobalUserRow($user->id);
         $this->assertNotNull($userRow);
         $this->assertEquals(1, (int) $userRow->uploads);
-        $this->assertEquals(10, (int) $userRow->xp);
+        $this->assertEquals(15, (int) $userRow->xp);
 
         // MySQL: country-scoped row
         $countryRow = $this->getCountryAggregate($photo->country_id);
@@ -133,15 +133,15 @@ class MetricsPipelineIntegrationTest extends TestCase
         $globalScope = RedisKeys::global();
         $this->assertEquals(1, (int) Redis::hGet(RedisKeys::stats($globalScope), 'photos'));
         $this->assertEquals(5, (int) Redis::hGet(RedisKeys::stats($globalScope), 'litter'));
-        $this->assertEquals(10, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
+        $this->assertEquals(15, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
 
         // Redis: XP leaderboard
-        $this->assertEquals(10.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
+        $this->assertEquals(15.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
 
         // Redis: user stats
         $userScope = RedisKeys::user($user->id);
         $this->assertEquals(1, (int) Redis::hGet(RedisKeys::stats($userScope), 'uploads'));
-        $this->assertEquals(10, (int) Redis::hGet(RedisKeys::stats($userScope), 'xp'));
+        $this->assertEquals(15, (int) Redis::hGet(RedisKeys::stats($userScope), 'xp'));
         $this->assertEquals(5, (int) Redis::hGet(RedisKeys::stats($userScope), 'litter'));
     }
 
@@ -159,7 +159,7 @@ class MetricsPipelineIntegrationTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(3, (int) $this->getGlobalAggregate()->litter);
-        $this->assertEquals(10, (int) $this->getGlobalAggregate()->xp);
+        $this->assertEquals(15, (int) $this->getGlobalAggregate()->xp);
 
         // Simulate tag edit: change summary and XP
         $photo->update([
@@ -173,19 +173,19 @@ class MetricsPipelineIntegrationTest extends TestCase
         $photo->refresh();
 
         // Fingerprint should change
-        $this->assertEquals(25, (int) $photo->processed_xp);
+        $this->assertEquals(30, (int) $photo->processed_xp);
 
-        // MySQL: litter went from 3 → 8 (delta +5), XP from 10 → 25 (delta +15)
+        // MySQL: litter went from 3 → 8 (delta +5), XP from 15 → 30 (delta +15)
         $global = $this->getGlobalAggregate();
         $this->assertEquals(8, (int) $global->litter);
-        $this->assertEquals(25, (int) $global->xp);
+        $this->assertEquals(30, (int) $global->xp);
         $this->assertEquals(1, (int) $global->uploads); // Uploads unchanged on update
 
         // Redis: should reflect cumulative values
         $globalScope = RedisKeys::global();
         $this->assertEquals(8, (int) Redis::hGet(RedisKeys::stats($globalScope), 'litter'));
-        $this->assertEquals(25, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
-        $this->assertEquals(25.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
+        $this->assertEquals(30, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
+        $this->assertEquals(30.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
     }
 
     public function test_delete_reverses_all_metrics(): void
@@ -205,9 +205,9 @@ class MetricsPipelineIntegrationTest extends TestCase
 
         // Verify creation worked
         $this->assertEquals(4, (int) $this->getGlobalAggregate()->litter);
-        $this->assertEquals(15, (int) $this->getGlobalAggregate()->xp);
+        $this->assertEquals(20, (int) $this->getGlobalAggregate()->xp);
         $this->assertEquals(1, (int) $this->getGlobalAggregate()->uploads);
-        $this->assertEquals(15.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
+        $this->assertEquals(20.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
 
         // Delete
         $this->metricsService->deletePhoto($photo);
@@ -255,9 +255,9 @@ class MetricsPipelineIntegrationTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(2, (int) $this->getGlobalAggregate()->litter);
-        $this->assertEquals(10, (int) $this->getGlobalAggregate()->xp);
+        $this->assertEquals(15, (int) $this->getGlobalAggregate()->xp);
         $this->assertEquals(2, (int) Redis::hGet(RedisKeys::stats($globalScope), 'litter'));
-        $this->assertEquals(10, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
+        $this->assertEquals(15, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
         $this->assertEquals(2, (int) Redis::hGet(RedisKeys::stats($countryScope), 'litter'));
 
         // Step 2: Edit (increase tags)
@@ -271,11 +271,11 @@ class MetricsPipelineIntegrationTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(8, (int) $this->getGlobalAggregate()->litter); // 5 + 3
-        $this->assertEquals(20, (int) $this->getGlobalAggregate()->xp);
+        $this->assertEquals(25, (int) $this->getGlobalAggregate()->xp);
         $this->assertEquals(1, (int) $this->getGlobalAggregate()->uploads); // Still 1
         $this->assertEquals(8, (int) Redis::hGet(RedisKeys::stats($globalScope), 'litter'));
-        $this->assertEquals(20, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
-        $this->assertEquals(20.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
+        $this->assertEquals(25, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
+        $this->assertEquals(25.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
 
         // Step 3: Edit (decrease tags)
         $photo->update([
@@ -288,10 +288,10 @@ class MetricsPipelineIntegrationTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(1, (int) $this->getGlobalAggregate()->litter);
-        $this->assertEquals(5, (int) $this->getGlobalAggregate()->xp);
+        $this->assertEquals(10, (int) $this->getGlobalAggregate()->xp);
         $this->assertEquals(1, (int) Redis::hGet(RedisKeys::stats($globalScope), 'litter'));
-        $this->assertEquals(5, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
-        $this->assertEquals(5.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
+        $this->assertEquals(10, (int) Redis::hGet(RedisKeys::stats($globalScope), 'xp'));
+        $this->assertEquals(10.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));
 
         // Step 4: Delete
         $this->metricsService->deletePhoto($photo);
@@ -335,21 +335,21 @@ class MetricsPipelineIntegrationTest extends TestCase
         $this->metricsService->processPhoto($photo1);
         $this->metricsService->processPhoto($photo2);
 
-        // Global totals: 2 + 6 = 8 litter, 10 + 30 = 40 XP
+        // Global totals: 2 + 6 = 8 litter, 15 + 35 = 50 XP
         $global = $this->getGlobalAggregate();
         $this->assertEquals(8, (int) $global->litter);
-        $this->assertEquals(40, (int) $global->xp);
+        $this->assertEquals(50, (int) $global->xp);
         $this->assertEquals(2, (int) $global->uploads);
 
         // Country 1: only photo1's data
         $c1 = $this->getCountryAggregate($country1->id);
         $this->assertEquals(2, (int) $c1->litter);
-        $this->assertEquals(10, (int) $c1->xp);
+        $this->assertEquals(15, (int) $c1->xp);
 
         // Country 2: only photo2's data
         $c2 = $this->getCountryAggregate($country2->id);
         $this->assertEquals(6, (int) $c2->litter);
-        $this->assertEquals(30, (int) $c2->xp);
+        $this->assertEquals(35, (int) $c2->xp);
 
         // Redis: country scopes are independent
         $c1Scope = RedisKeys::country($country1->id);
@@ -362,7 +362,7 @@ class MetricsPipelineIntegrationTest extends TestCase
 
         $global = $this->getGlobalAggregate();
         $this->assertEquals(6, (int) $global->litter);
-        $this->assertEquals(30, (int) $global->xp);
+        $this->assertEquals(35, (int) $global->xp);
         $this->assertEquals(1, (int) $global->uploads);
 
         $c1 = $this->getCountryAggregate($country1->id);
@@ -370,7 +370,7 @@ class MetricsPipelineIntegrationTest extends TestCase
 
         $c2 = $this->getCountryAggregate($country2->id);
         $this->assertEquals(6, (int) $c2->litter);
-        $this->assertEquals(30, (int) $c2->xp);
+        $this->assertEquals(35, (int) $c2->xp);
     }
 
     public function test_soft_delete_preserves_photo_but_removes_from_public_queries(): void
@@ -425,20 +425,20 @@ class MetricsPipelineIntegrationTest extends TestCase
         $u1Row = $this->getGlobalUserRow($user1->id);
         $u2Row = $this->getGlobalUserRow($user2->id);
 
-        $this->assertEquals(10, (int) $u1Row->xp);
+        $this->assertEquals(15, (int) $u1Row->xp);
         $this->assertEquals(2, (int) $u1Row->litter);
 
-        $this->assertEquals(20, (int) $u2Row->xp);
+        $this->assertEquals(25, (int) $u2Row->xp);
         $this->assertEquals(4, (int) $u2Row->litter);
 
         // Redis: user-specific stats isolated
-        $this->assertEquals(10, (int) Redis::hGet(RedisKeys::stats(RedisKeys::user($user1->id)), 'xp'));
-        $this->assertEquals(20, (int) Redis::hGet(RedisKeys::stats(RedisKeys::user($user2->id)), 'xp'));
+        $this->assertEquals(15, (int) Redis::hGet(RedisKeys::stats(RedisKeys::user($user1->id)), 'xp'));
+        $this->assertEquals(25, (int) Redis::hGet(RedisKeys::stats(RedisKeys::user($user2->id)), 'xp'));
 
         // Redis: both on global leaderboard
         $globalScope = RedisKeys::global();
-        $this->assertEquals(10.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user1->id));
-        $this->assertEquals(20.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user2->id));
+        $this->assertEquals(15.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user1->id));
+        $this->assertEquals(25.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user2->id));
 
         // Delete user1's photo — only user1's metrics should change
         $this->metricsService->deletePhoto($photo1);
@@ -447,10 +447,10 @@ class MetricsPipelineIntegrationTest extends TestCase
         $u2Row = $this->getGlobalUserRow($user2->id);
 
         $this->assertEquals(0, (int) $u1Row->xp);
-        $this->assertEquals(20, (int) $u2Row->xp);
+        $this->assertEquals(25, (int) $u2Row->xp);
 
         $this->assertFalse(Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user1->id));
-        $this->assertEquals(20.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user2->id));
+        $this->assertEquals(25.0, Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user2->id));
     }
 
     public function test_time_series_rows_created_for_all_timescales(): void
@@ -481,7 +481,7 @@ class MetricsPipelineIntegrationTest extends TestCase
                 ->first();
 
             $this->assertNotNull($row, "Missing global aggregate row for timescale $timescale");
-            $this->assertEquals(10, (int) $row->xp);
+            $this->assertEquals(15, (int) $row->xp);
             $this->assertEquals(2, (int) $row->litter);
         }
 
@@ -495,7 +495,7 @@ class MetricsPipelineIntegrationTest extends TestCase
                 ->first();
 
             $this->assertNotNull($row, "Missing per-user row for timescale $timescale");
-            $this->assertEquals(10, (int) $row->xp);
+            $this->assertEquals(15, (int) $row->xp);
         }
     }
 

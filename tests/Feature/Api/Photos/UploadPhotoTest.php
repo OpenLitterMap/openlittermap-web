@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Photos;
 
 use App\Actions\Locations\ReverseGeocodeLocationAction;
+use App\Enums\XpScore;
 use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
@@ -68,7 +69,8 @@ class UploadPhotoTest extends TestCase
             'platform' => 'web',
         ]);
 
-        $this->assertEquals(1, $response->json('xp_awarded'));
+        $this->assertEquals(XpScore::Upload->xp(), $response->json('xp_awarded'));
+        $this->assertEquals(XpScore::Upload->xp(), $user->fresh()->xp);
         $this->assertNotNull($response->json('city'));
         $this->assertNotNull($response->json('state'));
         $this->assertNotNull($response->json('country'));
@@ -345,7 +347,7 @@ class UploadPhotoTest extends TestCase
     // Upload XP and enriched response
     // ---------------------------------------------------------------
 
-    public function test_upload_awards_one_xp()
+    public function test_upload_awards_correct_xp()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
@@ -362,19 +364,15 @@ class UploadPhotoTest extends TestCase
             ),
         ])->assertOk();
 
-        $this->assertEquals(101, $user->fresh()->xp);
+        $this->assertEquals(100 + XpScore::Upload->xp(), $user->fresh()->xp);
     }
 
-    public function test_upload_xp_updates_redis_leaderboard()
+    public function test_upload_writes_metrics_for_leaderboard()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
 
         $user = User::factory()->create(['xp' => 50, 'picked_up' => true]);
-
-        // Clear any existing Redis state for this user
-        $globalKey = RedisKeys::xpRanking(RedisKeys::global());
-        Redis::zRem($globalKey, (string) $user->id);
 
         $this->actingAs($user)->postJson('/api/v3/upload', [
             'photo' => new UploadedFile(
@@ -386,8 +384,15 @@ class UploadPhotoTest extends TestCase
             ),
         ])->assertOk();
 
-        $score = Redis::zScore($globalKey, (string) $user->id);
-        $this->assertEquals(1, (int) $score);
+        // Upload writes to metrics table so user appears on time-filtered leaderboards
+        $this->assertDatabaseHas('metrics', [
+            'timescale' => 0, // all-time
+            'location_type' => 0,
+            'location_id' => 0,
+            'user_id' => $user->id,
+            'xp' => XpScore::Upload->xp(),
+            'uploads' => 1,
+        ]);
     }
 
     public function test_upload_returns_location_data()

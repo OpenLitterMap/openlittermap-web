@@ -1,20 +1,69 @@
 <?php
 
 use App\Http\Controllers\Achievements\AchievementsController;
+use App\Http\Controllers\Admin\AdminImpersonateController;
+use App\Http\Controllers\Admin\AdminQueueController;
+use App\Http\Controllers\Admin\AdminResetTagsController;
+use App\Http\Controllers\Admin\AdminStatsController;
+use App\Http\Controllers\Admin\AdminUsersController;
+use App\Http\Controllers\Admin\FindPhotoByIdController;
+use App\Http\Controllers\Admin\GetNextImageToVerifyController;
+use App\Http\Controllers\Admin\GoBackOnePhotoController;
+use App\Http\Controllers\Admin\UpdateTagsController;
+use App\Http\Controllers\Admin\VerifyImageWithTagsController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\API\DeleteAccountController;
+use App\Http\Controllers\API\GlobalStatsController;
+use App\Http\Controllers\API\MobileAppVersionController;
 use App\Http\Controllers\API\Tags\GetTagsController;
 use App\Http\Controllers\API\Tags\PhotoTagsController;
+use App\Http\Controllers\API\TeamsController as APITeamsController;
+use App\Http\Controllers\ApiSettingsController;
+use App\Http\Controllers\Auth\AuthTokenController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Bbox\BoundingBoxController;
+use App\Http\Controllers\Bbox\VerifyBoxController;
+use App\Http\Controllers\Cleanups\CreateCleanupController;
+use App\Http\Controllers\Cleanups\GetCleanupsGeoJsonController;
+use App\Http\Controllers\Cleanups\JoinCleanupController;
+use App\Http\Controllers\Cleanups\LeaveCleanupController;
 use App\Http\Controllers\Clusters\ClusterController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\DisplayTagsOnMapController;
+use App\Http\Controllers\DownloadControllerNew;
+use App\Http\Controllers\EmailSubController;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
+use App\Http\Controllers\Littercoin\Merchants\ApproveMerchantController;
+use App\Http\Controllers\Littercoin\Merchants\DeleteMerchantController;
+use App\Http\Controllers\Location\GetListOfCountriesController;
 use App\Http\Controllers\Location\LocationController;
 use App\Http\Controllers\Location\TagController;
+use App\Http\Controllers\MapController;
+use App\Http\Controllers\Maps\GlobalMapController;
+use App\Http\Controllers\Maps\Search\FindCustomTagsController;
+use App\Http\Controllers\Merchants\BecomeAMerchantController;
+use App\Http\Controllers\PhotosController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
 use App\Http\Controllers\RedisDataController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\Teams\ParticipantController;
+use App\Http\Controllers\Teams\ParticipantPhotoController;
+use App\Http\Controllers\Teams\ParticipantSessionController;
+use App\Http\Controllers\Teams\TeamsClusterController;
+use App\Http\Controllers\Teams\TeamsController;
+use App\Http\Controllers\Teams\TeamsDataController;
+use App\Http\Controllers\Teams\TeamsLeaderboardController;
+use App\Http\Controllers\Teams\TeamsSettingsController;
+use App\Http\Controllers\Teams\TeamPhotosController;
 use App\Http\Controllers\Uploads\UploadPhotoController;
 use App\Http\Controllers\User\Photos\UsersUploadsController;
+use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\User\UserPhotoController;
+use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WorldCup\GetDataForWorldCupController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,8 +93,8 @@ Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 Route::get('/points', [PointsController::class, 'index']);
 Route::get('/points/stats', [PointsStatsController::class, 'index']);
 Route::get('/points/{id}', [PointsController::class, 'show'])->where('id', '[0-9]+');
-Route::get('/global/stats-data', 'API\GlobalStatsController@index');
-Route::get('/mobile-app-version', 'API\MobileAppVersionController');
+Route::get('/global/stats-data', [GlobalStatsController::class, 'index']);
+Route::get('/mobile-app-version', MobileAppVersionController::class);
 Route::get('/levels', fn () => response()->json(config('levels.thresholds')));
 
 /*
@@ -96,13 +145,13 @@ Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkE
 Route::post('/password/validate-token', [ResetPasswordController::class, 'validateToken']);
 Route::post('/password/reset', [ResetPasswordController::class, 'reset']);
 
-Route::post('/auth/login', [App\Http\Controllers\Auth\LoginController::class, 'login'])
+Route::post('/auth/login', [LoginController::class, 'login'])
     ->middleware(app()->isLocal() ? ['web'] : ['web', 'throttle:5,1']);
 
-Route::post('/auth/token', [App\Http\Controllers\Auth\AuthTokenController::class, 'login'])
+Route::post('/auth/token', [AuthTokenController::class, 'login'])
     ->middleware('throttle:5,1');
 
-Route::post('/auth/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])
+Route::post('/auth/logout', [LoginController::class, 'logout'])
     ->middleware(['web', 'auth:web']);
 
 Route::post('/validate-token', function (Request $request) {
@@ -131,20 +180,20 @@ Route::post('/validate-token', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/user/profile/{id}', 'User\ProfileController@show')->where('id', '[0-9]+');
+Route::get('/user/profile/{id}', [ProfileController::class, 'show'])->where('id', '[0-9]+');
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user/profile/index', 'User\ProfileController@index');
-    Route::get('/user/profile/map', 'User\ProfileController@geojson');
-    Route::get('/user/profile/download', 'User\ProfileController@download');
-    Route::get('/user/profile/photos/index', 'User\UserPhotoController@index');
-    Route::get('/user/profile/photos/previous-custom-tags', 'User\UserPhotoController@previousCustomTags');
-    Route::get('/user/profile/photos/filter', 'User\UserPhotoController@filter');
-    Route::post('/user/profile/photos/tags/bulkTag', 'User\UserPhotoController@bulkTag');
-    Route::post('/user/profile/photos/delete', 'User\UserPhotoController@destroy');
-    Route::post('/profile/upload-profile-photo', 'UsersController@uploadProfilePhoto');
+    Route::get('/user/profile/index', [ProfileController::class, 'index']);
+    Route::get('/user/profile/map', [ProfileController::class, 'geojson']);
+    Route::get('/user/profile/download', [ProfileController::class, 'download']);
+    Route::get('/user/profile/photos/index', [UserPhotoController::class, 'index']);
+    Route::get('/user/profile/photos/previous-custom-tags', [UserPhotoController::class, 'previousCustomTags']);
+    Route::get('/user/profile/photos/filter', [UserPhotoController::class, 'filter']);
+    Route::post('/user/profile/photos/tags/bulkTag', [UserPhotoController::class, 'bulkTag']);
+    Route::post('/user/profile/photos/delete', [UserPhotoController::class, 'destroy']);
+    Route::post('/profile/upload-profile-photo', [UsersController::class, 'uploadProfilePhoto']);
     // Removed: POST /profile/photos/remaining/{id} — toggled deprecated `remaining` column
-    Route::post('/profile/photos/delete', 'PhotosController@deleteImage');
+    Route::post('/profile/photos/delete', [PhotosController::class, 'deleteImage']);
 });
 
 /*
@@ -154,31 +203,31 @@ Route::middleware('auth:sanctum')->group(function () {
 */
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/settings/details', 'UsersController@details');
-    Route::patch('/settings/details/password', 'UsersController@changePassword');
+    Route::post('/settings/details', [UsersController::class, 'details']);
+    Route::patch('/settings/details/password', [UsersController::class, 'changePassword']);
     // Route removed: /settings/delete — had no relationship cleanup. Use /settings/delete-account.
     // Route removed: /settings/security — wrote to non-existent columns.
-    Route::post('/settings/privacy/update', 'UsersController@togglePrivacy');
-    Route::post('/settings/phone/submit', 'UsersController@phone');
-    Route::post('/settings/phone/remove', 'UsersController@removePhone');
-    Route::post('/settings/toggle', 'UsersController@togglePresence');
-    Route::post('/settings/email/toggle', 'EmailSubController@toggleEmailSub');
-    Route::get('/settings/flags/countries', 'SettingsController@getCountries');
-    Route::post('/settings/save-flag', 'SettingsController@saveFlag');
-    Route::patch('/settings', 'SettingsController@update');
+    Route::post('/settings/privacy/update', [UsersController::class, 'togglePrivacy']);
+    Route::post('/settings/phone/submit', [UsersController::class, 'phone']);
+    Route::post('/settings/phone/remove', [UsersController::class, 'removePhone']);
+    Route::post('/settings/toggle', [UsersController::class, 'togglePresence']);
+    Route::post('/settings/email/toggle', [EmailSubController::class, 'toggleEmailSub']);
+    Route::get('/settings/flags/countries', [SettingsController::class, 'getCountries']);
+    Route::post('/settings/save-flag', [SettingsController::class, 'saveFlag']);
+    Route::patch('/settings', [SettingsController::class, 'update']);
 });
 
 // Settings — auth:sanctum supports both session (SPA) and token (mobile) auth
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/settings/privacy/maps/name', 'ApiSettingsController@mapsName');
-    Route::post('/settings/privacy/maps/username', 'ApiSettingsController@mapsUsername');
-    Route::post('/settings/privacy/leaderboard/name', 'ApiSettingsController@leaderboardName');
-    Route::post('/settings/privacy/leaderboard/username', 'ApiSettingsController@leaderboardUsername');
-    Route::post('/settings/privacy/createdby/name', 'ApiSettingsController@createdByName');
-    Route::post('/settings/privacy/createdby/username', 'ApiSettingsController@createdByUsername');
-    Route::post('/settings/update', 'ApiSettingsController@update');
-    Route::post('/settings/privacy/toggle-previous-tags', 'ApiSettingsController@togglePreviousTags');
-    Route::post('/settings/delete-account', 'API\DeleteAccountController');
+    Route::post('/settings/privacy/maps/name', [ApiSettingsController::class, 'mapsName']);
+    Route::post('/settings/privacy/maps/username', [ApiSettingsController::class, 'mapsUsername']);
+    Route::post('/settings/privacy/leaderboard/name', [ApiSettingsController::class, 'leaderboardName']);
+    Route::post('/settings/privacy/leaderboard/username', [ApiSettingsController::class, 'leaderboardUsername']);
+    Route::post('/settings/privacy/createdby/name', [ApiSettingsController::class, 'createdByName']);
+    Route::post('/settings/privacy/createdby/username', [ApiSettingsController::class, 'createdByUsername']);
+    Route::post('/settings/update', [ApiSettingsController::class, 'update']);
+    Route::post('/settings/privacy/toggle-previous-tags', [ApiSettingsController::class, 'togglePreviousTags']);
+    Route::post('/settings/delete-account', DeleteAccountController::class);
 });
 
 /*
@@ -189,60 +238,60 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::prefix('/teams')->group(function () {
     // Public — no auth required
-    Route::get('/types', 'API\TeamsController@types');
+    Route::get('/types', [APITeamsController::class, 'types']);
 
     // Authenticated — SPA (session) + mobile (Sanctum token)
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/members', 'API\TeamsController@members');
-        Route::get('/leaderboard', 'Teams\TeamsLeaderboardController@index');
-        Route::get('/list', 'API\TeamsController@list');
-        Route::get('/data', 'Teams\TeamsDataController@index');
-        Route::get('/clusters/{team}', 'Teams\TeamsClusterController@clusters');
-        Route::get('/points/{team}', 'Teams\TeamsClusterController@points');
-        Route::get('/joined', 'Teams\TeamsController@joined');
-        Route::patch('/update/{team}', 'API\TeamsController@update');
-        Route::post('/active', 'API\TeamsController@setActiveTeam');
-        Route::post('/create', 'API\TeamsController@create');
-        Route::post('/download', 'API\TeamsController@download');
-        Route::post('/inactivate', 'API\TeamsController@inactivateTeams');
-        Route::post('/join', 'API\TeamsController@join');
-        Route::post('/leave', 'API\TeamsController@leave');
-        Route::post('/leaderboard/visibility', 'Teams\TeamsLeaderboardController@toggle');
-        Route::post('/settings', 'Teams\TeamsSettingsController@index');
+        Route::get('/members', [APITeamsController::class, 'members']);
+        Route::get('/leaderboard', [TeamsLeaderboardController::class, 'index']);
+        Route::get('/list', [APITeamsController::class, 'list']);
+        Route::get('/data', [TeamsDataController::class, 'index']);
+        Route::get('/clusters/{team}', [TeamsClusterController::class, 'clusters']);
+        Route::get('/points/{team}', [TeamsClusterController::class, 'points']);
+        Route::get('/joined', [TeamsController::class, 'joined']);
+        Route::patch('/update/{team}', [APITeamsController::class, 'update']);
+        Route::post('/active', [APITeamsController::class, 'setActiveTeam']);
+        Route::post('/create', [APITeamsController::class, 'create']);
+        Route::post('/download', [APITeamsController::class, 'download']);
+        Route::post('/inactivate', [APITeamsController::class, 'inactivateTeams']);
+        Route::post('/join', [APITeamsController::class, 'join']);
+        Route::post('/leave', [APITeamsController::class, 'leave']);
+        Route::post('/leaderboard/visibility', [TeamsLeaderboardController::class, 'toggle']);
+        Route::post('/settings', [TeamsSettingsController::class, 'index']);
 
         // Team Photos — CRUD + approval (school teams)
         Route::prefix('/photos')->group(function () {
-            Route::get('/', 'Teams\TeamPhotosController@index');
-            Route::get('/map', 'Teams\TeamPhotosController@mapPoints');
-            Route::get('/member-stats', 'Teams\TeamPhotosController@memberStats');
-            Route::get('/{photo}', 'Teams\TeamPhotosController@show');
-            Route::patch('/{photo}/tags', 'Teams\TeamPhotosController@updateTags');
-            Route::post('/approve', 'Teams\TeamPhotosController@approve');
-            Route::post('/revoke', 'Teams\TeamPhotosController@revoke');
-            Route::delete('/{photo}', 'Teams\TeamPhotosController@destroy');
+            Route::get('/', [TeamPhotosController::class, 'index']);
+            Route::get('/map', [TeamPhotosController::class, 'mapPoints']);
+            Route::get('/member-stats', [TeamPhotosController::class, 'memberStats']);
+            Route::get('/{photo}', [TeamPhotosController::class, 'show']);
+            Route::patch('/{photo}/tags', [TeamPhotosController::class, 'updateTags']);
+            Route::post('/approve', [TeamPhotosController::class, 'approve']);
+            Route::post('/revoke', [TeamPhotosController::class, 'revoke']);
+            Route::delete('/{photo}', [TeamPhotosController::class, 'destroy']);
         });
 
         // Participant Management (facilitator — team leader)
         Route::prefix('/{team}/participants')->group(function () {
-            Route::get('/', 'Teams\ParticipantController@index');
-            Route::post('/', 'Teams\ParticipantController@store');
-            Route::post('/{participant}/deactivate', 'Teams\ParticipantController@deactivate');
-            Route::post('/{participant}/activate', 'Teams\ParticipantController@activate');
-            Route::post('/{participant}/reset-token', 'Teams\ParticipantController@resetToken');
-            Route::delete('/{participant}', 'Teams\ParticipantController@destroy');
+            Route::get('/', [ParticipantController::class, 'index']);
+            Route::post('/', [ParticipantController::class, 'store']);
+            Route::post('/{participant}/deactivate', [ParticipantController::class, 'deactivate']);
+            Route::post('/{participant}/activate', [ParticipantController::class, 'activate']);
+            Route::post('/{participant}/reset-token', [ParticipantController::class, 'resetToken']);
+            Route::delete('/{participant}', [ParticipantController::class, 'destroy']);
         });
     });
 });
 
 // Participant Session — public (no auth, token-based)
-Route::post('/participant/session', 'Teams\ParticipantSessionController@enter');
+Route::post('/participant/session', [ParticipantSessionController::class, 'enter']);
 
 // Participant Workspace — token auth via middleware
 Route::prefix('/participant')->middleware('participant')->group(function () {
-    Route::post('/upload', \App\Http\Controllers\Uploads\UploadPhotoController::class);
-    Route::post('/tags', [\App\Http\Controllers\API\Tags\PhotoTagsController::class, 'store']);
-    Route::get('/photos', 'Teams\ParticipantPhotoController@index');
-    Route::delete('/photos/{photo}', 'Teams\ParticipantPhotoController@destroy');
+    Route::post('/upload', UploadPhotoController::class);
+    Route::post('/tags', [PhotoTagsController::class, 'store']);
+    Route::get('/photos', [ParticipantPhotoController::class, 'index']);
+    Route::delete('/photos/{photo}', [ParticipantPhotoController::class, 'destroy']);
 });
 
 /*
@@ -271,9 +320,9 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 */
 
 // Moved from web.php
-Route::get('/global/points', 'Maps\GlobalMapController@index');
-Route::get('/global/art-data', 'Maps\GlobalMapController@artData');
-Route::get('/global/search/custom-tags', 'Maps\Search\FindCustomTagsController');
+Route::get('/global/points', [GlobalMapController::class, 'index']);
+Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
+Route::get('/global/search/custom-tags', FindCustomTagsController::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -281,10 +330,10 @@ Route::get('/global/search/custom-tags', 'Maps\Search\FindCustomTagsController')
 |--------------------------------------------------------------------------
 */
 
-Route::get('/community/stats', 'CommunityController@stats');
-Route::get('/tags-search', 'DisplayTagsOnMapController@show');
-Route::get('/city', 'MapController@getCity');
-Route::get('/countries/names', 'Location\GetListOfCountriesController');
+Route::get('/community/stats', [CommunityController::class, 'stats']);
+Route::get('/tags-search', [DisplayTagsOnMapController::class, 'show']);
+Route::get('/city', [MapController::class, 'getCity']);
+Route::get('/countries/names', GetListOfCountriesController::class);
 // Route::get('/get-world-cup-data', 'WorldCup\GetDataForWorldCupController'); // duplicate of /locations/world-cup
 
 /*
@@ -293,10 +342,10 @@ Route::get('/countries/names', 'Location\GetListOfCountriesController');
 |--------------------------------------------------------------------------
 */
 
-Route::post('/cleanups/create', 'Cleanups\CreateCleanupController');
-Route::get('/cleanups/get-cleanups', 'Cleanups\GetCleanupsGeoJsonController');
-Route::post('/cleanups/{inviteLink}/join', 'Cleanups\JoinCleanupController');
-Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
+Route::post('/cleanups/create', CreateCleanupController::class);
+Route::get('/cleanups/get-cleanups', GetCleanupsGeoJsonController::class);
+Route::post('/cleanups/{inviteLink}/join', JoinCleanupController::class);
+Route::post('/cleanups/{inviteLink}/leave', LeaveCleanupController::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -312,7 +361,7 @@ Route::post('/cleanups/{inviteLink}/leave', 'Cleanups\LeaveCleanupController');
 |--------------------------------------------------------------------------
 */
 
-Route::post('/download', 'DownloadControllerNew@index');
+Route::post('/download', [DownloadControllerNew::class, 'index']);
 // Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
 /*
@@ -355,7 +404,7 @@ Route::post('/download', 'DownloadControllerNew@index');
 |--------------------------------------------------------------------------
 */
 
-Route::post('/littercoin/merchants', 'Merchants\BecomeAMerchantController');
+Route::post('/littercoin/merchants', BecomeAMerchantController::class);
 
 // Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
 // Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
@@ -384,36 +433,36 @@ Route::post('/littercoin/merchants', 'Merchants\BecomeAMerchantController');
 */
 
 Route::group(['prefix' => '/admin', 'middleware' => 'admin'], function () {
-    Route::get('/photos', 'Admin\AdminQueueController');
-    Route::get('/find-photo-by-id', 'Admin\FindPhotoByIdController');
-    Route::get('/get-next-image-to-verify', 'Admin\GetNextImageToVerifyController');
-    Route::get('/get-countries-with-photos', 'AdminController@getCountriesWithPhotos');
-    Route::get('/go-back-one', 'Admin\GoBackOnePhotoController');
-    Route::post('/verify', 'AdminController@verify');
-    Route::post('/verify-tags-as-correct', 'Admin\VerifyImageWithTagsController');
-    Route::post('/reset-tags', 'Admin\AdminResetTagsController');
-    Route::post('/contentsupdatedelete', 'AdminController@updateDelete');
-    Route::post('/update-tags', 'Admin\UpdateTagsController');
-    Route::post('/destroy', 'AdminController@destroy');
-    Route::post('/merchants/approve', 'Littercoin\Merchants\ApproveMerchantController');
-    Route::post('/merchants/delete', 'Littercoin\Merchants\DeleteMerchantController');
+    Route::get('/photos', AdminQueueController::class);
+    Route::get('/find-photo-by-id', FindPhotoByIdController::class);
+    Route::get('/get-next-image-to-verify', GetNextImageToVerifyController::class);
+    Route::get('/get-countries-with-photos', [AdminController::class, 'getCountriesWithPhotos']);
+    Route::get('/go-back-one', GoBackOnePhotoController::class);
+    Route::post('/verify', [AdminController::class, 'verify']);
+    Route::post('/verify-tags-as-correct', VerifyImageWithTagsController::class);
+    Route::post('/reset-tags', AdminResetTagsController::class);
+    Route::post('/contentsupdatedelete', [AdminController::class, 'updateDelete']);
+    Route::post('/update-tags', UpdateTagsController::class);
+    Route::post('/destroy', [AdminController::class, 'destroy']);
+    Route::post('/merchants/approve', ApproveMerchantController::class);
+    Route::post('/merchants/delete', DeleteMerchantController::class);
 
     // Dashboard stats
-    Route::get('/stats', 'Admin\AdminStatsController');
+    Route::get('/stats', AdminStatsController::class);
 
     // User management
-    Route::get('/users', 'Admin\AdminUsersController@index');
-    Route::post('/users/{user}/trust', 'Admin\AdminUsersController@trust');
-    Route::post('/users/{user}/approve-all', 'Admin\AdminUsersController@approveAll');
-    Route::post('/users/{user}/school-manager', 'Admin\AdminUsersController@toggleSchoolManager');
-    Route::patch('/users/{user}/username', 'Admin\AdminUsersController@updateUsername');
+    Route::get('/users', [AdminUsersController::class, 'index']);
+    Route::post('/users/{user}/trust', [AdminUsersController::class, 'trust']);
+    Route::post('/users/{user}/approve-all', [AdminUsersController::class, 'approveAll']);
+    Route::post('/users/{user}/school-manager', [AdminUsersController::class, 'toggleSchoolManager']);
+    Route::patch('/users/{user}/username', [AdminUsersController::class, 'updateUsername']);
 
     // Impersonation (start requires admin middleware — stop is below, outside this group)
-    Route::post('/users/{user}/impersonate', 'Admin\AdminImpersonateController@start');
+    Route::post('/users/{user}/impersonate', [AdminImpersonateController::class, 'start']);
 });
 
 // Impersonate stop — outside admin group since session is the impersonated user
-Route::post('/impersonate/stop', 'Admin\AdminImpersonateController@stop')
+Route::post('/impersonate/stop', [AdminImpersonateController::class, 'stop'])
     ->middleware('auth');
 
 /*
@@ -423,13 +472,13 @@ Route::post('/impersonate/stop', 'Admin\AdminImpersonateController@stop')
 */
 
 Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
-    Route::get('/index', 'Bbox\BoundingBoxController@index');
-    Route::post('/create', 'Bbox\BoundingBoxController@create');
-    Route::post('/skip', 'Bbox\BoundingBoxController@skip');
-    Route::post('/tags/update', 'Bbox\BoundingBoxController@updateTags');
-    Route::post('/tags/wrong', 'Bbox\BoundingBoxController@wrongTags');
-    Route::get('/verify/index', 'Bbox\VerifyBoxController@index');
-    Route::post('/verify/update', 'Bbox\VerifyBoxController@update');
+    Route::get('/index', [BoundingBoxController::class, 'index']);
+    Route::post('/create', [BoundingBoxController::class, 'create']);
+    Route::post('/skip', [BoundingBoxController::class, 'skip']);
+    Route::post('/tags/update', [BoundingBoxController::class, 'updateTags']);
+    Route::post('/tags/wrong', [BoundingBoxController::class, 'wrongTags']);
+    Route::get('/verify/index', [VerifyBoxController::class, 'index']);
+    Route::post('/verify/update', [VerifyBoxController::class, 'update']);
 });
 
 /*

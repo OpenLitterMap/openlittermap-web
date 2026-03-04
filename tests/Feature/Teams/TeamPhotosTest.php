@@ -322,8 +322,8 @@ class TeamPhotosTest extends TestCase
 
         $fresh = $photo->fresh();
         $this->assertEquals(7, $fresh->total_tags);
-        // XP: Upload=5, Objects: 5×1 + 2×1 = 7 → Total = 12
-        $this->assertEquals(12, $fresh->xp);
+        // XP: Objects: 5×1 + 2×1 = 7 (tag-only, upload XP tracked separately)
+        $this->assertEquals(7, $fresh->xp);
         $this->assertCount(2, $fresh->photoTags);
 
         // Response includes new_tags

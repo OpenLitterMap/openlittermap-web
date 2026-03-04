@@ -164,9 +164,9 @@ const handleFileProcessed = (error, file) => {
     if (!error) {
         try {
             const data = JSON.parse(file.serverId);
-            sessionXp.value += data.xp_awarded || 1;
+            sessionXp.value += data.xp_awarded || 5;
         } catch {
-            sessionXp.value += 1;
+            sessionXp.value += 5;
         }
         successCount.value++;
     }

@@ -121,7 +121,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'verified' => 'boolean',
-        'picked_up' => 'boolean',
+        // picked_up is nullable tri-state (true/false/null) — no boolean cast to preserve null
         'show_name' => 'boolean',
         'show_username' => 'boolean',
         'public_profile' => 'boolean',
@@ -139,7 +139,6 @@ class User extends Authenticatable
         'littercoin_progress',
         'total_littercoin',
         'next_level',
-        'xp_redis',
         'social_links',
     ];
 
@@ -175,8 +174,6 @@ class User extends Authenticatable
         return !$this->verification_required || $this->team && $this->team->is_trusted;
     }
 
-    // picked_up is now a real column (was items_remaining, renamed + inverted)
-
     /**
      * @deprecated
      * Get total tags attribute
@@ -200,19 +197,6 @@ class User extends Authenticatable
     public function getUserVerificationCountAttribute ()
     {
         return Redis::hget("user_verification_count", $this->id) ?? 0;
-    }
-
-    /**
-     * @deprecated
-     * Get xp_redis attribute
-     *
-     * This will get the users Total Global XP.
-     *
-     * @return int user's total XP
-     */
-    public function getXpRedisAttribute()
-    {
-        return (int) Redis::zscore("xp.users", $this->id);
     }
 
     /**
@@ -274,7 +258,7 @@ class User extends Authenticatable
 
     public function getNextLevelAttribute(): array
     {
-        return LevelService::getUserLevel($this->xp_redis);
+        return LevelService::getUserLevel((int) $this->xp);
     }
 
     /**

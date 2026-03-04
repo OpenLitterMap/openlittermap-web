@@ -14,15 +14,15 @@ use App\Events\NewStateAdded;
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
 use App\Actions\Locations\ResolveLocationAction;
+use App\Enums\XpScore;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadPhotoRequest;
 
-use App\Services\Redis\RedisKeys;
+use App\Services\Metrics\MetricsService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redis;
 
 class UploadPhotoController extends Controller
 {
@@ -30,6 +30,7 @@ class UploadPhotoController extends Controller
         private MakeImageAction $makeImageAction,
         private UploadPhotoAction $uploadPhotoAction,
         private ResolveLocationAction $resolveLocationAction,
+        private MetricsService $metricsService,
     ) {}
 
     /**
@@ -39,8 +40,9 @@ class UploadPhotoController extends Controller
      * - Web: extracts lat/lon/date from EXIF (default)
      * - Mobile: accepts explicit lat, lon, date fields (overrides EXIF)
      *
-     * Awards 1 XP per upload (direct increment, not via MetricsService).
-     * Full tag-based XP flows through MetricsService::processPhoto() at verification time.
+     * Awards XpScore::Upload (5) XP per upload to MySQL users.xp.
+     * Redis XP is handled by MetricsService when tags are processed
+     * (XpCalculator includes upload base in photo.xp — no Redis push here to avoid double-counting).
      */
     public function __invoke(UploadPhotoRequest $request): JsonResponse
     {
@@ -89,9 +91,14 @@ class UploadPhotoController extends Controller
         $location = $this->resolveLocationAction->run($lat, $lon);
 
         // 5. Determine remaining/picked_up and device model
-        $remaining = $request->has('picked_up')
-            ? ! $request->boolean('picked_up')
-            : ! $user->picked_up;
+        // At upload time: explicit request value wins, then user default, then true (remaining)
+        if ($request->has('picked_up')) {
+            $remaining = ! $request->boolean('picked_up');
+        } elseif ($user->picked_up !== null) {
+            $remaining = ! $user->picked_up;
+        } else {
+            $remaining = true; // null preference → default to remaining (unknown)
+        }
 
         $deviceModel = $request->input('model', $exif['Model'] ?? 'Unknown');
 
@@ -154,16 +161,11 @@ class UploadPhotoController extends Controller
             ));
         }
 
-        // 9. Award upload XP (1 XP per observation, direct increment)
-        $user->increment('xp', 1);
-
-        $userId = (string) $user->id;
-        $userScope = RedisKeys::user($user->id);
-
-        Redis::pipeline(function ($pipe) use ($userId, $userScope) {
-            $pipe->zIncrBy(RedisKeys::xpRanking(RedisKeys::global()), 1, $userId);
-            $pipe->hIncrBy(RedisKeys::stats($userScope), 'xp', 1);
-        });
+        // 9. Award upload XP to MySQL (immediate feedback for profile)
+        // and metrics table (so user appears on time-filtered leaderboards)
+        $uploadXp = XpScore::Upload->xp();
+        $user->increment('xp', $uploadXp);
+        $this->metricsService->recordUploadMetrics($photo, $uploadXp);
 
         return response()->json([
             'success' => true,
@@ -174,8 +176,8 @@ class UploadPhotoController extends Controller
             'state' => $location->state->state,
             'country' => $location->country->country,
             'display_name' => $location->displayName,
-            'xp_awarded' => 1,
-            'user_xp_total' => $user->fresh()->xp,
+            'xp_awarded' => $uploadXp,
+            'user_xp_total' => $user->xp,
         ]);
     }
 }

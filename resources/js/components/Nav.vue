@@ -2,7 +2,7 @@
     <nav class="bg-black border-b border-white/10 text-white p-1 relative z-50">
         <div class="container mx-auto px-4 flex flex-wrap justify-between items-center py-3">
             <div class="flex items-center space-x-4">
-                <router-link to="/" class="flex items-center text-2xl md:text-3xl font-bold text-white">
+                <router-link to="/" class="nav-logo flex items-center text-2xl md:text-3xl font-bold text-white">
                     #OpenLitterMap<sup aria-label="version five" style="font-size: 0.45em; line-height: 1" class="text-amber-400">v5.0</sup>
                 </router-link>
             </div>
@@ -226,7 +226,7 @@ onUnmounted(() => {
     @apply block py-2 px-3 md:px-0 text-white/70 hover:text-white transition-colors duration-200 rounded-lg md:rounded-none;
 }
 
-.router-link-active {
+.router-link-active:not(.nav-logo) {
     @apply text-amber-400;
 }
 

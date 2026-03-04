@@ -86,7 +86,7 @@
                         </div>
                         <div class="text-white/40 text-sm mt-1">
                             of {{ profile.rank.global_total?.toLocaleString() }} users
-                            <span v-if="profile.rank.percentile > 0" class="text-emerald-400">
+                            <span v-if="profile.rank.percentile >= 50" class="text-emerald-400">
                                 &middot; Top {{ profile.rank.percentile }}%
                             </span>
                         </div>

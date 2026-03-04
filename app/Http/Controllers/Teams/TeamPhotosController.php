@@ -490,9 +490,10 @@ class TeamPhotosController extends Controller
         }
 
         $photoOwner = $photo->user;
-        $photoXp = (int) ($photo->processed_xp ?? 0);
 
-        // Reverse metrics if photo was processed
+        // Reverse metrics before soft delete (if photo was processed)
+        // MetricsService::deletePhoto() reverses both upload XP and tag XP
+        // from MySQL metrics, Redis, and users.xp
         if ($photo->processed_at !== null) {
             app(MetricsService::class)->deletePhoto($photo);
         }
@@ -503,9 +504,8 @@ class TeamPhotosController extends Controller
         // Soft delete
         $photo->delete();
 
-        // Decrement photo owner's counters (not the teacher's)
+        // Decrement photo owner's total_images (not the teacher's)
         if ($photoOwner) {
-            $photoOwner->xp = max(0, $photoOwner->xp - $photoXp);
             $photoOwner->total_images = max(0, $photoOwner->total_images - 1);
             $photoOwner->save();
         }

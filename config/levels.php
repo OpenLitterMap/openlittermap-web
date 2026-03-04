@@ -7,8 +7,8 @@ return [
      * Must be sorted ascending by key.
      */
     'thresholds' => [
-        0       => 'Complete Noob',
-        100     => 'Less of a Noob',
+        0       => 'Noob',
+        100     => 'Noobish',
         500     => 'Post-Noob',
         1000    => 'Litter Wizard',
         5000    => 'Trash Warrior',

@@ -121,9 +121,7 @@ class SeedLitterObjectTypesSeeder extends Seeder
         return [
             ['category' => CategoryKey::Alcohol->value, 'object' => 'bottle', 'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown']],
             ['category' => CategoryKey::Alcohol->value, 'object' => 'can', 'types' => ['beer', 'cider', 'spirits', 'unknown']],
-            ['category' => CategoryKey::Alcohol->value, 'object' => 'pint_glass', 'types' => ['beer', 'cider', 'unknown']],
-            ['category' => CategoryKey::Alcohol->value, 'object' => 'wine_glass', 'types' => ['wine', 'unknown']],
-            ['category' => CategoryKey::Alcohol->value, 'object' => 'shot_glass', 'types' => ['spirits', 'unknown']],
+            ['category' => CategoryKey::Alcohol->value, 'object' => 'glass', 'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown']],
 
             ['category' => CategoryKey::Softdrinks->value, 'object' => 'bottle', 'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown']],
             ['category' => CategoryKey::Softdrinks->value, 'object' => 'can', 'types' => ['soda', 'energy', 'juice', 'iced_tea', 'sparkling_water', 'unknown']],

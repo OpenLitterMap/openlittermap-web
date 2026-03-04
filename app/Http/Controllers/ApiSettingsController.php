@@ -17,7 +17,7 @@ class ApiSettingsController extends Controller
         'username' => 'string|min:3|max:30|regex:/^[a-zA-Z0-9-]+$/',
         'email' => 'email|max:75',
         'global_flag' => 'nullable|string|max:10',
-        'picked_up' => 'boolean',
+        'picked_up' => 'nullable|boolean',
         'previous_tags' => 'boolean',
         'emailsub' => 'boolean',
         'public_profile' => 'boolean',
@@ -120,9 +120,11 @@ class ApiSettingsController extends Controller
         }
 
         // Validate the value against the rule for this key
+        $rules = self::ALLOWED_SETTINGS[$key];
+        $prefix = str_contains($rules, 'nullable') ? '' : 'required|';
         $validator = validator(
             ['value' => $value],
-            ['value' => 'required|' . self::ALLOWED_SETTINGS[$key]]
+            ['value' => $prefix . $rules]
         );
 
         if ($validator->fails()) {

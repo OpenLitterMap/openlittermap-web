@@ -22,6 +22,6 @@ class LevelsEndpointTest extends TestCase
         $response = $this->getJson('/api/levels');
 
         $response->assertOk();
-        $response->assertJsonFragment(['Complete Noob']);
+        $response->assertJsonFragment(['Noob']);
     }
 }

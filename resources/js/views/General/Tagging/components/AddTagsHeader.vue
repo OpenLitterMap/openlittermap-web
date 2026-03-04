@@ -287,7 +287,7 @@ const nextPhoto = async () => {
 };
 
 // XP Calculations
-const currentXP = ref(userStore.user?.xp_redis || 0);
+const currentXP = ref(userStore.user?.xp || 0);
 const xpRequired = ref(userStore.user?.next_level?.xp || 1000);
 const userLevel = ref(userStore.user?.level || 1);
 
@@ -331,7 +331,7 @@ const getShortDate = () => {
 };
 
 const getLevelTitle = () => {
-    return userStore.user?.next_level?.title || 'Complete Noob';
+    return userStore.user?.next_level?.title || 'Noob';
 };
 
 const prepareTagsForUpload = () => {

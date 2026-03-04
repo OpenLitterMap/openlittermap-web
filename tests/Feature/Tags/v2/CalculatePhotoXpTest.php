@@ -29,7 +29,7 @@ class CalculatePhotoXpTest extends TestCase
     }
 
     /** @test */
-    public function empty_summary_still_awards_only_upload_xp()
+    public function empty_summary_awards_zero_xp()
     {
         $photo = Photo::factory()->create([
             'remaining' => 1, // Not picked up, so no pickup bonus
@@ -39,8 +39,8 @@ class CalculatePhotoXpTest extends TestCase
         $photo->generateSummary();
         $photo->refresh();
 
-        // upload XP is 5, no tags means total XP = 5
-        $this->assertSame(5, $photo->xp);
+        // no tags means total XP = 0 (upload XP is tracked separately on user, not photo)
+        $this->assertSame(0, $photo->xp);
     }
 
     /** @test */
@@ -72,12 +72,11 @@ class CalculatePhotoXpTest extends TestCase
         $photo->refresh();
 
         // XP calculation:
-        // Upload: 5
         // Objects (butts, qty=2): 2 × 1 = 2
         // 3 materials (2 from deprecated mapping: plastic,paper + 1 explicit) × parent qty 2 × 2 = 12
         // Brand: 1 × 3 = 3 (independent)
         // Picked up: 5
-        $this->assertSame(27, $photo->xp);
+        $this->assertSame(22, $photo->xp);
     }
 
     /** @test */
@@ -114,9 +113,9 @@ class CalculatePhotoXpTest extends TestCase
             $photo->refresh();
 
             $this->assertSame(
-                5 + 2 * $xpPerUnit,
+                2 * $xpPerUnit,
                 $photo->xp,
-                "XP for object key '{$key}' should be 5 + 2×{$xpPerUnit}"
+                "XP for object key '{$key}' should be 2×{$xpPerUnit}"
             );
         }
     }
@@ -204,8 +203,8 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertSame(0, $photo->summary['totals']['litter']);
         $this->assertSame(0, $photo->summary['totals']['custom_tags']); // qty=0 means no weighting
 
-        // XP should be: Upload (5) only because parent qty=0 means custom_tag contributes 0
-        $this->assertSame(5, $photo->xp);
+        // XP should be 0: no object XP because parent qty=0 means custom_tag contributes 0
+        $this->assertSame(0, $photo->xp);
     }
 
     /** @test */
@@ -238,8 +237,8 @@ class CalculatePhotoXpTest extends TestCase
         // Verify totals
         $this->assertEquals(8, $photo->summary['totals']['litter']);
 
-        // XP: 5 (upload) + 8 (objects) = 13
-        $this->assertEquals(13, $photo->xp);
+        // XP: 8 (objects)
+        $this->assertEquals(8, $photo->xp);
     }
 
     /** @test */
@@ -276,10 +275,9 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertEquals(5, $photo->summary['totals']['brands']);
         $this->assertEquals(5, $photo->summary['totals']['litter']);
 
-        // XP: 5 (upload) + 5 (objects via litter count) + 5×3 (brands) = 25
-        // Actually: objects are 0 since no object_id set, brands=5
-        // Let's just verify it runs
-        $this->assertGreaterThan(5, $photo->xp);
+        // XP: 5 (objects via litter count) + 5×3 (brands) = 20
+        // Actually: objects are 0 since no object_id set, brands contribute XP
+        $this->assertGreaterThan(0, $photo->xp);
     }
 
     /** @test */
@@ -306,8 +304,8 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertEquals(3, $photo->summary['totals']['custom_tags']);
         $this->assertEquals(3, $photo->summary['totals']['litter']);
 
-        // XP: 5 (upload) + 3×1 (custom tags) + 5 (picked up) = 13
-        $this->assertEquals(13, $photo->xp);
+        // XP: 3×1 (custom tags) + 5 (picked up) = 8
+        $this->assertEquals(8, $photo->xp);
     }
 
     /** @test */
@@ -346,8 +344,8 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertEquals(4, $photo->summary['totals']['materials']);
         $this->assertEquals(2, $photo->summary['totals']['litter']);
 
-        // XP: 5 (upload) + 2 (objects) + 4×2 (materials) = 15
-        $this->assertEquals(15, $photo->xp);
+        // XP: 2 (objects) + 4×2 (materials) = 10
+        $this->assertEquals(10, $photo->xp);
     }
 
     /** @test */
@@ -376,8 +374,8 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertEquals(0, $photo->summary['totals']['litter']);
         $this->assertEquals(2, $photo->summary['totals']['brands']);
 
-        // XP: 5 (upload) + 0 (no objects) + 2×3 (brands) = 11
-        $this->assertEquals(11, $photo->xp);
+        // XP: 0 (no objects) + 2×3 (brands) = 6
+        $this->assertEquals(6, $photo->xp);
     }
 
     /** @test */
@@ -422,8 +420,8 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertEquals(3, $photo->summary['totals']['brands']);
         $this->assertEquals(3, $photo->summary['totals']['litter']);
 
-        // XP: 5 (upload) + 3 (objects) + 3×3 (brands) = 17
-        $this->assertEquals(17, $photo->xp);
+        // XP: 3 (objects) + 3×3 (brands) = 12
+        $this->assertEquals(12, $photo->xp);
     }
 
     /** @test */
@@ -446,8 +444,8 @@ class CalculatePhotoXpTest extends TestCase
         $photo1->generateSummary();
         $photo1->refresh();
 
-        // XP: 5 (upload) + 1 (object) + 5 (picked up) = 11
-        $this->assertEquals(11, $photo1->xp);
+        // XP: 1 (object) + 5 (picked up) = 6
+        $this->assertEquals(6, $photo1->xp);
 
         // Test with remaining = 1 (not picked up)
         $photo2 = Photo::factory()->create(['remaining' => 1]);
@@ -462,8 +460,8 @@ class CalculatePhotoXpTest extends TestCase
         $photo2->generateSummary();
         $photo2->refresh();
 
-        // XP: 5 (upload) + 1 (object) = 6 (no picked up bonus)
-        $this->assertEquals(6, $photo2->xp);
+        // XP: 1 (object) = 1 (no picked up bonus)
+        $this->assertEquals(1, $photo2->xp);
     }
 
     /** @test */
@@ -520,13 +518,12 @@ class CalculatePhotoXpTest extends TestCase
         $this->assertEquals(3, $photo->summary['totals']['custom_tags']); // weighted: 1 custom_tag × 3 parent qty
 
         // XP calculation:
-        // 5 (upload)
-        // + 3×1 (bottles) + 1×50 (large item)
+        // 3×1 (bottles) + 1×50 (large item)
         // + 3×2 (materials)
         // + 2×3 (brands)
         // + 3×1 (custom tag)
         // + 5 (picked up)
-        // = 5 + 3 + 50 + 6 + 6 + 3 + 5 = 78
-        $this->assertEquals(78, $photo->xp);
+        // = 3 + 50 + 6 + 6 + 3 + 5 = 73
+        $this->assertEquals(73, $photo->xp);
     }
 }

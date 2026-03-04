@@ -59,7 +59,7 @@
             </div>
             <div class="text-white/40 text-sm mt-1">
                 {{ $t('of') }} {{ profileStore.rank.global_total?.toLocaleString() }} {{ $t('users') }}
-                <span v-if="profileStore.rank.percentile > 0" class="text-emerald-400">
+                <span v-if="profileStore.rank.percentile >= 50" class="text-emerald-400">
                     &middot; Top {{ profileStore.rank.percentile }}%
                 </span>
             </div>

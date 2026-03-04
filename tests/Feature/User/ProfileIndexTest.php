@@ -8,6 +8,7 @@ use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Redis\RedisKeys;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
@@ -43,7 +44,16 @@ class ProfileIndexTest extends TestCase
         Redis::hSet(RedisKeys::stats($userScope), 'uploads', 10);
         Redis::hSet(RedisKeys::stats($userScope), 'xp', 500);
         Redis::hSet(RedisKeys::stats($userScope), 'litter', 42);
-        Redis::zAdd(RedisKeys::xpRanking(RedisKeys::global()), 500, (string) $userId);
+
+        // Seed metrics table for rank (all-time global per-user row)
+        DB::table('metrics')->insert([
+            'timescale' => 0, 'location_type' => 0, 'location_id' => 0,
+            'user_id' => $userId, 'year' => 0, 'month' => 0, 'week' => 0,
+            'bucket_date' => '1970-01-01',
+            'uploads' => 10, 'tags' => 42, 'litter' => 42,
+            'brands' => 0, 'materials' => 0, 'custom_tags' => 0,
+            'xp' => 500,
+        ]);
 
         // Seed global stats
         Redis::hSet(RedisKeys::stats(RedisKeys::global()), 'photos', 1000);
@@ -126,9 +136,15 @@ class ProfileIndexTest extends TestCase
         $activeUser = User::factory()->create(['xp' => 100]);
         $zeroXpUser = User::factory()->create(['xp' => 0]);
 
-        $userScope = RedisKeys::user($activeUser->id);
-        Redis::hSet(RedisKeys::stats($userScope), 'xp', 100);
-        Redis::zAdd(RedisKeys::xpRanking(RedisKeys::global()), 100, (string) $activeUser->id);
+        // Seed metrics table for the active user (all-time global)
+        DB::table('metrics')->insert([
+            'timescale' => 0, 'location_type' => 0, 'location_id' => 0,
+            'user_id' => $activeUser->id, 'year' => 0, 'month' => 0, 'week' => 0,
+            'bucket_date' => '1970-01-01',
+            'uploads' => 1, 'tags' => 0, 'litter' => 0,
+            'brands' => 0, 'materials' => 0, 'custom_tags' => 0,
+            'xp' => 100,
+        ]);
 
         $response = $this->actingAs($zeroXpUser)
             ->getJson('/api/user/profile/index');

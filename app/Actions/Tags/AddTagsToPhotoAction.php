@@ -462,7 +462,7 @@ class AddTagsToPhotoAction
      */
     protected function calculateXp(array $photoTags): int
     {
-        $xp = XpScore::Upload->xp(); // Base upload XP: 5
+        $xp = 0; // Tag XP only — upload XP is awarded separately by UploadPhotoController
 
         foreach ($photoTags as $photoTag) {
             // Object XP — check for special keys (dumping small/medium/large)

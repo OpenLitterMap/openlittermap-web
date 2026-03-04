@@ -11,67 +11,18 @@ class TagsConfig
      *
      * Canonical objects per category. All keys are snake_case.
      * Types represent "what was in the container" (beer, water, soda, etc.)
+     *
+     * Categories:
+     * @alcohol
+     *
      */
     public static function get(): array
     {
         return [
-            CategoryKey::Smoking->value => [
-                'butts' => [
-                    'materials' => ['plastic', 'paper'],
-                ],
-                'lighters' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'cigarette_box' => [
-                    'materials' => ['cardboard'],
-                ],
-                'tobacco_pouch' => [
-                    'materials' => ['plastic'],
-                ],
-                'rolling_papers' => [
-                    'materials' => ['paper'],
-                ],
-                'packaging' => [
-                    'materials' => ['plastic', 'foil'],
-                ],
-                'cigarette_filter' => [
-                    'materials' => ['plastic'],
-                ],
-                'vape_pen' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'vape_cartridge' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'match_box' => [
-                    'materials' => ['cardboard'],
-                ],
-                'ashtray' => [
-                    'materials' => ['glass', 'ceramic', 'metal'],
-                ],
-                'other' => [],
-            ],
-
             CategoryKey::Alcohol->value => [
                 'bottle' => [
+                    'types' => ['beer', 'wine', 'spirits', 'cider'],
                     'materials' => ['glass', 'plastic'],
-                    'types' => ['beer', 'wine', 'spirits', 'cider', 'unknown'],
-                ],
-                'can' => [
-                    'materials' => ['aluminium'],
-                    'types' => ['beer', 'cider', 'spirits', 'unknown'],
-                ],
-                'pint_glass' => [
-                    'materials' => ['glass'],
-                    'types' => ['beer', 'cider', 'unknown'],
-                ],
-                'wine_glass' => [
-                    'materials' => ['glass'],
-                    'types' => ['wine', 'unknown'],
-                ],
-                'shot_glass' => [
-                    'materials' => ['glass'],
-                    'types' => ['spirits', 'unknown'],
                 ],
                 'broken_glass' => [
                     'materials' => ['glass'],
@@ -79,17 +30,25 @@ class TagsConfig
                 'bottle_cap' => [
                     'materials' => ['metal', 'plastic', 'cork'],
                 ],
+                'can' => [
+                    'materials' => ['aluminium'],
+                    'types' => ['beer', 'cider', 'spirits'],
+                ],
+                'cup' => [
+                    'materials' => ['plastic'],
+                ],
+                'glass' => [
+                    'materials' => ['glass'],
+                    'types' => ['beer', 'wine', 'spirits', 'cider'],
+                ],
+                'packaging' => [
+                    'materials' => ['cardboard', 'paper', 'plastic'],
+                ],
                 'pull_ring' => [
                     'materials' => ['aluminium'],
                 ],
                 'six_pack_rings' => [
                     'materials' => ['plastic'],
-                ],
-                'cup' => [
-                    'materials' => ['plastic'],
-                ],
-                'packaging' => [
-                    'materials' => ['cardboard', 'paper', 'plastic'],
                 ],
                 'other' => [],
             ],
@@ -371,6 +330,37 @@ class TagsConfig
                 'dog_waste' => [],
                 'dog_waste_in_bag' => [
                     'materials' => ['plastic'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Smoking->value => [
+                'butts' => [
+                    'materials' => ['plastic', 'paper'],
+                ],
+                'lighters' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'box' => [
+                    'types' => ['cigarette', 'match', 'unknown'],
+                    'materials' => ['cardboard', 'foil'],
+                ],
+                'pouch' => [
+                    'types' => ['tobacco'],
+                    'materials' => ['plastic'],
+                ],
+                'papers' => [
+                    'materials' => ['paper'],
+                ],
+                'packaging' => [
+                    'materials' => ['plastic', 'foil'],
+                ],
+                'vape' => [
+                    'types' => ['pen', 'cartridge'],
+                    'materials' => ['plastic', 'metal', 'glass'],
+                ],
+                'ashtray' => [
+                    'materials' => ['glass', 'ceramic', 'metal'],
                 ],
                 'other' => [],
             ],

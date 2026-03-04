@@ -251,15 +251,14 @@ class AddNewTagsToPhotosTest extends TestCase
 
         $photo->refresh();
 
-        // Expected XP:
-        // Upload base:  5
+        // Expected XP (tag-only, upload XP tracked separately on user):
         // Object:       3 × 1  = 3  (qty=3, object XP=1)
         // 2 Materials:  2 × (3 × 2) = 12  (each material: parentQty × 2)
         // 1 Brand:      2 × 3  = 6  (brandQty=2, brand XP=3)
         // 1 Custom tag: 3 × 1  = 3  (parentQty × 1)
         // PickedUp:     5           (remaining=false because picked_up=true in upload)
-        // Total: 5 + 3 + 12 + 6 + 3 + 5 = 34
-        $this->assertEquals(34, $photo->xp, 'XP should use enum multipliers: Upload=5, Object=1, Brand=3, Material=2, Custom=1, PickedUp=5');
+        // Total: 3 + 12 + 6 + 3 + 5 = 29
+        $this->assertEquals(29, $photo->xp, 'XP should use enum multipliers: Object=1, Brand=3, Material=2, Custom=1, PickedUp=5');
     }
 
     /**

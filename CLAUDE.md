@@ -114,7 +114,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations. 899 tests passing.
+Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations, lifecycle tests. 972 tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -171,7 +171,7 @@ XP-threshold based levels defined in `config/levels.php`. `LevelService::getUser
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 899 tests passing. Facilitator queue (3-panel admin-like UI for school teachers) complete. See `readme/Teams.md` and `readme/SchoolPipeline.md` for architecture.
+Fully deployed. 972 tests passing. Facilitator queue (3-panel admin-like UI for school teachers) complete. See `readme/Teams.md` and `readme/SchoolPipeline.md` for architecture.
 
 ## Code Preferences
 - Do not over-engineer

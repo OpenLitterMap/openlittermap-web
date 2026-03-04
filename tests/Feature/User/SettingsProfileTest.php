@@ -81,7 +81,8 @@ class SettingsProfileTest extends TestCase
 
         $response->assertOk();
         // items_remaining=true means picked_up=false (inverted for backward compat)
-        $this->assertFalse($user->fresh()->picked_up);
+        // picked_up is not cast to boolean (tri-state: true/false/null), so MySQL returns 0
+        $this->assertEquals(0, $user->fresh()->picked_up);
     }
 
     /** @test */
@@ -168,7 +169,8 @@ class SettingsProfileTest extends TestCase
             ]);
 
         $response->assertOk();
-        $this->assertFalse($user->fresh()->picked_up);
+        // picked_up is not cast to boolean (tri-state), so MySQL returns 0
+        $this->assertEquals(0, $user->fresh()->picked_up);
     }
 
     /** @test */

@@ -38,10 +38,15 @@
             <div class="hidden md:block h-8 w-px bg-white/10"></div>
 
             <!-- XP Bar - takes remaining space on desktop, full width on mobile -->
-            <div class="flex-1 min-w-[120px] flex flex-col gap-1 px-1 md:px-2">
+            <div
+                class="flex-1 min-w-[120px] flex flex-col gap-1 px-1 md:px-2 relative"
+                @mouseenter="xpHover = true"
+                @mouseleave="xpHover = false"
+                @click="xpHover = !xpHover"
+            >
                 <div class="flex items-center justify-between text-xs">
                     <span class="text-white/40">{{ tags.length }} {{ tags.length === 1 ? $t('tag') : $t('tags') }}</span>
-                    <span class="text-white/40">
+                    <span class="text-white/40 cursor-help">
                         {{ formatNumber(xpIntoLevel)
                         }}<span v-if="xpPreview > 0" class="text-emerald-400 ml-0.5">+{{ xpPreview }}</span> /
                         {{ formatNumber(xpRequired) }} XP
@@ -61,6 +66,33 @@
                         }"
                     />
                 </div>
+
+                <!-- XP Breakdown panel -->
+                <transition
+                    enter-active-class="transition ease-out duration-100"
+                    enter-from-class="opacity-0 translate-y-1"
+                    enter-to-class="opacity-100 translate-y-0"
+                    leave-active-class="transition ease-in duration-75"
+                    leave-from-class="opacity-100 translate-y-0"
+                    leave-to-class="opacity-0 translate-y-1"
+                >
+                    <div
+                        v-if="xpHover && xpBreakdown.length > 0"
+                        class="absolute top-full left-0 right-0 mt-1 z-20 bg-slate-800/95 backdrop-blur border border-white/10 rounded-lg p-3 shadow-xl"
+                    >
+                        <div class="text-xs font-semibold text-emerald-400 mb-2">+{{ xpPreview }} XP total</div>
+                        <div class="space-y-1">
+                            <div
+                                v-for="(line, i) in xpBreakdown"
+                                :key="i"
+                                class="flex items-center justify-between text-xs"
+                            >
+                                <span :class="i === 0 ? 'text-white/50' : 'text-white/70'">{{ line.label }}</span>
+                                <span class="text-emerald-400/80 tabular-nums ml-4">+{{ line.xp }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
             </div>
 
             <div class="hidden md:block h-8 w-px bg-white/10"></div>
@@ -171,13 +203,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useUserStore } from '@stores/user/index.js';
 import { usePhotosStore } from '@stores/photos/index.js';
+import { getHeaderBreakdown } from '../useXpCalculator.js';
 import moment from 'moment';
 
 const userStore = useUserStore();
 const photosStore = usePhotosStore();
+
+const xpHover = ref(false);
 
 const props = defineProps({
     currentPhoto: Object,
@@ -209,13 +244,15 @@ const canGoNext = computed(
 
 // XP — uses LevelService threshold data from next_level accessor
 const levelInfo = computed(() => userStore.user?.next_level || {});
-const currentXP = computed(() => userStore.user?.xp_redis || 0);
+const currentXP = computed(() => userStore.user?.xp || 0);
 const xpRequired = computed(() => levelInfo.value.xp_for_next || 1000);
 const userLevel = computed(() => levelInfo.value.level || 1);
 const xpIntoLevel = computed(() => levelInfo.value.xp_into_level || 0);
 
 const existingXPProgress = computed(() => xpRequired.value > 0 ? Math.min((xpIntoLevel.value / xpRequired.value) * 100, 100) : 100);
 const totalXPProgress = computed(() => xpRequired.value > 0 ? Math.min(((xpIntoLevel.value + props.xpPreview) / xpRequired.value) * 100, 100) : 100);
+
+const xpBreakdown = computed(() => getHeaderBreakdown(props.tags));
 
 // Helpers
 const formatDate = (datetime) => (datetime ? moment(datetime).format('MMM D, YYYY') : '—');
@@ -227,6 +264,6 @@ const formatNumber = (num) => {
 };
 
 const getLevelTitle = () => {
-    return userStore.user?.next_level?.title || 'Complete Noob';
+    return userStore.user?.next_level?.title || 'Noob';
 };
 </script>

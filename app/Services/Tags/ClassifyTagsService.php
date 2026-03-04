@@ -139,7 +139,7 @@ class ClassifyTagsService
             'wineBottle' => ['object' => 'wine_bottle', 'materials' => ['glass']],
             'paperCardAlcoholPackaging' => ['object' => 'packaging', 'materials' => ['cardboard', 'paper']],
             'plasticAlcoholPackaging' => ['object' => 'packaging', 'materials' => ['plastic']],
-            'pint' => ['object' => 'pint_glass', 'materials' => ['glass']],
+            'pint' => ['object' => 'glass', 'materials' => ['glass']],
             'alcohol_plastic_cups' => ['object' => 'cup', 'materials' => ['plastic']],
             'alcoholOther' => ['object' => 'other'],
 

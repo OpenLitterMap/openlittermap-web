@@ -24,6 +24,27 @@
             <h3 class="text-white font-semibold mb-4">{{ $t('Preferences') }}</h3>
 
             <div class="space-y-3">
+                <!-- Default Picked Up -->
+                <div class="flex items-center justify-between gap-4 py-1">
+                    <div>
+                        <div class="text-white text-sm">{{ $t('Default Picked Up') }}</div>
+                        <div class="text-white/30 text-xs">{{ $t('Set the default picked-up status when tagging') }}</div>
+                    </div>
+                    <div class="flex rounded-lg overflow-hidden border border-white/10">
+                        <button
+                            v-for="opt in pickedUpOptions"
+                            :key="opt.value"
+                            class="px-3 py-1.5 text-xs font-medium transition-colors"
+                            :class="pickedUpValue === opt.value
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60'"
+                            @click="savePickedUp(opt.value)"
+                        >
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                </div>
+
                 <SettingsToggle
                     :label="$t('Public Profile')"
                     :description="$t('Allow others to see your profile')"
@@ -125,18 +146,43 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useProfileStore } from '@stores/profile.js';
 import { useSettingsStore } from '@stores/settings.js';
 import { useUserStore } from '@stores/user/index.js';
 import SettingsField from './SettingsField.vue';
 import SettingsToggle from './SettingsToggle.vue';
 
+const { t: $t } = useI18n();
 const profileStore = useProfileStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 
 const showDeleteConfirm = ref(false);
 const deletePassword = ref('');
+
+// Picked Up 3-state options: Yes (true), No (false), Unknown (null)
+const pickedUpOptions = computed(() => [
+    { value: true, label: $t('Yes') },
+    { value: false, label: $t('No') },
+    { value: null, label: $t('Unknown') },
+]);
+
+const pickedUpValue = computed(() => {
+    const val = profileStore.user.picked_up;
+    if (val === true || val === 1) return true;
+    if (val === false || val === 0) return false;
+    return null;
+});
+
+const savePickedUp = async (value) => {
+    settingsStore.clearMessages();
+    const success = await settingsStore.UPDATE_SETTING('picked_up', value);
+    if (success) {
+        profileStore.user.picked_up = value;
+        userStore.user.picked_up = value;
+    }
+};
 
 const name = computed(() => profileStore.user.name || userStore.user.name || '');
 const username = computed(() => profileStore.user.username || userStore.user.username || '');

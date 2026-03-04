@@ -65,14 +65,12 @@ class TaggingArchitecturePhase1Test extends TestCase
         }
     }
 
-    public function test_9_typed_clos_exist(): void
+    public function test_7_typed_clos_exist(): void
     {
         $expectedCombos = [
             ['alcohol', 'bottle'],
             ['alcohol', 'can'],
-            ['alcohol', 'pint_glass'],
-            ['alcohol', 'wine_glass'],
-            ['alcohol', 'shot_glass'],
+            ['alcohol', 'glass'],
             ['softdrinks', 'bottle'],
             ['softdrinks', 'can'],
             ['softdrinks', 'carton'],

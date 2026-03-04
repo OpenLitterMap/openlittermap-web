@@ -13,7 +13,7 @@ class LevelServiceTest extends TestCase
         $result = LevelService::getUserLevel(0);
 
         $this->assertEquals(1, $result['level']);
-        $this->assertEquals('Complete Noob', $result['title']);
+        $this->assertEquals('Noob', $result['title']);
         $this->assertEquals(0, $result['xp']);
         $this->assertEquals(0, $result['xp_into_level']);
         $this->assertEquals(100, $result['xp_for_next']);
@@ -27,7 +27,7 @@ class LevelServiceTest extends TestCase
         $result = LevelService::getUserLevel(100);
 
         $this->assertEquals(2, $result['level']);
-        $this->assertEquals('Less of a Noob', $result['title']);
+        $this->assertEquals('Noobish', $result['title']);
         $this->assertEquals(0, $result['xp_into_level']);
         // Next threshold is 500, so xp_for_next = 500 - 100 = 400
         $this->assertEquals(400, $result['xp_for_next']);
