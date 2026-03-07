@@ -20,12 +20,22 @@ class GenerateTagsSeederTest extends TestCase
         $categories = Category::all();
 
         $minCategories = [
-            'smoking',
-            'food',
             'alcohol',
-            'softdrinks',
-            'personal_care',
+            'art',
+            'coffee',
+            'dumping',
+            'electronics',
+            'food',
+            'industrial',
+            'marine',
             'medical',
+            'other',
+            'pets',
+            'sanitary',
+            'smoking',
+            'softdrinks',
+            'unclassified',
+            'vehicles',
         ];
 
         foreach ($minCategories as $categoryKey) {

@@ -158,25 +158,9 @@ Route::post('/validate-token', function (Request $request) {
     return ['message' => 'valid'];
 })->middleware('auth:sanctum');
 
-// Deprecated routes removed:
-// GET /api/user — use GET /api/user/profile/index
-// GET /api/current-user — use GET /api/user/profile/index
-// POST /api/photos/submit — use POST /api/v3/upload
-// POST /api/photos/submit-with-tags — use POST /api/v3/upload + POST /api/v3/tags
-// POST /api/photos/upload-with-tags — duplicate of above
-// POST /api/photos/upload/with-or-without-tags — duplicate of above
-// GET /api/check-web-photos — orphan
-// DELETE /api/photos/delete — use POST /api/profile/photos/delete
-// POST /api/upload — use POST /api/v3/upload
-// POST /api/add-tags — use POST /api/v3/tags
-// GET /api/v2/photos/web/index — use GET /api/v3/user/photos
-// GET /api/v2/photos/get-untagged-uploads — use GET /api/v3/user/photos?tagged=false
-// GET /api/v2/photos/web/load-more — use GET /api/v3/user/photos
-// POST /api/v2/add-tags-to-uploaded-image — use POST /api/v3/tags
-
 /*
 |--------------------------------------------------------------------------
-| User Profile & Photos (moved from web.php)
+| User Profile & Photos
 |--------------------------------------------------------------------------
 */
 
@@ -192,21 +176,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/profile/photos/tags/bulkTag', [UserPhotoController::class, 'bulkTag']);
     Route::post('/user/profile/photos/delete', [UserPhotoController::class, 'destroy']);
     Route::post('/profile/upload-profile-photo', [UsersController::class, 'uploadProfilePhoto']);
-    // Removed: POST /profile/photos/remaining/{id} — toggled deprecated `remaining` column
     Route::post('/profile/photos/delete', [PhotosController::class, 'deleteImage']);
 });
 
 /*
 |--------------------------------------------------------------------------
-| Settings (moved from web.php)
+| Settings
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/settings/details', [UsersController::class, 'details']);
     Route::patch('/settings/details/password', [UsersController::class, 'changePassword']);
-    // Route removed: /settings/delete — had no relationship cleanup. Use /settings/delete-account.
-    // Route removed: /settings/security — wrote to non-existent columns.
     Route::post('/settings/privacy/update', [UsersController::class, 'togglePrivacy']);
     Route::post('/settings/phone/submit', [UsersController::class, 'phone']);
     Route::post('/settings/phone/remove', [UsersController::class, 'removePhone']);
@@ -319,14 +300,13 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-// Moved from web.php
 Route::get('/global/points', [GlobalMapController::class, 'index']);
 Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
 Route::get('/global/search/custom-tags', FindCustomTagsController::class);
 
 /*
 |--------------------------------------------------------------------------
-| Community & Map data (moved from web.php)
+| Community & Map data
 |--------------------------------------------------------------------------
 */
 
@@ -334,11 +314,10 @@ Route::get('/community/stats', [CommunityController::class, 'stats']);
 Route::get('/tags-search', [DisplayTagsOnMapController::class, 'show']);
 Route::get('/city', [MapController::class, 'getCity']);
 Route::get('/countries/names', GetListOfCountriesController::class);
-// Route::get('/get-world-cup-data', 'WorldCup\GetDataForWorldCupController'); // duplicate of /locations/world-cup
 
 /*
 |--------------------------------------------------------------------------
-| Cleanups (moved from web.php)
+| Cleanups
 |--------------------------------------------------------------------------
 */
 
@@ -349,86 +328,23 @@ Route::post('/cleanups/{inviteLink}/leave', LeaveCleanupController::class);
 
 /*
 |--------------------------------------------------------------------------
-| History (moved from web.php)
-|--------------------------------------------------------------------------
-*/
-
-// Removed: GET /history/paginated — deprecated, use GET /api/v3/user/photos
-
-/*
-|--------------------------------------------------------------------------
-| Downloads (moved from web.php)
+| Downloads
 |--------------------------------------------------------------------------
 */
 
 Route::post('/download', [DownloadControllerNew::class, 'index']);
-// Route::get('/world/{country}/{state}/{city?}/download/get', 'DownloadsController@getDataByCity');
 
 /*
 |--------------------------------------------------------------------------
-| Payments & Subscriptions (moved from web.php)
-|--------------------------------------------------------------------------
-*/
-
-// Route::get('plans', function () { return \App\Plan::all(); });
-// Route::post('/join', 'SubscriptionsController@store');
-// Route::post('/change', 'SubscriptionsController@change');
-// Route::post('/settings/payments/cancel', 'SubscriptionsController@destroy');
-// Route::post('/settings/payments/reactivate', 'SubscriptionsController@resume');
-// Route::post('/subscribe', 'SubscribersController');
-// Route::get('/stripe/subscriptions', 'StripeController@subscriptions');
-// Route::post('/stripe/delete', 'StripeController@delete');
-// Route::post('/stripe/resubscribe', 'StripeController@resubscribe');
-// Route::post('/stripe/webhook', 'WebhookController@handleWebhook')->name('webhook');
-
-/*
-|--------------------------------------------------------------------------
-| Donate (moved from web.php)
-|--------------------------------------------------------------------------
-*/
-
-// Route::get('/donate/amounts', 'DonateController@index');
-// Route::post('/donate', 'DonateController@submit');
-
-/*
-|--------------------------------------------------------------------------
-| Contact (moved from web.php)
-|--------------------------------------------------------------------------
-*/
-
-// Route::post('/contact-us', 'ContactUsController');
-
-/*
-|--------------------------------------------------------------------------
-| Littercoin (moved from web.php)
+| Littercoin
 |--------------------------------------------------------------------------
 */
 
 Route::post('/littercoin/merchants', BecomeAMerchantController::class);
 
-// Route::get('/get-users-littercoin', 'Littercoin\LittercoinController@getUsersLittercoin');
-// Route::post('/wallet-info', 'Littercoin\LittercoinController@getWalletInfo');
-// Route::post('/littercoin-mint-tx', 'Littercoin\LittercoinController@mintTx');
-// Route::post('/littercoin-submit-mint-tx', 'Littercoin\LittercoinController@submitMintTx');
-// Route::post('/littercoin-burn-tx', 'Littercoin\LittercoinController@burnTx');
-// Route::post('/littercoin-submit-burn-tx', 'Littercoin\LittercoinController@submitBurnTx');
-// Route::post('/merchant-mint-tx', 'Littercoin\LittercoinController@merchTx');
-// Route::post('/merchant-submit-mint-tx', 'Littercoin\LittercoinController@submitMerchTx');
-
 /*
 |--------------------------------------------------------------------------
-| Merchants (moved from web.php)
-|--------------------------------------------------------------------------
-*/
-
-// Route::post('/merchants/create', 'Littercoin\Merchants\CreateMerchantController');
-// Route::get('/merchants/get-geojson', 'Littercoin\Merchants\GetMerchantsGeojsonController');
-// Route::get('/merchants/get-next-merchant-to-approve', 'Littercoin\Merchants\GetNextMerchantToApproveController');
-// Route::post('/merchants/upload-photo', 'Merchants\UploadMerchantPhotoController');
-
-/*
-|--------------------------------------------------------------------------
-| Admin (moved from web.php)
+| Admin
 |--------------------------------------------------------------------------
 */
 
@@ -467,7 +383,7 @@ Route::post('/impersonate/stop', [AdminImpersonateController::class, 'stop'])
 
 /*
 |--------------------------------------------------------------------------
-| Bbox (moved from web.php)
+| Bbox
 |--------------------------------------------------------------------------
 */
 
@@ -481,12 +397,3 @@ Route::group(['prefix' => '/bbox', 'middleware' => ['can_bbox']], function () {
     Route::post('/verify/update', [VerifyBoxController::class, 'update']);
 });
 
-/*
-|--------------------------------------------------------------------------
-| Legacy location routes (moved from web.php)
-|--------------------------------------------------------------------------
-*/
-
-// Route::get('/location', 'Location\LocationsController@index');
-// Route::get('/states', 'Location\LocationsController@getStates');
-// Route::get('/cities', 'Location\LocationsController@getCities');

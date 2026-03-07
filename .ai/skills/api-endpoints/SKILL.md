@@ -43,9 +43,9 @@ All API routes live in `routes/api.php`. The API serves two clients: the Vue 3 S
 | Prefix | Middleware | Purpose |
 |--------|-----------|---------|
 | `/api/v3` | `auth:sanctum` | Current API (upload, tags, user photos) |
-| `/api` (public) | none | Tags catalog, points, stats, locations, clusters |
+| `/api` (public) | none | Tags catalog, points, stats, locations, clusters, leaderboard |
 | `/api/auth` | varies | Login, register, logout, password reset |
-| `/api` (auth) | `auth:sanctum` | Profile, settings, leaderboard, achievements |
+| `/api` (auth) | `auth:sanctum` | Profile, settings, achievements |
 | `/api/teams` | `auth:sanctum` | Team CRUD, photos, approval, leaderboard |
 | `/api/admin` | `admin` | Admin queue, verify, reset |
 | `/api/bbox` | `can_bbox` | Bounding box annotation |
@@ -100,10 +100,12 @@ POST /api/profile/photos/delete →  Delete single photo { "photoid": 123 } (sof
 ### Leaderboard query parameters
 
 ```
-GET /api/leaderboard?period=all&scope=global&page=1&per_page=20
-// period: all | today | this_week | this_month | this_year
-// scope: global | country:{id} | state:{id} | city:{id}
-// "all" uses Redis ZSETs, time-filtered uses MySQL metrics table
+GET /api/leaderboard?timeFilter=all-time&locationType=country&locationId=1&page=1
+// timeFilter: all-time | today | yesterday | this-month | last-month | this-year | last-year
+// locationType: country | state | city (optional)
+// locationId: numeric ID (required if locationType set)
+// All time filters use MySQL metrics table. Per page hardcoded to 100.
+// Public endpoint (no auth required). Optional auth adds currentUserRank.
 ```
 
 ### Team photo management (school teams)
@@ -146,8 +148,9 @@ GET /api/user/profile/{id}
 ### User photos filtering
 
 ```
-GET /api/v3/user/photos?tagged=false&per_page=100&page=1
+GET /api/v3/user/photos?tagged=false&per_page=100&page=1&picked_up=true
 // tagged: true | false (omit for all)
+// picked_up: true | false (omit for all) — filters by photo-level picked_up status
 // per_page: 1-100 (default 8)
 // Untagged = WHERE summary IS NULL (NOT doesntHave('photoTags'))
 // Returns: { photos: [...], pagination: { current_page, last_page, per_page, total }, user }
@@ -189,7 +192,7 @@ GET /api/clusters?zoom=5&bbox=-180,-90,180,90
 - **Adding public endpoints without `is_public` filtering.** Any query that returns photo data to unauthenticated users MUST use `Photo::public()` scope.
 - **Comparing VerificationStatus enum to int in controllers.** Use `->value` for comparisons: `$photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value`.
 - **Including `geom` in API responses.** Binary spatial data — keep it in Photo model's `$hidden` array.
-- **Using `doesntHave('photoTags')` for untagged filter.** Use `WHERE verified = 0` (VerificationStatus::UNVERIFIED). V4-migrated photos may have `verified >= 1` but no v5 photoTags.
+- **Using `doesntHave('photoTags')` or `WHERE verified = 0` for untagged filter.** Use `whereNull('summary')` — summary is set by GeneratePhotoSummaryService when tags are added, regardless of verification status.
 - **Assuming consistent error response keys.** Some controllers use `msg`, others use `message`. Check the specific controller before asserting response keys in tests.
 - **Missing `team_id` query parameter on team endpoints.** Most team endpoints require `?team_id=X` — forgetting it returns 422 or wrong team's data.
 - **Not handling the `flag` field on points responses.** `GET /api/points/{id}` returns a `flag` field from the user's settings. Mobile clients display this.

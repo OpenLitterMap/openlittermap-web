@@ -106,10 +106,20 @@
                             <div
                                 v-for="obj in getObjectsList(photo)"
                                 :key="obj.key"
-                                class="px-1 py-0.5 bg-white rounded text-xs text-gray-700 truncate"
+                                class="flex items-center gap-1 px-1 py-0.5 bg-white rounded text-xs text-gray-700"
                                 :title="`${obj.key} (x${obj.quantity})`"
                             >
-                                {{ obj.key }} x{{ obj.quantity }}
+                                <span class="truncate">{{ obj.key }} x{{ obj.quantity }}</span>
+                                <span
+                                    v-if="obj.pickedUp === true"
+                                    class="shrink-0 w-2 h-2 rounded-full bg-green-500"
+                                    :title="$t('Picked up')"
+                                ></span>
+                                <span
+                                    v-else-if="obj.pickedUp === false"
+                                    class="shrink-0 w-2 h-2 rounded-full bg-amber-500"
+                                    :title="$t('Not picked up')"
+                                ></span>
                             </div>
                         </div>
                     </div>
@@ -281,6 +291,7 @@ const getObjectsList = (photo) => {
             objects.push({
                 key: tag.object.key,
                 quantity: tag.quantity || 0,
+                pickedUp: tag.picked_up,
             });
         }
     });

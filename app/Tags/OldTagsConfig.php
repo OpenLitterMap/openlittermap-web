@@ -2,7 +2,7 @@
 
 namespace App\Tags;
 
-class TagsConfig
+class OldTagsConfig
 {
     /**
      * Get the complete tags configuration

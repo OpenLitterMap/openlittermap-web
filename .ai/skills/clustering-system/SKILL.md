@@ -41,6 +41,10 @@ clustering:update --all            # Recluster all global + tile zoom levels
 clustering:update --team=5         # Cluster a specific team
 clustering:update --all-teams      # Cluster all teams with photos
 clustering:update --stats          # Show statistics + integrity check
+clustering:update --explain        # Show query execution plan (combine with --all)
+
+# Interactive menu (no flags)
+clustering:update                  # Shows choice() menu: all, populate, both, team, all-teams, stats
 
 # Incremental (scheduled every 5 minutes)
 clustering:process-dirty           # Process dirty tiles + teams

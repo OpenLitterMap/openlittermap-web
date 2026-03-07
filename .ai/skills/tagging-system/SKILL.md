@@ -98,6 +98,12 @@ $photoTag->attachExtraTags($brands, Dimension::BRAND->value, 0);
 
 130+ mappings from old camelCase keys to normalized keys with inferred materials.
 
+### Category aliases (CATEGORY_ALIASES)
+
+`ClassifyTagsService::CATEGORY_ALIASES` resolves deprecated v4 category keys: `coastal→marine`, `trashdog→pets`, `dogshit→pets`, `automobile→vehicles`, `pathway→unclassified`, `drugs→unclassified`, `political→unclassified`, `stationery→unclassified`. The public `getCategory(string $rawKey)` method checks aliases before DB lookup.
+
+`TagsConfig` defines 16 categories (ordered alphabetically): alcohol, art, coffee, dumping, electronics, food, industrial, marine, medical, other, pets, sanitary, smoking, softdrinks, unclassified, vehicles.
+
 ### Dimension enum
 
 ```php

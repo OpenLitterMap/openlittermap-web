@@ -34,6 +34,9 @@ class UsersUploadsController extends Controller
         if ($request->filled('id')) {
             $id = $request->integer('id');
             $operator = $request->input('id_operator', '=');
+            if (! in_array($operator, ['=', '>', '<'], true)) {
+                $operator = '=';
+            }
             $query->where('id', $operator, $id);
         }
 
@@ -54,6 +57,16 @@ class UsersUploadsController extends Controller
                         $q2->where('key', 'like', "%{$customTag}%");
                     });
             });
+        }
+
+        // Picked up filter (per-tag level: true, false, or null=no info)
+        if ($request->has('picked_up')) {
+            $pickedUp = $request->input('picked_up');
+            if ($pickedUp === 'true') {
+                $query->whereHas('photoTags', fn($q) => $q->where('picked_up', true));
+            } elseif ($pickedUp === 'false') {
+                $query->whereHas('photoTags', fn($q) => $q->where('picked_up', false));
+            }
         }
 
         // Date range filter

@@ -35,9 +35,14 @@
                     <div class="flex items-center gap-2 mb-2">
                         <span class="font-semibold text-gray-800 capitalize">{{ item.object?.key || 'unknown' }}</span>
                         <span class="text-sm text-gray-600">×{{ item.quantity }}</span>
-                        <span v-if="item.picked_up" class="bg-green-500 text-white px-1.5 py-0.5 rounded text-xs"
-                            >✓ Picked up</span
-                        >
+                        <span
+                            v-if="item.picked_up === true"
+                            class="bg-green-500 text-white px-1.5 py-0.5 rounded text-xs"
+                        >Picked up</span>
+                        <span
+                            v-else-if="item.picked_up === false"
+                            class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs"
+                        >Not picked up</span>
                     </div>
 
                     <!-- Materials -->

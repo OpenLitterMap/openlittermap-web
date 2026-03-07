@@ -315,11 +315,30 @@ class ClassifyTagsService
     }
 
     /**
+     * Map deprecated v4 category keys to their v5 equivalents.
+     */
+    private const CATEGORY_ALIASES = [
+        'coastal'   => 'marine',
+        'trashdog'  => 'pets',
+        'dogshit'   => 'pets',
+        'automobile' => 'vehicles',
+        'pathway'   => 'unclassified',
+        'drugs'     => 'unclassified',
+        'political' => 'unclassified',
+        'stationery' => 'unclassified',
+    ];
+
+    /**
      * Helper to fetch Category by normalized key.
      */
     public function getCategory(string $rawKey): ?Category
     {
         $key = $this->normalize($rawKey);
+        $key = self::CATEGORY_ALIASES[$key] ?? $key;
+
+        if (isset($this->categories[$key])) {
+            return Category::find($this->categories[$key]);
+        }
 
         return Category::where('key', $key)->first();
     }

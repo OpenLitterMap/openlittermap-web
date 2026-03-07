@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-943 tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
+972+ tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
 
 ## Key Files
 
@@ -26,9 +26,11 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 - `tests/Feature/Tags/ReplacePhotoTagsTest.php` — 5 tests (replace tags, ownership, auth, extra tags cleanup)
 - `tests/Feature/Teams/TeamPhotosTest.php` — 35 tests (new_tags format, CLO tag edits, member stats, safeguarding, delete, revoke, approval, map)
 - `tests/Feature/User/PublicProfileTest.php` — 4 tests (public profile data, private returns, privacy settings, 404)
-- `tests/Feature/Leaderboard/LeaderboardTest.php` — 14 tests (all paths: global, country, state, city scopes)
+- `tests/Feature/Leaderboard/LeaderboardTest.php` — 18 tests (all paths: global, country, state, city scopes)
 - `tests/Feature/Auth/SanctumTokenAuthTest.php` — Mobile token auth tests
 - `tests/Feature/Signup/CreateNewUserTest.php` — Registration flow tests
+- `tests/Feature/Tags/ClassifyTagsServiceTest.php` — 12 tests (category aliases, deprecated tag mapping, unknown tags, getCategory)
+- `tests/Feature/User/UsersUploadsControllerTest.php` — 9 tests (picked_up filter, pagination, tagged/untagged filters)
 
 ## Invariants
 
@@ -269,4 +271,5 @@ DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --c
 - **Uploading photos via `/api/photos/submit` in web-guard tests.** That route uses `auth:api`. If your test uses `actingAs($user)`, the upload returns 401 and no photo is created. Use `Photo::factory()` for tests that aren't testing upload behavior.
 - **Expecting `geom` in JSON responses.** `Photo::$hidden = ['geom']` — binary spatial data is excluded from serialization.
 - **Using `assertNull` for `Redis::zScore()` on missing members.** PHP Redis returns `false` (not `null`) when a ZSET member doesn't exist. Use `assertFalse(Redis::zScore($key, $member))`.
+- **`HasPhotoUploads` trait double-encoding `address_array`.** The trait was `json_encode()`-ing `address_array` before insert, but the Photo model has an `'array'` cast on that column — causing double-encoding. Fixed to pass the raw array directly and let the model cast handle serialization.
 - **Flaky 429s from rate limiter state.** `CACHE_DRIVER=array` in phpunit.xml means rate limiter entries persist between tests in the same PHPUnit process. The base `TestCase::setUp()` calls `Cache::flush()` to prevent this. If you add a new test file that hits throttled routes and see intermittent 429s, verify it extends the base `TestCase`.

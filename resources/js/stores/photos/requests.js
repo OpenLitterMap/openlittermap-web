@@ -25,6 +25,11 @@ export const requests = {
                 params.id_operator = filters.idOperator || '=';
             }
 
+            // Add picked up filter
+            if (filters.pickedUp && filters.pickedUp !== 'all') {
+                params.picked_up = filters.pickedUp;
+            }
+
             // Add tag filter
             if (filters.tag) {
                 params.tag = filters.tag;

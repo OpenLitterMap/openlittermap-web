@@ -9,7 +9,6 @@ enum CategoryKey: string
     case Softdrinks = 'softdrinks';
     case Food = 'food';
     case Coffee = 'coffee';
-    case PersonalCare = 'personal_care';
     case Sanitary = 'sanitary';
     case Medical = 'medical';
     case Industrial = 'industrial';

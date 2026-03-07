@@ -124,4 +124,5 @@ public function handle(): int
 - **Running without `TagKeyCache::preloadAll()`.** Cold lookups hit the database per tag. Preload caches first.
 - **Not calling `GeneratePhotoSummaryService` after tag creation.** Summary must be generated for MetricsService to read.
 - **Assuming all v4 keys map 1:1 to v5.** Many v4 keys like `beerBottle` split into object + materials. `normalizeDeprecatedTag()` handles this.
+- **Not handling deprecated category keys.** `ClassifyTagsService::CATEGORY_ALIASES` resolves old category keys: `coastal→marine`, `trashdog→pets`, `dogshit→pets`, `automobile→vehicles`, `pathway→unclassified`, `drugs→unclassified`, `political→unclassified`, `stationery→unclassified`. The public `getCategory(string $rawKey)` method checks aliases before DB lookup.
 - **Processing brands inline.** Brands are deferred to `globalBrands` array — not attached to specific objects during migration.

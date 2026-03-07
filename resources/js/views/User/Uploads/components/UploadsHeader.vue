@@ -13,6 +13,7 @@ const filters = ref({
     dateTo: '',
     perPage: '25',
     taggedState: 'all', // 'all' | 'tagged' | 'untagged'
+    pickedUp: 'all', // 'all' | 'true' | 'false'
 });
 
 // Get stats from store
@@ -32,6 +33,7 @@ const getTaggedParam = () => {
 const buildFilterParams = () => {
     return {
         tagged: getTaggedParam(),
+        pickedUp: filters.value.pickedUp,
         id: filters.value.id || null,
         idOperator: filters.value.idOperator,
         tag: filters.value.tag || null,
@@ -57,7 +59,15 @@ const cycleTaggedState = () => {
     const states = ['all', 'untagged', 'tagged'];
     const currentIndex = states.indexOf(filters.value.taggedState);
     filters.value.taggedState = states[(currentIndex + 1) % states.length];
-    applyFilters(); // Use applyFilters instead of loadPhotos to ensure all filters are applied
+    applyFilters();
+};
+
+// Cycle picked up: all -> true -> false -> all
+const cyclePickedUp = () => {
+    const states = ['all', 'true', 'false'];
+    const currentIndex = states.indexOf(filters.value.pickedUp);
+    filters.value.pickedUp = states[(currentIndex + 1) % states.length];
+    applyFilters();
 };
 
 // Initial load: fetch both photos and stats
@@ -129,6 +139,28 @@ onMounted(async () => {
                             : filters.taggedState === 'untagged'
                               ? $t('Untagged')
                               : $t('Tagged')
+                    }}
+                </button>
+            </div>
+
+            <!-- Picked Up Filter -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Picked Up') }}</label>
+                <button
+                    @click="cyclePickedUp"
+                    class="px-3 py-1.5 text-xs font-medium border rounded transition-colors min-w-[90px]"
+                    :class="{
+                        'bg-gray-100 border-gray-300 text-gray-700': filters.pickedUp === 'all',
+                        'bg-green-50 border-green-300 text-green-700': filters.pickedUp === 'true',
+                        'bg-amber-50 border-amber-300 text-amber-700': filters.pickedUp === 'false',
+                    }"
+                >
+                    {{
+                        filters.pickedUp === 'all'
+                            ? $t('All')
+                            : filters.pickedUp === 'true'
+                              ? $t('Picked Up')
+                              : $t('Not Picked Up')
                     }}
                 </button>
             </div>

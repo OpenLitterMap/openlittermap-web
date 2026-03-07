@@ -29,6 +29,50 @@ class UpdateClusters extends Command
 
     public function handle(): int
     {
+        $hasOption = $this->option('stats')
+            || $this->option('populate')
+            || $this->option('all')
+            || $this->option('team')
+            || $this->option('all-teams');
+
+        if (! $hasOption) {
+            $options = [
+                'all'       => 'Recluster all global tiles',
+                'populate'  => 'Populate missing tile keys',
+                'both'      => 'Populate tile keys + recluster all',
+                'team'      => 'Cluster a specific team',
+                'all-teams' => 'Cluster all teams with photos',
+                'stats'     => 'Show statistics only',
+            ];
+
+            $label = $this->choice('What would you like to do?', array_values($options));
+            $choice = array_search($label, $options, true);
+
+            if ($choice === 'stats') {
+                $this->showStats();
+                return 0;
+            }
+
+            if (in_array($choice, ['populate', 'both'])) {
+                $this->populateTileKeys();
+            }
+
+            if (in_array($choice, ['all', 'both'])) {
+                $this->clusterAll();
+            }
+
+            if ($choice === 'team') {
+                $teamId = $this->ask('Enter team ID');
+                $this->clusterTeam((int) $teamId);
+            }
+
+            if ($choice === 'all-teams') {
+                $this->clusterAllTeams();
+            }
+
+            return 0;
+        }
+
         // Show stats
         if ($this->option('stats')) {
             $this->showStats();

@@ -10,11 +10,8 @@ class TagsConfig
      * Get the complete tags configuration.
      *
      * Canonical objects per category. All keys are snake_case.
+     * Categories are ordered alphabetically.
      * Types represent "what was in the container" (beer, water, soda, etc.)
-     *
-     * Categories:
-     * @alcohol
-     *
      */
     public static function get(): array
     {
@@ -53,46 +50,57 @@ class TagsConfig
                 'other' => [],
             ],
 
-            CategoryKey::Softdrinks->value => [
-                'bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                    'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown'],
-                ],
-                'can' => [
-                    'materials' => ['aluminium'],
-                    'types' => ['soda', 'energy', 'juice', 'iced_tea', 'sparkling_water', 'unknown'],
-                ],
-                'carton' => [
-                    'materials' => ['cardboard', 'foil', 'plastic'],
-                    'types' => ['juice', 'milk', 'iced_tea', 'plant_milk', 'unknown'],
-                ],
+            CategoryKey::Art->value => [
+                'graffiti' => [],
+                'mural' => [],
+                'other' => [],
+            ],
+
+            CategoryKey::Coffee->value => [
                 'cup' => [
                     'materials' => ['paper', 'plastic', 'foam', 'ceramic', 'metal'],
-                    'types' => ['coffee', 'tea', 'soda', 'smoothie', 'unknown'],
                 ],
                 'lid' => [
                     'materials' => ['plastic', 'paper', 'bioplastic'],
                 ],
-                'straw' => [
-                    'materials' => ['plastic', 'paper', 'metal', 'bamboo'],
-                ],
-                'straw_wrapper' => [
-                    'materials' => ['paper', 'plastic'],
-                ],
-                'juice_pouch' => [
-                    'materials' => ['plastic', 'foil'],
-                ],
-                'coffee_pod' => [
-                    'materials' => ['plastic', 'aluminium'],
-                ],
-                'label' => [
-                    'materials' => ['paper', 'plastic'],
-                ],
-                'broken_glass' => [
-                    'materials' => ['glass'],
+                'stirrer' => [
+                    'materials' => ['wood', 'plastic', 'metal', 'bamboo'],
                 ],
                 'packaging' => [
-                    'materials' => ['cardboard', 'plastic', 'foil'],
+                    'materials' => ['plastic', 'foil', 'paper'],
+                ],
+                'pod' => [
+                    'materials' => ['plastic', 'aluminium'],
+                ],
+                'sleeve' => [
+                    'materials' => ['cardboard', 'silicone'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Dumping->value => [
+                'dumping' => [
+                    'sizes' => ['small', 'medium', 'large'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Electronics->value => [
+                'battery' => [
+                    'materials' => ['metal', 'plastic'],
+                    'types' => ['alkaline', 'lithium'],
+                ],
+                'cable' => [
+                    'materials' => ['plastic', 'copper'],
+                ],
+                'charger' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'headphones' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'phone' => [
+                    'materials' => ['metal', 'plastic', 'glass'],
                 ],
                 'other' => [],
             ],
@@ -146,7 +154,136 @@ class TagsConfig
                 'other' => [],
             ],
 
-            CategoryKey::PersonalCare->value => [
+            CategoryKey::Industrial->value => [
+                'oil_container' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'oil_drum' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'chemical_container' => [
+                    'materials' => ['plastic', 'metal', 'glass'],
+                ],
+                'construction' => [
+                    'materials' => ['clay', 'concrete', 'plastic', 'metal', 'fiberglass', 'foam', 'asphalt', 'ceramic', 'stone'],
+                ],
+                'bricks' => [
+                    'materials' => ['clay', 'concrete', 'stone'],
+                ],
+                'tape' => [
+                    'materials' => ['plastic'],
+                ],
+                'pallet' => [
+                    'materials' => ['wood', 'plastic'],
+                ],
+                'wire' => [
+                    'materials' => ['copper', 'plastic', 'steel'],
+                ],
+                'pipe' => [
+                    'materials' => ['metal', 'plastic', 'concrete'],
+                ],
+                'container' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'dumping_small' => [],
+                'dumping_medium' => [],
+                'dumping_large' => [],
+                'other' => [],
+            ],
+
+            CategoryKey::Marine->value => [
+                'fishing_net' => [
+                    'materials' => ['nylon', 'plastic'],
+                ],
+                'rope' => [
+                    'materials' => ['nylon', 'plastic'],
+                ],
+                'buoy' => [
+                    'materials' => ['plastic'],
+                ],
+                'crate' => [
+                    'materials' => ['plastic'],
+                ],
+                'microplastics' => [
+                    'materials' => ['plastic'],
+                ],
+                'macroplastics' => [
+                    'materials' => ['plastic'],
+                ],
+                'styrofoam' => [
+                    'materials' => ['polystyrene'],
+                ],
+                'shotgun_cartridge' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Medical->value => [
+                'syringe' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'pill_pack' => [
+                    'materials' => ['plastic', 'aluminium'],
+                ],
+                'medicine_bottle' => [
+                    'materials' => ['plastic', 'glass'],
+                ],
+                'bandage' => [
+                    'materials' => ['cotton', 'elastic'],
+                ],
+                'plaster' => [
+                    'materials' => ['plastic'],
+                ],
+                'gloves' => [
+                    'materials' => ['latex', 'rubber', 'plastic'],
+                ],
+                'face_mask' => [
+                    'materials' => ['cotton', 'polyester', 'paper'],
+                ],
+                'sanitiser' => [
+                    'materials' => ['plastic'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Other->value => [
+                'clothing' => [],
+                'bags_litter' => [],
+                'overflowing_bin' => [],
+                'plastic' => [],
+                'traffic_cone' => [],
+                'metal' => [],
+                'plastic_bag' => [],
+                'paper' => [
+                    'materials' => ['paper'],
+                ],
+                'poster' => [],
+                'cable_tie' => [],
+                'balloon' => [
+                    'materials' => ['plastic', 'latex'],
+                ],
+                'furniture' => [],
+                'mattress' => [],
+                'appliance' => [],
+                'paint_can' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'umbrella' => [
+                    'materials' => ['plastic', 'metal', 'cloth'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Pets->value => [
+                'dog_waste' => [],
+                'dog_waste_in_bag' => [
+                    'materials' => ['plastic'],
+                ],
+                'other' => [],
+            ],
+
+            CategoryKey::Sanitary->value => [
                 'wipes' => [
                     'materials' => ['polyester', 'plastic'],
                 ],
@@ -186,154 +323,6 @@ class TagsConfig
                 'other' => [],
             ],
 
-            CategoryKey::Medical->value => [
-                'syringe' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'pill_pack' => [
-                    'materials' => ['plastic', 'aluminium'],
-                ],
-                'medicine_bottle' => [
-                    'materials' => ['plastic', 'glass'],
-                ],
-                'bandage' => [
-                    'materials' => ['cotton', 'elastic'],
-                ],
-                'plaster' => [
-                    'materials' => ['plastic'],
-                ],
-                'gloves' => [
-                    'materials' => ['latex', 'rubber', 'plastic'],
-                ],
-                'face_mask' => [
-                    'materials' => ['cotton', 'polyester', 'paper'],
-                ],
-                'sanitiser' => [
-                    'materials' => ['plastic'],
-                ],
-                'other' => [],
-            ],
-
-            CategoryKey::Industrial->value => [
-                'oil_container' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'oil_drum' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'chemical_container' => [
-                    'materials' => ['plastic', 'metal', 'glass'],
-                ],
-                'construction' => [
-                    'materials' => ['clay', 'concrete', 'plastic', 'metal', 'fiberglass', 'foam', 'asphalt', 'ceramic', 'stone'],
-                ],
-                'bricks' => [
-                    'materials' => ['clay', 'concrete', 'stone'],
-                ],
-                'tape' => [
-                    'materials' => ['plastic'],
-                ],
-                'pallet' => [
-                    'materials' => ['wood', 'plastic'],
-                ],
-                'wire' => [
-                    'materials' => ['copper', 'plastic', 'steel'],
-                ],
-                'pipe' => [
-                    'materials' => ['metal', 'plastic', 'concrete'],
-                ],
-                'container' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'dumping_small' => [],
-                'dumping_medium' => [],
-                'dumping_large' => [],
-                'other' => [],
-            ],
-
-            CategoryKey::Vehicles->value => [
-                'car_part' => [
-                    'materials' => ['metal', 'plastic', 'rubber', 'glass'],
-                ],
-                'battery' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'bumper' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'tyre' => [
-                    'materials' => ['rubber'],
-                ],
-                'wheel' => [
-                    'materials' => ['metal'],
-                ],
-                'light' => [
-                    'materials' => ['glass', 'plastic'],
-                ],
-                'mirror' => [
-                    'materials' => ['glass', 'plastic'],
-                ],
-                'license_plate' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'other' => [],
-            ],
-
-            CategoryKey::Marine->value => [
-                'fishing_net' => [
-                    'materials' => ['nylon', 'plastic'],
-                ],
-                'rope' => [
-                    'materials' => ['nylon', 'plastic'],
-                ],
-                'buoy' => [
-                    'materials' => ['plastic'],
-                ],
-                'crate' => [
-                    'materials' => ['plastic'],
-                ],
-                'microplastics' => [
-                    'materials' => ['plastic'],
-                ],
-                'macroplastics' => [
-                    'materials' => ['plastic'],
-                ],
-                'styrofoam' => [
-                    'materials' => ['polystyrene'],
-                ],
-                'shotgun_cartridge' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'other' => [],
-            ],
-
-            CategoryKey::Electronics->value => [
-                'battery' => [
-                    'materials' => ['metal', 'plastic'],
-                ],
-                'cable' => [
-                    'materials' => ['plastic', 'copper'],
-                ],
-                'phone' => [
-                    'materials' => ['metal', 'plastic', 'glass'],
-                ],
-                'charger' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'headphones' => [
-                    'materials' => ['plastic', 'metal'],
-                ],
-                'other' => [],
-            ],
-
-            CategoryKey::Pets->value => [
-                'dog_waste' => [],
-                'dog_waste_in_bag' => [
-                    'materials' => ['plastic'],
-                ],
-                'other' => [],
-            ],
-
             CategoryKey::Smoking->value => [
                 'butts' => [
                     'materials' => ['plastic', 'paper'],
@@ -365,9 +354,81 @@ class TagsConfig
                 'other' => [],
             ],
 
+            CategoryKey::Softdrinks->value => [
+                'bottle' => [
+                    'materials' => ['plastic', 'glass'],
+                    'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown'],
+                ],
+                'can' => [
+                    'materials' => ['aluminium'],
+                    'types' => ['soda', 'energy', 'juice', 'iced_tea', 'sparkling_water', 'unknown'],
+                ],
+                'carton' => [
+                    'materials' => ['cardboard', 'foil', 'plastic'],
+                    'types' => ['juice', 'milk', 'iced_tea', 'plant_milk', 'unknown'],
+                ],
+                'cup' => [
+                    'materials' => ['paper', 'plastic', 'foam', 'ceramic', 'metal'],
+                    'types' => ['coffee', 'tea', 'soda', 'smoothie', 'unknown'],
+                ],
+                'lid' => [
+                    'materials' => ['plastic', 'paper', 'bioplastic'],
+                ],
+                'straw' => [
+                    'materials' => ['plastic', 'paper', 'metal', 'bamboo'],
+                ],
+                'straw_wrapper' => [
+                    'materials' => ['paper', 'plastic'],
+                ],
+                'juice_pouch' => [
+                    'materials' => ['plastic', 'foil'],
+                ],
+                'coffee_pod' => [
+                    'materials' => ['plastic', 'aluminium'],
+                ],
+                'label' => [
+                    'materials' => ['paper', 'plastic'],
+                ],
+                'broken_glass' => [
+                    'materials' => ['glass'],
+                ],
+                'packaging' => [
+                    'materials' => ['cardboard', 'plastic', 'foil'],
+                ],
+                'other' => [],
+            ],
+
             CategoryKey::Unclassified->value => [
                 'other' => [],
                 'bags_litter' => [],
+            ],
+
+            CategoryKey::Vehicles->value => [
+                'car_part' => [
+                    'materials' => ['metal', 'plastic', 'rubber', 'glass'],
+                ],
+                'battery' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'bumper' => [
+                    'materials' => ['plastic', 'metal'],
+                ],
+                'tyre' => [
+                    'materials' => ['rubber'],
+                ],
+                'wheel' => [
+                    'materials' => ['metal'],
+                ],
+                'light' => [
+                    'materials' => ['glass', 'plastic'],
+                ],
+                'mirror' => [
+                    'materials' => ['glass', 'plastic'],
+                ],
+                'license_plate' => [
+                    'materials' => ['metal', 'plastic'],
+                ],
+                'other' => [],
             ],
         ];
     }
