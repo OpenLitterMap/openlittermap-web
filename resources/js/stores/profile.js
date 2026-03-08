@@ -44,7 +44,7 @@ export const useProfileStore = defineStore('profile', {
                     const settingsFields = [
                         'name', 'username', 'email', 'public_profile',
                         'show_name', 'show_username', 'show_name_maps',
-                        'show_username_maps', 'previous_tags', 'emailsub',
+                        'show_username_maps', 'picked_up', 'previous_tags', 'emailsub',
                     ];
                     settingsFields.forEach((key) => {
                         if (key in data.user) {

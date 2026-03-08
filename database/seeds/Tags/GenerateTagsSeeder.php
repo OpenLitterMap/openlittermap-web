@@ -2,13 +2,12 @@
 
 namespace Database\Seeders\Tags;
 
-use App\Models\Litter\Categories\Material;
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterObjectType;
-use App\Models\Litter\Tags\LitterState;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Tags\TagsConfig;
 use Illuminate\Database\Seeder;
@@ -31,46 +30,22 @@ class GenerateTagsSeeder extends Seeder
     }
 
     /**
-     * Seed materials from the deprecated Material model + config
+     * Seed materials extracted from TagsConfig
      */
     protected function seedMaterials(): void
     {
-        $materials = Material::types();
-
-        $configMaterials = $this->extractMaterialsFromConfig();
-        $allMaterials = array_unique(array_merge($materials, $configMaterials));
-
-        foreach ($allMaterials as $material) {
+        foreach (TagsConfig::allMaterialKeys() as $material) {
             Materials::firstOrCreate(['key' => $material]);
         }
     }
 
     /**
-     * Seed litter object types
+     * Seed litter object types extracted from TagsConfig
      */
     protected function seedTypes(): void
     {
-        $types = [
-            'beer' => 'Beer',
-            'wine' => 'Wine',
-            'spirits' => 'Spirits',
-            'cider' => 'Cider',
-            'water' => 'Water',
-            'soda' => 'Soda',
-            'juice' => 'Juice',
-            'energy' => 'Energy Drink',
-            'sports' => 'Sports Drink',
-            'coffee' => 'Coffee',
-            'tea' => 'Tea',
-            'milk' => 'Milk',
-            'smoothie' => 'Smoothie',
-            'iced_tea' => 'Iced Tea',
-            'sparkling_water' => 'Sparkling Water',
-            'plant_milk' => 'Plant Milk',
-            'unknown' => 'Unknown',
-        ];
-
-        foreach ($types as $key => $name) {
+        foreach (TagsConfig::allTypeKeys() as $key) {
+            $name = ucwords(str_replace('_', ' ', $key));
             LitterObjectType::firstOrCreate(['key' => $key], ['name' => $name]);
         }
     }
@@ -99,11 +74,22 @@ class GenerateTagsSeeder extends Seeder
     }
 
     /**
-     * Seed categories, objects, CLO pivots, materials, and types from TagsConfig
+     * Seed categories, objects, CLO pivots, materials, and types from TagsConfig.
+     * Also ensures the 'unclassified' system category exists (used by ClassifyTagsService
+     * for deprecated v4 alias resolution, not shown in UI).
      */
     protected function seedCategoryObjectRelationships(): void
     {
         $configuration = TagsConfig::get();
+
+        // Ensure 'unclassified' system category exists with an 'other' CLO.
+        // Required by ClassifyTagsService (v4 alias resolution) and UpdateTagsService.
+        $unclassified = Category::firstOrCreate(['key' => CategoryKey::Unclassified->value]);
+        $otherObj = LitterObject::firstOrCreate(['key' => 'other']);
+        CategoryObject::firstOrCreate([
+            'category_id' => $unclassified->id,
+            'litter_object_id' => $otherObj->id,
+        ]);
 
         foreach ($configuration as $categoryKey => $objects) {
             $category = Category::firstOrCreate(['key' => $categoryKey]);
@@ -158,22 +144,4 @@ class GenerateTagsSeeder extends Seeder
         }
     }
 
-    /**
-     * Extract all unique materials from configuration
-     */
-    protected function extractMaterialsFromConfig(): array
-    {
-        $materials = [];
-        $configuration = TagsConfig::get();
-
-        foreach ($configuration as $category => $objects) {
-            foreach ($objects as $object => $attributes) {
-                if (!empty($attributes['materials'])) {
-                    $materials = array_merge($materials, $attributes['materials']);
-                }
-            }
-        }
-
-        return array_unique($materials);
-    }
 }

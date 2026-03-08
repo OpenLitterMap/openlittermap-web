@@ -20,7 +20,7 @@ V5 uses a normalized hierarchy: Photo -> PhotoTag (category + object + quantity)
 - `app/Models/Litter/Tags/CustomTagNew.php` — Custom tags (`custom_tags_new` table)
 - `app/Models/Litter/Tags/CategoryObject.php` — Pivot: `category_litter_object` + `types()` BelongsToMany
 - `app/Models/Litter/Tags/LitterObjectType.php` — Type lookup: "what was in the container" (beer, water, etc.)
-- `database/seeds/Tags/SeedLitterObjectTypesSeeder.php` — Seeds 17 types, unclassified/softdrinks categories, canonical objects, 9 typed CLO pivot mappings
+- `database/seeds/Tags/GenerateTagsSeeder.php` — Seeds all categories, objects, CLO pivots, materials, and types from TagsConfig. Also ensures `unclassified` system category exists.
 - `app/Services/Tags/ClassifyTagsService.php` — Tag classification + deprecated key mapping
 - `app/Services/Tags/UpdateTagsService.php` — V4->V5 migration per photo
 - `app/Services/Tags/GeneratePhotoSummaryService.php` — Summary JSON + XP from PhotoTags
@@ -29,11 +29,12 @@ V5 uses a normalized hierarchy: Photo -> PhotoTag (category + object + quantity)
 
 ## Invariants
 
-1. **`photo_tags` uses FK columns:** `category_id` and `litter_object_id` (not string columns). Tests must create Category/LitterObject records and use their IDs.
+1. **`photo_tags` uses FK columns:** `category_id` and `litter_object_id` (not string columns). Tests must create Category/LitterObject records and use their IDs. **These columns are now NULLABLE** — extra-tag-only tags (brands, materials, custom tags) can exist without a litter object.
 2. **`photo_tag_extra_tags` is polymorphic:** `tag_type` is `'material'|'brand'|'custom_tag'`, `tag_type_id` is the FK to the respective table.
 3. **Namespace is `App\Models\Litter\Tags\PhotoTag`**, not `App\Models\PhotoTag`.
 4. **Summary generation MUST follow any tag change.** Call `$photo->generateSummary()` after creating/updating/deleting PhotoTags.
 5. **Unknown tags are auto-created:** `LitterObject::firstOrCreate(['key' => $key], ['crowdsourced' => true])`.
+6. **Loose PhotoTags (nullable CLO).** `category_litter_object_id`, `category_id`, `litter_object_id` are all nullable. `AddTagsToPhotoAction::createExtraTagOnly()` creates standalone extra-tag PhotoTags with null CLO fields. `GeneratePhotoSummaryService` counts objects only when `objectId > 0` (variable renamed `$totalLitter` → `$totalObjects`). `XpCalculator` awards object XP only when `object_id > 0` — extra-tag-only tags don't get phantom object XP. Frontend `useXpCalculator.js` mirrors this logic.
 
 ## Patterns
 
@@ -102,7 +103,7 @@ $photoTag->attachExtraTags($brands, Dimension::BRAND->value, 0);
 
 `ClassifyTagsService::CATEGORY_ALIASES` resolves deprecated v4 category keys: `coastal→marine`, `trashdog→pets`, `dogshit→pets`, `automobile→vehicles`, `pathway→unclassified`, `drugs→unclassified`, `political→unclassified`, `stationery→unclassified`. The public `getCategory(string $rawKey)` method checks aliases before DB lookup.
 
-`TagsConfig` defines 16 categories (ordered alphabetically): alcohol, art, coffee, dumping, electronics, food, industrial, marine, medical, other, pets, sanitary, smoking, softdrinks, unclassified, vehicles.
+`TagsConfig` defines 16 active categories (ordered alphabetically): alcohol, art, civic, coffee, dumping, electronics, food, industrial, marine, medical, other, pets, sanitary, smoking, softdrinks, vehicles. The `unclassified` system category is NOT in TagsConfig but is created by `GenerateTagsSeeder` for v4 alias resolution.
 
 ### Dimension enum
 

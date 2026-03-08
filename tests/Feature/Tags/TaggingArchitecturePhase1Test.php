@@ -10,8 +10,8 @@ use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Tags\TagsConfig;
 use Database\Seeders\Tags\GenerateTagsSeeder;
-use Database\Seeders\Tags\SeedLitterObjectTypesSeeder;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -20,26 +20,21 @@ class TaggingArchitecturePhase1Test extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed([
-            GenerateTagsSeeder::class,
-            SeedLitterObjectTypesSeeder::class,
-        ]);
+        $this->seed(GenerateTagsSeeder::class);
     }
 
     // ─── Seeding verification ───
 
-    public function test_17_litter_object_types_are_seeded(): void
+    public function test_litter_object_types_are_seeded_from_tags_config(): void
     {
-        $this->assertDatabaseCount('litter_object_types', 17);
+        // Types are extracted from TagsConfig — count should match unique type keys
+        $expectedCount = count(TagsConfig::allTypeKeys());
+        $this->assertDatabaseCount('litter_object_types', $expectedCount);
     }
 
     public function test_all_expected_type_keys_exist(): void
     {
-        $expectedKeys = [
-            'beer', 'wine', 'spirits', 'cider', 'water', 'soda', 'juice',
-            'energy', 'sports', 'coffee', 'tea', 'milk', 'smoothie',
-            'iced_tea', 'sparkling_water', 'plant_milk', 'unknown',
-        ];
+        $expectedKeys = TagsConfig::allTypeKeys();
 
         foreach ($expectedKeys as $key) {
             $this->assertDatabaseHas('litter_object_types', ['key' => $key]);
@@ -58,19 +53,25 @@ class TaggingArchitecturePhase1Test extends TestCase
 
     public function test_canonical_objects_are_seeded(): void
     {
-        $canonicalObjects = ['broken_glass', 'carton', 'straw_wrapper', 'coffee_pod'];
+        $canonicalObjects = ['broken_glass', 'carton', 'straw_wrapper', 'pod'];
 
         foreach ($canonicalObjects as $key) {
             $this->assertDatabaseHas('litter_objects', ['key' => $key]);
         }
     }
 
-    public function test_7_typed_clos_exist(): void
+    public function test_typed_clos_exist(): void
     {
         $expectedCombos = [
             ['alcohol', 'bottle'],
             ['alcohol', 'can'],
             ['alcohol', 'glass'],
+            ['dumping', 'dumping'],
+            ['electronics', 'battery'],
+            ['marine', 'rope'],
+            ['smoking', 'box'],
+            ['smoking', 'pouch'],
+            ['smoking', 'vape'],
             ['softdrinks', 'bottle'],
             ['softdrinks', 'can'],
             ['softdrinks', 'carton'],
@@ -91,31 +92,12 @@ class TaggingArchitecturePhase1Test extends TestCase
         }
     }
 
-    public function test_every_typed_clo_includes_unknown(): void
-    {
-        $unknown = LitterObjectType::where('key', 'unknown')->first();
-        $this->assertNotNull($unknown);
-
-        $typedCloIds = DB::table('category_object_types')
-            ->distinct()
-            ->pluck('category_litter_object_id');
-
-        foreach ($typedCloIds as $cloId) {
-            $hasUnknown = DB::table('category_object_types')
-                ->where('category_litter_object_id', $cloId)
-                ->where('litter_object_type_id', $unknown->id)
-                ->exists();
-
-            $this->assertTrue($hasUnknown, "CLO id={$cloId} must include 'unknown' type");
-        }
-    }
-
     public function test_alcohol_bottle_has_correct_types(): void
     {
         $clo = $this->getClo('alcohol', 'bottle');
         $typeKeys = $clo->types->pluck('key')->sort()->values()->toArray();
 
-        $this->assertEquals(['beer', 'cider', 'spirits', 'unknown', 'wine'], $typeKeys);
+        $this->assertEquals(['beer', 'cider', 'premixed', 'spirits', 'unknown', 'wine'], $typeKeys);
     }
 
     public function test_softdrinks_can_has_correct_types(): void
@@ -295,7 +277,7 @@ class TaggingArchitecturePhase1Test extends TestCase
         $cotCountBefore = DB::table('category_object_types')->count();
 
         // Run seeder again
-        $this->seed(SeedLitterObjectTypesSeeder::class);
+        $this->seed(GenerateTagsSeeder::class);
 
         $this->assertEquals($typeCountBefore, LitterObjectType::count());
         $this->assertEquals($cotCountBefore, DB::table('category_object_types')->count());

@@ -186,12 +186,9 @@ protected function setUp(): void
 protected function setUp(): void
 {
     parent::setUp();
-    $this->seed([
-        GenerateTagsSeeder::class,
-        SeedLitterObjectTypesSeeder::class,
-    ]);
+    $this->seed(GenerateTagsSeeder::class);
 }
-// SeedLitterObjectTypesSeeder depends on GenerateTagsSeeder (needs categories/objects to exist)
+// GenerateTagsSeeder seeds all categories, objects, materials, types, and CLO pivots from TagsConfig
 ```
 
 ### VerificationStatus in assertions
@@ -272,4 +269,5 @@ DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --c
 - **Expecting `geom` in JSON responses.** `Photo::$hidden = ['geom']` — binary spatial data is excluded from serialization.
 - **Using `assertNull` for `Redis::zScore()` on missing members.** PHP Redis returns `false` (not `null`) when a ZSET member doesn't exist. Use `assertFalse(Redis::zScore($key, $member))`.
 - **`HasPhotoUploads` trait double-encoding `address_array`.** The trait was `json_encode()`-ing `address_array` before insert, but the Photo model has an `'array'` cast on that column — causing double-encoding. Fixed to pass the raw array directly and let the model cast handle serialization.
+- **Empty tags on PUT /api/v3/tags returns 200, not 422.** `ReplacePhotoTagsRequest` validates `tags` as `present|array` (not `required|array|min:1`). Sending `tags: []` clears all tags on a photo. Tests expecting 422 for empty tags must be updated to expect 200.
 - **Flaky 429s from rate limiter state.** `CACHE_DRIVER=array` in phpunit.xml means rate limiter entries persist between tests in the same PHPUnit process. The base `TestCase::setUp()` calls `Cache::flush()` to prevent this. If you add a new test file that hits throttled routes and see intermittent 429s, verify it extends the base `TestCase`.

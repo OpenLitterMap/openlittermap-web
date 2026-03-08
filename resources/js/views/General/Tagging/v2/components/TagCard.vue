@@ -1,17 +1,24 @@
 <template>
-    <div :class="['rounded-xl p-3', tag.object && !tag.cloId ? 'bg-red-500/10 border border-red-500/30' : 'bg-white/5 border border-white/10']">
+    <div
+        :class="[
+            'rounded-xl p-3 transition-all duration-200',
+            tag.object && !tag.cloId
+                ? 'bg-amber-500/10 border border-amber-500/30 border-l-4 border-l-amber-400'
+                : 'bg-gradient-to-r from-white/[0.08] to-white/[0.03] border border-white/15 hover:border-emerald-500/30',
+        ]"
+    >
         <!-- Row 1: Tag name, quantity, actions -->
         <div class="flex items-center gap-2">
             <!-- Custom tag badge -->
             <span
                 v-if="tag.custom"
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0"
             >
                 Custom
             </span>
 
             <!-- Tag name -->
-            <span class="text-white font-medium truncate min-w-0" :title="tagDisplay">
+            <span class="text-white font-semibold truncate min-w-0" :title="tagDisplay">
                 {{ tagDisplay }}
             </span>
 
@@ -27,14 +34,14 @@
             <div class="flex-1 min-w-0"></div>
 
             <!-- Quantity controls -->
-            <div class="flex items-center gap-1 flex-shrink-0">
+            <div class="flex items-center gap-0.5 flex-shrink-0 bg-white/5 rounded-lg p-0.5">
                 <button
                     @click="decreaseQuantity"
                     :disabled="tag.quantity <= 1"
                     aria-label="Decrease quantity"
-                    class="w-7 h-7 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-7 h-7 rounded-md hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
-                    <span class="text-white text-sm">−</span>
+                    <span class="text-white/70 text-sm font-bold">-</span>
                 </button>
 
                 <input
@@ -46,45 +53,43 @@
                     min="1"
                     max="100"
                     aria-label="Quantity"
-                    class="w-10 h-7 text-center bg-white/5 border border-white/10 rounded-lg text-white text-sm tabular-nums focus:outline-none focus:border-emerald-500/50"
+                    class="w-9 h-7 text-center bg-transparent text-white text-sm font-bold tabular-nums focus:outline-none"
                 />
 
                 <button
                     @click="increaseQuantity"
                     :disabled="tag.quantity >= 100"
                     aria-label="Increase quantity"
-                    class="w-7 h-7 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-7 h-7 rounded-md hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
-                    <span class="text-white text-sm">+</span>
+                    <span class="text-white/70 text-sm font-bold">+</span>
                 </button>
             </div>
 
-            <!-- Picked up dropdown -->
-            <select
-                :value="tag.pickedUp"
-                @change="setPickedUp($event.target.value)"
+            <!-- Picked up toggle (tri-state button) -->
+            <button
+                @click="cyclePickedUp"
                 aria-label="Picked up status"
                 :class="[
-                    'px-2 py-1 rounded-lg text-xs font-medium transition-colors appearance-none cursor-pointer border flex-shrink-0',
+                    'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 flex-shrink-0 flex items-center gap-1',
                     tag.pickedUp === true
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/40'
                         : tag.pickedUp === false
-                          ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                          : 'bg-white/5 text-white/50 border-white/10',
+                          ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/30'
+                          : 'bg-white/5 text-white/40 ring-1 ring-white/10 hover:ring-white/20',
                 ]"
             >
-                <option :value="null" class="bg-slate-800 text-white">? Unknown</option>
-                <option :value="true" class="bg-slate-800 text-white">✓ Picked up</option>
-                <option :value="false" class="bg-slate-800 text-white">✗ Not picked</option>
-            </select>
+                <span v-if="tag.pickedUp === true">Picked up</span>
+                <span v-else-if="tag.pickedUp === false">Still there</span>
+                <span v-else>Unknown</span>
+            </button>
 
             <!-- Add details button -->
             <button
-                v-if="!showDetails"
-                @click="openDetails"
-                class="px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors flex-shrink-0"
+                @click="showDetails ? (showDetails = false) : openDetails()"
+                class="px-2 py-1 text-[11px] font-medium text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors flex-shrink-0 border border-transparent hover:border-emerald-500/20"
             >
-                +
+                {{ showDetails ? 'Hide tagging menu' : '+ Add more tags' }}
             </button>
 
             <!-- Remove button -->
@@ -92,40 +97,47 @@
                 @click="$emit('remove')"
                 aria-label="Remove tag"
                 title="Remove tag"
-                class="w-7 h-7 flex items-center justify-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors flex-shrink-0"
+                class="w-7 h-7 flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
             >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
 
-        <!-- XP breakdown -->
-        <div class="flex items-center gap-2 mt-1 text-[11px]">
-            <span class="text-emerald-400 font-medium">+{{ tagXp }} XP</span>
-            <span class="text-white/30">{{ tagBreakdown }}</span>
+        <!-- XP + Type pills (single row) -->
+        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-white/5 text-[11px] min-w-0">
+            <span class="text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded flex-shrink-0">+{{ tagXp }} XP</span>
+            <span v-if="!props.availableTypes.length" class="text-white/30 truncate">{{ tagBreakdown }}</span>
+            <div class="flex-1 min-w-0"></div>
+            <div v-if="props.availableTypes.length > 0" class="flex items-center gap-1 min-w-0 overflow-x-auto scrollbar-hide">
+                <button
+                    v-for="t in props.availableTypes"
+                    :key="t.id"
+                    @click="setType(tag.typeId === t.id ? null : t.id)"
+                    :class="[
+                        'px-2 py-0.5 rounded-lg text-[11px] font-medium transition-colors border whitespace-nowrap flex-shrink-0',
+                        tag.typeId === t.id
+                            ? 'bg-emerald-500/30 text-white border-emerald-400/50 ring-1 ring-emerald-400/30'
+                            : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10',
+                    ]"
+                >
+                    {{ formatKey(t.key) }}
+                </button>
+            </div>
         </div>
 
-        <!-- Row 2: Type pills (only for objects with valid types) -->
-        <div v-if="props.availableTypes.length > 0" class="flex flex-wrap items-center gap-1 mt-2 pt-2 border-t border-white/5">
-            <span class="text-[10px] text-white/30 mr-1">Type:</span>
+        <!-- Suggested materials (quick-add chips) -->
+        <div v-if="showDetails && unusedSuggestedMaterials.length > 0" class="flex items-center gap-1 mt-3">
+            <div class="flex-1 min-w-0"></div>
+            <span class="text-[10px] text-white/30 mr-1 flex-shrink-0">{{ unusedSuggestedMaterials.length > 1 ? 'Materials:' : 'Material:' }}</span>
             <button
-                v-for="t in props.availableTypes"
-                :key="t.id"
-                @click="setType(tag.typeId === t.id ? null : t.id)"
-                :class="[
-                    'px-2 py-0.5 rounded-lg text-[11px] font-medium transition-colors border',
-                    tag.typeId === t.id
-                        ? 'bg-emerald-500/30 text-white border-emerald-400/50 ring-1 ring-emerald-400/30'
-                        : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10',
-                ]"
+                v-for="m in unusedSuggestedMaterials"
+                :key="'sm-' + m.id"
+                @click="quickAddMaterial(m)"
+                class="px-2 py-0.5 rounded-lg text-[11px] font-medium transition-colors border bg-cyan-500/10 text-cyan-400/70 border-cyan-500/20 hover:bg-cyan-500/20 hover:text-cyan-300"
             >
-                {{ formatKey(t.key) }}
+                + {{ formatKey(m.key) }}
             </button>
         </div>
 
@@ -139,16 +151,10 @@
                 <span
                     v-for="brand in tag.brands"
                     :key="'b-' + brand.id"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/40 text-purple-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs border border-purple-500/20"
                 >
                     {{ formatKey(brand.key) }}
-                    <button
-                        @click="removeBrand(brand)"
-                        aria-label="Remove brand"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeBrand(brand)" aria-label="Remove brand" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
             <div v-if="tag.materials?.length" class="flex items-center gap-1">
@@ -156,16 +162,10 @@
                 <span
                     v-for="material in tag.materials"
                     :key="'m-' + material.id"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-600/40 text-teal-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-xs border border-cyan-500/20"
                 >
                     {{ formatKey(material.key) }}
-                    <button
-                        @click="removeMaterial(material)"
-                        aria-label="Remove material"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeMaterial(material)" aria-label="Remove material" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
             <div v-if="tag.objects?.length" class="flex items-center gap-1">
@@ -173,16 +173,10 @@
                 <span
                     v-for="obj in tag.objects"
                     :key="'o-' + obj.id"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-xs border border-blue-500/20"
                 >
                     {{ formatKey(obj.key) }}
-                    <button
-                        @click="removeObject(obj)"
-                        aria-label="Remove object"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeObject(obj)" aria-label="Remove object" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
             <div v-if="tag.customTags?.length" class="flex items-center gap-1">
@@ -190,16 +184,10 @@
                 <span
                     v-for="custom in tag.customTags"
                     :key="'c-' + custom"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-600/40 text-amber-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-xs border border-amber-500/20"
                 >
                     {{ custom }}
-                    <button
-                        @click="removeCustom(custom)"
-                        aria-label="Remove custom tag"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeCustom(custom)" aria-label="Remove custom tag" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
         </div>
@@ -216,58 +204,34 @@
                 <span
                     v-for="brand in tag.brands"
                     :key="'b-' + brand.id"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/40 text-purple-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs border border-purple-500/20"
                 >
                     {{ formatKey(brand.key) }}
-                    <button
-                        @click="removeBrand(brand)"
-                        aria-label="Remove brand"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeBrand(brand)" aria-label="Remove brand" class="hover:text-red-300 transition-colors">×</button>
                 </span>
                 <span
                     v-for="material in tag.materials"
                     :key="'m-' + material.id"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-600/40 text-teal-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-xs border border-cyan-500/20"
                 >
                     {{ formatKey(material.key) }}
-                    <button
-                        @click="removeMaterial(material)"
-                        aria-label="Remove material"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeMaterial(material)" aria-label="Remove material" class="hover:text-red-300 transition-colors">×</button>
                 </span>
                 <span
                     v-for="obj in tag.objects"
                     :key="'o-' + obj.id"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-xs border border-blue-500/20"
                 >
                     {{ formatKey(obj.key) }}
-                    <button
-                        @click="removeObject(obj)"
-                        aria-label="Remove object"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeObject(obj)" aria-label="Remove object" class="hover:text-red-300 transition-colors">×</button>
                 </span>
                 <span
                     v-for="custom in tag.customTags"
                     :key="'c-' + custom"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-600/40 text-amber-200 rounded text-xs"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-xs border border-amber-500/20"
                 >
                     {{ custom }}
-                    <button
-                        @click="removeCustom(custom)"
-                        aria-label="Remove custom tag"
-                        class="hover:text-red-300 transition-colors"
-                    >
-                        ×
-                    </button>
+                    <button @click="removeCustom(custom)" aria-label="Remove custom tag" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
 
@@ -316,9 +280,6 @@
                 class="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:border-emerald-500/50"
             />
 
-            <button @click="showDetails = false" class="text-xs text-white/40 hover:text-white/60 transition-colors">
-                Hide Tagging Menu
-            </button>
         </div>
     </div>
 </template>
@@ -349,6 +310,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    suggestedMaterials: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const emit = defineEmits(['update-quantity', 'set-picked-up', 'set-type', 'add-detail', 'remove-detail', 'remove']);
@@ -366,9 +331,10 @@ const objectSearchRef = ref(null);
 // Open details panel and focus brand input
 const openDetails = () => {
     showDetails.value = true;
-    nextTick(() => {
+    // Double nextTick ensures Headless UI Combobox is fully mounted
+    nextTick(() => nextTick(() => {
         brandSearchRef.value?.$el?.querySelector('input')?.focus();
-    });
+    }));
 };
 
 // Local quantity with sync to prop
@@ -390,13 +356,17 @@ const commitQuantity = () => {
     emit('update-quantity', val);
 };
 
-// Picked up dropdown handler
-const setPickedUp = (value) => {
-    let parsed;
-    if (value === 'true') parsed = true;
-    else if (value === 'false') parsed = false;
-    else parsed = null;
-    emit('set-picked-up', parsed);
+// Picked up tri-state cycle: null → true → false → null
+const cyclePickedUp = () => {
+    let next;
+    if (props.tag.pickedUp === null || props.tag.pickedUp === undefined) {
+        next = true;
+    } else if (props.tag.pickedUp === true) {
+        next = false;
+    } else {
+        next = null;
+    }
+    emit('set-picked-up', next);
 };
 
 // Type pill handler
@@ -464,6 +434,16 @@ const selectedTypeName = computed(() => {
 
 const tagXp = computed(() => calculateTagXp(props.tag));
 const tagBreakdown = computed(() => getTagBreakdownParts(props.tag).join(' \u00B7 '));
+
+// Suggested materials not yet added to this tag
+const unusedSuggestedMaterials = computed(() => {
+    const addedKeys = new Set((props.tag.materials || []).map((m) => m.key));
+    return props.suggestedMaterials.filter((m) => !addedKeys.has(m.key));
+});
+
+const quickAddMaterial = (material) => {
+    emit('add-detail', { type: 'material', value: material });
+};
 
 const hasDetails = computed(() => {
     return (
@@ -570,5 +550,14 @@ const removeCustom = (custom) => {
 :deep(.detail-select input) {
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
 </style>

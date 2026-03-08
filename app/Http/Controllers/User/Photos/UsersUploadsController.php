@@ -82,6 +82,7 @@ class UsersUploadsController extends Controller
                 'team',
                 'photoTags.category',
                 'photoTags.object',
+                'photoTags.type',
                 'photoTags.extraTags.extraTag',
             ])
             ->orderBy('created_at', 'desc')
@@ -139,6 +140,7 @@ class UsersUploadsController extends Controller
                 'team',
                 'photoTags.category',
                 'photoTags.object',
+                'photoTags.type',
                 'photoTags.extraTags.extraTag',
             ])
             ->firstOrFail();
@@ -171,20 +173,27 @@ class UsersUploadsController extends Controller
     {
         $user = $request->user();
 
-        // Total photos for user
-        $totalPhotos = Photo::where('user_id', $user->id)->count();
+        // Total photos for user (exclude verified.jpg placeholder to match index query)
+        $baseQuery = Photo::where('user_id', $user->id)
+            ->where('filename', '!=', '/assets/verified.jpg');
+
+        $totalPhotos = (clone $baseQuery)->count();
 
         // Untagged photos count — summary is null until tags are added
-        $leftToTag = Photo::where('user_id', $user->id)
+        $leftToTag = (clone $baseQuery)
             ->whereNull('summary')
             ->count();
 
-        // Get tag counts from Redis
+        // Get tag counts from Redis, with DB fallback
         $userMetrics = RedisMetricsCollector::getUserMetrics($user->id);
         $totalTags = array_sum($userMetrics['objects'] ?? [])
             + array_sum($userMetrics['materials'] ?? [])
             + array_sum($userMetrics['brands'] ?? [])
             + array_sum($userMetrics['custom_tags'] ?? []);
+
+        if ($totalTags === 0) {
+            $totalTags = (int) (clone $baseQuery)->sum('total_tags');
+        }
 
         // Calculate percentage
         $taggedPhotos = max(0, $totalPhotos - $leftToTag);
@@ -212,27 +221,33 @@ class UsersUploadsController extends Controller
         $newTags = [];
 
         foreach ($photo->photoTags as $photoTag) {
+            $hasObject = $photoTag->category && $photoTag->object;
+
             $tag = [
                 'id' => $photoTag->id,
-                'category_litter_object_id' => $photoTag->category_litter_object_id,
+                'category_litter_object_id' => $hasObject ? $photoTag->category_litter_object_id : null,
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
-                'picked_up' => $photoTag->picked_up,
+                'picked_up' => (bool) ($photoTag->picked_up ?? $photo->picked_up),
             ];
 
-            // Add category
-            if ($photoTag->category) {
+            // Add category + object only when both resolve (skip orphaned CLO references)
+            if ($hasObject) {
                 $tag['category'] = [
                     'id' => $photoTag->category->id,
                     'key' => $photoTag->category->key,
                 ];
-            }
-
-            // Add object
-            if ($photoTag->object) {
                 $tag['object'] = [
                     'id' => $photoTag->object->id,
                     'key' => $photoTag->object->key,
+                ];
+            }
+
+            // Add type
+            if ($photoTag->type) {
+                $tag['type'] = [
+                    'id' => $photoTag->type->id,
+                    'key' => $photoTag->type->key,
                 ];
             }
 

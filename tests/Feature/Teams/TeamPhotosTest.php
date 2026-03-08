@@ -713,8 +713,8 @@ class TeamPhotosTest extends TestCase
             'is_public' => false,
         ]);
 
-        // Set student counters
-        $this->student->update(['xp' => 10, 'total_images' => 5]);
+        // Set student XP
+        $this->student->update(['xp' => 10]);
 
         $response = $this->actingAs($this->teacher)
             ->deleteJson("/api/teams/photos/{$photo->id}", [
@@ -727,10 +727,9 @@ class TeamPhotosTest extends TestCase
         // Soft-deleted
         $this->assertSoftDeleted('photos', ['id' => $photo->id]);
 
-        // Student counters decremented (not teacher's)
+        // Student XP unchanged (no processed_xp → no XP change)
         $this->student->refresh();
-        $this->assertEquals(10, $this->student->xp); // no processed_xp → no XP change
-        $this->assertEquals(4, $this->student->total_images);
+        $this->assertEquals(10, $this->student->xp);
     }
 
     public function test_teacher_can_delete_processed_photo_with_metrics_reversal()
@@ -749,7 +748,7 @@ class TeamPhotosTest extends TestCase
             'processed_xp' => 5,
         ]);
 
-        $this->student->update(['xp' => 20, 'total_images' => 3]);
+        $this->student->update(['xp' => 20]);
 
         $response = $this->actingAs($this->teacher)
             ->deleteJson("/api/teams/photos/{$photo->id}", [
@@ -763,7 +762,6 @@ class TeamPhotosTest extends TestCase
         // XP reversed on student
         $this->student->refresh();
         $this->assertEquals(15, $this->student->xp); // 20 - 5
-        $this->assertEquals(2, $this->student->total_images);
     }
 
     public function test_student_cannot_delete_team_photo()

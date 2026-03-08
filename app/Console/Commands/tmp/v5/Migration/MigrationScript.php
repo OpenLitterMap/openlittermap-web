@@ -39,7 +39,6 @@ class MigrationScript extends Command
 
     public function handle(): int
     {
-        // Check for required columns
         if (! DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
             $this->error('Column photos.migrated_at missing. Run migrations first.');
             return self::FAILURE;
@@ -60,15 +59,11 @@ class MigrationScript extends Command
             }
         }
 
-        // Run migration
         $this->runMigration();
 
         return self::SUCCESS;
     }
 
-    /**
-     * Run the migration
-     */
     private function runMigration(): void
     {
         $this->info("═══════════════════════════════");

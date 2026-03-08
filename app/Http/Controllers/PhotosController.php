@@ -41,9 +41,6 @@ class PhotosController extends Controller
         // Soft delete
         $photo->delete();
 
-        $user->total_images = max(0, $user->total_images - 1);
-        $user->save();
-
         return response()->json(['message' => 'Photo deleted successfully!']);
     }
 

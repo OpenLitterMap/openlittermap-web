@@ -51,6 +51,12 @@
             </div>
         </div>
 
+        <!-- Achievements — TODO: Coming soon -->
+        <div class="bg-white/5 border border-white/10 rounded-xl px-6 py-4 flex items-center gap-3 opacity-60">
+            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{{ $t('Achievements') }}</div>
+            <div class="text-white/30 text-sm">{{ $t('Coming Soon') }}</div>
+        </div>
+
         <!-- Rank -->
         <div class="bg-white/5 border border-white/10 rounded-xl p-6">
             <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-3">{{ $t('Global Rank') }}</div>
@@ -112,38 +118,6 @@
             </div>
         </div>
 
-        <!-- Achievements — TODO: Coming soon -->
-        <div class="bg-white/5 border border-white/10 rounded-xl px-6 py-4 flex items-center gap-3 opacity-60">
-            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{{ $t('Achievements') }}</div>
-            <div class="text-white/30 text-sm">{{ $t('Coming Soon') }}</div>
-        </div>
-
-        <!-- Global Stats -->
-        <div class="bg-white/5 border border-white/10 rounded-xl p-6">
-            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">
-                {{ $t('OpenLitterMap Global') }}
-            </div>
-            <div class="grid grid-cols-2 gap-4 text-center">
-                <div>
-                    <div class="text-white text-2xl font-bold tabular-nums">
-                        {{ profileStore.global_stats.total_photos?.toLocaleString() }}
-                    </div>
-                    <div class="text-white/40 text-sm">{{ $t('Total Photos') }}</div>
-                    <div v-if="profileStore.stats.photo_percent > 0" class="text-emerald-400 text-xs mt-1">
-                        {{ $t('You contributed') }} {{ profileStore.stats.photo_percent }}%
-                    </div>
-                </div>
-                <div>
-                    <div class="text-white text-2xl font-bold tabular-nums">
-                        {{ profileStore.global_stats.total_litter?.toLocaleString() }}
-                    </div>
-                    <div class="text-white/40 text-sm">{{ $t('Total Litter Tagged') }}</div>
-                    <div v-if="profileStore.stats.tag_percent > 0" class="text-emerald-400 text-xs mt-1">
-                        {{ $t('You contributed') }} {{ profileStore.stats.tag_percent }}%
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -154,11 +128,6 @@ import { useProfileStore } from '@stores/profile.js';
 
 const { t: $t } = useI18n();
 const profileStore = useProfileStore();
-
-const achievementPercent = computed(() => {
-    const { unlocked, total } = profileStore.achievements;
-    return total > 0 ? Math.round((unlocked / total) * 100) : 0;
-});
 
 const photoPercent = computed(() => {
     const p = profileStore.stats.photo_percent;

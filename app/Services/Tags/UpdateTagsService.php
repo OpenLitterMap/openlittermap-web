@@ -2,10 +2,7 @@
 
 namespace App\Services\Tags;
 
-use App\Enums\CategoryKey;
 use App\Enums\Dimension;
-use App\Models\Litter\Tags\Category;
-use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
 use App\Services\Achievements\Tags\TagKeyCache;
@@ -337,12 +334,8 @@ class UpdateTagsService
             'count' => count($brands)
         ]);
 
-        $unclassifiedOtherCloId = $this->getUnclassifiedOtherCloId();
-
         $photoTag = PhotoTag::create([
             'photo_id'                  => $photo->id,
-            'category_litter_object_id' => $unclassifiedOtherCloId,
-            'category_id'               => Category::where('key', CategoryKey::Brands->value)->value('id'),
             'quantity'                  => array_sum(array_column($brands, 'quantity')),
             'picked_up'                 => !$photo->remaining,
         ]);
@@ -367,11 +360,8 @@ class UpdateTagsService
             return;
         }
 
-        $unclassifiedOtherCloId = $this->getUnclassifiedOtherCloId();
-
         $photoTag = PhotoTag::create([
             'photo_id'                  => $photo->id,
-            'category_litter_object_id' => $unclassifiedOtherCloId,
             'quantity'                  => $primary['quantity'] ?? 1,
             'picked_up'                 => !$photo->remaining,
         ]);
@@ -398,33 +388,15 @@ class UpdateTagsService
         }
     }
 
-    private function resolveCloId(?int $categoryId, ?int $objectId): int
+    private function resolveCloId(?int $categoryId, ?int $objectId): ?int
     {
         if ($categoryId && $objectId) {
-            $cloId = DB::table('category_litter_object')
+            return DB::table('category_litter_object')
                 ->where('category_id', $categoryId)
                 ->where('litter_object_id', $objectId)
                 ->value('id');
-
-            if ($cloId) {
-                return $cloId;
-            }
         }
 
-        return $this->getUnclassifiedOtherCloId();
-    }
-
-    private function getUnclassifiedOtherCloId(): int
-    {
-        $clo = CategoryObject::query()
-            ->whereHas('category', fn($q) => $q->where('key', CategoryKey::Unclassified->value))
-            ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
-            ->first();
-
-        if (!$clo) {
-            throw new \RuntimeException('Missing unclassified.other CLO record');
-        }
-
-        return $clo->id;
+        return null;
     }
 }

@@ -10,6 +10,8 @@ export const requests = {
 
                 if (response.data.success) {
                     this.auth = true;
+                    // Sync user data (picked_up, xp, level, etc.) from server
+                    this.REFRESH_USER();
                 } else {
                     this.$reset();
                 }

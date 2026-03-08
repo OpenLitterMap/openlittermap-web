@@ -36,8 +36,8 @@
                 :materials="materials"
                 :searchable-tags="searchableTags"
                 :available-types="getTypesForTag(tag)"
+                :suggested-materials="getSuggestedMaterials(tag)"
                 @update-quantity="(q) => $emit('update-quantity', tag.id, q)"
-                @toggle-picked-up="() => $emit('toggle-picked-up', tag.id)"
                 @add-detail="(detail) => $emit('add-detail', tag.id, detail)"
                 @remove="() => $emit('remove-tag', tag.id)"
                 @set-picked-up="(val) => $emit('set-picked-up', tag.id, val)"
@@ -49,10 +49,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import TagCard from './TagCard.vue';
 import { useTagsStore } from '@stores/tags/index.js';
 
 const tagsStore = useTagsStore();
+
+const materialsByKey = computed(() => new Map(tagsStore.materials.map((m) => [m.key, m])));
 
 defineProps({
     hasPhotos: {
@@ -82,5 +85,12 @@ defineEmits(['update-quantity', 'set-picked-up', 'set-type', 'add-detail', 'remo
 const getTypesForTag = (tag) => {
     if (!tag.cloId) return [];
     return tagsStore.getTypesForClo(tag.cloId);
+};
+
+const getSuggestedMaterials = (tag) => {
+    if (!tag.object?.suggested_materials?.length) return [];
+    return tag.object.suggested_materials
+        .map((key) => materialsByKey.value.get(key))
+        .filter(Boolean);
 };
 </script>

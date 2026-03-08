@@ -1,5 +1,5 @@
 <template>
-    <div class="flex items-center justify-center px-4 bg-blue-600" style="min-height: calc(100vh - 80px)">
+    <div class="flex items-center justify-center px-4 bg-blue-600" style="min-height: calc(100vh - 73px)">
         <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
             <!-- Loading state while validating token -->
             <div v-if="validating" class="text-center text-gray-600">{{ $t('Validating your reset link...') }}</div>

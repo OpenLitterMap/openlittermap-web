@@ -24,7 +24,7 @@ class ReplacePhotoTagsRequest extends FormRequest
     {
         return [
             'photo_id' => ['required', 'integer', Rule::exists('photos', 'id')->whereNull('deleted_at')],
-            'tags' => 'required|array|min:1',
+            'tags' => 'present|array',
 
             // New CLO-based format
             'tags.*.category_litter_object_id' => 'sometimes|integer|exists:category_litter_object,id',

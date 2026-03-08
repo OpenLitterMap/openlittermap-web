@@ -67,9 +67,15 @@ export const usePhotosStore = defineStore('photos', {
          * Fetch both photos and stats (for initial load)
          */
         async fetchUntaggedData(page = 1, filters = {}) {
+            this.loading.photos = true;
+            this.loading.stats = true;
             this.currentFilters = { ...this.currentFilters, ...filters };
-            // Fetch photos and stats in parallel
-            await Promise.all([this.GET_USERS_PHOTOS(page, this.currentFilters), this.GET_UNTAGGED_STATS()]);
+            try {
+                await Promise.all([this.GET_USERS_PHOTOS(page, this.currentFilters), this.GET_UNTAGGED_STATS()]);
+            } finally {
+                this.loading.photos = false;
+                this.loading.stats = false;
+            }
         },
 
         /**

@@ -52,7 +52,7 @@ class GeneratePhotoSummaryService
             ->get();
 
         $tags = [];
-        $totalLitter = 0;
+        $totalObjects = 0;
         $totalMaterials = 0;
         $totalBrands = 0;
         $totalCustomTags = 0;
@@ -82,7 +82,10 @@ class GeneratePhotoSummaryService
             $cloId = $pt->category_litter_object_id;
             $typeId = $pt->litter_object_type_id;
 
-            $totalLitter += $qty;
+            // Only count as litter if there's an actual object
+            if ($objectId > 0) {
+                $totalObjects += $qty;
+            }
 
             // Track keys
             if ($categoryId > 0 && $pt->category) {
@@ -160,7 +163,7 @@ class GeneratePhotoSummaryService
         }
 
         $totals = [
-            'litter' => $totalLitter,
+            'litter' => $totalObjects,
             'materials' => $totalMaterials,
             'brands' => $totalBrands,
             'custom_tags' => $totalCustomTags,
@@ -196,7 +199,7 @@ class GeneratePhotoSummaryService
         $photo->update([
             'summary' => $summary,
             'xp' => $xp,
-            'total_tags' => $totalLitter,
+            'total_tags' => $totalObjects + $totalMaterials + $totalBrands + $totalCustomTags,
             'total_brands' => $totalBrands,
             'result_string' => $resultString,
         ]);

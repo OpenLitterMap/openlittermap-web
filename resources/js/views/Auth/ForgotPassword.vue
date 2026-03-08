@@ -1,5 +1,5 @@
 <template>
-    <div class="flex items-center justify-center px-4 bg-blue-600" style="min-height: calc(100vh - 80px)">
+    <div class="flex items-center justify-center px-4 bg-blue-600" style="min-height: calc(100vh - 73px)">
         <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
             <h1 class="text-2xl font-bold text-center mb-2">{{ $t('Reset your password') }}</h1>
             <p class="text-gray-600 text-center mb-6">{{ $t("Enter your username or email and we'll send you a reset link.") }}</p>

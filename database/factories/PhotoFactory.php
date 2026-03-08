@@ -20,7 +20,7 @@ class PhotoFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'filename' => $this->faker->name . '.' . $this->faker->fileExtension(),
+            'filename' => $this->faker->name . '.' . $this->faker->randomElement(['jpg', 'png', 'heic']),
             'model' => 'Unknown',
             'datetime' => $this->faker->dateTime,
             'lat' => $lat,

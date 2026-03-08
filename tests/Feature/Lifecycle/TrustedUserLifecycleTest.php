@@ -221,7 +221,6 @@ class TrustedUserLifecycleTest extends TestCase
         // users.xp: zero
         $user->refresh();
         $this->assertEquals(0, $user->xp, 'users.xp = 0 after delete');
-        $this->assertEquals(0, $user->total_images);
 
         // Profile: everything zero
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');

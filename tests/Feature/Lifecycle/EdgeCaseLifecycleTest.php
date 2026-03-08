@@ -192,9 +192,9 @@ class EdgeCaseLifecycleTest extends TestCase
     /**
      * PUT /api/v3/tags with an empty tags array must be rejected by validation
      * (ReplacePhotoTagsRequest requires tags|min:1).
-     * This prevents a user from stripping all tags from a photo.
+     * Clearing all tags from a photo resets it to untagged state.
      */
-    public function test_replace_tags_rejects_empty_tag_array(): void
+    public function test_replace_tags_with_empty_array_clears_photo(): void
     {
         $user = User::factory()->create([
             'xp' => 0,
@@ -208,19 +208,20 @@ class EdgeCaseLifecycleTest extends TestCase
         $user->refresh();
         $this->assertEquals(8, $user->xp, 'Baseline: upload(5) + tag(3) = 8');
 
-        // Attempt to replace with empty tags → 422 validation error
+        // Clear all tags
         $response = $this->actingAs($user)
             ->putJson('/api/v3/tags', [
                 'photo_id' => $photoId,
                 'tags' => [],
             ]);
 
-        $response->assertUnprocessable();
-        $response->assertJsonValidationErrors(['tags']);
+        $response->assertOk();
 
-        // XP unchanged
-        $user->refresh();
-        $this->assertEquals(8, $user->xp, 'XP unchanged after rejected empty replace');
+        // Photo is now untagged
+        $photo = Photo::find($photoId);
+        $this->assertNull($photo->summary, 'Summary cleared');
+        $this->assertEquals(0, $photo->xp, 'XP reset to 0');
+        $this->assertEquals(0, $photo->total_tags, 'Total tags reset to 0');
     }
 
     // =========================================================================
@@ -450,9 +451,8 @@ class EdgeCaseLifecycleTest extends TestCase
 
     /**
      * PhotosController::deleteImage() calls MetricsService::deletePhoto()
-     * (which updates users.xp via query builder) then does $user->save()
-     * to update total_images. Verify that save() does NOT overwrite
-     * the corrected XP (Eloquent only saves dirty attributes).
+     * (which updates users.xp via query builder). Verify that the XP
+     * is correctly zeroed after delete.
      */
     public function test_delete_controller_save_does_not_overwrite_xp(): void
     {

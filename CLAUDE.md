@@ -123,6 +123,7 @@ Built by a single developer over 17 years.
 
 ## Key Architectural Invariants
 - `photos.remaining` is deprecated — use `$photo->picked_up` accessor (returns `!remaining`). API responses include both fields; new code should use `picked_up`. `photo_tags.picked_up` is a separate nullable column for per-tag granularity.
+- `users.total_images` is deprecated — profile upload counts use `Photo::where('user_id', $id)->count()` as fallback when Redis is empty. Do NOT increment/decrement `total_images` in new code.
 - School team photos: `is_public=false` until teacher approval (see `readme/SchoolPipeline.md`)
 - `TagsVerifiedByAdmin` fires for ALL non-school users at tag time (leaderboard credit is immediate). Only school students wait for teacher approval
 - All public/global queries MUST use `Photo::public()` scope or `where('is_public', true)`
@@ -130,8 +131,10 @@ Built by a single developer over 17 years.
 - `AddTagsToPhotoAction` generates summary + XP regardless of trust level (null summary = zero metrics)
 - `VerificationStatus` enum cast is on Photo model — use `->value` for `>=`/`<` comparisons, direct enum for `===`
 - `Photo.geom` column is binary spatial data — hidden from JSON via `$hidden` array
-- `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns
-- `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category
+- `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns. All three (`category_litter_object_id`, `category_id`, `litter_object_id`) are **nullable** — extra-tag-only PhotoTags have null CLO
+- `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
+- Replace tags (`PUT /api/v3/tags`) accepts empty `tags: []` to clear all tags from a photo
+- `TagsConfig` provides helper methods: `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()` — use these instead of hardcoding lists
 - Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only
 - `Photo` model uses `SoftDeletes` — `$photo->delete()` soft-deletes, `Photo::public()` auto-excludes
 - Locations API uses `locations`/`location_type` keys (not `children`/`children_type`)

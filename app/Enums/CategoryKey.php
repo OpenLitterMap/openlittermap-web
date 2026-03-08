@@ -4,26 +4,32 @@ namespace App\Enums;
 
 enum CategoryKey: string
 {
-    case Smoking = 'smoking';
+    // ── Active categories (in TagsConfig, visible to users) ──
     case Alcohol = 'alcohol';
-    case Softdrinks = 'softdrinks';
-    case Food = 'food';
-    case Coffee = 'coffee';
-    case Sanitary = 'sanitary';
-    case Medical = 'medical';
-    case Industrial = 'industrial';
-    case Dumping = 'dumping';
-    case Vehicles = 'vehicles';
-    case Automobile = 'automobile';
-    case Marine = 'marine';
-    case Coastal = 'coastal';
-    case Electronics = 'electronics';
-    case Pets = 'pets';
-    case Dogshit = 'dogshit';
-    case Brands = 'brands';
     case Art = 'art';
-    case Material = 'material';
+    case Civic = 'civic';
+    case Coffee = 'coffee';
+    case Dumping = 'dumping';
+    case Electronics = 'electronics';
+    case Food = 'food';
+    case Industrial = 'industrial';
+    case Marine = 'marine';
+    case Medical = 'medical';
     case Other = 'other';
-    case Stationery = 'stationery';
+    case Pets = 'pets';
+    case Sanitary = 'sanitary';
+    case Smoking = 'smoking';
+    case Softdrinks = 'softdrinks';
+    case Vehicles = 'vehicles';
+
+    // ── System categories (not shown in UI) ──
+    case Brands = 'brands';
+    case Material = 'material';
     case Unclassified = 'unclassified';
+
+    // ── Deprecated aliases (v4 keys, resolved by ClassifyTagsService) ──
+    case Automobile = 'automobile';
+    case Coastal = 'coastal';
+    case Dogshit = 'dogshit';
+    case Stationery = 'stationery';
 }

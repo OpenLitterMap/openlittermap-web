@@ -22,6 +22,7 @@ class GenerateTagsSeederTest extends TestCase
         $minCategories = [
             'alcohol',
             'art',
+            'civic',
             'coffee',
             'dumping',
             'electronics',
@@ -130,7 +131,7 @@ class GenerateTagsSeederTest extends TestCase
         // Cup is used across multiple categories (alcohol, softdrinks)
         $cupObject = LitterObject::where('key', 'cup')->first();
 
-        $expectedMaterials = ['ceramic', 'foam', 'paper', 'plastic', 'metal'];
+        $expectedMaterials = ['bioplastic', 'ceramic', 'foam', 'paper', 'plastic', 'metal'];
         $notExpectedMaterials = ['cotton', 'nylon'];
 
         $aggregatedMaterials = $cupObject->categories->flatMap(function ($category) {

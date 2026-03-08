@@ -75,7 +75,7 @@ class User extends Authenticatable
         'username',
         'plan',
         'xp',
-        'total_images',
+        'total_images', // deprecated
         'level',
         'show_name',
         'show_username',
@@ -117,6 +117,10 @@ class User extends Authenticatable
 
     protected $guarded = [
         'role_id'
+    ];
+
+    protected $attributes = [
+        'picked_up' => true,
     ];
 
     protected $casts = [

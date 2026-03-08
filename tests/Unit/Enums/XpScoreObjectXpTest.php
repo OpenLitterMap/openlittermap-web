@@ -48,4 +48,19 @@ class XpScoreObjectXpTest extends TestCase
         $this->assertSame(1, XpScore::getObjectXp('large'));
         $this->assertSame(1, XpScore::getObjectXp('bagsLitter'));
     }
+
+    /** @test */
+    public function dumping_with_type_returns_correct_xp(): void
+    {
+        $this->assertSame(10, XpScore::getObjectXp('dumping', 'small'));
+        $this->assertSame(25, XpScore::getObjectXp('dumping', 'medium'));
+        $this->assertSame(50, XpScore::getObjectXp('dumping', 'large'));
+    }
+
+    /** @test */
+    public function dumping_without_type_returns_default_xp(): void
+    {
+        $this->assertSame(1, XpScore::getObjectXp('dumping'));
+        $this->assertSame(1, XpScore::getObjectXp('dumping', null));
+    }
 }

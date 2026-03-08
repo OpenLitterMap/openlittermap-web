@@ -3,10 +3,11 @@
  *
  * XP values match backend XpScore enum:
  *   Upload=5, Object=1, Brand=3, Material=2, CustomTag=1, PickedUp=5
- *   Special objects: dumping_small=10, dumping_medium=25, dumping_large=50, bags_litter=10
+ *   Special objects: bags_litter=10, dumping+small=10, dumping+medium=25, dumping+large=50
  */
 
 const SPECIAL_OBJECT_XP = { dumping_small: 10, dumping_medium: 25, dumping_large: 50, bags_litter: 10 };
+const DUMPING_TYPE_XP = { small: 10, medium: 25, large: 50 };
 
 const formatKey = (key) => {
     if (!key) return '';
@@ -14,21 +15,28 @@ const formatKey = (key) => {
 };
 
 /**
+ * Get the XP value for an object, accounting for type-based overrides (e.g., dumping + size).
+ */
+function getObjectXp(tag) {
+    const key = tag.object?.key;
+    if (SPECIAL_OBJECT_XP[key]) return SPECIAL_OBJECT_XP[key];
+    if (key === 'dumping' && tag.typeKey) return DUMPING_TYPE_XP[tag.typeKey] || 1;
+    return 1;
+}
+
+/**
  * Calculate XP for a single tag (excludes upload bonus).
  */
 export function calculateTagXp(tag) {
     const qty = tag.quantity || 1;
-    const objectXp = SPECIAL_OBJECT_XP[tag.object?.key] || 1;
+    const objectXp = getObjectXp(tag);
     let xp = 0;
 
     if (tag.type === 'brand-only') {
-        xp += qty; // implicit unclassified.other object
         xp += qty * 3;
     } else if (tag.type === 'material-only') {
-        xp += qty;
         xp += qty * 2;
     } else if (tag.custom) {
-        xp += qty;
         xp += qty;
     } else {
         xp += qty * objectXp;
@@ -66,7 +74,7 @@ export function calculateTotalXp(tags) {
 export function getTagBreakdownParts(tag) {
     const parts = [];
     const qty = tag.quantity || 1;
-    const objectXp = SPECIAL_OBJECT_XP[tag.object?.key] || 1;
+    const objectXp = getObjectXp(tag);
 
     if (tag.type === 'brand-only') {
         parts.push(`×${qty}`);
@@ -118,14 +126,14 @@ export function getHeaderBreakdown(tags) {
 
     tags.forEach((tag) => {
         const qty = tag.quantity || 1;
-        const objectXp = SPECIAL_OBJECT_XP[tag.object?.key] || 1;
+        const objectXp = getObjectXp(tag);
 
         if (tag.type === 'brand-only') {
-            lines.push({ label: `${formatKey(tag.brand?.key)} (×${qty})`, xp: qty + qty * 3 });
+            lines.push({ label: `${formatKey(tag.brand?.key)} (×${qty})`, xp: qty * 3 });
         } else if (tag.type === 'material-only') {
-            lines.push({ label: `${formatKey(tag.material?.key)} (×${qty})`, xp: qty + qty * 2 });
+            lines.push({ label: `${formatKey(tag.material?.key)} (×${qty})`, xp: qty * 2 });
         } else if (tag.custom) {
-            lines.push({ label: `"${tag.key}" (×${qty})`, xp: qty * 2 });
+            lines.push({ label: `"${tag.key}" (×${qty})`, xp: qty });
         } else {
             lines.push({ label: `${formatKey(tag.object?.key)} (×${qty})`, xp: qty * objectXp });
         }

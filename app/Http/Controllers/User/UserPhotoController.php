@@ -71,11 +71,7 @@ class UserPhotoController extends Controller
             }
         }
 
-        // Decrement user counters
-        if ($deleted > 0) {
-            $user->total_images = max(0, $user->total_images - $deleted);
-            $user->save();
-        }
+        // Note: total_images is deprecated — profile reads Photo::count() as fallback
 
         return ['success' => true];
     }

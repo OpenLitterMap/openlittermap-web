@@ -143,10 +143,10 @@ class ProfileController extends Controller
             return ['public' => false];
         }
 
-        $metrics = RedisMetricsCollector::getUserMetrics($id);
-        $uploads = $metrics['uploads'] ?: (int) $user->total_images;
-        $litter = $metrics['litter'] ?: (int) $user->total_litter;
-        $xp = $metrics['xp'] ?: (int) $user->xp;
+        $stats = $this->resolveUserStats($id, $user);
+        $uploads = $stats['uploads'];
+        $litter = $stats['litter'];
+        $xp = $stats['xp'];
 
         $levelInfo = LevelService::getUserLevel($xp);
 
@@ -207,17 +207,15 @@ class ProfileController extends Controller
         $user = Auth::user();
         $userId = $user->id;
 
-        // Stats from Redis, with MySQL fallback for pre-v5 users
-        $metrics = RedisMetricsCollector::getUserMetrics($userId);
-
         // Refresh user to pick up any query-builder updates (e.g. MetricsService
         // syncs users.xp via User::where()->increment(), which doesn't update
         // the cached model attributes)
         $user->refresh();
 
-        $uploads = $metrics['uploads'] ?: (int) $user->total_images;
-        $litter = $metrics['litter'] ?: (int) $user->total_litter;
-        $xp = $metrics['xp'] ?: (int) $user->xp;
+        $stats = $this->resolveUserStats($userId, $user);
+        $uploads = $stats['uploads'];
+        $litter = $stats['litter'];
+        $xp = $stats['xp'];
 
         // Level
         $levelInfo = LevelService::getUserLevel($xp);
@@ -294,7 +292,7 @@ class ProfileController extends Controller
                 'uploads' => $uploads,
                 'litter' => $litter,
                 'xp' => $xp,
-                'streak' => $metrics['streak'],
+                'streak' => $stats['streak'],
                 'littercoin' => (int) ($user->total_littercoin ?? 0),
                 'photo_percent' => $photoPercent,
                 'tag_percent' => $tagPercent,
@@ -319,6 +317,34 @@ class ProfileController extends Controller
                 'cities' => (int) ($locationCounts->cities ?? 0),
             ],
             'team' => $team,
+        ];
+    }
+
+    /**
+     * Resolve user stats from Redis with MySQL fallbacks.
+     */
+    private function resolveUserStats(int $userId, User $user): array
+    {
+        $metrics = RedisMetricsCollector::getUserMetrics($userId);
+
+        $uploads = $metrics['uploads'];
+        $litter = $metrics['litter'];
+
+        // Single DB query for both fallbacks when Redis is empty
+        if (! $uploads || ! $litter) {
+            $dbStats = Photo::where('user_id', $userId)
+                ->selectRaw('COUNT(*) as photo_count, COALESCE(SUM(total_tags), 0) as tag_sum')
+                ->first();
+
+            $uploads = $uploads ?: (int) $dbStats->photo_count;
+            $litter = $litter ?: (int) $dbStats->tag_sum;
+        }
+
+        return [
+            'uploads' => $uploads,
+            'litter' => $litter,
+            'xp' => $metrics['xp'] ?: (int) $user->xp,
+            'streak' => $metrics['streak'],
         ];
     }
 

@@ -52,15 +52,33 @@ enum XpScore
 
     /**
      * Map an object-key string to its XP value (with overrides).
+     * Supports both legacy keys (dumping_small) and new type-based keys (dumping + small).
      */
-    public static function getObjectXp(string $key): int
+    public static function getObjectXp(string $objectKey, ?string $typeKey = null): int
     {
-        return match ($key) {
+        // Legacy object keys (v4 migration data)
+        $legacyMatch = match ($objectKey) {
             'dumping_small'  => self::Small->xp(),
             'dumping_medium' => self::Medium->xp(),
             'dumping_large'  => self::Large->xp(),
             'bags_litter'    => self::BagsLitter->xp(),
-            default          => self::Object->xp(),
+            default          => null,
         };
+
+        if ($legacyMatch !== null) {
+            return $legacyMatch;
+        }
+
+        // v5 type-based XP (dumping object + size type)
+        if ($objectKey === 'dumping' && $typeKey !== null) {
+            return match ($typeKey) {
+                'small'  => self::Small->xp(),
+                'medium' => self::Medium->xp(),
+                'large'  => self::Large->xp(),
+                default  => self::Object->xp(),
+            };
+        }
+
+        return self::Object->xp();
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Actions\Tags;
 
 use App\Actions\Badges\CheckLocationTypeAward;
-use App\Enums\CategoryKey;
 use App\Enums\VerificationStatus;
 use App\Enums\XpScore;
 use App\Events\TagsVerifiedByAdmin;
@@ -74,12 +73,57 @@ class AddTagsToPhotoAction
             // Detect payload format
             if (isset($tag['category_litter_object_id'])) {
                 $photoTags[] = $this->createTagFromClo($userId, $photoId, $tag);
+            } elseif ($this->isExtraTagOnly($tag)) {
+                $photoTags[] = $this->createExtraTagOnly($userId, $photoId, $tag);
             } else {
                 $photoTags[] = $this->createTagLegacy($userId, $photoId, $tag);
             }
         }
 
         return $photoTags;
+    }
+
+    /**
+     * Check if this tag payload contains only extra tags (no object).
+     */
+    protected function isExtraTagOnly(array $tag): bool
+    {
+        return (! empty($tag['brand_only']) && isset($tag['brand']))
+            || (! empty($tag['material_only']) && isset($tag['material']))
+            || (! empty($tag['custom']) && isset($tag['key']));
+    }
+
+    /**
+     * Create a PhotoTag with no object — only extra tags (brand, material, or custom tag).
+     */
+    protected function createExtraTagOnly(int $userId, int $photoId, array $tag): PhotoTag
+    {
+        $quantity = max(1, (int) ($tag['quantity'] ?? 1));
+        $pickedUp = $tag['picked_up'] ?? null;
+
+        $photoTag = PhotoTag::create([
+            'photo_id' => $photoId,
+            'quantity' => $quantity,
+            'picked_up' => $pickedUp,
+        ]);
+
+        if (! empty($tag['brand_only']) && isset($tag['brand'])) {
+            $brandModel = BrandList::find($tag['brand']['id']);
+            if (! $brandModel) {
+                throw new \Exception("Brand {$tag['brand']['key']} not found.");
+            }
+            $photoTag->attachExtraTags([['id' => $brandModel->id, 'quantity' => $quantity]], 'brand');
+        } elseif (! empty($tag['material_only']) && isset($tag['material'])) {
+            $materialModel = Materials::find($tag['material']['id']);
+            if (! $materialModel) {
+                throw new \Exception("Material with ID {$tag['material']['id']} not found.");
+            }
+            $photoTag->attachExtraTags([['id' => $materialModel->id]], 'material');
+        } elseif (! empty($tag['custom']) && isset($tag['key'])) {
+            $this->attachCustomTags($userId, $photoTag, [$tag['key']]);
+        }
+
+        return $photoTag;
     }
 
     /**
@@ -162,16 +206,6 @@ class AddTagsToPhotoAction
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
-        // Handle brand-only tags
-        if (! empty($tag['brand_only']) && isset($tag['brand'])) {
-            return $this->createBrandOnlyTagLegacy($photoId, $tag, $quantity, $pickedUp);
-        }
-
-        // Handle material-only tags
-        if (! empty($tag['material_only']) && isset($tag['material'])) {
-            return $this->createMaterialOnlyTagLegacy($photoId, $tag, $quantity, $pickedUp);
-        }
-
         // Resolve CLO from category + object
         $clo = null;
         if ($category && $object) {
@@ -190,16 +224,11 @@ class AddTagsToPhotoAction
             }
         }
 
-        // Fallback CLO for null category/object: unclassified.other
-        if (! $clo) {
-            $clo = $this->getUnclassifiedOtherClo();
-        }
-
         $photoTag = PhotoTag::create([
             'photo_id' => $photoId,
-            'category_litter_object_id' => $clo->id,
-            'category_id' => $clo->category_id,
-            'litter_object_id' => $clo->litter_object_id,
+            'category_litter_object_id' => $clo?->id,
+            'category_id' => $clo?->category_id,
+            'litter_object_id' => $clo?->litter_object_id,
             'quantity' => $quantity,
             'picked_up' => $pickedUp,
         ]);
@@ -244,70 +273,6 @@ class AddTagsToPhotoAction
 
             $photoTag->attachExtraTags($brandExtras, 'brand');
         }
-
-        return $photoTag;
-    }
-
-    /**
-     * Create a brand-only tag in legacy format.
-     */
-    protected function createBrandOnlyTagLegacy(int $photoId, array $tag, int $quantity, ?bool $pickedUp): PhotoTag
-    {
-        $brandModel = BrandList::find($tag['brand']['id']);
-
-        if (! $brandModel) {
-            throw new \Exception("Brand {$tag['brand']['key']} not found.");
-        }
-
-        $clo = $this->getUnclassifiedOtherClo();
-
-        $photoTag = PhotoTag::create([
-            'photo_id' => $photoId,
-            'category_litter_object_id' => $clo->id,
-            'category_id' => $clo->category_id,
-            'litter_object_id' => $clo->litter_object_id,
-            'quantity' => $quantity,
-            'picked_up' => $pickedUp,
-        ]);
-
-        $photoTag->extraTags()->firstOrCreate([
-            'tag_type' => 'brand',
-            'tag_type_id' => $brandModel->id,
-        ], [
-            'quantity' => $quantity,
-        ]);
-
-        return $photoTag;
-    }
-
-    /**
-     * Create a material-only tag in legacy format.
-     */
-    protected function createMaterialOnlyTagLegacy(int $photoId, array $tag, int $quantity, ?bool $pickedUp): PhotoTag
-    {
-        $materialModel = Materials::find($tag['material']['id']);
-
-        if (! $materialModel) {
-            throw new \Exception("Material with ID {$tag['material']['id']} not found.");
-        }
-
-        $clo = $this->getUnclassifiedOtherClo();
-
-        $photoTag = PhotoTag::create([
-            'photo_id' => $photoId,
-            'category_litter_object_id' => $clo->id,
-            'category_id' => $clo->category_id,
-            'litter_object_id' => $clo->litter_object_id,
-            'quantity' => $quantity,
-            'picked_up' => $pickedUp,
-        ]);
-
-        $photoTag->extraTags()->firstOrCreate([
-            'tag_type' => 'material',
-            'tag_type_id' => $materialModel->id,
-        ], [
-            'quantity' => 1,
-        ]);
 
         return $photoTag;
     }
@@ -393,22 +358,6 @@ class AddTagsToPhotoAction
         $photoTag->attachExtraTags($extras, 'custom_tag');
     }
 
-    /**
-     * Get the CLO for unclassified.other (catch-all for brand-only/material-only/custom-only).
-     */
-    protected function getUnclassifiedOtherClo(): CategoryObject
-    {
-        $clo = CategoryObject::query()
-            ->whereHas('category', fn($q) => $q->where('key', CategoryKey::Unclassified->value))
-            ->whereHas('litterObject', fn($q) => $q->where('key', 'other'))
-            ->first();
-
-        if (! $clo) {
-            throw new \RuntimeException('CLO for unclassified.other not found. Run GenerateTagsSeeder.');
-        }
-
-        return $clo;
-    }
 
     /**
      * Resolve category and object from tag input (legacy format).
@@ -465,12 +414,13 @@ class AddTagsToPhotoAction
         $xp = 0; // Tag XP only — upload XP is awarded separately by UploadPhotoController
 
         foreach ($photoTags as $photoTag) {
-            // Object XP — check for special keys (dumping small/medium/large)
+            // Object XP — only if there's an actual object
             $objectKey = $photoTag->object?->key;
-            $objectXp = $objectKey
-                ? XpScore::getObjectXp($objectKey)
-                : XpScore::Object->xp();
-            $xp += $photoTag->quantity * $objectXp;
+            if ($objectKey) {
+                $typeKey = $photoTag->type?->key;
+                $objectXp = XpScore::getObjectXp($objectKey, $typeKey);
+                $xp += $photoTag->quantity * $objectXp;
+            }
 
             // Reload extra tags if not already loaded
             if (! $photoTag->relationLoaded('extraTags')) {

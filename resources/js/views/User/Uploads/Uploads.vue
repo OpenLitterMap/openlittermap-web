@@ -1,5 +1,5 @@
 <template>
-    <div class="olm-full bg-gray-800 p-6">
+    <div class="min-h-[calc(100vh-73px)] bg-gray-800 p-6">
         <UploadsHeader />
 
         <!-- Empty State -->
@@ -86,40 +86,42 @@
                                 <span class="text-gray-600">{{ $t('Objects') }}:</span>
                                 <span class="font-semibold text-gray-800">{{ getObjectCount(photo) }}</span>
                             </div>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">{{ $t('Total tags') }}:</span>
-                                <span class="font-semibold text-gray-800">{{ photo.total_tags }}</span>
+                            <div v-if="getBrandCount(photo) > 0" class="flex justify-between text-xs">
+                                <span class="text-gray-600">{{ $t('Brands') }}:</span>
+                                <span class="font-semibold text-gray-800">{{ getBrandCount(photo) }}</span>
                             </div>
                             <div v-if="getMaterialCount(photo) > 0" class="flex justify-between text-xs">
                                 <span class="text-gray-600">{{ $t('Materials') }}:</span>
                                 <span class="font-semibold text-gray-800">{{ getMaterialCount(photo) }}</span>
                             </div>
-                            <div v-if="getBrandCount(photo) > 0" class="flex justify-between text-xs">
-                                <span class="text-gray-600">{{ $t('Brands') }}:</span>
-                                <span class="font-semibold text-gray-800">{{ getBrandCount(photo) }}</span>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-600">{{ $t('Total tags') }}:</span>
+                                <span class="font-semibold text-gray-800">{{ photo.total_tags }}</span>
                             </div>
                         </div>
 
                         <!-- Tags List Column -->
                         <div class="flex flex-col gap-0.5">
-                            <p class="text-xs mb-1">{{ $t('Objects') }}:</p>
+                            <p class="text-xs mb-1">{{ $t('Tags') }}:</p>
                             <div
-                                v-for="obj in getObjectsList(photo)"
+                                v-for="obj in getTagsList(photo)"
                                 :key="obj.key"
                                 class="flex items-center gap-1 px-1 py-0.5 bg-white rounded text-xs text-gray-700"
-                                :title="`${obj.key} (x${obj.quantity})`"
+                                :title="`${obj.category ? obj.category + ' / ' : ''}${obj.label} (x${obj.quantity})`"
                             >
-                                <span class="truncate">{{ obj.key }} x{{ obj.quantity }}</span>
+                                <span class="truncate">{{ obj.label }} x{{ obj.quantity }}</span>
                                 <span
                                     v-if="obj.pickedUp === true"
-                                    class="shrink-0 w-2 h-2 rounded-full bg-green-500"
-                                    :title="$t('Picked up')"
-                                ></span>
+                                    class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-green-100 text-green-700"
+                                >{{ $t('picked up') }}</span>
                                 <span
                                     v-else-if="obj.pickedUp === false"
-                                    class="shrink-0 w-2 h-2 rounded-full bg-amber-500"
-                                    :title="$t('Not picked up')"
-                                ></span>
+                                    class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-amber-100 text-amber-700"
+                                >{{ $t('not picked up') }}</span>
+                                <span
+                                    v-else
+                                    class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-gray-100 text-gray-500"
+                                >{{ $t('unknown') }}</span>
                             </div>
                         </div>
                     </div>
@@ -283,19 +285,43 @@ const getBrandCount = (photo) => {
     return count;
 };
 
-const getObjectsList = (photo) => {
+const formatKey = (key) => {
+    if (!key) return '';
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+const MAX_TAG_DISPLAY = 8;
+
+const getTagsList = (photo) => {
     if (!photo.new_tags) return [];
-    const objects = [];
-    photo.new_tags.forEach((tag) => {
+    const items = [];
+    for (const tag of photo.new_tags) {
+        if (items.length >= MAX_TAG_DISPLAY) break;
         if (tag.object && tag.object.key) {
-            objects.push({
-                key: tag.object.key,
+            const typeLabel = tag.type?.key ? formatKey(tag.type.key) + ' ' : '';
+            const label = typeLabel + formatKey(tag.object.key);
+            items.push({
+                key: `obj-${tag.id}`,
+                label,
+                category: tag.category?.key,
                 quantity: tag.quantity || 0,
                 pickedUp: tag.picked_up,
             });
+        } else if (tag.extra_tags?.length > 0) {
+            for (const extra of tag.extra_tags) {
+                if (items.length >= MAX_TAG_DISPLAY) break;
+                const label = extra.tag?.key ? formatKey(extra.tag.key) : formatKey(extra.type);
+                items.push({
+                    key: `extra-${tag.id}-${extra.type}-${extra.tag?.id}`,
+                    label,
+                    category: extra.type,
+                    quantity: extra.quantity || tag.quantity || 1,
+                    pickedUp: tag.picked_up,
+                });
+            }
         }
-    });
-    return objects.slice(0, 5);
+    }
+    return items;
 };
 
 const openTags = (photo) => {

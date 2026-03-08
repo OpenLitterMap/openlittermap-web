@@ -23,7 +23,6 @@ class UserPhotoBulkDeleteTest extends TestCase
 
         $this->user = User::factory()->create([
             'xp' => 10,
-            'total_images' => 5,
         ]);
     }
 
@@ -78,7 +77,6 @@ class UserPhotoBulkDeleteTest extends TestCase
         $this->user->refresh();
         // 10 - (2 × 3) = 4
         $this->assertEquals(4, $this->user->xp);
-        $this->assertEquals(3, $this->user->total_images);
     }
 
     public function test_bulk_delete_cannot_delete_another_users_photos(): void

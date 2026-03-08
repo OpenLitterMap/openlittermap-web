@@ -36,7 +36,7 @@ User profile dashboard, settings management, privacy controls, and account delet
 ## Invariants
 
 1. **All profile routes use `auth:sanctum`.** Not `auth:api`. Use `actingAs($user)` in tests (no guard argument).
-2. **Redis-first with MySQL fallback.** `RedisMetricsCollector::getUserMetrics()` returns Redis data; ProfileController falls back to `$user->total_images`, `$user->total_litter`, `$user->xp` when Redis returns 0.
+2. **Redis-first with MySQL fallback.** `RedisMetricsCollector::getUserMetrics()` returns Redis data; ProfileController falls back to MySQL. `resolveUserStats()` batches the DB fallback into a single `selectRaw('COUNT(*), SUM(total_tags)')` query. Litter stat falls back to `Photo::sum('total_tags')` (not deprecated `users.total_litter`).
 3. **Rank from Redis ZSET with MySQL fallback.** `ZREVRANK` on `{g}:lb:xp`; if false, count users with more XP via `User::where('xp', '>', $xp)->count() + 1`.
 4. **Level updated on profile view.** If `$user->level != calculated`, `$user->save()` syncs it.
 5. **Settings whitelist enforced server-side.** `ApiSettingsController::ALLOWED_SETTINGS = ['name', 'username', 'email', 'global_flag', 'picked_up', 'previous_tags', 'emailsub', 'public_profile']`. Any other key returns 422.
@@ -117,19 +117,22 @@ return [
     'stats' => [uploads, litter, xp, streak, littercoin, photo_percent, tag_percent],
     'level' => [level, title, xp_into_level, xp_for_next, xp_remaining, progress_percent],
     'rank' => [global_position, global_total, percentile],
-    'global_stats' => [total_photos, total_litter],
     'achievements' => [unlocked, total],
     'locations' => [countries, states, cities],
     'team' => [id, name] | null,
 ];
 ```
 
+Note: `global_stats` section was removed from `ProfileController@index`. ProfileDashboard frontend shows Achievements above Global Rank.
+
 ### Redis + MySQL fallback pattern
 
 ```php
 $metrics = RedisMetricsCollector::getUserMetrics($userId);
-$uploads = $metrics['uploads'] ?: (int) $user->total_images;
-$litter  = $metrics['litter']  ?: (int) $user->total_litter;
+// resolveUserStats() batches fallback into single query:
+// Photo::where('user_id', $userId)->selectRaw('COUNT(*) as uploads, SUM(total_tags) as litter')->first()
+$uploads = $metrics['uploads'] ?: $dbFallback->uploads;
+$litter  = $metrics['litter']  ?: $dbFallback->litter;  // Photo::sum('total_tags'), NOT users.total_litter
 $xp      = $metrics['xp']      ?: (int) $user->xp;
 ```
 

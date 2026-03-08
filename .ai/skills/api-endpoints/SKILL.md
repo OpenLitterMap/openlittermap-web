@@ -93,7 +93,7 @@ POST /api/v3/upload             →  Upload photo (web: EXIF; mobile: explicit l
 GET  /api/v3/user/photos        →  List user's photos (paginated, filterable, per_page up to 100)
 GET  /api/v3/user/photos/stats  →  Aggregate counts (totalPhotos, totalTags, leftToTag)
 POST /api/v3/tags               →  Add tags to untagged photo
-PUT  /api/v3/tags               →  Replace all tags on tagged photo (edit mode)
+PUT  /api/v3/tags               →  Replace all tags on tagged photo (edit mode, accepts empty tags: [])
 POST /api/profile/photos/delete →  Delete single photo { "photoid": 123 } (soft delete)
 ```
 
@@ -157,6 +157,10 @@ GET /api/v3/user/photos?tagged=false&per_page=100&page=1&picked_up=true
 ```
 
 Response includes `picked_up` (boolean, never null) and `remaining` (deprecated inverse). Use `picked_up`.
+
+**`new_tags` response shape:** Each tag includes `category_litter_object_id`, `litter_object_type_id`, `quantity`, `picked_up` (bool, cast with fallback to photo-level), `category` (object or null), `object` (object or null), `extra_tags` (array). For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` are null. `filename` field on photo is a full URL, usable directly as image source.
+
+**PUT /api/v3/tags accepts empty tags.** `ReplacePhotoTagsRequest` validates `tags` as `present|array` (not `required|array|min:1`). Sending `tags: []` clears all tags from a photo (resets summary, XP, verified to untagged state).
 
 ### GeoJSON response format (points/clusters)
 

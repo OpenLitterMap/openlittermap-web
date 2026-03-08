@@ -468,8 +468,7 @@ class TeamPhotosController extends Controller
      *
      * DELETE /api/teams/photos/{photo}?team_id=X
      *
-     * Reverses metrics, deletes S3 files, soft-deletes the photo,
-     * and decrements the photo owner's XP and total_images.
+     * Reverses metrics, deletes S3 files, soft-deletes the photo.
      */
     public function destroy(Request $request, Photo $photo): JsonResponse
     {
@@ -489,8 +488,6 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
         }
 
-        $photoOwner = $photo->user;
-
         // Reverse metrics before soft delete (if photo was processed)
         // MetricsService::deletePhoto() reverses both upload XP and tag XP
         // from MySQL metrics, Redis, and users.xp
@@ -503,12 +500,6 @@ class TeamPhotosController extends Controller
 
         // Soft delete
         $photo->delete();
-
-        // Decrement photo owner's total_images (not the teacher's)
-        if ($photoOwner) {
-            $photoOwner->total_images = max(0, $photoOwner->total_images - 1);
-            $photoOwner->save();
-        }
 
         return response()->json([
             'success' => true,

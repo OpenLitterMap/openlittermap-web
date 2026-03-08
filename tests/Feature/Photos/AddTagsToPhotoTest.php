@@ -90,7 +90,7 @@ class AddTagsToPhotoTest extends TestCase
                 ],
                 [
                     'category' => 'alcohol',
-                    'object' => 'beer_bottle',
+                    'object' => 'bottle',
                     'quantity' => 5,
                     'picked_up' => false,
                 ],
@@ -472,8 +472,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
-        // Brand-only uses unclassified.other CLO — denorm fields are set
-        $this->assertNotNull($photoTag->category_litter_object_id);
+        // Brand-only tags have no object — CLO is null
+        $this->assertNull($photoTag->category_litter_object_id);
 
         $brandExtra = $photoTag->extraTags()->where('tag_type', 'brand')->first();
         $this->assertNotNull($brandExtra, 'Brand should be attached as extra tag');
@@ -505,8 +505,8 @@ class AddTagsToPhotoTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
-        // Material-only uses unclassified.other CLO — denorm fields are set
-        $this->assertNotNull($photoTag->category_litter_object_id);
+        // Material-only tags have no object — CLO is null
+        $this->assertNull($photoTag->category_litter_object_id);
 
         $materialExtra = $photoTag->extraTags()->where('tag_type', 'material')->first();
         $this->assertNotNull($materialExtra, 'Material should be attached as extra tag');

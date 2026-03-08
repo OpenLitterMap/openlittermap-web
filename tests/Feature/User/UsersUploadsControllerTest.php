@@ -170,7 +170,7 @@ class UsersUploadsControllerTest extends TestCase
         $response->assertOk();
         $tags = $response->json('photos.0.new_tags');
         $this->assertNotEmpty($tags);
-        $this->assertSame(1, $tags[0]['picked_up']);
+        $this->assertTrue($tags[0]['picked_up']);
     }
 
     /** @test */

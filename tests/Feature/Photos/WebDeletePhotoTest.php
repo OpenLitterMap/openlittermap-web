@@ -56,9 +56,9 @@ class WebDeletePhotoTest extends TestCase
         $this->assertDatabaseHas('photos', ['id' => $photo->id, 'deleted_at' => null]);
     }
 
-    public function test_delete_decrements_user_counters(): void
+    public function test_delete_decrements_user_xp(): void
     {
-        $user = User::factory()->create(['xp' => 50, 'total_images' => 3]);
+        $user = User::factory()->create(['xp' => 50]);
         $photo = Photo::factory()->create([
             'user_id' => $user->id,
             'processed_at' => now(),
@@ -72,12 +72,11 @@ class WebDeletePhotoTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(30, $user->xp);
-        $this->assertEquals(2, $user->total_images);
     }
 
     public function test_delete_unprocessed_photo_does_not_decrement_xp(): void
     {
-        $user = User::factory()->create(['xp' => 5, 'total_images' => 3]);
+        $user = User::factory()->create(['xp' => 5]);
         $photo = Photo::factory()->create([
             'user_id' => $user->id,
             'processed_at' => null,
@@ -89,7 +88,6 @@ class WebDeletePhotoTest extends TestCase
 
         $user->refresh();
         $this->assertEquals(5, $user->xp);
-        $this->assertEquals(2, $user->total_images);
     }
 
     public function test_processed_photo_has_metrics_reversed(): void

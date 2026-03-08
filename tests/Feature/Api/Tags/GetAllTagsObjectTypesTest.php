@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api\Tags;
 
 use Database\Seeders\Tags\GenerateTagsSeeder;
-use Database\Seeders\Tags\SeedLitterObjectTypesSeeder;
 use Tests\TestCase;
 
 class GetAllTagsObjectTypesTest extends TestCase
@@ -11,10 +10,7 @@ class GetAllTagsObjectTypesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed([
-            GenerateTagsSeeder::class,
-            SeedLitterObjectTypesSeeder::class,
-        ]);
+        $this->seed(GenerateTagsSeeder::class);
     }
 
     public function test_objects_include_types_from_tags_config(): void

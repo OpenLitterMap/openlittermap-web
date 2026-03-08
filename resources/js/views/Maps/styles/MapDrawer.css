@@ -3,9 +3,9 @@
 .map-drawer {
     position: fixed;
     left: 0;
-    top: 80px;
-    height: 100vh;
-    max-height: calc(100vh - 80px); /* Prevent drawer from exceeding GlobalMap height */
+    top: 73px;
+    height: calc(100vh - 73px);
+    max-height: calc(100vh - 73px); /* Prevent drawer from exceeding GlobalMap height */
     display: flex;
     z-index: 1000;
     transition: all 0.3s ease;
@@ -46,7 +46,7 @@
 .drawer-content {
     width: 400px;
     height: 100%;
-    max-height: calc(100vh - 80px); /* Match container max-height */
+    max-height: calc(100vh - 73px); /* Match container max-height */
     background: rgba(31, 41, 55, 0.95);
     backdrop-filter: blur(20px);
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.5);

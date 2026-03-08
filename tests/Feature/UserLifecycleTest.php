@@ -359,10 +359,9 @@ class UserLifecycleTest extends TestCase
         // MySQL metrics zeroed
         $this->assertMetricsRow($user->id, 0, 0, 0);
 
-        // users.xp and total_images
+        // users.xp zeroed
         $user->refresh();
         $this->assertEquals(0, $user->xp, 'users.xp should be 0 after delete');
-        $this->assertEquals(0, $user->total_images);
     }
 
     // =========================================================================

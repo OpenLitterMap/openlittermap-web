@@ -98,9 +98,20 @@ Date accepts Unix timestamp (seconds) or ISO 8601 string. `(0, 0)` coordinates r
 - `app/Http/Controllers/API/AddTagsToUploadedImageController.php` — legacy mobile tagging
 - `app/Http/Controllers/API/GetUntaggedUploadController.php` — legacy untagged photos list
 
+## React Native v7 API Changes
+
+See `MOBILE_API_CHANGES.md` at the project root for the full RN v7 change log.
+
+Key notes:
+- **`filename` field is a full URL** — usable directly as an image source (no base URL prefix needed)
+- **`new_tags` response** includes `category`, `object`, `type`, `extra_tags`, `picked_up` (bool). For loose tags (extra-tag-only), `category`, `object`, and `category_litter_object_id` may be null.
+- **Tag editing via `PUT /api/v3/tags`** — same CLO format. Accepts empty `tags: []` to clear all tags.
+- **`picked_up` cast to `(bool)`** with fallback to photo-level `picked_up`
+
 ## Common Mistakes
 
 - **Sending v4 tag format.** `{ smoking: { butts: 3 } }` is no longer accepted. Use CLO format.
 - **Using old upload endpoint.** `POST /api/photos/submit` no longer exists. Use `POST /api/v3/upload`.
 - **Using old delete endpoint.** `DELETE /api/photos/delete` no longer exists. Use `POST /api/profile/photos/delete`.
 - **Not building search index from `/api/tags/all`.** The 7 flat collections must be joined client-side.
+- **Prefixing `filename` with a base URL.** The `filename` field is already a full URL — using it with a prefix produces a broken double-URL.

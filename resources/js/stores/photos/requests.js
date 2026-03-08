@@ -163,8 +163,6 @@ export const requests = {
             });
 
             if (response.data.success) {
-                const title = t('Tags Updated');
-                toast.success(title);
                 await this.GET_UNTAGGED_STATS();
             }
 
@@ -185,9 +183,6 @@ export const requests = {
             });
 
             if (response.data.success) {
-                const title = t('Tags Added');
-                toast.success(title);
-
                 // Refresh stats and photos in parallel to avoid stale intermediate state
                 await Promise.all([
                     this.GET_UNTAGGED_STATS(),

@@ -84,11 +84,14 @@ final class XpCalculator
             $quantity = $tag['quantity'] ?? 0;
             $objectId = $tag['object_id'] ?? 0;
 
-            $objectKey = $objectKeys[$objectId] ?? null;
-            if ($objectKey) {
-                $xp += $quantity * XpScore::getObjectXp($objectKey);
-            } else {
-                $xp += $quantity * XpScore::Object->xp();
+            // Only award object XP if there's an actual object
+            if ($objectId > 0) {
+                $objectKey = $objectKeys[$objectId] ?? null;
+                if ($objectKey) {
+                    $xp += $quantity * XpScore::getObjectXp($objectKey);
+                } else {
+                    $xp += $quantity * XpScore::Object->xp();
+                }
             }
 
             // Materials: set membership, weighted by parent qty → each material contributes qty * Material XP
@@ -150,9 +153,9 @@ final class XpCalculator
      * Calculate XP for a single object by key
      * Used during summary generation when we have the key
      */
-    public static function getObjectXp(string $objectKey): int
+    public static function getObjectXp(string $objectKey, ?string $typeKey = null): int
     {
-        return XpScore::getObjectXp($objectKey);
+        return XpScore::getObjectXp($objectKey, $typeKey);
     }
 
     /**

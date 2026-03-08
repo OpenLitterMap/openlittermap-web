@@ -140,14 +140,14 @@
                     <div class="flex-shrink-0 pt-3 mt-auto">
                         <button
                             @click="submitTags"
-                            :disabled="activeTags.length === 0 || isSubmitting || hasUnresolvedTags"
+                            :disabled="!canSubmit"
                             class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-white/5 disabled:text-white/20 disabled:border-white/10 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                         >
                             <template v-if="!isSubmitting">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                                {{ isEditMode ? $t('Update Tags') : $t('Confirm Tags') }}
+                                {{ isEditMode ? (activeTags.length === 0 ? $t('Clear All Tags') : $t('Update Tags')) : $t('Confirm Tags') }}
                                 <span v-if="activeTags.length > 0" class="text-emerald-200/80 text-xs">({{ activeTags.length }})</span>
                             </template>
                             <template v-else>
@@ -371,6 +371,13 @@ const hasUnresolvedTags = computed(() => {
     return activeTags.value.some((tag) => tag.object && !tag.cloId);
 });
 
+const canSubmit = computed(() => {
+    if (isSubmitting.value || hasUnresolvedTags.value) return false;
+    if (activeTags.value.length === 0 && !isEditMode.value) return false;
+    return true;
+});
+
+
 // Helper to ensure photo has an array in tagsByPhoto
 const ensurePhotoTags = () => {
     const photoId = currentPhoto.value?.id;
@@ -444,6 +451,9 @@ const convertExistingTags = (photo) => {
             categoryId: apiTag.category?.id || null,
             categoryKey: apiTag.category?.key || null,
             typeId: apiTag.litter_object_type_id || null,
+            typeKey: apiTag.litter_object_type_id
+                ? tagsStore.types.find((t) => t.id === apiTag.litter_object_type_id)?.key || null
+                : null,
             quantity: apiTag.quantity || 1,
             pickedUp: apiTag.picked_up ?? true,
             brands,
@@ -658,6 +668,7 @@ const handleTagSelection = (selected) => {
             categoryId: selected.categoryId || null,
             categoryKey: selected.categoryKey || null,
             typeId: resolvedTypeId,
+            typeKey: resolvedTypeId ? tagsStore.types.find((t) => t.id === resolvedTypeId)?.key || null : null,
             quantity: 1,
             pickedUp: defaultPickedUp.value,
             brands: [],
@@ -729,7 +740,9 @@ const setPickedUp = (tagId, value) => {
 
 const setTagType = (tagId, typeId) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (tag) tag.typeId = typeId;
+    if (!tag) return;
+    tag.typeId = typeId;
+    tag.typeKey = typeId ? tagsStore.types.find((t) => t.id === typeId)?.key || null : null;
 };
 
 const addTagDetail = (tagId, detail) => {
@@ -789,7 +802,7 @@ const clearAllTags = () => {
 
 // Submit tags
 const submitTags = async () => {
-    if (isSubmitting.value || activeTags.value.length === 0 || hasUnresolvedTags.value) return;
+    if (!canSubmit.value) return;
 
     isSubmitting.value = true;
     const photoId = currentPhoto.value.id;

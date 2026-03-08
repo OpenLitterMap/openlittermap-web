@@ -55,12 +55,20 @@ class PhotoTagsController extends Controller
                 $tag->delete();
             });
 
-            // Reset summary and XP so AddTagsToPhotoAction regenerates them
+            // Reset summary and XP
             $photo->update([
                 'summary' => null,
                 'xp' => 0,
+                'total_tags' => 0,
+                'total_brands' => 0,
+                'result_string' => '',
                 'verified' => 0,
             ]);
+
+            // If no new tags, just clear — photo returns to untagged state
+            if (empty($validatedData['tags'])) {
+                return [];
+            }
 
             // Add new tags (generates summary, XP, fires TagsVerifiedByAdmin → MetricsService)
             return $this->addTagsToPhotoActionNew->run(

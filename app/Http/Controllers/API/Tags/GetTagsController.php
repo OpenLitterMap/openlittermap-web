@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\Tags;
 
+use App\Enums\CategoryKey;
 use App\Http\Controllers\Controller;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -44,19 +45,23 @@ class GetTagsController extends Controller
     public function getAllTags(): JsonResponse
     {
         $categories = Category::select('id', 'key')
-            ->where('key', '!=', 'unclassified')
+            ->where('key', '!=', CategoryKey::Unclassified->value)
             ->orderBy('key')
             ->get();
 
-        $objectTypesMap = $this->buildObjectTypesMap();
+        $objectMaps = TagsConfig::buildObjectMaps('types', 'materials');
+        $objectTypesMap = $objectMaps['types'];
+        $objectMaterialsMap = $objectMaps['materials'];
 
         $litterObjects = LitterObject::with(['categories:id,key'])
+            ->whereHas('categories')
             ->select('id', 'key')
             ->orderBy('key')
             ->get()
-            ->map(function (LitterObject $obj) use ($objectTypesMap) {
+            ->map(function (LitterObject $obj) use ($objectTypesMap, $objectMaterialsMap) {
                 $data = $obj->toArray();
                 $data['types'] = $objectTypesMap[$obj->key] ?? [];
+                $data['suggested_materials'] = $objectMaterialsMap[$obj->key] ?? [];
 
                 return $data;
             });
@@ -82,33 +87,6 @@ class GetTagsController extends Controller
             'category_objects' => $categoryObjects,
             'category_object_types' => $categoryObjectTypes,
         ]);
-    }
-
-    /**
-     * Build a map of object key → merged type keys from TagsConfig.
-     *
-     * If the same object appears in multiple categories, types are merged and deduplicated.
-     */
-    protected function buildObjectTypesMap(): array
-    {
-        $map = [];
-
-        foreach (TagsConfig::get() as $objects) {
-            foreach ($objects as $objectKey => $config) {
-                $types = $config['types'] ?? [];
-
-                if (empty($types)) {
-                    $map[$objectKey] ??= [];
-                    continue;
-                }
-
-                $map[$objectKey] = array_values(array_unique(
-                    array_merge($map[$objectKey] ?? [], $types)
-                ));
-            }
-        }
-
-        return $map;
     }
 
     /**
