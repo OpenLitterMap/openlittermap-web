@@ -123,6 +123,17 @@ class AddTagsToPhotoAction
             $this->attachCustomTags($userId, $photoTag, [$tag['key']]);
         }
 
+        // Attach additional extras on custom/brand/material-only tags
+        if (! empty($tag['brands'])) {
+            $this->attachBrands($photoTag, $tag['brands']);
+        }
+        if (! empty($tag['materials'])) {
+            $this->attachMaterials($photoTag, $tag['materials']);
+        }
+        if (! empty($tag['custom_tags'])) {
+            $this->attachCustomTags($userId, $photoTag, $tag['custom_tags']);
+        }
+
         return $photoTag;
     }
 

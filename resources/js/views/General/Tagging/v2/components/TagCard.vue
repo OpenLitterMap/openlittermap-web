@@ -242,7 +242,9 @@
                     v-model="brandQuery"
                     :tags="brandsForSelect"
                     placeholder="Add brand..."
+                    custom-tag-label="Create custom brand tag:"
                     @tag-selected="addBrand"
+                    @custom-tag="addCustomFromBrand"
                     class="detail-select"
                 />
             </div>
@@ -254,7 +256,9 @@
                     v-model="materialQuery"
                     :tags="materialsForSelect"
                     placeholder="Add material..."
+                    custom-tag-label="Create custom material tag:"
                     @tag-selected="addMaterial"
+                    @custom-tag="addCustomFromMaterial"
                     class="detail-select"
                 />
             </div>
@@ -266,6 +270,7 @@
                     v-model="objectQuery"
                     :tags="objectsForSelect"
                     placeholder="Add more objects..."
+                    custom-tag-label="Create custom object tag:"
                     @tag-selected="addObject"
                     @custom-tag="addCustomFromObject"
                     class="detail-select"
@@ -506,12 +511,34 @@ const addObject = (selected) => {
     }
 };
 
+const addCustomFromBrand = (customTag) => {
+    const value = customTag?.key?.trim().replace(/\s+/g, ' ').slice(0, 64);
+    if (value) {
+        emit('add-detail', {
+            type: 'custom',
+            value: `brand:${value}`,
+        });
+        brandQuery.value = '';
+    }
+};
+
+const addCustomFromMaterial = (customTag) => {
+    const value = customTag?.key?.trim().replace(/\s+/g, ' ').slice(0, 64);
+    if (value) {
+        emit('add-detail', {
+            type: 'custom',
+            value: `material:${value}`,
+        });
+        materialQuery.value = '';
+    }
+};
+
 const addCustomFromObject = (customTag) => {
     const value = customTag?.key?.trim().replace(/\s+/g, ' ').slice(0, 64);
     if (value) {
         emit('add-detail', {
             type: 'custom',
-            value: value,
+            value: `object:${value}`,
         });
         objectQuery.value = '';
     }

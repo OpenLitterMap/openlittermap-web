@@ -110,7 +110,7 @@ class UntrustedUserLifecycleTest extends TestCase
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');
         $profile->assertOk();
         $this->assertEquals(8, $profile->json('stats.xp'), 'Profile shows full XP');
-        $this->assertEquals(3, $profile->json('stats.litter'), 'Profile shows litter');
+        $this->assertEquals(3, $profile->json('stats.tags'), 'Profile shows tags');
         $this->assertEquals(1, $profile->json('stats.uploads'));
 
         // Today leaderboard includes untrusted user
@@ -172,7 +172,7 @@ class UntrustedUserLifecycleTest extends TestCase
         // Profile: zeros
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(0, $profile->json('stats.xp'));
-        $this->assertEquals(0, $profile->json('stats.litter'));
+        $this->assertEquals(0, $profile->json('stats.tags'));
 
         // Leaderboard: empty
         $lb = $this->actingAs($user)->getJson('/api/leaderboard?timeFilter=today');

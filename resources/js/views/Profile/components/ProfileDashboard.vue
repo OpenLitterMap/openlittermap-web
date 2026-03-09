@@ -141,7 +141,7 @@ const tagPercent = computed(() => {
 
 const statCards = computed(() => [
     { label: $t('Uploads'), value: profileStore.stats.uploads?.toLocaleString(), sub: photoPercent.value },
-    { label: $t('Litter Tagged'), value: profileStore.stats.litter?.toLocaleString(), sub: tagPercent.value },
+    { label: $t('Tags'), value: profileStore.stats.tags?.toLocaleString(), sub: tagPercent.value },
     { label: $t('XP'), value: profileStore.stats.xp?.toLocaleString() },
     { label: $t('Day Streak'), value: profileStore.stats.streak?.toLocaleString() },
 ]);

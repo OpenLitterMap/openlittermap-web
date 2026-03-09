@@ -3,7 +3,7 @@
         <Combobox :modelValue="selected" @update:modelValue="handleSelection" nullable>
             <div class="relative">
                 <ComboboxInput
-                    id="unified-tag-search-input"
+                    :id="instanceId"
                     @change="query = $event.target.value"
                     :displayValue="(item) => item?.key || ''"
                     :placeholder="placeholder"
@@ -91,7 +91,7 @@
                     <!-- Custom tag option -->
                     <ComboboxOption
                         v-if="debouncedQuery.length > 2 && !exactMatch"
-                        :value="{ custom: true, key: query }"
+                        :value="customTagOption"
                         v-slot="{ active }"
                     >
                         <li
@@ -101,7 +101,7 @@
                             ]"
                         >
                             <span class="flex items-center gap-2">
-                                <span>Create custom tag: "{{ query }}"</span>
+                                <span>{{ customTagLabel }} "{{ query }}"</span>
                                 <span
                                     :class="[
                                         'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium not-italic ml-auto',
@@ -134,10 +134,19 @@ const props = defineProps({
         type: String,
         default: 'Search or create tag...',
     },
+    inputId: {
+        type: String,
+        default: null,
+    },
+    customTagLabel: {
+        type: String,
+        default: 'Create custom tag:',
+    },
 });
 
 const emit = defineEmits(['update:modelValue', 'tag-selected', 'custom-tag']);
 
+const instanceId = props.inputId || `tag-search-${Math.random().toString(36).slice(2, 9)}`;
 const query = ref('');
 const selected = ref(null);
 const debouncedQuery = ref('');
@@ -161,7 +170,7 @@ const formatKey = (key) => {
 
 onMounted(() => {
     nextTick(() => {
-        document.getElementById('unified-tag-search-input')?.focus();
+        document.getElementById(instanceId)?.focus();
     });
 });
 
@@ -241,8 +250,10 @@ const groupedTags = computed(() => {
 
 const exactMatch = computed(() => {
     const searchTerm = debouncedQuery.value.toLowerCase();
-    return props.tags.some((tag) => tag.key.toLowerCase() === searchTerm);
+    return props.tags.some((tag) => tag.type === 'customTag' && tag.key.toLowerCase() === searchTerm);
 });
+
+const customTagOption = computed(() => ({ custom: true, key: query.value }));
 
 const typeBadgeClass = (type) => {
     const classes = {

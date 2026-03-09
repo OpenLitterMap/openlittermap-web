@@ -109,19 +109,21 @@
                                 class="flex items-center gap-1 px-1 py-0.5 bg-white rounded text-xs text-gray-700"
                                 :title="`${obj.category ? obj.category + ' / ' : ''}${obj.label} (x${obj.quantity})`"
                             >
-                                <span class="truncate">{{ obj.label }} x{{ obj.quantity }}</span>
-                                <span
-                                    v-if="obj.pickedUp === true"
-                                    class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-green-100 text-green-700"
-                                >{{ $t('picked up') }}</span>
-                                <span
-                                    v-else-if="obj.pickedUp === false"
-                                    class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-amber-100 text-amber-700"
-                                >{{ $t('not picked up') }}</span>
-                                <span
-                                    v-else
-                                    class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-gray-100 text-gray-500"
-                                >{{ $t('unknown') }}</span>
+                                <span class="truncate">{{ obj.label }}{{ obj.quantity > 1 ? ` x${obj.quantity}` : '' }}</span>
+                                <template v-if="obj.showPickedUp !== false">
+                                    <span
+                                        v-if="obj.pickedUp === true"
+                                        class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-green-100 text-green-700"
+                                    >{{ $t('picked up') }}</span>
+                                    <span
+                                        v-else-if="obj.pickedUp === false"
+                                        class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-amber-100 text-amber-700"
+                                    >{{ $t('not picked up') }}</span>
+                                    <span
+                                        v-else
+                                        class="shrink-0 px-1 py-px rounded text-[10px] font-medium bg-gray-100 text-gray-500"
+                                    >{{ $t('unknown') }}</span>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -306,8 +308,14 @@ const getTagsList = (photo) => {
                 category: tag.category?.key,
                 quantity: tag.quantity || 0,
                 pickedUp: tag.picked_up,
+                showPickedUp: true,
             });
-        } else if (tag.extra_tags?.length > 0) {
+        }
+
+        // Show extra tags (brands, materials, custom) — both for object tags and standalone extras
+        if (tag.extra_tags?.length > 0) {
+            const showPickedUpOnFirst = !(tag.object && tag.object.key);
+            let isFirst = true;
             for (const extra of tag.extra_tags) {
                 if (items.length >= MAX_TAG_DISPLAY) break;
                 const label = extra.tag?.key ? formatKey(extra.tag.key) : formatKey(extra.type);
@@ -317,7 +325,9 @@ const getTagsList = (photo) => {
                     category: extra.type,
                     quantity: extra.quantity || tag.quantity || 1,
                     pickedUp: tag.picked_up,
+                    showPickedUp: showPickedUpOnFirst && isFirst,
                 });
+                isFirst = false;
             }
         }
     }

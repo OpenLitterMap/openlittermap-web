@@ -186,6 +186,12 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
+/* Inline empty state — sits inside .popup-meta alongside the date */
+.popup-empty-inline {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
 /* ----------------------------------------
    Meta Row — picked up pill + date
    ---------------------------------------- */

@@ -119,7 +119,7 @@ class UserLifecycleTest extends TestCase
         $profileResponse->assertOk();
         $this->assertEquals(1, $profileResponse->json('stats.uploads'), 'Profile: 1 upload');
         $this->assertEquals($expectedXp, $profileResponse->json('stats.xp'), 'Profile XP from Redis');
-        $this->assertEquals(3, $profileResponse->json('stats.litter'), 'Profile litter: 3');
+        $this->assertEquals(3, $profileResponse->json('stats.tags'), 'Profile tags: 3');
         $this->assertEquals(1, $profileResponse->json('rank.global_position'), 'Rank 1 (only user)');
         $this->assertEquals(1, $profileResponse->json('locations.countries'), '1 country');
 
@@ -523,28 +523,28 @@ class UserLifecycleTest extends TestCase
         $response->assertOk();
         $this->assertEquals(0, $response->json('stats.uploads'));
         $this->assertEquals(0, $response->json('stats.xp'));
-        $this->assertEquals(0, $response->json('stats.litter'));
+        $this->assertEquals(0, $response->json('stats.tags'));
 
         // After upload
         $photoId = $this->uploadPhoto($user);
         $response = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(1, $response->json('stats.uploads'), 'After upload: 1 upload');
         $this->assertEquals(5, $response->json('stats.xp'), 'After upload: 5 XP');
-        $this->assertEquals(0, $response->json('stats.litter'), 'After upload: 0 litter');
+        $this->assertEquals(0, $response->json('stats.tags'), 'After upload: 0 tags');
 
         // After tagging
         $this->tagPhoto($user, $photoId, 4);
         $response = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(1, $response->json('stats.uploads'), 'After tag: still 1 upload');
         $this->assertEquals(9, $response->json('stats.xp'), 'After tag: 5+4 = 9 XP');
-        $this->assertEquals(4, $response->json('stats.litter'), 'After tag: 4 litter');
+        $this->assertEquals(4, $response->json('stats.tags'), 'After tag: 4 tags');
 
         // After delete
         $this->actingAs($user)->postJson('/api/profile/photos/delete', ['photoid' => $photoId]);
         $response = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(0, $response->json('stats.uploads'), 'After delete: 0 uploads');
         $this->assertEquals(0, $response->json('stats.xp'), 'After delete: 0 XP');
-        $this->assertEquals(0, $response->json('stats.litter'), 'After delete: 0 litter');
+        $this->assertEquals(0, $response->json('stats.tags'), 'After delete: 0 tags');
     }
 
     // =========================================================================

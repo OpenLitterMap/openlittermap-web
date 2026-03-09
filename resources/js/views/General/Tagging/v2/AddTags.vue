@@ -98,6 +98,7 @@
                             :tags="searchableTags"
                             :brands="brandsList"
                             :materials="materialsList"
+                            input-id="unified-tag-search-input"
                             @tag-selected="handleTagSelection"
                             @custom-tag="handleCustomTag"
                             placeholder="Search All Tags or Create Your Own!"
@@ -395,36 +396,63 @@ const convertExistingTags = (photo) => {
     return photo.new_tags.map((apiTag) => {
         const tagId = Math.random().toString(16).slice(2);
 
-        // Brand-only or material-only (no object)
+        // Extra-tag-only (no object) — classify by primary extra type
         if (!apiTag.object && apiTag.extra_tags?.length) {
-            const firstExtra = apiTag.extra_tags[0];
-            if (firstExtra.type === 'brand') {
+            const brands = [];
+            const materials = [];
+            const customTags = [];
+
+            apiTag.extra_tags.forEach((extra) => {
+                if (extra.type === 'brand' && extra.tag) {
+                    brands.push({ id: extra.tag.id, key: extra.tag.key, quantity: extra.quantity || 1 });
+                } else if (extra.type === 'material' && extra.tag) {
+                    materials.push({ id: extra.tag.id, key: extra.tag.key });
+                } else if (extra.type === 'custom_tag' && extra.tag) {
+                    customTags.push(extra.tag.key);
+                }
+            });
+
+            // Single brand with no other extras → brand-only card
+            if (brands.length === 1 && !materials.length && !customTags.length) {
                 return {
                     id: tagId,
-                    brand: firstExtra.tag,
+                    brand: brands[0],
                     quantity: apiTag.quantity || 1,
                     pickedUp: apiTag.picked_up,
                     type: 'brand-only',
                 };
             }
-            if (firstExtra.type === 'material') {
+            // Single material with no other extras → material-only card
+            if (materials.length === 1 && !brands.length && !customTags.length) {
                 return {
                     id: tagId,
-                    material: firstExtra.tag,
+                    material: materials[0],
                     quantity: apiTag.quantity || 1,
                     pickedUp: apiTag.picked_up,
                     type: 'material-only',
                 };
             }
-            if (firstExtra.type === 'custom_tag') {
+            // Single custom tag with no other extras → custom tag card
+            if (customTags.length === 1 && !brands.length && !materials.length) {
                 return {
                     id: tagId,
                     custom: true,
-                    key: firstExtra.tag?.key || '',
+                    key: customTags[0],
                     quantity: apiTag.quantity || 1,
                     pickedUp: apiTag.picked_up,
                 };
             }
+            // Mixed extras or multiple of same type → custom card with all details
+            return {
+                id: tagId,
+                custom: true,
+                key: customTags[0] || brands[0]?.key || materials[0]?.key || 'custom tag',
+                quantity: apiTag.quantity || 1,
+                pickedUp: apiTag.picked_up,
+                brands,
+                materials,
+                customTags: customTags.slice(1),
+            };
         }
 
         // Standard object tag
@@ -811,7 +839,35 @@ const submitTags = async () => {
     const submittedXp = calculateXP.value;
     const submittedTags = [...activeTags.value];
 
-    const tagsForUpload = activeTags.value.map((tag) => {
+    // Consolidate standalone custom tags into a single payload
+    const rawTags = activeTags.value;
+    const standaloneCustom = rawTags.filter((t) => t.custom && !t.cloId);
+    const nonCustom = rawTags.filter((t) => !t.custom || t.cloId);
+
+    const consolidated = [...nonCustom];
+    if (standaloneCustom.length > 0) {
+        // Merge all standalone custom tags into one entry
+        const allKeys = [];
+        const allBrands = [];
+        const allMaterials = [];
+        standaloneCustom.forEach((t) => {
+            allKeys.push(t.key);
+            if (t.brands?.length) allBrands.push(...t.brands);
+            if (t.materials?.length) allMaterials.push(...t.materials);
+            if (t.customTags?.length) allKeys.push(...t.customTags);
+        });
+        consolidated.push({
+            custom: true,
+            key: allKeys[0],
+            customTags: allKeys.slice(1),
+            brands: allBrands,
+            materials: allMaterials,
+            quantity: standaloneCustom[0].quantity,
+            pickedUp: standaloneCustom[0].pickedUp,
+        });
+    }
+
+    const tagsForUpload = consolidated.map((tag) => {
         // Use CLO-based payload when we have a CLO id
         if (tag.cloId) {
             return {
@@ -827,12 +883,17 @@ const submitTags = async () => {
 
         // Legacy format fallback for brand-only, material-only, custom-only
         if (tag.custom) {
-            return {
+            const payload = {
                 custom: true,
                 key: tag.key,
                 quantity: tag.quantity,
                 picked_up: tag.pickedUp,
             };
+            // Include extras if the custom card has detail tags
+            if (tag.brands?.length) payload.brands = tag.brands.map((b) => ({ id: b.id, quantity: b.quantity || 1 }));
+            if (tag.materials?.length) payload.materials = tag.materials.map((m) => m.id);
+            if (tag.customTags?.length) payload.custom_tags = tag.customTags;
+            return payload;
         } else if (tag.type === 'brand-only') {
             return {
                 brand_only: true,

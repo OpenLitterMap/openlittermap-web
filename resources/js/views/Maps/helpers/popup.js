@@ -142,11 +142,17 @@ export const popupHelper = {
 
         const hasMetaContent = pickedUpHtml || dateFormatted;
         const hasFooterContent = hasSocialLinks || shareUrl;
+        const isEmptyState = tagsHtml && tagsHtml.includes('popup-empty-state');
 
         // Image click: open full-size in new tab for trusted images, do nothing for waiting
         const imageClickAttr = isTrustedUser
             ? `onclick="window.open('${safeProps.filename}', '_blank');" title="${translate('View full image')}"`
             : '';
+
+        // When there are no tags, combine the empty-state message and date into a single meta line
+        const metaHtml = isEmptyState
+            ? `<div class="popup-meta">${tagsHtml.replace('popup-empty-state', 'popup-empty-state popup-empty-inline')}${dateFormatted ? `<span class="popup-date">${dateFormatted}</span>` : ''}</div>`
+            : `${tagsHtml}${hasMetaContent ? `<div class="popup-meta">${pickedUpHtml}${dateFormatted ? `<span class="popup-date">${dateFormatted}</span>` : ''}</div>` : ''}`;
 
         return `
             <div class="popup-image-wrap">
@@ -161,8 +167,7 @@ export const popupHelper = {
                 ${isTrustedUser ? '<div class="popup-image-gradient"></div>' : ''}
             </div>
             <div class="popup-body">
-                ${tagsHtml}
-                ${hasMetaContent ? `<div class="popup-meta">${pickedUpHtml}${dateFormatted ? `<span class="popup-date">${dateFormatted}</span>` : ''}</div>` : ''}
+                ${metaHtml}
                 ${userHtml ? `<div class="popup-attribution">${userHtml}</div>` : ''}
                 ${adminInfo ? `<div class="popup-admin">${adminInfo}</div>` : ''}
                 ${removedTags ? `<div class="popup-admin">${removedTags}</div>` : ''}

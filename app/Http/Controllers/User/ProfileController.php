@@ -11,13 +11,11 @@ use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\LevelService;
-use App\Services\Redis\RedisKeys;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class ProfileController extends Controller
 {
@@ -145,7 +143,7 @@ class ProfileController extends Controller
 
         $stats = $this->resolveUserStats($id, $user);
         $uploads = $stats['uploads'];
-        $litter = $stats['litter'];
+        $tags = $stats['tags'];
         $xp = $stats['xp'];
 
         $levelInfo = LevelService::getUserLevel($xp);
@@ -177,7 +175,7 @@ class ProfileController extends Controller
             ],
             'stats' => [
                 'uploads' => $uploads,
-                'litter' => $litter,
+                'tags' => $tags,
                 'xp' => $xp,
             ],
             'level' => $levelInfo,
@@ -214,7 +212,7 @@ class ProfileController extends Controller
 
         $stats = $this->resolveUserStats($userId, $user);
         $uploads = $stats['uploads'];
-        $litter = $stats['litter'];
+        $tags = $stats['tags'];
         $xp = $stats['xp'];
 
         // Level
@@ -233,15 +231,16 @@ class ProfileController extends Controller
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
             : 0;
 
-        // Global stats from Redis, with MySQL fallback
-        $globalStats = Redis::hGetAll(RedisKeys::stats(RedisKeys::global()));
-        $globalPhotos = (int) ($globalStats['photos'] ?? 0);
-        $globalLitter = (int) ($globalStats['litter'] ?? 0);
-
-        if ($globalPhotos === 0) {
-            $globalPhotos = (int) Photo::where('is_public', true)->count();
-            $globalLitter = (int) Photo::where('is_public', true)->sum('total_tags');
-        }
+        // Global stats from MySQL (source of truth for percentage calculations)
+        $globalPhotos = (int) Photo::where('is_public', true)->count();
+        $globalTags = (int) DB::table('metrics')
+            ->where('user_id', '>', 0)
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('year', 0)
+            ->where('month', 0)
+            ->sum('tags');
 
         // Achievements
         $unlockedCount = DB::table('user_achievements')
@@ -257,7 +256,7 @@ class ProfileController extends Controller
 
         // Percentage of global contribution
         $photoPercent = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
-        $tagPercent = ($litter && $globalLitter) ? round($litter / $globalLitter * 100, 2) : 0;
+        $tagPercent = ($tags && $globalTags) ? round($tags / $globalTags * 100, 2) : 0;
 
         // Active team
         $team = null;
@@ -290,7 +289,7 @@ class ProfileController extends Controller
             ],
             'stats' => [
                 'uploads' => $uploads,
-                'litter' => $litter,
+                'tags' => $tags,
                 'xp' => $xp,
                 'streak' => $stats['streak'],
                 'littercoin' => (int) ($user->total_littercoin ?? 0),
@@ -305,7 +304,7 @@ class ProfileController extends Controller
             ],
             'global_stats' => [
                 'total_photos' => $globalPhotos,
-                'total_litter' => $globalLitter,
+                'total_tags' => $globalTags,
             ],
             'achievements' => [
                 'unlocked' => $unlockedCount,
@@ -325,26 +324,35 @@ class ProfileController extends Controller
      */
     private function resolveUserStats(int $userId, User $user): array
     {
-        $metrics = RedisMetricsCollector::getUserMetrics($userId);
+        $redisMetrics = RedisMetricsCollector::getUserMetrics($userId);
 
-        $uploads = $metrics['uploads'];
-        $litter = $metrics['litter'];
+        // Total tags from metrics table (single indexed row lookup)
+        $metricsRow = DB::table('metrics')
+            ->where('user_id', $userId)
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('year', 0)
+            ->where('month', 0)
+            ->first(['uploads', 'tags', 'xp']);
 
-        // Single DB query for both fallbacks when Redis is empty
-        if (! $uploads || ! $litter) {
-            $dbStats = Photo::where('user_id', $userId)
-                ->selectRaw('COUNT(*) as photo_count, COALESCE(SUM(total_tags), 0) as tag_sum')
-                ->first();
+        $uploads = (int) ($metricsRow->uploads ?? 0);
+        $tags = (int) ($metricsRow->tags ?? 0);
+        $xp = (int) ($metricsRow->xp ?? 0);
 
-            $uploads = $uploads ?: (int) $dbStats->photo_count;
-            $litter = $litter ?: (int) $dbStats->tag_sum;
+        // Fallback to Redis/DB when no metrics row exists yet
+        if (! $uploads) {
+            $uploads = $redisMetrics['uploads'] ?: (int) Photo::where('user_id', $userId)->count();
+        }
+        if (! $xp) {
+            $xp = $redisMetrics['xp'] ?: (int) $user->xp;
         }
 
         return [
             'uploads' => $uploads,
-            'litter' => $litter,
-            'xp' => $metrics['xp'] ?: (int) $user->xp,
-            'streak' => $metrics['streak'],
+            'tags' => $tags,
+            'xp' => $xp,
+            'streak' => $redisMetrics['streak'],
         ];
     }
 

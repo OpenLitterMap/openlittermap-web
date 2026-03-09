@@ -514,7 +514,7 @@ class EdgeCaseLifecycleTest extends TestCase
         $profile->assertOk();
         $this->assertEquals(5, $profile->json('stats.xp'), 'Profile shows upload XP');
         $this->assertEquals(1, $profile->json('stats.uploads'));
-        $this->assertEquals(0, $profile->json('stats.litter'), 'No litter before tagging');
+        $this->assertEquals(0, $profile->json('stats.tags'), 'No tags before tagging');
 
         // All metric sources agree: 5 XP, 1 upload, 0 litter
         $user->refresh();

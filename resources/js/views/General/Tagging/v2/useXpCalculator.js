@@ -37,7 +37,16 @@ export function calculateTagXp(tag) {
     } else if (tag.type === 'material-only') {
         xp += qty * 2;
     } else if (tag.custom) {
-        xp += qty;
+        xp += qty; // primary custom tag key
+        if (tag.brands?.length) {
+            tag.brands.forEach((b) => (xp += (b.quantity || 1) * 3));
+        }
+        if (tag.materials?.length) {
+            xp += tag.materials.length * qty * 2;
+        }
+        if (tag.customTags?.length) {
+            xp += tag.customTags.length * qty;
+        }
     } else {
         xp += qty * objectXp;
         if (tag.brands?.length) {
@@ -85,6 +94,23 @@ export function getTagBreakdownParts(tag) {
     } else if (tag.custom) {
         parts.push(`×${qty}`);
         parts.push(`custom (+${qty})`);
+
+        const brandCount = tag.brands?.length || 0;
+        if (brandCount > 0) {
+            let brandXp = 0;
+            tag.brands.forEach((b) => (brandXp += (b.quantity || 1) * 3));
+            parts.push(`${brandCount} brand${brandCount > 1 ? 's' : ''} (+${brandXp})`);
+        }
+
+        const matCount = tag.materials?.length || 0;
+        if (matCount > 0) {
+            parts.push(`${matCount} material${matCount > 1 ? 's' : ''} (+${matCount * qty * 2})`);
+        }
+
+        const customCount = tag.customTags?.length || 0;
+        if (customCount > 0) {
+            parts.push(`${customCount} more custom (+${customCount * qty})`);
+        }
     } else {
         if (objectXp > 1) {
             parts.push(`×${qty} @ +${objectXp}`);

@@ -147,6 +147,9 @@ class TagsConfig
                 'chopsticks' => [
                     'materials' => ['wood', 'bamboo', 'plastic'],
                 ],
+                'container' => [
+                    'materials' => ['plastic'],
+                ],
                 'crisp_packet' => [
                     'materials' => ['foil', 'plastic'],
                 ],

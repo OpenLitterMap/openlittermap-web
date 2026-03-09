@@ -38,26 +38,30 @@ class ProfileIndexTest extends TestCase
         ]);
 
         $userId = $user->id;
-        $userScope = RedisKeys::user($userId);
 
-        // Seed Redis stats
-        Redis::hSet(RedisKeys::stats($userScope), 'uploads', 10);
-        Redis::hSet(RedisKeys::stats($userScope), 'xp', 500);
-        Redis::hSet(RedisKeys::stats($userScope), 'litter', 42);
-
-        // Seed metrics table for rank (all-time global per-user row)
+        // Seed metrics table (source of truth for profile stats + rank)
         DB::table('metrics')->insert([
             'timescale' => 0, 'location_type' => 0, 'location_id' => 0,
             'user_id' => $userId, 'year' => 0, 'month' => 0, 'week' => 0,
             'bucket_date' => '1970-01-01',
-            'uploads' => 10, 'tags' => 42, 'litter' => 42,
-            'brands' => 0, 'materials' => 0, 'custom_tags' => 0,
+            'uploads' => 10, 'tags' => 42, 'litter' => 30,
+            'brands' => 5, 'materials' => 4, 'custom_tags' => 3,
             'xp' => 500,
         ]);
 
-        // Seed global stats
-        Redis::hSet(RedisKeys::stats(RedisKeys::global()), 'photos', 1000);
-        Redis::hSet(RedisKeys::stats(RedisKeys::global()), 'litter', 5000);
+        // Seed another user's metrics for global tag total
+        $otherUser = User::factory()->create();
+        DB::table('metrics')->insert([
+            'timescale' => 0, 'location_type' => 0, 'location_id' => 0,
+            'user_id' => $otherUser->id, 'year' => 0, 'month' => 0, 'week' => 0,
+            'bucket_date' => '1970-01-01',
+            'uploads' => 5, 'tags' => 58, 'litter' => 50,
+            'brands' => 3, 'materials' => 3, 'custom_tags' => 2,
+            'xp' => 200,
+        ]);
+
+        // Seed public photos for global photo count
+        Photo::factory()->count(10)->create(['is_public' => true]);
 
         $response = $this->actingAs($user)
             ->getJson('/api/user/profile/index');
@@ -65,10 +69,10 @@ class ProfileIndexTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure([
             'user' => ['id', 'name', 'username', 'avatar', 'created_at', 'global_flag', 'public_profile'],
-            'stats' => ['uploads', 'litter', 'xp', 'streak'],
+            'stats' => ['uploads', 'tags', 'xp', 'streak'],
             'level' => ['level', 'title', 'xp', 'xp_into_level', 'xp_for_next', 'xp_remaining', 'progress_percent'],
             'rank' => ['global_position', 'global_total', 'percentile'],
-            'global_stats' => ['total_photos', 'total_litter'],
+            'global_stats' => ['total_photos', 'total_tags'],
             'achievements' => ['unlocked', 'total'],
             'locations' => ['countries', 'states', 'cities'],
         ]);
@@ -79,10 +83,11 @@ class ProfileIndexTest extends TestCase
         $this->assertEquals('Test User', $data['user']['name']);
         $this->assertEquals(500, $data['stats']['xp']);
         $this->assertEquals(10, $data['stats']['uploads']);
-        $this->assertEquals(42, $data['stats']['litter']);
+        $this->assertEquals(42, $data['stats']['tags']);
         $this->assertEquals(3, $data['level']['level']); // 500 XP → level 3 "Post-Noob" (thresholds: 0, 100, 500)
         $this->assertEquals(1, $data['rank']['global_position']);
-        $this->assertEquals(1000, $data['global_stats']['total_photos']);
+        $this->assertEquals(10, $data['global_stats']['total_photos']);
+        $this->assertEquals(100, $data['global_stats']['total_tags']); // 42 + 58
     }
 
     /** @test */

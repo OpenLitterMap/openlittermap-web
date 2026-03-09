@@ -68,8 +68,8 @@
                         <div class="text-white text-2xl font-bold tabular-nums">{{ profile.stats.uploads?.toLocaleString() }}</div>
                     </div>
                     <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                        <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">Litter Tagged</div>
-                        <div class="text-white text-2xl font-bold tabular-nums">{{ profile.stats.litter?.toLocaleString() }}</div>
+                        <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">Tags</div>
+                        <div class="text-white text-2xl font-bold tabular-nums">{{ profile.stats.tags?.toLocaleString() }}</div>
                     </div>
                     <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
                         <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">XP</div>

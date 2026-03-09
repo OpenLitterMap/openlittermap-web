@@ -82,7 +82,7 @@ class TrustedUserLifecycleTest extends TestCase
         $profile->assertOk();
         $this->assertEquals(0, $profile->json('stats.uploads'));
         $this->assertEquals(0, $profile->json('stats.xp'));
-        $this->assertEquals(0, $profile->json('stats.litter'));
+        $this->assertEquals(0, $profile->json('stats.tags'));
 
         // === STEP 2: Upload a photo — 5 XP immediately, no litter yet ===
         $photoId = $this->uploadPhoto($user);
@@ -110,7 +110,7 @@ class TrustedUserLifecycleTest extends TestCase
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(1, $profile->json('stats.uploads'));
         $this->assertEquals(5, $profile->json('stats.xp'));
-        $this->assertEquals(0, $profile->json('stats.litter'));
+        $this->assertEquals(0, $profile->json('stats.tags'));
 
         // Leaderboard: user visible with upload XP
         $lb = $this->actingAs($user)->getJson('/api/leaderboard?timeFilter=today');
@@ -166,7 +166,7 @@ class TrustedUserLifecycleTest extends TestCase
         // Profile: shows tags and locations
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(8, $profile->json('stats.xp'));
-        $this->assertEquals(3, $profile->json('stats.litter'));
+        $this->assertEquals(3, $profile->json('stats.tags'));
         $this->assertEquals(1, $profile->json('rank.global_position'));
         $this->assertEquals(1, $profile->json('locations.countries'));
 
@@ -226,7 +226,7 @@ class TrustedUserLifecycleTest extends TestCase
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals(0, $profile->json('stats.xp'));
         $this->assertEquals(0, $profile->json('stats.uploads'));
-        $this->assertEquals(0, $profile->json('stats.litter'));
+        $this->assertEquals(0, $profile->json('stats.tags'));
 
         // Leaderboard: empty
         $lb = $this->actingAs($user)->getJson('/api/leaderboard?timeFilter=today');
@@ -259,7 +259,7 @@ class TrustedUserLifecycleTest extends TestCase
         $profile = $this->actingAs($user)->getJson('/api/user/profile/index');
         $this->assertEquals($expectedXp, $profile->json('stats.xp'));
         $this->assertEquals(1, $profile->json('stats.uploads'));
-        $this->assertEquals(1, $profile->json('stats.litter'));
+        $this->assertEquals(1, $profile->json('stats.tags'));
 
         $lb = $this->actingAs($user)->getJson('/api/leaderboard?timeFilter=today');
         $this->assertEquals(1, $lb->json('total'));
