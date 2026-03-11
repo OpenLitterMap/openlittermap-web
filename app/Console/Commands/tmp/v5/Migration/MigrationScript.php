@@ -5,8 +5,10 @@ namespace App\Console\Commands\tmp\v5\Migration;
 use App\Models\Achievements\Achievement;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Tags\TagsConfig;
 use App\Services\Achievements\AchievementEngine;
 use App\Services\Metrics\MetricsService;
 use App\Services\Redis\RedisMetricsCollector;
@@ -49,6 +51,7 @@ class MigrationScript extends Command
         }
 
         $this->ensureProcessingColumns();
+        $this->fixInvalidVerificationStatuses();
         $this->seedReferenceTables();
         TagKeyCache::preloadAll();
         DB::disableQueryLog();
@@ -326,6 +329,43 @@ class MigrationScript extends Command
         }
     }
 
+    /**
+     * Fix photos with invalid verification status (e.g. 999) before migration.
+     * Uses raw DB query to bypass the VerificationStatus enum cast.
+     */
+    private function fixInvalidVerificationStatuses(): void
+    {
+        // [photoId => [userId, newVerified]]
+        $fixes = [
+            11641 => [32, 2],
+            11645 => [1210, 2],
+            11856 => [1210, 2],
+            11903 => [1254, 2],
+        ];
+
+        $fixed = 0;
+        foreach ($fixes as $photoId => [$expectedUserId, $newStatus]) {
+            $photo = DB::table('photos')->where('id', $photoId)->first(['verified', 'user_id']);
+            if (!$photo) {
+                $this->warn("⚠ Photo {$photoId} not found, skipping");
+                continue;
+            }
+            if ((int) $photo->user_id !== $expectedUserId) {
+                $this->warn("⚠ Photo {$photoId} belongs to user {$photo->user_id}, expected {$expectedUserId}, skipping");
+                continue;
+            }
+            if ((int) $photo->verified !== $newStatus) {
+                DB::table('photos')->where('id', $photoId)->update(['verified' => $newStatus]);
+                $this->info("✓ Photo {$photoId}: verified {$photo->verified} → {$newStatus}");
+                $fixed++;
+            }
+        }
+
+        if ($fixed > 0) {
+            $this->info("✓ Fixed {$fixed} invalid verification statuses");
+        }
+    }
+
     private function seedReferenceTables(): void
     {
         $this->info("Seeding reference tables...");
@@ -337,6 +377,18 @@ class MigrationScript extends Command
             $this->info("✓ Tags seeded");
         } else {
             $this->info("✓ Tags already exist");
+        }
+
+        // Always ensure all materials exist (including legacy v4 materials)
+        $materialsCreated = 0;
+        foreach (TagsConfig::allMaterialKeys() as $key) {
+            $material = Materials::firstOrCreate(['key' => $key]);
+            if ($material->wasRecentlyCreated) {
+                $materialsCreated++;
+            }
+        }
+        if ($materialsCreated > 0) {
+            $this->info("✓ Created {$materialsCreated} missing materials");
         }
 
         if (BrandList::count() == 0) {

@@ -273,11 +273,11 @@ class CalculatePhotoXpTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(5, $photo->summary['totals']['brands']);
-        $this->assertEquals(5, $photo->summary['totals']['litter']);
+        // No object_id set, so litter count is 0 (only objects count as litter)
+        $this->assertEquals(0, $photo->summary['totals']['litter']);
 
-        // XP: 5 (objects via litter count) + 5×3 (brands) = 20
-        // Actually: objects are 0 since no object_id set, brands contribute XP
-        $this->assertGreaterThan(0, $photo->xp);
+        // XP: 0 (no objects) + 5×3 (brands) = 15
+        $this->assertEquals(15, $photo->xp);
     }
 
     /** @test */
@@ -302,9 +302,10 @@ class CalculatePhotoXpTest extends TestCase
         $photo->refresh();
 
         $this->assertEquals(3, $photo->summary['totals']['custom_tags']);
-        $this->assertEquals(3, $photo->summary['totals']['litter']);
+        // No object_id set, so litter count is 0 (only objects count as litter)
+        $this->assertEquals(0, $photo->summary['totals']['litter']);
 
-        // XP: 3×1 (custom tags) + 5 (picked up) = 8
+        // XP: 0 (no objects) + 3×1 (custom tags) + 5 (picked up) = 8
         $this->assertEquals(8, $photo->xp);
     }
 

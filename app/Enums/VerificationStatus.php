@@ -10,7 +10,7 @@ namespace App\Enums;
 enum VerificationStatus: int
 {
     case UNVERIFIED = 0;
-    case VERIFIED = 1;        // Crowd-verified (future: AI-verified)
+    case VERIFIED = 1;        // Crowd-verified
     case ADMIN_APPROVED = 2;  // Manually verified by admin or trusted user
     case BBOX_APPLIED = 3;    // Bounding boxes drawn
     case BBOX_VERIFIED = 4;   // Bounding boxes verified by second user

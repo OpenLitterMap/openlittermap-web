@@ -99,7 +99,7 @@
                     class="w-full mb-4 bg-white/5 border border-white/20 rounded-lg px-2 py-1.5 text-sm text-white focus:border-emerald-500/50 focus:outline-none"
                     @change="switchTeam"
                 >
-                    <option v-for="t in teams" :key="t.id" :value="t.id" class="bg-slate-800">{{ t.name }}</option>
+                    <option v-for="t in sortedSidebarTeams" :key="t.id" :value="t.id" class="bg-slate-800">{{ t.name }}</option>
                 </select>
 
                 <!-- Team name (single team) -->
@@ -374,6 +374,15 @@ let echoChannel = null;
 const teams = computed(() => teamsStore.teams);
 const hasTeams = computed(() => teamsStore.hasTeams);
 const team = computed(() => teams.value.find((t) => t.id === selectedTeamId.value));
+
+// Active team first in sidebar dropdown, rest sorted by total photos desc
+const sortedSidebarTeams = computed(() => {
+    const active = teams.value.filter((t) => t.id === selectedTeamId.value);
+    const rest = teams.value
+        .filter((t) => t.id !== selectedTeamId.value)
+        .sort((a, b) => (b.total_images || 0) - (a.total_images || 0));
+    return [...active, ...rest];
+});
 const dashboard = computed(() => teamsStore.dashboard);
 const photoStats = computed(() => photosStore.stats);
 const isSchoolTeam = computed(() => team.value?.type_name === 'school');

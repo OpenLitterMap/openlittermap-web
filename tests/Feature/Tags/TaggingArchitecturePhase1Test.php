@@ -183,22 +183,20 @@ class TaggingArchitecturePhase1Test extends TestCase
         $this->assertNull($photoTag->type);
     }
 
-    public function test_photo_tag_clo_id_is_required(): void
+    public function test_photo_tag_clo_id_is_nullable(): void
     {
-        $category = Category::where('key', CategoryKey::Alcohol->value)->first();
-        $object = LitterObject::where('key', 'bottle')->first();
-
         $photo = Photo::factory()->create();
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
-
-        PhotoTag::create([
+        $photoTag = PhotoTag::create([
             'photo_id' => $photo->id,
-            'category_id' => $category->id,
-            'litter_object_id' => $object->id,
+            'category_id' => null,
+            'litter_object_id' => null,
             'category_litter_object_id' => null,
             'quantity' => 1,
         ]);
+
+        $this->assertNull($photoTag->category_litter_object_id);
+        $this->assertDatabaseHas('photo_tags', ['id' => $photoTag->id]);
     }
 
     // ─── API tests ───

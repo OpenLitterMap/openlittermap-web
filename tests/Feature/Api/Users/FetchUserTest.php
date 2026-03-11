@@ -25,7 +25,7 @@ class FetchUserTest extends TestCase
                 ],
                 'stats' => [
                     'uploads',
-                    'litter',
+                    'tags',
                     'xp',
                 ],
                 'level',

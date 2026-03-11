@@ -523,12 +523,32 @@ class TagsConfig
     }
 
     /**
-     * Extract all unique material keys from the config.
+     * v4 material column names that don't appear in any v5 object's materials list
+     * but exist in production data and must be preserved during migration.
+     */
+    private const LEGACY_MATERIALS = [
+        'bronze',
+        'carbon_fiber',
+        'composite',
+        'iron_or_steel',
+        'nickel',
+        'polyethylene',
+        'polymer',
+        'polypropylene',
+        'pvc',
+        'titanium',
+    ];
+
+    /**
+     * Extract all unique material keys from the config, including legacy v4 materials.
      */
     public static function allMaterialKeys(): array
     {
         return array_values(array_unique(
-            self::extractConfigKeys('materials')
+            array_merge(
+                self::extractConfigKeys('materials'),
+                self::LEGACY_MATERIALS
+            )
         ));
     }
 

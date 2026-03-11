@@ -177,17 +177,45 @@
                 <table class="w-full text-sm">
                     <thead class="border-b border-white/10">
                         <tr>
-                            <th class="px-4 py-3 font-medium text-white/50 text-left text-[11px] uppercase tracking-widest">{{ $t('Name') }}</th>
+                            <th
+                                class="px-4 py-3 font-medium text-left text-[11px] uppercase tracking-widest cursor-pointer select-none transition-colors"
+                                :class="sortKey === 'name' ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'"
+                                @click="toggleSort('name')"
+                            >
+                                {{ $t('Name') }}
+                                <span v-if="sortKey === 'name'" class="ml-0.5">{{ sortAsc ? '↑' : '↓' }}</span>
+                            </th>
                             <th class="px-4 py-3 font-medium text-white/50 text-left text-[11px] uppercase tracking-widest">{{ $t('Type') }}</th>
-                            <th class="px-4 py-3 font-medium text-white/50 text-right text-[11px] uppercase tracking-widest">{{ $t('Members') }}</th>
-                            <th class="px-4 py-3 font-medium text-white/50 text-right text-[11px] uppercase tracking-widest">{{ $t('Photos') }}</th>
-                            <th class="px-4 py-3 font-medium text-white/50 text-right text-[11px] uppercase tracking-widest">{{ $t('Litter') }}</th>
+                            <th
+                                class="px-4 py-3 font-medium text-right text-[11px] uppercase tracking-widest cursor-pointer select-none transition-colors"
+                                :class="sortKey === 'members' ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'"
+                                @click="toggleSort('members')"
+                            >
+                                {{ $t('Members') }}
+                                <span v-if="sortKey === 'members'" class="ml-0.5">{{ sortAsc ? '↑' : '↓' }}</span>
+                            </th>
+                            <th
+                                class="px-4 py-3 font-medium text-right text-[11px] uppercase tracking-widest cursor-pointer select-none transition-colors"
+                                :class="sortKey === 'photos' ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'"
+                                @click="toggleSort('photos')"
+                            >
+                                {{ $t('Photos') }}
+                                <span v-if="sortKey === 'photos'" class="ml-0.5">{{ sortAsc ? '↑' : '↓' }}</span>
+                            </th>
+                            <th
+                                class="px-4 py-3 font-medium text-right text-[11px] uppercase tracking-widest cursor-pointer select-none transition-colors"
+                                :class="sortKey === 'tags' ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'"
+                                @click="toggleSort('tags')"
+                            >
+                                {{ $t('Total Tags') }}
+                                <span v-if="sortKey === 'tags'" class="ml-0.5">{{ sortAsc ? '↑' : '↓' }}</span>
+                            </th>
                             <th class="px-4 py-3 w-20"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
                         <tr
-                            v-for="t in teams"
+                            v-for="t in sortedTeams"
                             :key="t.id"
                             class="hover:bg-white/[0.03]"
                             :class="t.id === teamId ? 'bg-white/[0.05]' : ''"
@@ -228,7 +256,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
 
@@ -241,6 +269,44 @@ const props = defineProps({
 });
 
 defineEmits(['switch-team', 'switch-tab']);
+
+// ── Sorting ──
+const sortKey = ref('photos');
+const sortAsc = ref(false);
+
+const sortedTeams = computed(() => {
+    if (!props.teams) return [];
+
+    const active = props.teams.filter((t) => t.id === props.teamId);
+    const rest = props.teams.filter((t) => t.id !== props.teamId);
+
+    const sorted = [...rest].sort((a, b) => {
+        let cmp = 0;
+
+        if (sortKey.value === 'name') {
+            cmp = (a.name || '').localeCompare(b.name || '');
+        } else if (sortKey.value === 'members') {
+            cmp = (a.members || 0) - (b.members || 0);
+        } else if (sortKey.value === 'photos') {
+            cmp = (a.total_images || 0) - (b.total_images || 0);
+        } else if (sortKey.value === 'tags') {
+            cmp = (a.total_litter || 0) - (b.total_litter || 0);
+        }
+
+        return sortAsc.value ? cmp : -cmp;
+    });
+
+    return [...active, ...sorted];
+});
+
+const toggleSort = (key) => {
+    if (sortKey.value === key) {
+        sortAsc.value = !sortAsc.value;
+    } else {
+        sortKey.value = key;
+        sortAsc.value = key === 'name';
+    }
+};
 
 const toast = useToast();
 const photosStore = useTeamPhotosStore();

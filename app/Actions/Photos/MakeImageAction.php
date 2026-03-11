@@ -96,15 +96,6 @@ class MakeImageAction
         $fileSize = $file->getSize();
         $realPath = $file->getRealPath();
 
-        Log::info('MakeImageAction: processing upload', [
-            'original_name' => $originalName,
-            'extension' => $extension,
-            'mime_type' => $mimeType,
-            'file_size' => $fileSize,
-            'real_path' => $realPath,
-            'is_valid' => $file->isValid(),
-        ]);
-
         // Check extension, MIME type, AND magic bytes for HEIC detection
         if (!$this->isHeic($file)) {
             try {

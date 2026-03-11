@@ -62,10 +62,37 @@ class UpdateTagsService
     {
         $groups             = [];
         $globalBrands       = [];
+        $globalMaterials    = [];
         $topLevelCustomTags = [];
 
         // 1) Category-based blocks
         foreach ($originalTags as $categoryKey => $items) {
+            // v4 "material" category → standalone material extra tags in v5
+            if ($categoryKey === 'material') {
+                foreach ($items as $tag => $qtyRaw) {
+                    $qty = (int) $qtyRaw;
+                    if ($qty <= 0) {
+                        continue;
+                    }
+
+                    $materialId = TagKeyCache::idFor(Dimension::MATERIAL->value, $tag);
+                    if ($materialId) {
+                        $globalMaterials[] = [
+                            'id'       => $materialId,
+                            'key'      => $tag,
+                            'type'     => Dimension::MATERIAL->value,
+                            'quantity' => $qty,
+                        ];
+                    } else {
+                        Log::warning("Material not found in materials table during migration", [
+                            'material_key' => $tag,
+                            'photo_id'     => $photoId,
+                        ]);
+                    }
+                }
+                continue;
+            }
+
             if ($categoryKey === 'brands') {
                 foreach ($items as $tag => $qtyRaw) {
                     $qty = (int) $qtyRaw;
@@ -83,19 +110,15 @@ class UpdateTagsService
                             'id' => $brandId,
                             'key' => $tag,
                             'type' => 'brand',
-                            'quantity' => $qty
+                            'quantity' => $qty,
                         ];
                     } else {
-//                        Log::warning("Brand not found in brandslist", [
-//                            'brand_key' => $tag,
-//                            'photo_id' => $photoId
-//                        ]);
                         // Still add it but without ID (will become brands-only tag)
                         $globalBrands[] = [
                             'id' => null,
                             'key' => $tag,
                             'type' => Dimension::BRAND->value,
-                            'quantity' => $qty
+                            'quantity' => $qty,
                         ];
                     }
                 }
@@ -228,9 +251,10 @@ class UpdateTagsService
         }
 
         return [
-            'groups'       => $groups,
-            'globalBrands' => $globalBrands,
-            'customTags'   => $topLevelCustomTags,
+            'groups'          => $groups,
+            'globalBrands'    => $globalBrands,
+            'globalMaterials' => $globalMaterials,
+            'customTags'      => $topLevelCustomTags,
         ];
     }
 
@@ -238,6 +262,7 @@ class UpdateTagsService
     {
         $groups             = $parsedTags['groups'] ?? [];
         $globalBrands       = $parsedTags['globalBrands'] ?? [];
+        $globalMaterials    = $parsedTags['globalMaterials'] ?? [];
         $topLevelCustomTags = $parsedTags['customTags'] ?? [];
 
         $createdPhotoTags = [];
@@ -264,9 +289,11 @@ class UpdateTagsService
                     ]);
 
                     $createdPhotoTags[] = [
-                        'photo_tag'   => $photoTag,
-                        'category_id' => $categoryId,
-                        'object'      => $object,
+                        'photo_tag'    => $photoTag,
+                        'category_id'  => $categoryId,
+                        'category_key' => $categoryKey,
+                        'object_key'   => $object['key'] ?? 'unknown',
+                        'object'       => $object,
                     ];
 
                     // Attach materials from deprecated tags
@@ -292,28 +319,60 @@ class UpdateTagsService
             }
         }
 
-        // Skip brand attachment for now - will be handled in a separate process
-        // Just log that we have brands to process later
+        // Attach brands to objects or create standalone
         if (!empty($globalBrands)) {
-            $brandKeys = array_map(fn($b) => $b['key'] ?? 'unknown', $globalBrands);
+            if ($hasObjects) {
+                $this->attachBrandsToObjects($photo, $globalBrands, $createdPhotoTags);
+            } else {
+                $this->createBrandsOnlyTag($photo, $globalBrands);
+            }
         }
 
-        // If no objects at all but have brands, create brands-only tag
-        if (!$hasObjects && !empty($globalBrands)) {
-            $this->createBrandsOnlyTag($photo, $globalBrands);
+        // Attach global materials (from v4 "material" category) to last photo tag, or create standalone
+        if (!empty($globalMaterials)) {
+            $lastPhotoTag = $photo->photoTags()->latest()->first();
+            if ($lastPhotoTag) {
+                // Attach to existing tag (object, brands-only, or whatever was created)
+                $lastPhotoTag->attachExtraTags($globalMaterials, Dimension::MATERIAL->value);
+            } else {
+                $this->createMaterialsOnlyTag($photo, $globalMaterials);
+            }
+        }
+
+        // Handle custom tags
+        if (!empty($topLevelCustomTags)) {
+            $lastPhotoTag = $photo->photoTags()->latest()->first();
+            if ($lastPhotoTag) {
+                // Attach to existing tag (object, brands-only, materials-only)
+                $this->attachCustomTagsToLast($photo, $topLevelCustomTags);
+            } else {
+                // No tags at all yet — create custom-only
+                $this->createCustomOnlyTag($photo, $topLevelCustomTags);
+            }
+        }
+    }
+
+    /**
+     * Attach a single brand to a single object PhotoTag.
+     *
+     * Only migrates brands when there is exactly 1 object and 1 brand.
+     * All other combinations (multiple objects, multiple brands, multi-category) are skipped.
+     */
+    private function attachBrandsToObjects(Photo $photo, array $globalBrands, array $createdPhotoTags): void
+    {
+        // Only migrate when exactly 1 object and 1 brand
+        if (count($createdPhotoTags) !== 1 || count($globalBrands) !== 1) {
+            $brandKeys = collect($globalBrands)->pluck('key')->implode(',');
+            $objectKeys = collect($createdPhotoTags)->pluck('object_key')->implode(',');
+            Log::info("Brand skipped: photo={$photo->id} objects=" . count($createdPhotoTags) . " brands=" . count($globalBrands) . " brand_keys=[{$brandKeys}] object_keys=[{$objectKeys}]");
             return;
         }
 
-        // Custom-only
-        if (!$hasObjects && !empty($topLevelCustomTags)) {
-            $this->createCustomOnlyTag($photo, $topLevelCustomTags);
-            return;
-        }
+        $lastPhotoTag = $createdPhotoTags[0]['photo_tag'];
 
-        // Attach any top-level custom tags to the last created tag
-        if ($hasObjects && !empty($topLevelCustomTags)) {
-            $this->attachCustomTagsToLast($photo, $topLevelCustomTags);
-        }
+        $lastPhotoTag->attachExtraTags($globalBrands, Dimension::BRAND->value);
+
+        Log::info("Brand attached: photo={$photo->id} brand={$globalBrands[0]['key']}(qty={$globalBrands[0]['quantity']}) → object={$createdPhotoTags[0]['object_key']} category={$createdPhotoTags[0]['category_key']}");
     }
 
     /**
@@ -325,15 +384,6 @@ class UpdateTagsService
             return;
         }
 
-        // Extract brand keys for logging
-        $brandKeys = array_map(fn($b) => $b['key'] ?? 'unknown', $brands);
-
-        Log::info("Creating brands-only tag", [
-            'photo_id' => $photo->id,
-            'brands' => $brandKeys,
-            'count' => count($brands)
-        ]);
-
         $photoTag = PhotoTag::create([
             'photo_id'                  => $photo->id,
             'quantity'                  => array_sum(array_column($brands, 'quantity')),
@@ -341,6 +391,24 @@ class UpdateTagsService
         ]);
 
         $photoTag->attachExtraTags($brands, Dimension::BRAND->value);
+    }
+
+    /**
+     * Create a materials-only PhotoTag for v4 "material" category items without object relationships
+     */
+    private function createMaterialsOnlyTag(Photo $photo, array $materials): void
+    {
+        if (empty($materials)) {
+            return;
+        }
+
+        $photoTag = PhotoTag::create([
+            'photo_id'  => $photo->id,
+            'quantity'  => array_sum(array_column($materials, 'quantity')),
+            'picked_up' => !$photo->remaining,
+        ]);
+
+        $photoTag->attachExtraTags($materials, Dimension::MATERIAL->value);
     }
 
     private function createCustomOnlyTag(Photo $photo, array $customTags): void

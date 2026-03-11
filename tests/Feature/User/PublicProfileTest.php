@@ -26,7 +26,7 @@ class PublicProfileTest extends TestCase
         $response->assertJsonPath('user.username', 'publicuser');
         $response->assertJsonStructure([
             'user' => ['id', 'name', 'username', 'avatar', 'global_flag', 'member_since'],
-            'stats' => ['uploads', 'litter', 'xp'],
+            'stats' => ['uploads', 'tags', 'xp'],
             'level' => ['level', 'title'],
             'rank' => ['global_position', 'global_total', 'percentile'],
             'achievements' => ['unlocked', 'total'],

@@ -43,8 +43,11 @@ class CreateCSVExportTest extends TestCase
 
     public function test_it_has_correct_mappings_for_all_categories_and_tags()
     {
-        // Pick the first category and its first two objects
-        $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->first();
+        // Pick a category with at least 2 objects (unclassified only has 1)
+        $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+            ->orderBy('id')
+            ->get()
+            ->first(fn ($c) => $c->litterObjects->count() >= 2);
         $objects = $category->litterObjects;
         $obj1 = $objects[0];
         $obj2 = $objects[1];
