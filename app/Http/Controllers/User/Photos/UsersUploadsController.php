@@ -69,6 +69,26 @@ class UsersUploadsController extends Controller
             }
         }
 
+        // Country filter
+        if ($request->filled('country')) {
+            $query->whereHas('countryRelation', fn($q) => $q->where('country', $request->input('country')));
+        }
+
+        // State filter
+        if ($request->filled('state')) {
+            $query->whereHas('stateRelation', fn($q) => $q->where('state', $request->input('state')));
+        }
+
+        // City filter
+        if ($request->filled('city')) {
+            $query->whereHas('cityRelation', fn($q) => $q->where('city', $request->input('city')));
+        }
+
+        // Verified status filter
+        if ($request->has('verified') && $request->input('verified') !== null) {
+            $query->where('verified', (int) $request->input('verified'));
+        }
+
         // Date range filter
         if ($request->filled('date_from')) {
             $query->where('datetime', '>=', $request->input('date_from'));
@@ -80,6 +100,9 @@ class UsersUploadsController extends Controller
         $photos = $query
             ->with([
                 'team',
+                'countryRelation',
+                'stateRelation',
+                'cityRelation',
                 'photoTags.category',
                 'photoTags.object',
                 'photoTags.type',
@@ -99,6 +122,10 @@ class UsersUploadsController extends Controller
                 'model' => $photo->model,
                 'picked_up' => $photo->picked_up,
                 'remaining' => $photo->remaining, // @deprecated — use picked_up
+                'verified' => $photo->verified,
+                'country' => $photo->countryRelation?->country,
+                'state' => $photo->stateRelation?->state,
+                'city' => $photo->cityRelation?->city,
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,
@@ -207,6 +234,60 @@ class UsersUploadsController extends Controller
             'leftToTag' => $leftToTag,
             'taggedPercentage' => $taggedPercentage
         ]);
+    }
+
+    /**
+     * Get hierarchical location data for the user's photos
+     */
+    public function locations(): JsonResponse
+    {
+        $user = Auth::user();
+
+        $photos = Photo::where('user_id', $user->id)
+            ->whereNotNull('country_id')
+            ->with(['countryRelation', 'stateRelation', 'cityRelation'])
+            ->get();
+
+        $tree = [];
+
+        foreach ($photos as $photo) {
+            $country = $photo->countryRelation?->country;
+            $state = $photo->stateRelation?->state;
+            $city = $photo->cityRelation?->city;
+
+            if (! $country) {
+                continue;
+            }
+
+            if (! isset($tree[$country])) {
+                $tree[$country] = [];
+            }
+
+            if ($state && ! isset($tree[$country][$state])) {
+                $tree[$country][$state] = [];
+            }
+
+            if ($state && $city && ! in_array($city, $tree[$country][$state], true)) {
+                $tree[$country][$state][] = $city;
+            }
+        }
+
+        $locations = [];
+        foreach ($tree as $country => $states) {
+            $stateList = [];
+            foreach ($states as $state => $cities) {
+                $stateList[] = [
+                    'state' => $state,
+                    'cities' => $cities,
+                ];
+            }
+            $locations[] = [
+                'country' => $country,
+                'states' => $stateList,
+            ];
+        }
+
+        return response()->json(['locations' => $locations]);
     }
 
     /**

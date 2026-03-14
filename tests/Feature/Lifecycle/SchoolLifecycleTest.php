@@ -85,7 +85,7 @@ class SchoolLifecycleTest extends TestCase
         $this->teacher = User::factory()->create([
             'name' => 'Ms. Murphy',
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => true,
             'picked_up' => null,
         ]);
@@ -107,7 +107,7 @@ class SchoolLifecycleTest extends TestCase
         $this->student = User::factory()->create([
             'name' => 'Alice Student',
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => true,
             'active_team' => $this->schoolTeam->id,
             'picked_up' => null,
@@ -524,7 +524,7 @@ class SchoolLifecycleTest extends TestCase
 
         $student2 = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => true,
             'active_team' => $this->schoolTeam->id,
             'picked_up' => null,
@@ -533,7 +533,7 @@ class SchoolLifecycleTest extends TestCase
 
         $student3 = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => true,
             'active_team' => $this->schoolTeam->id,
             'picked_up' => null,

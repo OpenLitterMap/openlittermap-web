@@ -122,9 +122,7 @@ trait HasPhotoUploads
             'city_id' => $locationData['city_id'],
             'model' => 'test model',
             'platform' => 'mobile',
-            'geohash' => $attributes['geoHash'],
             'team_id' => $user->active_team,
-            'suburb' => $attributes['address']['suburb'] ?? null,
             'address_array' => $attributes['address'],
             'geom' => DB::raw("ST_GeomFromText('POINT({$attributes['latitude']} {$attributes['longitude']})', 4326)"),
         ]);

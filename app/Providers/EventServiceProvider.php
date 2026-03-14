@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Events\ImageUploaded;
-use App\Events\ImageDeleted;
 use App\Events\Images\BadgeCreated;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
@@ -44,11 +43,6 @@ class EventServiceProvider extends ServiceProvider
 
             // Littercoin rewards — separate domain concern
             RewardLittercoin::class,
-        ],
-
-        // Phase 3: Delete — metrics reversal is synchronous in controllers
-        // (MetricsService::deletePhoto called before soft-delete)
-        ImageDeleted::class => [
         ],
 
         // School team approval — notify team members

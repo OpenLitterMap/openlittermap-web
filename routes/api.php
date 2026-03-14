@@ -42,7 +42,6 @@ use App\Http\Controllers\Location\GetListOfCountriesController;
 use App\Http\Controllers\Location\LocationController;
 use App\Http\Controllers\Location\TagController;
 use App\Http\Controllers\MapController;
-use App\Http\Controllers\Maps\GlobalMapController;
 use App\Http\Controllers\Maps\Search\FindCustomTagsController;
 use App\Http\Controllers\Merchants\BecomeAMerchantController;
 use App\Http\Controllers\PhotosController;
@@ -80,6 +79,7 @@ Route::group(['prefix' => 'v3', 'middleware' => ['auth:sanctum']], function () {
     Route::put('/tags', [PhotoTagsController::class, 'update']);
     Route::get('/user/photos', [UsersUploadsController::class, 'index']);
     Route::get('/user/photos/stats', [UsersUploadsController::class, 'stats']);
+    Route::get('/user/photos/locations', [UsersUploadsController::class, 'locations']);
 });
 
 /*
@@ -171,7 +171,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile/map', [ProfileController::class, 'geojson']);
     Route::get('/user/profile/download', [ProfileController::class, 'download']);
     Route::get('/user/profile/photos/index', [UserPhotoController::class, 'index']);
-    Route::get('/user/profile/photos/previous-custom-tags', [UserPhotoController::class, 'previousCustomTags']);
     Route::get('/user/profile/photos/filter', [UserPhotoController::class, 'filter']);
     Route::post('/user/profile/photos/tags/bulkTag', [UserPhotoController::class, 'bulkTag']);
     Route::post('/user/profile/photos/delete', [UserPhotoController::class, 'destroy']);
@@ -300,8 +299,6 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/global/points', [GlobalMapController::class, 'index']);
-Route::get('/global/art-data', [GlobalMapController::class, 'artData']);
 Route::get('/global/search/custom-tags', FindCustomTagsController::class);
 
 /*

@@ -59,7 +59,7 @@ class UserLifecycleTest extends TestCase
 
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false, // trusted user → auto-verify
             'picked_up' => null, // no default → remaining=true → no PickedUp bonus
         ]);
@@ -293,7 +293,7 @@ class UserLifecycleTest extends TestCase
     {
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'picked_up' => null,
         ]);
 
@@ -327,7 +327,7 @@ class UserLifecycleTest extends TestCase
     {
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false,
             'picked_up' => null,
         ]);
@@ -513,7 +513,7 @@ class UserLifecycleTest extends TestCase
     {
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false,
             'picked_up' => null,
         ]);

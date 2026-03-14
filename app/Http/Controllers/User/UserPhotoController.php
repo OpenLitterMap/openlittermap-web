@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\User;
 
 use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\Photos\GetPreviousCustomTagsAction;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
 use App\Traits\Photos\FilterPhotos;
@@ -111,11 +110,4 @@ class UserPhotoController extends Controller
         ];
     }
 
-    /**
-     * List of the user's previously added custom tags
-     */
-    public function previousCustomTags (GetPreviousCustomTagsAction $previousTagsAction)
-    {
-        return $previousTagsAction->run(request()->user());
-    }
 }

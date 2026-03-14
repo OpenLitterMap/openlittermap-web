@@ -60,7 +60,6 @@ GET    /api/user/profile/download                 → ProfileController@download
 # Photo management (SPA)
 GET    /api/user/profile/photos/index             → UserPhotoController@index
 GET    /api/user/profile/photos/filter            → UserPhotoController@filter
-GET    /api/user/profile/photos/previous-custom-tags → UserPhotoController@previousCustomTags
 POST   /api/user/profile/photos/tags/bulkTag      → UserPhotoController@bulkTag
 POST   /api/user/profile/photos/delete            → UserPhotoController@destroy
 

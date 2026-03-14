@@ -62,10 +62,6 @@ class RegisterController extends Controller
 
         event(new UserSignedUp(now()));
 
-        $user->images_remaining = 1000;
-        $user->verify_remaining = 5000;
-        $user->save();
-
         Auth::login($user);
 
         $token = $user->createToken('mobile');

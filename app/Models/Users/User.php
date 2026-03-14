@@ -73,37 +73,26 @@ class User extends Authenticatable
         'password',
         'email',
         'username',
-        'plan',
         'xp',
-        'total_images', // deprecated
         'level',
         'show_name',
         'show_username',
 
         'stripe_id',
-        'images_remaining',
-        'verify_remaining',
-        'has_uploaded',
 
         'emailsub',
         'sub_token',
         'eth_wallet',
         'littercoin_allowance',
-        'has_uploaded_today',
-        'has_uploaded_counter',
         'active_team',
-        'link_instagram',
         'verification_required',
         'username_flagged',
         'prevent_others_tagging_my_photos',
         'littercoin_owed',
         'littercoin_paid',
-        'count_correctly_verified',
         'previous_tags',
         'remaining_teams',
-        'photos_per_month',
         'bbox_verification_count',
-        'enable_admin_tagging'
     ];
 
     /**
@@ -112,11 +101,10 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token', 'role_id'
+        'password', 'remember_token',
     ];
 
     protected $guarded = [
-        'role_id'
     ];
 
     protected $attributes = [

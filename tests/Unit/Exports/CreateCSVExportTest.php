@@ -22,7 +22,7 @@ class CreateCSVExportTest extends TestCase
 
     public function test_it_has_correct_headings_for_all_categories_and_tags()
     {
-        $expected = ['id', 'verification', 'phone', 'date_taken', 'date_uploaded', 'lat', 'lon', 'picked up', 'address', 'total_litter'];
+        $expected = ['id', 'verification', 'phone', 'date_taken', 'date_uploaded', 'lat', 'lon', 'picked up', 'address', 'total_tags'];
 
         $categories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
         foreach ($categories as $category) {
@@ -63,7 +63,7 @@ class CreateCSVExportTest extends TestCase
             'lon' => 42.0,
             'remaining' => true,
             'address_array' => ['road' => '12345 Street', 'country' => 'Ireland'],
-            'total_litter' => 15,
+            'total_tags' => 15,
             'summary' => [
                 'tags' => [
                     ['clo_id' => $cloId1, 'category_id' => $category->id, 'object_id' => $obj1->id, 'quantity' => 5, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],

@@ -132,20 +132,6 @@ class UserAccountTest extends TestCase
         $this->assertNull($user->name);
     }
 
-    public function test_registered_user_has_correct_initial_limits(): void
-    {
-        Mail::fake();
-        Event::fake();
-
-        $this->postJson($this->registerRoute(), $this->validPayload());
-
-        $user = User::where('email', 'test@example.com')->first();
-
-        $this->assertNotNull($user);
-        $this->assertEquals(1000, $user->images_remaining);
-        $this->assertEquals(5000, $user->verify_remaining);
-    }
-
     public function test_password_is_hashed(): void
     {
         Mail::fake();

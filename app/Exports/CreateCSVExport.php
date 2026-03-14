@@ -70,7 +70,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'lon',
             'picked up',
             'address',
-            'total_litter',
+            'total_tags',
         ];
 
         foreach ($this->categoryObjects as $category) {
@@ -101,7 +101,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->lon,
             $row->remaining ? 'No' : 'Yes',
             $row->display_name,
-            $row->summary['totals']['litter'] ?? $row->total_litter,
+            $row->summary['totals']['litter'] ?? $row->total_tags,
         ];
 
         $tags = $row->summary['tags'] ?? [];

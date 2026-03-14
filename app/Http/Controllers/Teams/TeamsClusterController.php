@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
-use App\Traits\FilterPhotosByGeoHashTrait;
 use App\Traits\GeoJson\CreateGeoJsonPoints;
 use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 class TeamsClusterController extends Controller
 {
     use CreateGeoJsonPoints;
-    use FilterPhotosByGeoHashTrait;
 
     /**
      * GET /api/teams/clusters/{team}
@@ -93,6 +92,7 @@ class TeamsClusterController extends Controller
      * GET /api/teams/points/{team}
      *
      * Returns individual photo points at deep zoom levels.
+     * Uses lat/lon bounding box filtering.
      */
     public function points(Request $request, int $team): array
     {
@@ -110,7 +110,6 @@ class TeamsClusterController extends Controller
                 'team_id',
                 'summary',
                 'filename',
-                'geohash',
                 'lat',
                 'lon',
                 'remaining',
@@ -124,12 +123,71 @@ class TeamsClusterController extends Controller
             ])
             ->whereTeamId($team);
 
-        $photos = $this->filterPhotosByGeoHash(
-            $query,
-            $request->bbox,
-            $request->layers ?: null
-        )->get();
+        // Bounding box filter using lat/lon
+        if ($request->bbox && is_array($request->bbox)) {
+            $bbox = $request->bbox;
+            $west = (float) ($bbox['left'] ?? $bbox[0] ?? -180);
+            $south = (float) ($bbox['bottom'] ?? $bbox[1] ?? -90);
+            $east = (float) ($bbox['right'] ?? $bbox[2] ?? 180);
+            $north = (float) ($bbox['top'] ?? $bbox[3] ?? 90);
+
+            $query->whereBetween('lat', [$south, $north]);
+
+            if ($west > $east) {
+                // Crosses dateline
+                $query->where(function ($q) use ($west, $east) {
+                    $q->where('lon', '>=', $west)->orWhere('lon', '<=', $east);
+                });
+            } else {
+                $query->whereBetween('lon', [$west, $east]);
+            }
+        }
+
+        $photos = $query->limit(5000)->get();
 
         return $this->photosToGeojson($photos);
+    }
+
+    /**
+     * Convert photos to a GeoJSON FeatureCollection for map rendering.
+     */
+    private function photosToGeojson($photos): array
+    {
+        $features = $photos->map(function (Photo $photo) {
+            $name = $photo->user->show_name_maps ? $photo->user->name : null;
+            $username = $photo->user->show_username_maps ? $photo->user->username : null;
+            $team = $photo->team ? $photo->team->name : null;
+            $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value)
+                ? $photo->filename
+                : '/assets/images/waiting.png';
+            $summary = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->summary : null;
+
+            return [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [$photo->lat, $photo->lon],
+                ],
+                'properties' => [
+                    'photo_id' => $photo->id,
+                    'summary' => $summary,
+                    'filename' => $filename,
+                    'datetime' => $photo->datetime,
+                    'cluster' => false,
+                    'verified' => $photo->verified,
+                    'name' => $name,
+                    'username' => $username,
+                    'team' => $team,
+                    'picked_up' => $photo->picked_up,
+                    'social' => $photo->user->social_links,
+                    'custom_tags' => $photo->customTags->pluck('tag'),
+                ],
+            ];
+        })->toArray();
+
+        return [
+            'type' => 'FeatureCollection',
+            'features' => $features,
+        ];
     }
 }

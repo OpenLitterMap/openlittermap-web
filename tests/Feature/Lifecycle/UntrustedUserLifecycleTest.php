@@ -59,7 +59,7 @@ class UntrustedUserLifecycleTest extends TestCase
         // === STEP 1: Create untrusted user ===
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => true, // untrusted
             'picked_up' => null,
         ]);

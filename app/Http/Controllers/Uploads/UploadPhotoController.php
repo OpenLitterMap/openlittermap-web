@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Uploads;
 
-use Geohash\GeoHash;
-
 use App\Models\Photo;
 
 use App\Events\ImageUploaded;
@@ -115,7 +113,6 @@ class UploadPhotoController extends Controller
             'state_id' => $location->state->id,
             'city_id' => $location->city->id,
             'platform' => $hasExplicit ? 'mobile' : 'web',
-            'geohash' => (new GeoHash())->encode($lat, $lon),
             'team_id' => $request->attributes->get('participant_team')?->id ?? $user->active_team,
             'participant_id' => $request->attributes->get('participant')?->id,
             'five_hundred_square_filepath' => $bboxImageName,

@@ -57,7 +57,7 @@ class EdgeCaseLifecycleTest extends TestCase
     {
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false,
             'picked_up' => null,
         ]);
@@ -128,7 +128,7 @@ class EdgeCaseLifecycleTest extends TestCase
     {
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false,
             'picked_up' => null,
         ]);
@@ -458,7 +458,7 @@ class EdgeCaseLifecycleTest extends TestCase
     {
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false,
             'picked_up' => null,
         ]);

@@ -65,7 +65,7 @@ class TrustedUserLifecycleTest extends TestCase
         // === STEP 1: Create account — clean slate ===
         $user = User::factory()->create([
             'xp' => 0,
-            'total_images' => 0,
+
             'verification_required' => false, // trusted
             'picked_up' => null,
         ]);

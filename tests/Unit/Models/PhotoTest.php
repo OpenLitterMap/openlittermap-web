@@ -39,13 +39,10 @@ class PhotoTest extends TestCase
                 // Core
                 'id', 'user_id', 'filename', 'model', 'datetime', 'lat', 'lon',
                 'verification', 'verified', 'remaining', 'platform',
-                'created_at', 'updated_at',
+                'is_public', 'created_at', 'updated_at', 'deleted_at',
 
                 // Location FKs
                 'country_id', 'state_id', 'city_id',
-
-                // Location strings (kept)
-                'suburb', 'state_district',
 
                 // v5 tagging
                 'summary', 'xp', 'total_tags', 'total_brands',
@@ -55,32 +52,32 @@ class PhotoTest extends TestCase
                 'processed_at', 'processed_fp', 'processed_tags', 'processed_xp',
 
                 // Legacy (still in schema, removed post-migration)
-                'result_string', 'total_litter',
+                'result_string',
 
                 // Category FKs (deprecated — removed post-migration)
                 'smoking_id', 'alcohol_id', 'coffee_id', 'food_id',
                 'softdrinks_id', 'dumping_id', 'sanitary_id', 'industrial_id',
                 'other_id', 'coastal_id', 'art_id', 'brands_id',
                 'trashdog_id', 'dogshit_id', 'material_id',
-                'drugs_id', 'pathways_id', 'political_id',
+                'drugs_id', 'pathways_id',
 
                 // Verification / admin
-                'verified_by', 'incorrect_verification',
-                'wrong_tags', 'wrong_tags_by',
+                'verified_by',
 
                 // Bounding box / AI
-                'bounding_box', 'geohash',
+                'bounding_box',
                 'bbox_skipped', 'skipped_by', 'bbox_assigned_to',
                 'bbox_verification_assigned_to', 'five_hundred_square_filepath',
 
                 // Clustering
-                'tile_key',
+                'tile_key', 'cell_x', 'cell_y',
+
+                // Spatial
+                'geom',
 
                 // Teams
-                'team_id',
-
-                // Other
-                'generated',
+                'team_id', 'team_approved_at', 'team_approved_by',
+                'participant_id',
             ])
         );
     }
@@ -90,6 +87,10 @@ class PhotoTest extends TestCase
         $droppedColumns = [
             'display_name', 'location', 'road',
             'city', 'county', 'country', 'country_code',
+            'geohash', 'total_litter',
+            'suburb', 'state_district',
+            'incorrect_verification', 'wrong_tags', 'wrong_tags_by',
+            'generated', 'political_id',
         ];
 
         foreach ($droppedColumns as $column) {
@@ -254,22 +255,6 @@ class PhotoTest extends TestCase
             $smoking->translate() . $food->translate(),
             $photo->result_string
         );
-    }
-
-    /** @deprecated Remove after v5 migration - tests $photo->total() */
-    public function test_a_photo_has_a_count_of_total_litter_in_it()
-    {
-        $smoking = Smoking::factory(['butts' => 1])->create();
-        $brands = Brand::factory(['walkers' => 1])->create();
-        $photo = Photo::factory()->create([
-            'smoking_id' => $smoking->id,
-            'brands_id' => $brands->id,
-        ]);
-
-        $photo->total();
-
-        // Brands are not calculated
-        $this->assertEquals($smoking->total(), $photo->total_litter);
     }
 
     /** @deprecated Remove after v5 migration - tests $photo->tags() */

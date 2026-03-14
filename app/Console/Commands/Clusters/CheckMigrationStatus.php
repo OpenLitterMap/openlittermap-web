@@ -66,7 +66,7 @@ class CheckMigrationStatus extends Command
 
         // legacy columns lingering?
         $legacy = array_filter(
-            ['point_count_abbreviated','geohash','created_at','id'],
+            ['point_count_abbreviated','created_at','id'],
             fn ($c) => Schema::hasColumn('clusters', $c)
         );
         $legacy

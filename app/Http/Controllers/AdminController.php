@@ -54,7 +54,7 @@ class AdminController extends Controller
         }
         $upm = json_encode($upm);
 
-        $usersUploaded = User::where('has_uploaded', 1)->get();
+        $usersUploaded = User::whereHas('photos')->get();
 
         $usersUploaded = $usersUploaded->groupBy(function ($val) {
             return Carbon::parse($val->created_at)->format('m-y');
