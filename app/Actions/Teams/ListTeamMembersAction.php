@@ -2,7 +2,7 @@
 
 namespace App\Actions\Teams;
 
-
+use App\Models\Photo;
 use App\Models\Teams\Team;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class ListTeamMembersAction
 {
     /**
-     * Load team members ranked by total litter.
+     * Load team members ranked by total tags (live query).
      *
      * Privacy is applied in two layers:
      * - School teams (safeguarding=true): real names returned here;
@@ -19,10 +19,22 @@ class ListTeamMembersAction
      */
     public function run(Team $team): Paginator
     {
+        $teamId = $team->id;
+
         $query = $team
             ->users()
-            ->withPivot('total_photos', 'total_litter', 'updated_at', 'show_name_leaderboards', 'show_username_leaderboards')
-            ->orderBy('pivot_total_litter', 'desc');
+            ->withPivot('show_name_leaderboards', 'show_username_leaderboards')
+            ->addSelect([
+                'member_total_photos' => Photo::query()
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('photos.user_id', 'users.id')
+                    ->where('photos.team_id', $teamId),
+                'member_total_tags' => Photo::query()
+                    ->selectRaw('COALESCE(SUM(total_tags), 0)')
+                    ->whereColumn('photos.user_id', 'users.id')
+                    ->where('photos.team_id', $teamId),
+            ])
+            ->orderByDesc('member_total_tags');
 
         if ($team->safeguarding) {
             return $query->simplePaginate(10, [
@@ -31,7 +43,6 @@ class ListTeamMembersAction
                 'users.username',
                 'users.active_team',
                 'users.updated_at',
-                'total_photos',
             ]);
         }
 
@@ -41,7 +52,6 @@ class ListTeamMembersAction
             DB::raw("if(`team_user`.`show_username_leaderboards` = 1, `username`, '') as username"),
             'users.active_team',
             'users.updated_at',
-            'total_photos',
         ]);
     }
 }

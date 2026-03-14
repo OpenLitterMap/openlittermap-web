@@ -245,7 +245,11 @@ class UpdateClusters extends Command
     private function clusterAllTeams(): void
     {
         $teams = DB::table('teams')
-            ->where('total_images', '>', 0)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('photos')
+                    ->whereColumn('photos.team_id', 'teams.id');
+            })
             ->pluck('id', 'name');
 
         if ($teams->isEmpty()) {

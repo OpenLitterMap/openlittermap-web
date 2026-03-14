@@ -103,13 +103,14 @@ point_count   BIGINT UNSIGNED   -- Photos in cluster
 grid_size     DECIMAL(6,3)
 ```
 
-### Dirty tables
+### Dirty tiles table
 ```sql
 dirty_tiles: tile_key (PK), changed_at, attempts
-dirty_teams: team_id (PK), changed_at, attempts
 ```
 
-Both use upsert with backoff: after 3 attempts, `changed_at` advances by 5 minutes. Auto-cleaned after 24 hours.
+Uses upsert with backoff: after 3 attempts, `changed_at` advances by 5 minutes. Auto-cleaned after 24 hours.
+
+**Note:** `dirty_teams` table was dropped (2026-03-14). Team clustering is now on-demand only via `clustering:update --team=ID` or `--all-teams`.
 
 ## API Endpoints
 

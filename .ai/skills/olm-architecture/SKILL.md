@@ -309,7 +309,7 @@ User model `next_level` accessor calls LevelService. Frontend reads `user.next_l
 
 ## API Field Naming Convention
 
-All list/leaderboard endpoints use: `total_tags`, `total_images`, `total_members`, `created_at`, `updated_at`. Never use old names: `total_litter`, `tags`, `photos`, `contributors`, `members`.
+All list/leaderboard endpoints use: `total_tags`, `total_photos`, `total_members`, `created_at`, `updated_at`. Never use old names: `total_litter`, `total_images`, `tags`, `photos`, `contributors`, `members`.
 
 ## Clustering
 
@@ -319,7 +319,7 @@ Grid-based, 9 zoom levels (0,2,4,6,8,10,12,14,16). Two tiers:
 
 Photos need `verified >= ADMIN_APPROVED` and `is_public = true` to appear in clusters.
 
-`MarkTilesAndTeamsDirty` listener marks affected tiles when photos are verified/approved.
+`PhotoObserver` marks affected tiles dirty when photos are verified/moved. Team dirty tracking was removed — team clustering is on-demand only.
 
 ## Testing Patterns
 

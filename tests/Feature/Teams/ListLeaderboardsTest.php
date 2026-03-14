@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Teams;
 
+use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
@@ -13,16 +14,32 @@ use Tests\TestCase;
 
 class ListLeaderboardsTest extends TestCase
 {
+    /**
+     * Create N photos for a team with the given total_tags.
+     */
+    private function createTeamPhotos(Team $team, int $count, int $totalTagsEach = 1): void
+    {
+        $user = User::factory()->create();
+        Photo::factory($count)->create([
+            'user_id' => $user->id,
+            'team_id' => $team->id,
+            'total_tags' => $totalTagsEach,
+        ]);
+    }
+
     public function test_it_can_list_the_global_teams_leaderboards()
     {
         /** @var User $user */
         $user = User::factory()->create();
 
-        Team::factory(3)->sequence(
-            ['total_litter' => 1, 'members' => 5, 'total_images' => 10],
-            ['total_litter' => 2, 'members' => 3, 'total_images' => 20],
-            ['total_litter' => 3, 'members' => 8, 'total_images' => 30],
-        )->create();
+        $teams = Team::factory(3)->create(['members' => 1]);
+
+        // Team 1: 1 photo, 1 tag each = 1 total tag
+        $this->createTeamPhotos($teams[0], 1, 1);
+        // Team 2: 2 photos, 1 tag each = 2 total tags
+        $this->createTeamPhotos($teams[1], 2, 1);
+        // Team 3: 1 photo, 3 tags = 3 total tags
+        $this->createTeamPhotos($teams[2], 1, 3);
 
         $result = $this
             ->actingAs($user)
@@ -35,15 +52,15 @@ class ListLeaderboardsTest extends TestCase
                 $json->has('data.0.type_name');
                 $json->has('data.0.total_members');
                 $json->has('data.0.total_tags');
-                $json->has('data.0.total_images');
+                $json->has('data.0.total_photos');
                 $json->has('data.0.created_at');
                 $json->missing('data.0.total_litter');
+                $json->missing('data.0.total_images');
                 $json->etc();
             })
             ->json();
 
         $this->assertEquals([3, 2, 1], array_column($result['data'], 'total_tags'));
-        $this->assertEquals([8, 3, 5], array_column($result['data'], 'total_members'));
     }
 
     public function test_it_does_not_include_teams_that_dont_want_to_be_in_leaderboards()
@@ -51,11 +68,15 @@ class ListLeaderboardsTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create();
 
-        Team::factory(3)->sequence(
-            ['total_litter' => 1],
-            ['total_litter' => 2, 'leaderboards' => false],
-            ['total_litter' => 3],
+        $teams = Team::factory(3)->sequence(
+            [],
+            ['leaderboards' => false],
+            [],
         )->create();
+
+        $this->createTeamPhotos($teams[0], 1, 1);
+        $this->createTeamPhotos($teams[1], 1, 2);
+        $this->createTeamPhotos($teams[2], 1, 3);
 
         $result = $this
             ->actingAs($user)
@@ -72,7 +93,10 @@ class ListLeaderboardsTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create();
 
-        Team::factory(30)->create(['total_litter' => 1]);
+        $teams = Team::factory(30)->create();
+        foreach ($teams as $team) {
+            $this->createTeamPhotos($team, 1, 1);
+        }
 
         $this->actingAs($user)
             ->getJson('/api/teams/leaderboard')

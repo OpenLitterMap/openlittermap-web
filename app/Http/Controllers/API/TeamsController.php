@@ -38,17 +38,28 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $teams = $user->teams->map(fn ($team) => [
-            'id' => $team->id,
-            'name' => $team->name,
-            'identifier' => $team->identifier,
-            'type_name' => $team->type_name,
-            'total_members' => $team->members,
-            'total_tags' => $team->total_litter,
-            'total_images' => $team->total_images,
-            'created_at' => $team->created_at,
-            'updated_at' => $team->updated_at,
-        ]);
+        $teams = $user->teams()
+            ->addSelect([
+                'teams.*',
+                'team_total_photos' => \App\Models\Photo::query()
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('photos.team_id', 'teams.id'),
+                'team_total_tags' => \App\Models\Photo::query()
+                    ->selectRaw('COALESCE(SUM(total_tags), 0)')
+                    ->whereColumn('photos.team_id', 'teams.id'),
+            ])
+            ->get()
+            ->map(fn ($team) => [
+                'id' => $team->id,
+                'name' => $team->name,
+                'identifier' => $team->identifier,
+                'type_name' => $team->type_name,
+                'total_members' => $team->members,
+                'total_tags' => (int) $team->team_total_tags,
+                'total_photos' => (int) $team->team_total_photos,
+                'created_at' => $team->created_at,
+                'updated_at' => $team->updated_at,
+            ]);
 
         return $this->success(['teams' => $teams]);
     }

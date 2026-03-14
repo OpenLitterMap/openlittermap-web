@@ -23,6 +23,7 @@ class MigrationScript extends Command
     protected $signature = 'olm:v5
         {--skip-locations : Skip the locations cleanup step}
         {--skip-redis-flush : Skip the Redis FLUSHDB step (useful when resuming a partial migration)}
+        {--skip-teams : Skip team data rebuild (members recalc + cluster regeneration)}
         {--user= : Specific user ID to migrate}
         {--batch=500 : Number of photos per batch}';
 
@@ -63,6 +64,12 @@ class MigrationScript extends Command
         }
 
         $this->runMigration();
+        $this->resetUntaggedVerifiedPhotos();
+
+        if (! $this->option('skip-teams')) {
+            $this->recalculateTeamMembers();
+            $this->rebuildTeamClusters();
+        }
 
         return self::SUCCESS;
     }
@@ -449,5 +456,90 @@ class MigrationScript extends Command
         }
 
         return sprintf('%dm %ds', $minutes, $remainingSeconds);
+    }
+
+    /**
+     * Reset photos that are verified >= 2 but have no tags.
+     *
+     * Trusted users' photos were auto-promoted to ADMIN_APPROVED on upload
+     * even when untagged. This puts them back to UNVERIFIED so they're off
+     * the map and back in the untagged queue.
+     */
+    private function resetUntaggedVerifiedPhotos(): void
+    {
+        $this->newLine();
+        $this->info('═══════════════════════════════');
+        $this->info('Resetting untagged verified photos');
+        $this->info('═══════════════════════════════');
+
+        $count = DB::table('photos')
+            ->where('verified', '>=', 2)
+            ->where('total_tags', 0)
+            ->whereNull('summary')
+            ->count();
+
+        if ($count === 0) {
+            $this->info('No untagged verified photos found.');
+            return;
+        }
+
+        $this->info("Found {$count} photos with verified >= 2 but no tags — resetting to 0 (UNVERIFIED)");
+
+        $affected = DB::table('photos')
+            ->where('verified', '>=', 2)
+            ->where('total_tags', 0)
+            ->whereNull('summary')
+            ->update(['verified' => 0]);
+
+        $this->info("✓ Reset {$affected} photos to UNVERIFIED");
+    }
+
+    /**
+     * Recalculate teams.members from actual team_user pivot count.
+     */
+    private function recalculateTeamMembers(): void
+    {
+        $this->newLine();
+        $this->info('═══════════════════════════════');
+        $this->info('Recalculating team member counts');
+        $this->info('═══════════════════════════════');
+
+        $teams = DB::table('teams')->get(['id', 'name', 'members']);
+        $fixed = 0;
+
+        foreach ($teams as $team) {
+            $actual = DB::table('team_user')->where('team_id', $team->id)->count();
+
+            if ($actual !== $team->members) {
+                $this->warn("  Team {$team->id} ({$team->name}): {$team->members} → {$actual}");
+                DB::table('teams')->where('id', $team->id)->update(['members' => $actual]);
+                $fixed++;
+            }
+        }
+
+        if ($fixed === 0) {
+            $this->info('All team member counts are correct.');
+        } else {
+            $this->info("✓ Fixed {$fixed} team(s)");
+        }
+    }
+
+    /**
+     * Rebuild cluster data for all teams with photos.
+     */
+    private function rebuildTeamClusters(): void
+    {
+        $this->newLine();
+        $this->info('═══════════════════════════════');
+        $this->info('Rebuilding team clusters');
+        $this->info('═══════════════════════════════');
+
+        $exitCode = Artisan::call('clustering:update', ['--all-teams' => true], $this->output);
+
+        if ($exitCode === 0) {
+            $this->info('✓ Team clusters rebuilt');
+        } else {
+            $this->warn("⚠ Team clustering exited with code {$exitCode}");
+        }
     }
 }

@@ -188,7 +188,7 @@ INDEX photos_public_verified_idx ON photos(is_public, verified)
 // 2. If processed: MetricsService::deletePhoto() → reverse metrics
 // 3. DeletePhotoAction → S3 cleanup
 // 4. $photo->delete() → soft-delete
-// 5. Decrement photo owner's XP and total_images
+// 5. Decrement photo owner's XP
 ```
 
 ### Teacher revoke flow

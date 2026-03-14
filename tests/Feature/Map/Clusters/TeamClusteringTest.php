@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Map\Clusters;
 
-use App\Enums\VerificationStatus;
-use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
@@ -296,99 +294,4 @@ class TeamClusteringTest extends TestCase
         $this->assertGreaterThan(0, $clusters);
     }
 
-    /** @test */
-    public function mark_team_dirty_creates_dirty_team_entry(): void
-    {
-        $this->service->markTeamDirty($this->team->id);
-
-        $dirty = DB::table('dirty_teams')
-            ->where('team_id', $this->team->id)
-            ->first();
-
-        $this->assertNotNull($dirty);
-        $this->assertEquals(0, $dirty->attempts);
-    }
-
-    /** @test */
-    public function mark_team_dirty_with_backoff_increments_attempts(): void
-    {
-        $this->service->markTeamDirty($this->team->id);
-        $this->service->markTeamDirty($this->team->id, true);
-
-        $dirty = DB::table('dirty_teams')
-            ->where('team_id', $this->team->id)
-            ->first();
-
-        $this->assertGreaterThanOrEqual(1, $dirty->attempts);
-    }
-
-    /** @test */
-    public function process_dirty_command_processes_dirty_teams(): void
-    {
-        $this->createPhotosAt(51.5, -0.1, 5, [
-            'team_id' => $this->team->id,
-            'user_id' => $this->user->id,
-            'verified' => 2,
-        ]);
-
-        $this->service->backfillPhotoTileKeys();
-        $this->service->markTeamDirty($this->team->id);
-
-        $this->artisan('clustering:process-dirty')
-            ->assertExitCode(0);
-
-        // Team should be processed and removed from dirty_teams
-        $this->assertNull(
-            DB::table('dirty_teams')->where('team_id', $this->team->id)->first()
-        );
-
-        // Clusters should exist for the team
-        $clusters = DB::table('clusters')
-            ->where('team_id', $this->team->id)
-            ->count();
-
-        $this->assertGreaterThan(0, $clusters);
-    }
-
-    /** @test */
-    public function photo_observer_marks_team_dirty_on_verified_photo_save(): void
-    {
-        $photo = Photo::factory()->create([
-            'user_id' => $this->user->id,
-            'team_id' => $this->team->id,
-            'verified' => VerificationStatus::ADMIN_APPROVED,
-            'lat' => 51.5,
-            'lon' => -0.1,
-        ]);
-
-        // Change coordinates to trigger observer
-        $photo->lat = 51.6;
-        $photo->save();
-
-        $dirty = DB::table('dirty_teams')
-            ->where('team_id', $this->team->id)
-            ->first();
-
-        $this->assertNotNull($dirty);
-    }
-
-    /** @test */
-    public function photo_observer_marks_team_dirty_on_delete(): void
-    {
-        $photo = Photo::factory()->create([
-            'user_id' => $this->user->id,
-            'team_id' => $this->team->id,
-            'verified' => VerificationStatus::ADMIN_APPROVED,
-            'lat' => 51.5,
-            'lon' => -0.1,
-        ]);
-
-        $photo->delete();
-
-        $dirty = DB::table('dirty_teams')
-            ->where('team_id', $this->team->id)
-            ->first();
-
-        $this->assertNotNull($dirty);
-    }
 }

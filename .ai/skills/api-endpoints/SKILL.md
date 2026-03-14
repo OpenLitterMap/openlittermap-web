@@ -61,7 +61,7 @@ All API routes live in `routes/api.php`. The API serves two clients: the Vue 3 S
 6. **Public endpoints must filter `is_public = true`.** All map/points/global/community endpoints use `Photo::public()` scope or explicit `where('is_public', true)`.
 7. **v3 is the current API version.** New endpoints go in the v3 group. All legacy v1/v2 endpoints have been removed.
 8. **Location API uses `locations`/`location_type` keys.** Not `children`/`children_type`. The `{type}` parameter accepts `country`, `state`, or `city`.
-9. **Consistent API field naming convention.** All list/leaderboard endpoints (teams, locations, global stats) use: `total_tags`, `total_images`, `total_members`, `created_at`, `updated_at`. Never use old names like `total_litter`, `tags`, `photos`, `contributors`.
+9. **Consistent API field naming convention.** All list/leaderboard endpoints (teams, locations, global stats) use: `total_tags`, `total_photos`, `total_members`, `created_at`, `updated_at`. Never use old names like `total_litter`, `total_images`, `tags`, `photos`, `contributors`.
 9. **Points API returns `page` (not `current_page`).** Frontend normalizes to `current_page` in `pointsHelper.getPaginationData()`.
 10. **Delete account is GDPR-compliant.** Photos are preserved as anonymous contributions (`user_id` set to NULL via DB CASCADE). Redis leaderboards and per-user metrics are cleaned up.
 

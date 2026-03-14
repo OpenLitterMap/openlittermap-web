@@ -9,13 +9,7 @@ class JoinTeamAction
 {
     public function run(User $user, Team $team)
     {
-        // Have the user join this team and restore their contributions
-        $userPhotosOnThisTeam = $user->photos()->whereTeamId($team->id);
-
-        $user->teams()->attach($team, [
-            'total_photos' => $userPhotosOnThisTeam->count(),
-            'total_litter' => $userPhotosOnThisTeam->sum('total_tags')
-        ]);
+        $user->teams()->attach($team);
 
         $this->setAsActiveTeamIfNull($user, $team);
 

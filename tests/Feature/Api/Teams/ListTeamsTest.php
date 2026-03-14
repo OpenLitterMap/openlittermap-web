@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\Teams;
 
+use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
@@ -14,10 +15,17 @@ class ListTeamsTest extends TestCase
     {
         // User joins a team -------------------------
         $user = User::factory()->create();
-        $team = Team::factory()->create();
+        $otherUser = User::factory()->create();
+        $team = Team::factory()->create(['members' => 2]);
         $otherTeam = Team::factory()->create();
         $user->teams()->attach($team);
-        $team->update(['members' => 2, 'total_litter' => 15, 'total_images' => 5]);
+
+        // Create 5 photos with 3 tags each = 15 total tags
+        Photo::factory(5)->create([
+            'user_id' => $user->id,
+            'team_id' => $team->id,
+            'total_tags' => 3,
+        ]);
 
         // User lists his teams ------------------------
         $response = $this->actingAs($user)
@@ -31,8 +39,9 @@ class ListTeamsTest extends TestCase
         $this->assertEquals('community', $response[0]['type_name']);
         $this->assertEquals(2, $response[0]['total_members']);
         $this->assertEquals(15, $response[0]['total_tags']);
-        $this->assertEquals(5, $response[0]['total_images']);
+        $this->assertEquals(5, $response[0]['total_photos']);
         $this->assertArrayNotHasKey('total_litter', $response[0]);
+        $this->assertArrayNotHasKey('total_images', $response[0]);
     }
 
     public function test_it_can_list_all_available_team_types()

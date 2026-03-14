@@ -269,24 +269,6 @@ class ClusteringService
     }
 
     /**
-     * Mark a team as needing reclustering
-     */
-    public function markTeamDirty(int $teamId, bool $withBackoff = false): void
-    {
-        $changedAt = $withBackoff
-            ? now()->addMinutes(1)
-            : now();
-
-        DB::statement('
-            INSERT INTO dirty_teams (team_id, changed_at, attempts)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                changed_at = IF(attempts < 3, VALUES(changed_at), changed_at + INTERVAL 5 MINUTE),
-                attempts = attempts + 1
-        ', [$teamId, $changedAt, $withBackoff ? 1 : 0]);
-    }
-
-    /**
      * Get clustering statistics
      */
     public function getStats(): array
