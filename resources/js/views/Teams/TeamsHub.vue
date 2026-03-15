@@ -380,7 +380,7 @@ const sortedSidebarTeams = computed(() => {
     const active = teams.value.filter((t) => t.id === selectedTeamId.value);
     const rest = teams.value
         .filter((t) => t.id !== selectedTeamId.value)
-        .sort((a, b) => (b.total_images || 0) - (a.total_images || 0));
+        .sort((a, b) => (b.total_photos || 0) - (a.total_photos || 0));
     return [...active, ...rest];
 });
 const dashboard = computed(() => teamsStore.dashboard);

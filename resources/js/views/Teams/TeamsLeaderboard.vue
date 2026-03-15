@@ -34,7 +34,7 @@
                             </td>
                             <td class="px-4 py-3 font-medium">{{ team.name }}</td>
                             <td class="px-4 py-3 text-right tabular-nums">{{ team.total_tags?.toLocaleString() }}</td>
-                            <td class="px-4 py-3 text-right tabular-nums">{{ team.total_images?.toLocaleString() }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums">{{ team.total_photos?.toLocaleString() }}</td>
                             <td class="px-4 py-3 text-right text-slate-500 text-xs">
                                 {{ formatDate(team.created_at) }}
                             </td>

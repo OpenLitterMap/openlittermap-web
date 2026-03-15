@@ -2,7 +2,9 @@
 
 namespace App\Models\Teams;
 
+use App\Models\Photo;
 use App\Models\Teams\TeamType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -62,10 +64,24 @@ class Team extends Model
         return $this->belongsTo(TeamType::class, 'type_id');
     }
 
-    // double check this
-    public function photos ()
+    public function photos(): HasMany
     {
-        return $this->hasManyThrough('App\Models\Users\User', 'App\Models\Photo');
+        return $this->hasMany(Photo::class, 'team_id');
+    }
+
+    /**
+     * Add total_photos and total_tags as correlated subqueries.
+     */
+    public function scopeWithPhotoStats(Builder $query): void
+    {
+        $query->addSelect([
+            'total_photos' => Photo::query()
+                ->selectRaw('COUNT(*)')
+                ->whereColumn('photos.team_id', 'teams.id'),
+            'total_tags' => Photo::query()
+                ->selectRaw('COALESCE(SUM(total_tags), 0)')
+                ->whereColumn('photos.team_id', 'teams.id'),
+        ]);
     }
 
     public function isSchool(): bool

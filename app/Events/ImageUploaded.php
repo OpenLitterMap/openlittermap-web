@@ -32,24 +32,24 @@ class ImageUploaded implements ShouldBroadcast
         User $user,
         Photo $photo,
         Country $country,
-        State $state,
-        City $city
+        ?State $state,
+        ?City $city
     )
     {
         $this->user = [
             'name' => $user->show_name_maps ? $user->name : '',
             'username' => $user->show_username_maps ? $user->username : '',
         ];
-        $this->city = $city->city;
-        $this->state = $state->state;
+        $this->city = $city?->city;
+        $this->state = $state?->state;
         $this->country = $country->country;
         $this->countryCode = $country->shortcode;
         $this->teamName = $user->team->name ?? null;
         $this->userId = $user->id;
         $this->photoId = $photo->id;
         $this->countryId = $country->id;
-        $this->stateId = $state->id;
-        $this->cityId = $city->id;
+        $this->stateId = $state?->id;
+        $this->cityId = $city?->id;
         $this->latitude = $photo->lat;
         $this->longitude = $photo->lon;
         $this->isUserVerified = $user->is_trusted;

@@ -114,7 +114,7 @@ Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, 
 
 ## Current Branch: `upgrade/tagging-2025`
 
-Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations, lifecycle tests. 972 tests passing.
+Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations, lifecycle tests. 1010+ tests passing.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -122,7 +122,7 @@ UN-endorsed Digital Public Good for environmental citizen science.
 Built by a single developer over 17 years.
 
 ## Key Architectural Invariants
-- `photos.remaining` is deprecated — use `$photo->picked_up` accessor (returns `!remaining`). API responses include both fields; new code should use `picked_up`. `photo_tags.picked_up` is a separate nullable column for per-tag granularity.
+- `photos.remaining` is deprecated (drop post-migration) — `picked_up` is now per-tag on `photo_tags.picked_up` (nullable boolean: true/false/null). XP bonus is +5 per object quantity where `picked_up=true` (not photo-level). Brand-only, material-only, and custom-only tags don't get the picked_up bonus.
 - `users.total_images` is deprecated — profile upload counts use `Photo::where('user_id', $id)->count()` as fallback when Redis is empty. Do NOT increment/decrement `total_images` in new code.
 - School team photos: `is_public=false` until teacher approval (see `readme/SchoolPipeline.md`)
 - `TagsVerifiedByAdmin` fires for ALL non-school users at tag time (leaderboard credit is immediate). Only school students wait for teacher approval
@@ -161,7 +161,7 @@ Built by a single developer over 17 years.
 
 ## Level System
 XP-threshold based levels defined in `config/levels.php`. `LevelService::getUserLevel($xp)` returns level info.
-- Thresholds: 0 (Complete Noob), 100 (Less of a Noob), 500 (Post-Noob), 1000 (Litter Wizard), 5000 (Trash Warrior), 10000 (Early Guardian), 15000 (Trashmonster), 50000 (Force of Nature), 100000 (Planet Protector), 200000 (Galactic Garbagething), 500000 (Interplanetary), 1000000 (SuperIntelligent LitterMaster)
+- Thresholds: 0 (Noob), 100 (Noobish), 500 (Post-Noob), 1000 (Litter Wizard), 5000 (Trash Warrior), 10000 (Early Guardian), 15000 (Trashmonster), 50000 (Force of Nature), 100000 (Planet Protector), 200000 (Galactic Garbagething), 500000 (Interplanetary), 1000000 (SuperIntelligent LitterMaster)
 - User model `next_level` accessor calls `LevelService::getUserLevel()` — returns `level`, `title`, `xp_for_next`, `xp_into_level`, `progress_percent`
 - Frontend reads `user.next_level.title` and `user.next_level.xp_for_next` for display
 
@@ -174,7 +174,7 @@ XP-threshold based levels defined in `config/levels.php`. `LevelService::getUser
 - 5 AI_READY: ready for OpenLitterAI training
 
 ## Teams v5 Status
-Fully deployed. 972 tests passing. Facilitator queue (3-panel admin-like UI for school teachers) complete. See `readme/Teams.md` and `readme/SchoolPipeline.md` for architecture.
+Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI for school teachers) complete. See `readme/Teams.md` and `readme/SchoolPipeline.md` for architecture.
 
 ## Code Preferences
 - Do not over-engineer

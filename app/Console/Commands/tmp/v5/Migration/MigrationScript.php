@@ -24,6 +24,7 @@ class MigrationScript extends Command
         {--skip-locations : Skip the locations cleanup step}
         {--skip-redis-flush : Skip the Redis FLUSHDB step (useful when resuming a partial migration)}
         {--skip-teams : Skip team data rebuild (members recalc + cluster regeneration)}
+        {--error-locations-csv= : CSV file to fix error_country photos (from olm:locations:resolve-errors --export)}
         {--user= : Specific user ID to migrate}
         {--batch=500 : Number of photos per batch}';
 
@@ -45,6 +46,10 @@ class MigrationScript extends Command
         if (! DB::getSchemaBuilder()->hasColumn('photos', 'migrated_at')) {
             $this->error('Column photos.migrated_at missing. Run migrations first.');
             return self::FAILURE;
+        }
+
+        if ($csv = $this->option('error-locations-csv')) {
+            $this->importErrorLocationFixes($csv);
         }
 
         if (! $this->option('skip-locations')) {
@@ -241,6 +246,28 @@ class MigrationScript extends Command
 
         // Display user summary
         $this->displayUserSummary($userId, $processedForUser, $failedForUser);
+    }
+
+    /**
+     * Import pre-resolved error_country photo fixes from CSV.
+     * Runs BEFORE location cleanup so the cleanup can merge/orphan the error locations.
+     */
+    private function importErrorLocationFixes(string $path): void
+    {
+        $this->newLine();
+        $this->info('═══════════════════════════════');
+        $this->info('Importing error location fixes');
+        $this->info('═══════════════════════════════');
+
+        $exitCode = Artisan::call('olm:locations:resolve-errors', [
+            '--import' => $path,
+        ], $this->output);
+
+        if ($exitCode === 0) {
+            $this->info('✓ Error location fixes imported');
+        } else {
+            $this->warn("⚠ Error location import exited with code {$exitCode}");
+        }
     }
 
     private function runLocationsMigrationScript () {

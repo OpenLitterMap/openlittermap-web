@@ -137,11 +137,18 @@ class URLStateManager {
     /**
      * Set tag filter in URL
      */
-    setTagFilter(type, id) {
+    setTagFilter(type, id, { from, to } = {}) {
         const url = new URL(window.location.href);
         url.searchParams.set('filter', `${type}:${id}`);
         // Reset page when filter changes
         url.searchParams.delete('page');
+
+        // Date filters also set fromDate/toDate
+        if (type === 'date' && from && to) {
+            url.searchParams.set('fromDate', from);
+            url.searchParams.set('toDate', to);
+        }
+
         this.commitURL(url, false); // Push for user action
     }
 
@@ -151,6 +158,8 @@ class URLStateManager {
     clearTagFilter() {
         const url = new URL(window.location.href);
         url.searchParams.delete('filter');
+        url.searchParams.delete('fromDate');
+        url.searchParams.delete('toDate');
         url.searchParams.delete('page');
         this.commitURL(url, false); // Push for user action
     }

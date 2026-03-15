@@ -452,7 +452,7 @@ export const popupHelper = {
             return `<span class="popup-pill popup-pill-picked">\u2713 ${translate('Picked up')}</span>`;
         }
 
-        return `<span class="popup-pill popup-pill-remaining">\u25CF ${translate('Still there')}</span>`;
+        return `<span class="popup-pill popup-pill-remaining">\u25CF ${translate('Not picked up')}</span>`;
     },
 
     /**

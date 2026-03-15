@@ -184,8 +184,11 @@ class GeneratePhotoSummaryService
         // Calculate XP
         $xp = XpCalculator::calculateFromTags($xpTags, $objectIdToKey);
 
-        if (! $photo->remaining) {
-            $xp += XpScore::PickedUp->xp();
+        // +5 XP per object that was picked up — per-tag granularity
+        foreach ($photoTags as $pt) {
+            if ($pt->picked_up && $pt->litter_object_id) {
+                $xp += XpScore::PickedUp->xp() * $pt->quantity;
+            }
         }
 
         // Generate result_string for map display

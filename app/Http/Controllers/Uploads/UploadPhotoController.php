@@ -110,8 +110,8 @@ class UploadPhotoController extends Controller
             'lon' => $lon,
             'model' => $deviceModel,
             'country_id' => $location->country->id,
-            'state_id' => $location->state->id,
-            'city_id' => $location->city->id,
+            'state_id' => $location->state?->id,
+            'city_id' => $location->city?->id,
             'platform' => $hasExplicit ? 'mobile' : 'web',
             'team_id' => $request->attributes->get('participant_team')?->id ?? $user->active_team,
             'participant_id' => $request->attributes->get('participant')?->id,
@@ -159,10 +159,17 @@ class UploadPhotoController extends Controller
         }
 
         // 9. Award upload XP to MySQL (immediate feedback for profile)
-        // and metrics table (so user appears on time-filtered leaderboards)
+        // and metrics table (so user appears on time-filtered leaderboards).
+        // Skip for private photos (school team) — deferred until teacher
+        // approval, when MetricsService::processPhoto() handles the full XP.
         $uploadXp = XpScore::Upload->xp();
-        $user->increment('xp', $uploadXp);
-        $this->metricsService->recordUploadMetrics($photo, $uploadXp);
+        $xpAwarded = 0;
+
+        if ($photo->is_public !== false) {
+            $user->increment('xp', $uploadXp);
+            $this->metricsService->recordUploadMetrics($photo, $uploadXp);
+            $xpAwarded = $uploadXp;
+        }
 
         return response()->json([
             'success' => true,
@@ -173,7 +180,7 @@ class UploadPhotoController extends Controller
             'state' => $location->state->state,
             'country' => $location->country->country,
             'display_name' => $location->displayName,
-            'xp_awarded' => $uploadXp,
+            'xp_awarded' => $xpAwarded,
             'user_xp_total' => $user->xp,
         ]);
     }

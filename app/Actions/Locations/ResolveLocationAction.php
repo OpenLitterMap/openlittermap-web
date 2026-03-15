@@ -13,7 +13,11 @@ class ResolveLocationAction
     /**
      * Reverse geocode lat/lon and resolve to Country, State, City.
      *
-     * @throws GeocodingException
+     * Gracefully handles incomplete geocoding data — state and city may
+     * be null if the API response doesn't include them. The photo is
+     * still uploaded; location can be fixed later.
+     *
+     * @throws GeocodingException only if country_code is missing (minimum requirement)
      * @throws GuzzleException
      */
     public function run(float $lat, float $lon): LocationResult
@@ -24,7 +28,7 @@ class ResolveLocationAction
 
         $country = $this->resolveCountry($address);
         $state = $this->resolveState($country, $address);
-        $city = $this->resolveCity($country, $state, $address);
+        $city = $state ? $this->resolveCity($country, $state, $address) : null;
 
         return new LocationResult(
             country: $country,
@@ -49,12 +53,12 @@ class ResolveLocationAction
         );
     }
 
-    private function resolveState(Country $country, array $address): State
+    private function resolveState(Country $country, array $address): ?State
     {
         $name = $this->lookup($address, ['state', 'county', 'region', 'state_district']);
 
         if (!$name) {
-            throw new GeocodingException('No state found in geocode response');
+            return null;
         }
 
         return State::firstOrCreate(
@@ -63,14 +67,14 @@ class ResolveLocationAction
         );
     }
 
-    private function resolveCity(Country $country, State $state, array $address): City
+    private function resolveCity(Country $country, State $state, array $address): ?City
     {
         $name = $this->lookup($address, [
             'city', 'town', 'city_district', 'village', 'hamlet', 'locality', 'county'
         ]);
 
         if (!$name) {
-            throw new GeocodingException('No city found in geocode response');
+            return null;
         }
 
         return City::firstOrCreate(

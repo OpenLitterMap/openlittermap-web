@@ -179,11 +179,11 @@ class TeamsController extends Controller
     }
 
     /**
-     * Array of teams the user has joined
+     * Array of teams the user has joined, with live-computed stats.
      */
     public function joined ()
     {
-        return Auth::user()->teams;
+        return Auth::user()->teams()->withPhotoStats()->get();
     }
 
     /**

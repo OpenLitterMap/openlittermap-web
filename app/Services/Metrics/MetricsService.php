@@ -121,6 +121,13 @@ final class MetricsService
      */
     public function recordUploadMetrics(Photo $photo, int $uploadXp): void
     {
+        // Skip metrics for private photos (school team) — deferred until
+        // teacher approval, when processPhoto() → doCreate() handles the
+        // full XP (upload + tag) in one pass.
+        if ($photo->is_public === false) {
+            return;
+        }
+
         $metrics = [
             'tags_count' => 0,
             'brands_count' => 0,
@@ -171,6 +178,14 @@ final class MetricsService
             'processed_tags' => json_encode($metrics['tags'], JSON_NUMERIC_CHECK),
             'processed_xp' => $metrics['xp'],
         ]);
+
+        // Sync users.xp — doCreate runs when no prior metrics exist
+        // (e.g., school photos deferred until teacher approval, or revoke+reapprove).
+        $xp = (int) $metrics['xp'];
+        if ($xp > 0) {
+            User::where('id', $photo->user_id)
+                ->update(['xp' => DB::raw("xp + {$xp}")]);
+        }
 
         $this->updateRedis($photo, $metrics, 'create');
     }

@@ -14,7 +14,7 @@ class LoginController extends Controller
      * Login via email or username.
      *
      * Uses session auth (Sanctum stateful) for SPA.
-     * For external API consumers (e.g. LitterWeek), use Passport OAuth tokens instead.
+     * For mobile/external API consumers, use POST /api/auth/token (Sanctum token).
      * @param Request $request
      * @return JsonResponse
      * @throws ValidationException

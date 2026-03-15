@@ -3,13 +3,34 @@
 namespace App\Services\Points\Aggregators;
 
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TimeSeriesAggregator
 {
     /**
-     * Aggregate time series data
+     * Aggregate time series from a full query (no photo ID cap).
+     */
+    public function aggregateFromQuery(Builder $query, array $params): array
+    {
+        $groupBy = $this->determineGroupBy($params);
+
+        $results = $query
+            ->selectRaw("
+                {$groupBy} as bucket,
+                COUNT(*) as photos,
+                COALESCE(SUM(total_tags), 0) as objects
+            ")
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->get();
+
+        return $this->formatResults($results);
+    }
+
+    /**
+     * Aggregate time series data from photo IDs (legacy).
      */
     public function aggregate(Collection $photoIds, array $params): array
     {
@@ -30,6 +51,11 @@ class TimeSeriesAggregator
             ->orderBy('bucket')
             ->get();
 
+        return $this->formatResults($results);
+    }
+
+    private function formatResults(Collection $results): array
+    {
         return $results->map(function($row) {
             return (object)[
                 'bucket' => $row->bucket,

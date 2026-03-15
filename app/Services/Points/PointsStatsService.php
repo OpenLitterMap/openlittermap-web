@@ -48,6 +48,8 @@ class PointsStatsService
         }
 
         // Run all aggregations
+        // Time histogram runs against the FULL query (no ID cap) so it
+        // represents all photos in the viewport, not just the first 1,000.
         return [
             'counts' => $this->metadataAggregator->aggregate($photoIds),
             'by_category' => $this->categoryAggregator->aggregate($photoIds),
@@ -56,9 +58,12 @@ class PointsStatsService
             'materials' => $this->materialAggregator->aggregate($photoIds),
             'custom_tags' => $this->customTagAggregator->aggregate($photoIds),
             'top_contributors' => $this->contributorAggregator->aggregate($photoIds),
-            'time_histogram' => $this->timeSeriesAggregator->aggregate($photoIds, $params),
+            'time_histogram' => $this->timeSeriesAggregator->aggregateFromQuery(
+                clone $baseQuery, $params
+            ),
             'meta' => [
                 'truncated' => $totalCount > self::MAX_RESULTS,
+                'total_count' => $totalCount,
                 'max_results' => self::MAX_RESULTS,
             ],
         ];

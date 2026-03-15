@@ -9,10 +9,10 @@ use App\Models\Location\State;
 readonly class LocationResult
 {
     public function __construct(
-        public Country $country,
-        public State   $state,
-        public City    $city,
-        public array   $addressArray,
-        public string  $displayName,
+        public Country  $country,
+        public ?State   $state,
+        public ?City    $city,
+        public array    $addressArray,
+        public string   $displayName,
     ) {}
 }

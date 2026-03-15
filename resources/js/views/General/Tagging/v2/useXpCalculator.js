@@ -60,8 +60,8 @@ export function calculateTagXp(tag) {
         }
     }
 
-    if (tag.pickedUp) {
-        xp += 5;
+    if (tag.pickedUp && !tag.custom && tag.type !== 'brand-only' && tag.type !== 'material-only') {
+        xp += qty * 5;
     }
 
     return xp;
@@ -136,8 +136,8 @@ export function getTagBreakdownParts(tag) {
         }
     }
 
-    if (tag.pickedUp) {
-        parts.push('picked up +5');
+    if (tag.pickedUp && !tag.custom && tag.type !== 'brand-only' && tag.type !== 'material-only') {
+        parts.push(`picked up (+${qty * 5})`);
     }
 
     return parts;
@@ -206,10 +206,18 @@ export function getHeaderBreakdown(tags) {
         lines.push({ label: `Custom tags (${totalCustomCount})`, xp: totalCustomXp });
     }
 
-    // Aggregate picked up
-    const pickedUpCount = tags.filter((t) => t.pickedUp).length;
-    if (pickedUpCount > 0) {
-        lines.push({ label: `Picked up (${pickedUpCount} tag${pickedUpCount > 1 ? 's' : ''})`, xp: pickedUpCount * 5 });
+    // Aggregate picked up — per-object quantity, excludes brand-only/material-only/custom
+    let pickedUpXp = 0;
+    let pickedUpObjects = 0;
+    tags.forEach((t) => {
+        if (t.pickedUp && !t.custom && t.type !== 'brand-only' && t.type !== 'material-only') {
+            const qty = t.quantity || 1;
+            pickedUpXp += qty * 5;
+            pickedUpObjects += qty;
+        }
+    });
+    if (pickedUpObjects > 0) {
+        lines.push({ label: `Picked up (${pickedUpObjects} object${pickedUpObjects > 1 ? 's' : ''})`, xp: pickedUpXp });
     }
 
     return lines;

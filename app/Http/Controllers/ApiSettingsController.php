@@ -14,7 +14,7 @@ class ApiSettingsController extends Controller
      */
     private const ALLOWED_SETTINGS = [
         'name' => 'string|min:3|max:25',
-        'username' => 'string|min:3|max:30|regex:/^[a-zA-Z0-9-]+$/',
+        'username' => 'string|min:3|max:100|regex:/^[a-zA-Z0-9-]+$/',
         'email' => 'email|max:75',
         'global_flag' => 'nullable|string|max:10',
         'picked_up' => 'nullable|boolean',

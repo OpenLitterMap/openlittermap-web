@@ -106,11 +106,16 @@ if ($updated > 0) {
 
 ### processPhoto($photo)
 - Computes fingerprint from summary JSON
-- If `processed_at` is null: first processing (create metrics)
-- If `processed_at` is set: re-processing (compute delta, apply corrections)
+- If `processed_at` is null: first processing → `doCreate()` (creates metrics + increments `users.xp`)
+- If `processed_at` is set: re-processing → `doUpdate()` (computes delta, applies corrections to `users.xp`)
 - Upserts `metrics` table rows: 5 timescales × 4 location scopes × 2 (aggregate user_id=0 + per-user user_id>0)
 - Updates Redis via `RedisMetricsCollector` (inside `DB::afterCommit`)
 - Sets `photo.processed_at`, `processed_fp`, `processed_tags`, `processed_xp`
+
+### recordUploadMetrics($photo, $uploadXp)
+- Gated on `$photo->is_public === false` — school photos skip entirely (deferred to approval)
+- For public photos: writes 1 upload + upload XP to metrics/Redis, sets `processed_at`
+- At tag time, `processPhoto()` routes to `doUpdate()` (delta-based) since `processed_at` is set
 
 ### deletePhoto($photo)
 - **Must run BEFORE `$photo->delete()`** — hard sequencing rule
@@ -209,7 +214,7 @@ Photo::public()  // →where('is_public', true)
 ->where('is_public', true)
 ```
 
-School pipeline: student uploads → `is_public = false` → teacher reviews in Facilitator Queue → teacher approves → `is_public = true` + `verified = ADMIN_APPROVED` → `TagsVerifiedByAdmin` fires → metrics processed.
+School pipeline: student uploads → `is_public = false` → NO upload metrics (deferred) → teacher reviews in Facilitator Queue → teacher approves → `is_public = true` + `verified = ADMIN_APPROVED` → `TagsVerifiedByAdmin` fires → `processPhoto()` → `doCreate()` handles full XP (upload + tag) in one pass + increments `users.xp`.
 
 Admin queue never sees school photos (`WHERE is_public = true` excludes them). Teachers are the sole approvers for their team via the Facilitator Queue (3-panel admin-like UI).
 
@@ -288,7 +293,7 @@ Backend: `TeamPhotosController` returns `new_tags` (CLO format), accepts CLO-bas
 
 ## Level System
 
-Config-driven thresholds in `config/levels.php`. 12 levels from "Complete Noob" (0 XP) to "SuperIntelligent LitterMaster" (1M+ XP).
+Config-driven thresholds in `config/levels.php`. 12 levels from "Noob" (0 XP) to "SuperIntelligent LitterMaster" (1M+ XP).
 
 `LevelService::getUserLevel($xp)` returns: level, title, xp_into_level, xp_for_next, xp_remaining, progress_percent.
 
@@ -305,7 +310,7 @@ User model `next_level` accessor calls LevelService. Frontend reads `user.next_l
 | Brand | 3 | Per brand (uses brand's own quantity) |
 | Material | 2 | Per material (uses parent tag's quantity — set membership) |
 | Custom Tag | 1 | Per custom tag (uses parent tag's quantity) |
-| Picked Up | 5 | Bonus if remaining = false |
+| Picked Up | 5 | Per object (×quantity) where `photo_tags.picked_up=true`. Objects only — no bonus for brand/material/custom-only tags |
 
 ## API Field Naming Convention
 
@@ -332,7 +337,7 @@ Photos need `verified >= ADMIN_APPROVED` and `is_public = true` to appear in clu
 - Reset Spatie permissions cache: `app()[PermissionRegistrar::class]->forgetCachedPermissions()`
 - `TeamType::create(['team' => 'community', 'price' => 0])` — `price` has no default
 
-973+ tests passing (1 skipped). See `testing-patterns` skill for full details.
+1010+ tests passing (1 skipped). See `testing-patterns` skill for full details.
 
 ## Common Mistakes
 

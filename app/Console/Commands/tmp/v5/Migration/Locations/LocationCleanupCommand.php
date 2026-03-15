@@ -63,6 +63,14 @@ class LocationCleanupCommand extends Command
         $this->info('═══════════════════════════════════');
         $this->normalizeWhitespace();
 
+        // Step 0.5: Re-resolve error locations
+        $this->newLine();
+        $this->info('═══════════════════════════════════');
+        $this->info('Step 0.5: Re-resolve error locations');
+        $this->info('═══════════════════════════════════');
+        $this->resolveErrorLocations();
+        $this->verifyIntegrity('error location resolution');
+
         // Step 1: Countries
         $this->info('═══════════════════════════════════');
         $this->info('Step 1: Merge duplicate countries');
@@ -923,6 +931,198 @@ class LocationCleanupCommand extends Command
         } else {
             $this->info('  ✓ All photos.country_id consistent with cities');
         }
+    }
+
+    // ─────────────────────────────────────────────
+    // Step 0.5: Error location resolution
+    // ─────────────────────────────────────────────
+
+    private const ERROR_COUNTRY_ID = 16;
+    private const ERROR_STATE_ID = 46;
+    private const ERROR_CITY_ID = 89;
+
+    /**
+     * Re-resolve photos assigned to the error_country/error_state/error_city
+     * sentinel locations from their stored address_array (no API needed).
+     *
+     * Photos without address_array should be pre-fixed by running
+     * `olm:locations:resolve-errors` before the migration.
+     * After this step, error locations become orphans and are cleaned up in Step 5.
+     */
+    private function resolveErrorLocations(): void
+    {
+        $errorCountry = DB::table('countries')
+            ->where('id', self::ERROR_COUNTRY_ID)
+            ->first();
+
+        if (!$errorCountry || $errorCountry->country !== 'error_country') {
+            $this->info('  No error_country (id=16) found — skipping');
+            return;
+        }
+
+        $total = DB::table('photos')
+            ->where('country_id', self::ERROR_COUNTRY_ID)
+            ->whereNull('deleted_at')
+            ->count();
+
+        if ($total === 0) {
+            $this->info('  No photos linked to error_country');
+            return;
+        }
+
+        $this->info("  Found {$total} photos linked to error_country");
+
+        if ($this->dryRun) {
+            $this->line("  [DRY] Would re-resolve photos from stored address_array");
+            return;
+        }
+
+        // Resolve from stored address_array (offline, no API)
+        $resolved = $this->resolveErrorPhotosFromAddress();
+        $this->info("  ✓ {$resolved} photos resolved from address_array");
+
+        // Report remaining
+        $remaining = DB::table('photos')
+            ->where('country_id', self::ERROR_COUNTRY_ID)
+            ->whereNull('deleted_at')
+            ->count();
+
+        if ($remaining > 0) {
+            $this->warn("  ⚠ {$remaining} photos still on error_country (no address_array — run olm:locations:resolve-errors to fix via API)");
+        } else {
+            $this->info("  ✓ All error_country photos resolved");
+        }
+    }
+
+    /**
+     * Phase 1: Re-resolve photos that have a stored address_array with country_code.
+     */
+    private function resolveErrorPhotosFromAddress(): int
+    {
+        $resolved = 0;
+
+        DB::table('photos')
+            ->where('country_id', self::ERROR_COUNTRY_ID)
+            ->whereNotNull('address_array')
+            ->where('address_array', '!=', '')
+            ->where('address_array', '!=', 'null')
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->chunk(200, function ($photos) use (&$resolved) {
+                foreach ($photos as $photo) {
+                    $address = json_decode($photo->address_array, true);
+
+                    if (!$address || empty($address['country_code'])) {
+                        continue;
+                    }
+
+                    $location = $this->resolveFromAddress($address);
+
+                    if ($location) {
+                        DB::table('photos')
+                            ->where('id', $photo->id)
+                            ->update([
+                                'country_id' => $location['country_id'],
+                                'state_id' => $location['state_id'],
+                                'city_id' => $location['city_id'],
+                            ]);
+                        $resolved++;
+                    }
+                }
+            });
+
+        return $resolved;
+    }
+
+    /**
+     * Resolve country/state/city from an address array using the same
+     * lookup logic as ResolveLocationAction, but via raw DB queries
+     * (no auth user needed, no API call).
+     */
+    private function resolveFromAddress(array $address): ?array
+    {
+        $countryCode = strtoupper($address['country_code']);
+        $countryName = $address['country'] ?? '';
+
+        // Resolve country
+        $country = DB::table('countries')
+            ->where('shortcode', $countryCode)
+            ->first();
+
+        if (!$country) {
+            $country = (object) [
+                'id' => DB::table('countries')->insertGetId([
+                    'shortcode' => $countryCode,
+                    'country' => $countryName,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]),
+            ];
+        }
+
+        // Resolve state (same fallback chain as ResolveLocationAction)
+        $stateName = $address['state']
+            ?? $address['county']
+            ?? $address['region']
+            ?? $address['state_district']
+            ?? null;
+
+        if (!$stateName) {
+            return null;
+        }
+
+        $state = DB::table('states')
+            ->where('country_id', $country->id)
+            ->where('state', $stateName)
+            ->first();
+
+        if (!$state) {
+            $state = (object) [
+                'id' => DB::table('states')->insertGetId([
+                    'state' => $stateName,
+                    'country_id' => $country->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]),
+            ];
+        }
+
+        // Resolve city (same fallback chain as ResolveLocationAction)
+        $cityName = $address['city']
+            ?? $address['town']
+            ?? $address['city_district']
+            ?? $address['village']
+            ?? $address['hamlet']
+            ?? $address['locality']
+            ?? $address['county']
+            ?? null;
+
+        if (!$cityName) {
+            return null;
+        }
+
+        $city = DB::table('cities')
+            ->where('state_id', $state->id)
+            ->where('city', $cityName)
+            ->first();
+
+        if (!$city) {
+            $city = (object) [
+                'id' => DB::table('cities')->insertGetId([
+                    'city' => $cityName,
+                    'state_id' => $state->id,
+                    'country_id' => $country->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]),
+            ];
+        }
+
+        return [
+            'country_id' => $country->id,
+            'state_id' => $state->id,
+            'city_id' => $city->id,
+        ];
     }
 
     // ─────────────────────────────────────────────

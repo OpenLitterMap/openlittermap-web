@@ -315,7 +315,10 @@ const handleFilterApply = async (filter) => {
     }
 
     activeFilter.value = filter;
-    urlHelper.stateManager.setTagFilter(filter.type, filter.id);
+    urlHelper.stateManager.setTagFilter(filter.type, filter.id, {
+        from: filter.from,
+        to: filter.to,
+    });
 
     // Reset pagination and re-fetch
     paginationHelper.resetPagination({ currentPage, totalPages, pointsStats });

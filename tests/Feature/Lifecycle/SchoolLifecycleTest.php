@@ -31,9 +31,9 @@ use Tests\TestCase;
  * No Event::fake(), no MetricsService mocks — tests the real pipeline.
  *
  * Confirms:
- * - Upload awards 5 XP immediately (known leak — recordUploadMetrics runs unconditionally)
+ * - Upload does NOT award XP for school photos (is_public=false gate)
  * - Student tagging does NOT fire TagsVerifiedByAdmin (no tag metrics before approval)
- * - Teacher approval fires TagsVerifiedByAdmin → MetricsService::processPhoto() → doUpdate()
+ * - Teacher approval fires TagsVerifiedByAdmin → MetricsService::processPhoto() → doCreate()
  * - Teacher edit + re-approve updates metrics correctly
  * - Teacher delete reverses all metrics
  * - Participant session uploads attributed to facilitator
@@ -117,45 +117,38 @@ class SchoolLifecycleTest extends TestCase
     }
 
     // =========================================================================
-    // Test 1: Upload awards XP immediately (documented leak)
+    // Test 1: Upload does NOT award XP for school photos
     // =========================================================================
 
     /**
-     * recordUploadMetrics() runs unconditionally for ALL uploads, including
-     * school photos. This means the student gets 5 XP in metrics/Redis/leaderboards
-     * BEFORE teacher approval.
-     *
-     * This is a known behaviour: upload XP leaks for school photos.
-     * No litter/tag data leaks — only the upload count and 5 XP.
+     * recordUploadMetrics() is gated on is_public. School photos (is_public=false)
+     * skip upload XP, metrics, and leaderboard entries entirely. All metrics are
+     * deferred until teacher approval.
      */
-    public function test_upload_awards_xp_immediately_for_school_student(): void
+    public function test_upload_does_not_award_xp_for_school_student(): void
     {
-        $uploadXp = XpScore::Upload->xp();
-
         $photoId = $this->uploadPhoto($this->student);
         $photo = Photo::find($photoId);
 
         // Photo is private (PhotoObserver sets is_public=false for school teams)
         $this->assertFalse((bool) $photo->is_public, 'School photo must be private');
 
-        // But student already has upload XP
+        // Student has NO XP — upload metrics skipped for school photos
         $this->student->refresh();
-        $this->assertEquals($uploadXp, $this->student->xp, 'Student has upload XP before approval');
+        $this->assertEquals(0, $this->student->xp, 'Student has 0 XP before approval');
 
-        // Metrics table: 1 upload, 5 XP, 0 litter
-        $this->assertMetricsRow($this->student->id, 1, $uploadXp, 0);
+        // No metrics row exists
+        $this->assertNoMetricsRow($this->student->id);
 
-        // Redis: student on leaderboard with 5 XP
+        // Redis: student NOT on leaderboard
         $globalScope = RedisKeys::global();
-        $this->assertEquals(
-            (float) $uploadXp,
+        $this->assertFalse(
             Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $this->student->id),
-            'Student on leaderboard before approval (upload XP leak)'
+            'Student not on leaderboard before approval'
         );
 
-        // processed_at is set (not null) — this means processPhoto() will route to doUpdate()
-        $this->assertNotNull($photo->processed_at);
-        $this->assertEquals($uploadXp, (int) $photo->processed_xp);
+        // processed_at is null — processPhoto() will route to doCreate() at approval
+        $this->assertNull($photo->processed_at);
     }
 
     // =========================================================================
@@ -164,13 +157,11 @@ class SchoolLifecycleTest extends TestCase
 
     /**
      * After tagging, a school student photo has verified=VERIFIED(1) and
-     * is_public=false. TagsVerifiedByAdmin does NOT fire — no tag metrics
-     * are processed. Only the upload XP from recordUploadMetrics exists.
+     * is_public=false. TagsVerifiedByAdmin does NOT fire — no metrics
+     * are processed. Upload metrics were also skipped (is_public=false).
      */
     public function test_tagging_does_not_process_tag_metrics(): void
     {
-        $uploadXp = XpScore::Upload->xp();
-
         $photoId = $this->uploadPhoto($this->student);
         $this->tagPhoto($this->student, $photoId, 3); // 3 butts → 3 object XP
 
@@ -190,16 +181,15 @@ class SchoolLifecycleTest extends TestCase
         $this->assertNotNull($photo->summary, 'Summary generated at tag time');
         $this->assertGreaterThan(0, $photo->xp, 'Tag XP calculated');
 
-        // BUT: metrics have NOT been updated with tag data
-        // processed_xp is still just the upload XP (5) — tags not processed
-        $this->assertEquals($uploadXp, (int) $photo->processed_xp, 'processed_xp unchanged (still upload-only)');
+        // No metrics at all — upload skipped, tags not processed
+        $this->assertNull($photo->processed_at, 'processed_at still null');
 
-        // Student XP has NOT increased from tagging — still just upload XP
+        // Student XP is 0 — no upload XP, no tag XP
         $this->student->refresh();
-        $this->assertEquals($uploadXp, $this->student->xp, 'Student XP unchanged after tagging (tags not processed)');
+        $this->assertEquals(0, $this->student->xp, 'Student XP = 0 (no metrics processed)');
 
-        // Metrics: still upload-only
-        $this->assertMetricsRow($this->student->id, 1, $uploadXp, 0);
+        // No metrics row
+        $this->assertNoMetricsRow($this->student->id);
     }
 
     // =========================================================================
@@ -208,8 +198,8 @@ class SchoolLifecycleTest extends TestCase
 
     /**
      * Teacher approves → photo becomes public, verified=ADMIN_APPROVED,
-     * TagsVerifiedByAdmin fires → MetricsService::processPhoto() → doUpdate().
-     * Student XP increases by the tag delta.
+     * TagsVerifiedByAdmin fires → MetricsService::processPhoto() → doCreate().
+     * Student gets full XP (upload + tag) at approval time — nothing before.
      */
     public function test_teacher_approval_processes_tag_metrics(): void
     {
@@ -221,9 +211,9 @@ class SchoolLifecycleTest extends TestCase
         $photo = Photo::find($photoId);
         $tagXp = $photo->xp; // Tag XP only (no upload base)
 
-        // Pre-approval: upload XP only in user model and metrics
+        // Pre-approval: NO XP at all (upload metrics deferred for school)
         $this->student->refresh();
-        $this->assertEquals($uploadXp, $this->student->xp);
+        $this->assertEquals(0, $this->student->xp, 'Student has 0 XP before approval');
 
         // Teacher approves
         $response = $this->actingAs($this->teacher)
@@ -246,11 +236,11 @@ class SchoolLifecycleTest extends TestCase
             'Photo ADMIN_APPROVED after approval'
         );
 
-        // MetricsService processed: processed_xp now includes upload + tag
+        // MetricsService::processPhoto → doCreate: full XP (upload + tag)
         $expectedTotalXp = $uploadXp + $tagXp;
         $this->assertEquals($expectedTotalXp, (int) $photo->processed_xp, 'processed_xp = upload + tag XP');
 
-        // Student XP increased by tag delta
+        // Student XP = full amount (doCreate increments users.xp)
         $this->student->refresh();
         $this->assertEquals($expectedTotalXp, $this->student->xp, 'Student XP = upload + tag after approval');
 
@@ -302,8 +292,8 @@ class SchoolLifecycleTest extends TestCase
         $editedTagXp = $photo->xp; // New tag XP after edit
         $this->assertGreaterThan($originalTagXp, $editedTagXp, 'Teacher edit increased tag XP');
 
-        // Still not approved — processed_xp unchanged
-        $this->assertEquals($uploadXp, (int) $photo->processed_xp, 'processed_xp unchanged before approval');
+        // Still not approved — no metrics at all (upload deferred)
+        $this->assertNull($photo->processed_at, 'processed_at null before approval');
 
         // Teacher approves
         $this->actingAs($this->teacher)
@@ -328,19 +318,17 @@ class SchoolLifecycleTest extends TestCase
 
     /**
      * Teacher deletes a tagged-but-unapproved photo.
-     * recordUploadMetrics already wrote processed_at, so deletePhoto() must
-     * reverse the upload XP. Tag data was never in metrics (no approval).
+     * No metrics were ever recorded (upload deferred, tags not processed),
+     * so deletePhoto() is a no-op. Just soft-deletes the photo.
      */
     public function test_teacher_deletes_unapproved_photo(): void
     {
-        $uploadXp = XpScore::Upload->xp();
-
         $photoId = $this->uploadPhoto($this->student);
         $this->tagPhoto($this->student, $photoId, 3);
 
-        // Student has upload XP only
+        // Student has 0 XP (upload metrics deferred)
         $this->student->refresh();
-        $this->assertEquals($uploadXp, $this->student->xp);
+        $this->assertEquals(0, $this->student->xp);
 
         // Teacher deletes
         $response = $this->actingAs($this->teacher)
@@ -351,18 +339,18 @@ class SchoolLifecycleTest extends TestCase
         $response->assertOk();
         $this->assertSoftDeleted('photos', ['id' => $photoId]);
 
-        // Upload XP reversed
+        // Student XP unchanged (was already 0)
         $this->student->refresh();
         $this->assertEquals(0, $this->student->xp, 'Student XP = 0 after teacher delete');
 
-        // Metrics zeroed
-        $this->assertMetricsRow($this->student->id, 0, 0, 0);
+        // No metrics row (nothing was ever recorded)
+        $this->assertNoMetricsRow($this->student->id);
 
-        // Redis: pruned from leaderboard
+        // Redis: not on leaderboard
         $globalScope = RedisKeys::global();
         $this->assertFalse(
             Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $this->student->id),
-            'Pruned from leaderboard after delete'
+            'Not on leaderboard after delete'
         );
     }
 
@@ -381,7 +369,7 @@ class SchoolLifecycleTest extends TestCase
         $photoId = $this->uploadPhoto($this->student);
         $this->tagPhoto($this->student, $photoId, 3);
 
-        // Approve
+        // Approve — doCreate processes full XP
         $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
@@ -425,7 +413,8 @@ class SchoolLifecycleTest extends TestCase
     /**
      * Upload → tag → approve → revoke → re-approve.
      * Revoke calls MetricsService::deletePhoto() → reverses ALL metrics.
-     * Re-approval fires TagsVerifiedByAdmin → doCreate() recalculates.
+     * Re-approval fires TagsVerifiedByAdmin → doCreate() recalculates
+     * and restores users.xp (doCreate now increments users.xp).
      */
     public function test_revoke_reverses_metrics_reapprove_restores(): void
     {
@@ -434,7 +423,7 @@ class SchoolLifecycleTest extends TestCase
         $photoId = $this->uploadPhoto($this->student);
         $this->tagPhoto($this->student, $photoId, 3);
 
-        // Approve
+        // Approve — doCreate processes full XP
         $this->actingAs($this->teacher)
             ->postJson('/api/teams/photos/approve', [
                 'team_id' => $this->schoolTeam->id,
@@ -469,15 +458,7 @@ class SchoolLifecycleTest extends TestCase
         // Metrics reversed — processed_at cleared by deletePhoto()
         $this->assertNull($photo->processed_at, 'processed_at cleared after revoke');
 
-        // Student XP decreased — revoke reverses the full processed_xp
-        // Note: users.xp was decremented by MetricsService::deletePhoto()
-        // which decrements by the old processed_xp. But recordUploadMetrics
-        // originally gave +5 directly to users.xp. After revoke, the state is:
-        // users.xp = approvedXp - approvedXp + uploadXp(from original increment) = uploadXp
-        // Wait — actually deletePhoto decrements by old processed_xp from users.xp query-builder.
-        // Original: increment(xp, 5) at upload, then doUpdate added (approvedXp - 5) delta.
-        // So users.xp = 5 + (approvedXp - 5) = approvedXp before revoke.
-        // deletePhoto subtracts approvedXp → users.xp = 0.
+        // Student XP = 0 — deletePhoto reversed the full processed_xp
         $this->student->refresh();
         $this->assertEquals(0, $this->student->xp, 'Student XP = 0 after revoke');
 
@@ -495,19 +476,14 @@ class SchoolLifecycleTest extends TestCase
         $this->assertTrue((bool) $photo->is_public, 'Public after re-approve');
 
         // processPhoto → doCreate (processed_at was null after revoke)
-        // doCreate does NOT increment users.xp — only writes metrics + Redis
+        // doCreate now increments users.xp — revoke+reapprove fully restores XP
         $this->assertNotNull($photo->processed_at, 'processed_at set after re-approve');
 
-        // The tag XP is in metrics, but users.xp may not have the full amount
-        // because doCreate doesn't call users.xp increment.
-        // This documents the known gap when revoking and re-approving.
         $this->student->refresh();
+        $this->assertEquals($approvedXp, $this->student->xp, 'Student XP fully restored after re-approve');
 
-        // After re-approve: doCreate writes metrics but does NOT increment users.xp
-        // So users.xp stays at 0. The metrics table has the correct XP though.
-        // This is a known edge case — revoke+reapprove doesn't restore users.xp fully.
         $metricsXp = $this->getMetricsXp($this->student->id);
-        $this->assertGreaterThan(0, $metricsXp, 'Metrics table has XP after re-approve');
+        $this->assertEquals($approvedXp, $metricsXp, 'Metrics XP fully restored after re-approve');
     }
 
     // =========================================================================
@@ -550,13 +526,13 @@ class SchoolLifecycleTest extends TestCase
         $photo3Id = $this->uploadPhoto($student3);
         $this->tagPhoto($student3, $photo3Id, 5); // 5 butts
 
-        // Pre-approval: each student has only upload XP
+        // Pre-approval: each student has 0 XP (upload deferred for school)
         $this->student->refresh();
         $student2->refresh();
         $student3->refresh();
-        $this->assertEquals($uploadXp, $this->student->xp);
-        $this->assertEquals($uploadXp, $student2->xp);
-        $this->assertEquals($uploadXp, $student3->xp);
+        $this->assertEquals(0, $this->student->xp);
+        $this->assertEquals(0, $student2->xp);
+        $this->assertEquals(0, $student3->xp);
 
         // Teacher batch approves all
         $response = $this->actingAs($this->teacher)
@@ -621,8 +597,6 @@ class SchoolLifecycleTest extends TestCase
      */
     public function test_double_approval_no_double_counting(): void
     {
-        $uploadXp = XpScore::Upload->xp();
-
         $photoId = $this->uploadPhoto($this->student);
         $this->tagPhoto($this->student, $photoId, 3);
 
@@ -709,9 +683,9 @@ class SchoolLifecycleTest extends TestCase
         // Photo is private (school team)
         $this->assertFalse((bool) $photo->is_public, 'School photo private');
 
-        // Teacher gets the upload XP (recordUploadMetrics runs unconditionally)
+        // Teacher does NOT get upload XP (school photo, upload metrics deferred)
         $this->teacher->refresh();
-        $this->assertEquals($uploadXp, $this->teacher->xp, 'Facilitator gets upload XP from participant upload');
+        $this->assertEquals(0, $this->teacher->xp, 'Facilitator has 0 XP before approval (school photo)');
 
         // Student XP untouched
         $this->student->refresh();
@@ -763,7 +737,7 @@ class SchoolLifecycleTest extends TestCase
 
         // School student tagging: verified = VERIFIED(1), no metrics fire
         $this->assertEquals(VerificationStatus::VERIFIED->value, $photo->verified->value);
-        $this->assertEquals($uploadXp, (int) $photo->processed_xp, 'Still upload-only in processed_xp');
+        $this->assertNull($photo->processed_at, 'No metrics processed yet');
 
         // Teacher approves
         $this->actingAs($this->teacher)
@@ -873,6 +847,20 @@ class SchoolLifecycleTest extends TestCase
         $this->assertEquals($uploads, (int) $row->uploads, "Metrics uploads for user {$userId}");
         $this->assertEquals($xp, (int) $row->xp, "Metrics XP for user {$userId}");
         $this->assertEquals($litter, (int) $row->litter, "Metrics litter for user {$userId}");
+    }
+
+    private function assertNoMetricsRow(int $userId): void
+    {
+        $row = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('user_id', $userId)
+            ->where('year', 0)
+            ->where('month', 0)
+            ->first();
+
+        $this->assertNull($row, "No metrics row should exist for user {$userId}");
     }
 
     private function getMetricsXp(int $userId): int

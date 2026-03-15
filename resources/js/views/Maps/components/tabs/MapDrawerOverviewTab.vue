@@ -89,9 +89,13 @@
                     <div
                         v-for="(item, idx) in normalizedHistogram"
                         :key="idx"
-                        class="flex-1 bg-gradient-to-t from-green-500 to-green-400 rounded-t hover:opacity-80 transition-opacity cursor-pointer min-w-[2px]"
+                        class="flex-1 rounded-t transition-all min-w-[2px]"
+                        :class="isActiveDateBucket(item.bucket)
+                            ? 'bg-gradient-to-t from-emerald-300 to-white opacity-100'
+                            : 'bg-gradient-to-t from-green-500 to-green-400 hover:opacity-80 cursor-pointer'"
                         :style="`height: ${item.height}%`"
                         :title="`${formatDate(item.bucket)}: ${formatNumber(item.photos)} photos, ${formatNumber(item.objects)} objects`"
+                        @click="handleBarClick(item)"
                     ></div>
                 </div>
                 <div class="flex justify-between text-xs text-white/70">
@@ -275,6 +279,59 @@ const categories = computed(() => {
         };
     });
 });
+
+// Time series bar click → date filter
+const handleBarClick = (item) => {
+    const { from, to } = bucketToDateRange(item.bucket);
+    emit('filter-apply', {
+        type: 'date',
+        id: item.bucket,
+        label: formatDate(item.bucket),
+        from,
+        to,
+    });
+};
+
+/**
+ * Convert a time-series bucket string to a from/to date range.
+ * Handles daily ("2025-03-15"), weekly ("2025-11"), and monthly ("2025-03-01") formats.
+ */
+const bucketToDateRange = (bucket) => {
+    if (!bucket) return { from: null, to: null };
+
+    // Weekly format: "YYYY-WW" (e.g. "2025-11")
+    if (/^\d{4}-\d{1,2}$/.test(bucket) && !bucket.includes('-0')) {
+        const [year, week] = bucket.split('-').map(Number);
+        // ISO week: Monday of the given week
+        const jan4 = new Date(year, 0, 4);
+        const dayOfWeek = jan4.getDay() || 7;
+        const monday = new Date(jan4);
+        monday.setDate(jan4.getDate() - dayOfWeek + 1 + (week - 1) * 7);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        return {
+            from: monday.toISOString().slice(0, 10),
+            to: sunday.toISOString().slice(0, 10),
+        };
+    }
+
+    // Monthly format: "YYYY-MM-01"
+    if (/^\d{4}-\d{2}-01$/.test(bucket)) {
+        const date = new Date(bucket + 'T00:00:00');
+        const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        return {
+            from: bucket,
+            to: lastDay.toISOString().slice(0, 10),
+        };
+    }
+
+    // Daily format: "YYYY-MM-DD"
+    return { from: bucket, to: bucket };
+};
+
+const isActiveDateBucket = (bucket) => {
+    return props.activeFilter?.type === 'date' && props.activeFilter?.id === bucket;
+};
 
 const handleCategoryHover = (category) => {
     highlightedCategory.value = category;

@@ -232,8 +232,8 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ t.members }}</td>
-                            <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ t.total_images }}</td>
-                            <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ t.total_litter }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ t.total_photos }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ t.total_tags }}</td>
                             <td class="px-4 py-3 text-center">
                                 <span
                                     v-if="t.id === teamId"
@@ -288,9 +288,9 @@ const sortedTeams = computed(() => {
         } else if (sortKey.value === 'members') {
             cmp = (a.members || 0) - (b.members || 0);
         } else if (sortKey.value === 'photos') {
-            cmp = (a.total_images || 0) - (b.total_images || 0);
+            cmp = (a.total_photos || 0) - (b.total_photos || 0);
         } else if (sortKey.value === 'tags') {
-            cmp = (a.total_litter || 0) - (b.total_litter || 0);
+            cmp = (a.total_tags || 0) - (b.total_tags || 0);
         }
 
         return sortAsc.value ? cmp : -cmp;

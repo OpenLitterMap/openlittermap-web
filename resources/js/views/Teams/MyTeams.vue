@@ -80,8 +80,8 @@
                                         {{ member.active_team === viewTeamId ? $t('Active') : $t('Inactive') }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-right tabular-nums">{{ member.pivot.total_photos }}</td>
-                                <td class="px-4 py-3 text-right tabular-nums">{{ member.pivot.total_litter }}</td>
+                                <td class="px-4 py-3 text-right tabular-nums">{{ member.member_total_photos }}</td>
+                                <td class="px-4 py-3 text-right tabular-nums">{{ member.member_total_tags }}</td>
                                 <td class="px-4 py-3 text-right text-slate-500 text-xs">
                                     {{ member.pivot.updated_at ? formatDate(member.pivot.updated_at) : '—' }}
                                 </td>
@@ -138,8 +138,8 @@
                                 <td class="px-4 py-3 font-medium">{{ team.name }}</td>
                                 <td class="px-4 py-3 text-slate-500 font-mono text-xs">{{ team.identifier }}</td>
                                 <td class="px-4 py-3 text-right tabular-nums">{{ team.members }}</td>
-                                <td class="px-4 py-3 text-right tabular-nums">{{ team.total_images }}</td>
-                                <td class="px-4 py-3 text-right tabular-nums">{{ team.total_litter }}</td>
+                                <td class="px-4 py-3 text-right tabular-nums">{{ team.total_photos }}</td>
+                                <td class="px-4 py-3 text-right tabular-nums">{{ team.total_tags }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-center gap-1">
                                         <!-- Set active -->

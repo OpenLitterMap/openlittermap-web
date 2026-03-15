@@ -39,15 +39,7 @@ class TeamsController extends Controller
         $user = Auth::user();
 
         $teams = $user->teams()
-            ->addSelect([
-                'teams.*',
-                'team_total_photos' => \App\Models\Photo::query()
-                    ->selectRaw('COUNT(*)')
-                    ->whereColumn('photos.team_id', 'teams.id'),
-                'team_total_tags' => \App\Models\Photo::query()
-                    ->selectRaw('COALESCE(SUM(total_tags), 0)')
-                    ->whereColumn('photos.team_id', 'teams.id'),
-            ])
+            ->withPhotoStats()
             ->get()
             ->map(fn ($team) => [
                 'id' => $team->id,
@@ -55,8 +47,8 @@ class TeamsController extends Controller
                 'identifier' => $team->identifier,
                 'type_name' => $team->type_name,
                 'total_members' => $team->members,
-                'total_tags' => (int) $team->team_total_tags,
-                'total_photos' => (int) $team->team_total_photos,
+                'total_tags' => (int) $team->total_tags,
+                'total_photos' => (int) $team->total_photos,
                 'created_at' => $team->created_at,
                 'updated_at' => $team->updated_at,
             ]);

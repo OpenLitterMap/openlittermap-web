@@ -75,8 +75,8 @@ class CalculatePhotoXpTest extends TestCase
         // Objects (butts, qty=2): 2 × 1 = 2
         // 3 materials (2 from deprecated mapping: plastic,paper + 1 explicit) × parent qty 2 × 2 = 12
         // Brand: 1 × 3 = 3 (independent)
-        // Picked up: 5
-        $this->assertSame(22, $photo->xp);
+        // Picked up: 2 × 5 = 10 (per-object qty × PickedUp XP)
+        $this->assertSame(27, $photo->xp);
     }
 
     /** @test */
@@ -305,8 +305,8 @@ class CalculatePhotoXpTest extends TestCase
         // No object_id set, so litter count is 0 (only objects count as litter)
         $this->assertEquals(0, $photo->summary['totals']['litter']);
 
-        // XP: 0 (no objects) + 3×1 (custom tags) + 5 (picked up) = 8
-        $this->assertEquals(8, $photo->xp);
+        // XP: 0 (no objects) + 3×1 (custom tags) = 3 (no picked_up bonus without object)
+        $this->assertEquals(3, $photo->xp);
     }
 
     /** @test */
@@ -523,8 +523,8 @@ class CalculatePhotoXpTest extends TestCase
         // + 3×2 (materials)
         // + 2×3 (brands)
         // + 3×1 (custom tag)
-        // + 5 (picked up)
-        // = 3 + 50 + 6 + 6 + 3 + 5 = 73
-        $this->assertEquals(73, $photo->xp);
+        // + 0 (no per-tag picked_up set)
+        // = 3 + 50 + 6 + 6 + 3 = 68
+        $this->assertEquals(68, $photo->xp);
     }
 }
