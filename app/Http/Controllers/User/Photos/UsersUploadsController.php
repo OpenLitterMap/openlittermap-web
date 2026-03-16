@@ -129,6 +129,8 @@ class UsersUploadsController extends Controller
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,
+                'is_public' => (bool) $photo->is_public,
+                'school_team' => $photo->team && $photo->team->isSchool(),
                 'created_at' => $photo->created_at,
 
                 'new_tags' => $this->getNewTags($photo),

@@ -213,4 +213,21 @@ class UsersUploadsControllerTest extends TestCase
             'picked_up' => $pickedUp,
         ]);
     }
+
+    public function test_index_returns_is_public_and_school_team_fields(): void
+    {
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $this->user);
+        $photo->update(['is_public' => false]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/v3/user/photos');
+
+        $response->assertOk();
+        $photos = $response->json('photos');
+        $this->assertCount(1, $photos);
+        $this->assertArrayHasKey('is_public', $photos[0]);
+        $this->assertArrayHasKey('school_team', $photos[0]);
+        $this->assertFalse($photos[0]['is_public']);
+        $this->assertFalse($photos[0]['school_team']);
+    }
 }
