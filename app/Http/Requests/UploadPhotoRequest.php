@@ -31,6 +31,7 @@ class UploadPhotoRequest extends FormRequest
             'lon' => ['sometimes', 'numeric', 'between:-180,180'],
             'date' => ['sometimes'],
             'picked_up' => ['sometimes', 'boolean'],
+            'is_public' => ['sometimes', 'boolean'],
             'model' => ['sometimes', 'string', 'max:255'],
         ];
     }

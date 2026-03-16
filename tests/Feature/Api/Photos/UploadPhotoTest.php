@@ -442,4 +442,154 @@ class UploadPhotoTest extends TestCase
         $response->assertStatus(422);
         $response->assertJson(['error' => 'duplicate']);
     }
+
+    // ---------------------------------------------------------------
+    // Upload metrics gate: school vs private-by-choice
+    // ---------------------------------------------------------------
+
+    public function test_school_team_photo_defers_upload_xp()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $schoolType = TeamType::firstOrCreate(
+            ['team' => 'school'],
+            ['team' => 'school']
+        );
+
+        $team = Team::factory()->create([
+            'type_id' => $schoolType->id,
+            'type_name' => 'school',
+        ]);
+
+        $user = User::factory()->create([
+            'active_team' => $team->id,
+            'picked_up' => true,
+        ]);
+        $team->users()->attach($user->id);
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+
+        // School photos defer XP — no immediate award
+        $this->assertEquals(0, $response->json('xp_awarded'));
+        $this->assertEquals(0, $user->fresh()->xp);
+
+        // Photo should be private
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertFalse((bool) $photo->is_public);
+    }
+
+    // ---------------------------------------------------------------
+    // public_photos user default
+    // ---------------------------------------------------------------
+
+    public function test_upload_uses_user_public_photos_default()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+        $user = User::factory()->create(['picked_up' => true, 'public_photos' => false]);
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(storage_path('framework/testing/img_with_exif.JPG'), 'photo.jpg', 'image/jpeg', null, true),
+        ]);
+        $response->assertOk();
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertFalse((bool) $photo->is_public);
+    }
+
+    public function test_upload_request_is_public_overrides_user_default()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+        $user = User::factory()->create(['picked_up' => true, 'public_photos' => false]);
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(storage_path('framework/testing/img_with_exif.JPG'), 'photo.jpg', 'image/jpeg', null, true),
+            'is_public' => true,
+        ]);
+        $response->assertOk();
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertTrue((bool) $photo->is_public);
+    }
+
+    public function test_school_team_overrides_user_public_photos_true()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+        $schoolType = TeamType::firstOrCreate(['team' => 'school'], ['team' => 'school']);
+        $team = Team::factory()->create(['type_id' => $schoolType->id, 'type_name' => 'school']);
+        $user = User::factory()->create(['active_team' => $team->id, 'picked_up' => true, 'public_photos' => true]);
+        $team->users()->attach($user->id);
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(storage_path('framework/testing/img_with_exif.JPG'), 'photo.jpg', 'image/jpeg', null, true),
+        ]);
+        $response->assertOk();
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertFalse((bool) $photo->is_public);
+        $this->assertEquals(0, $response->json('xp_awarded'));
+    }
+
+    public function test_user_leaving_school_team_uses_own_default()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+        $user = User::factory()->create(['active_team' => null, 'picked_up' => true, 'public_photos' => false]);
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(storage_path('framework/testing/img_with_exif.JPG'), 'photo.jpg', 'image/jpeg', null, true),
+        ]);
+        $response->assertOk();
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertFalse((bool) $photo->is_public);
+        $this->assertEquals(\App\Enums\XpScore::Upload->xp(), $response->json('xp_awarded'));
+    }
+
+    public function test_non_school_team_photo_gets_immediate_upload_xp()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $communityType = TeamType::firstOrCreate(
+            ['team' => 'community'],
+            ['team' => 'community', 'price' => 0]
+        );
+
+        $team = Team::factory()->create([
+            'type_id' => $communityType->id,
+            'type_name' => 'community',
+        ]);
+
+        $user = User::factory()->create([
+            'active_team' => $team->id,
+            'picked_up' => true,
+        ]);
+        $team->users()->attach($user->id);
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+
+        // Community team photos get immediate XP
+        $this->assertEquals(XpScore::Upload->xp(), $response->json('xp_awarded'));
+        $this->assertEquals(XpScore::Upload->xp(), $user->fresh()->xp);
+
+        // Photo should be public
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertTrue((bool) $photo->is_public);
+    }
 }

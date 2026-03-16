@@ -100,6 +100,14 @@ class UploadPhotoController extends Controller
 
         $deviceModel = $request->input('model', $exif['Model'] ?? 'Unknown');
 
+        // 6a. Determine photo visibility: request value → user default → true
+        // PhotoObserver::creating() overrides to false for school teams
+        if ($request->has('is_public')) {
+            $isPublic = $request->boolean('is_public');
+        } else {
+            $isPublic = $user->public_photos ?? true;
+        }
+
         // 6. Create Photo — FKs only, no string duplication
         $photo = Photo::create([
             'user_id' => $user->id,
@@ -113,6 +121,7 @@ class UploadPhotoController extends Controller
             'state_id' => $location->state?->id,
             'city_id' => $location->city?->id,
             'platform' => $hasExplicit ? 'mobile' : 'web',
+            'is_public' => $isPublic,
             'team_id' => $request->attributes->get('participant_team')?->id ?? $user->active_team,
             'participant_id' => $request->attributes->get('participant')?->id,
             'five_hundred_square_filepath' => $bboxImageName,
@@ -133,15 +142,17 @@ class UploadPhotoController extends Controller
             event(new NewCountryAdded(
                 $location->country->country,
                 $location->country->shortcode,
-                now()
+                now(),
+                $user->id
             ));
         }
 
-        if ($location->state->wasRecentlyCreated) {
+        if ($location->state?->wasRecentlyCreated) {
             event(new NewStateAdded(
                 $location->state->state,
                 $location->country->country,
-                now()
+                now(),
+                $user->id
             ));
         }
 
@@ -160,12 +171,17 @@ class UploadPhotoController extends Controller
 
         // 9. Award upload XP to MySQL (immediate feedback for profile)
         // and metrics table (so user appears on time-filtered leaderboards).
-        // Skip for private photos (school team) — deferred until teacher
-        // approval, when MetricsService::processPhoto() handles the full XP.
+        // Skip for school team photos — deferred until teacher approval,
+        // when MetricsService::processPhoto() handles the full XP.
+        // Private-by-choice photos (user setting) still get immediate XP.
         $uploadXp = XpScore::Upload->xp();
         $xpAwarded = 0;
 
-        if ($photo->is_public !== false) {
+        $isSchoolPhoto = $photo->team_id
+            && ($team = \App\Models\Teams\Team::find($photo->team_id))
+            && $team->isSchool();
+
+        if (! $isSchoolPhoto) {
             $user->increment('xp', $uploadXp);
             $this->metricsService->recordUploadMetrics($photo, $uploadXp);
             $xpAwarded = $uploadXp;
@@ -176,9 +192,9 @@ class UploadPhotoController extends Controller
             'photo_id' => $photo->id,
             'lat' => $photo->lat,
             'lon' => $photo->lon,
-            'city' => $location->city->city,
-            'state' => $location->state->state,
-            'country' => $location->country->country,
+            'city' => $location->city?->city,
+            'state' => $location->state?->state,
+            'country' => $location->country?->country,
             'display_name' => $location->displayName,
             'xp_awarded' => $xpAwarded,
             'user_xp_total' => $user->xp,
