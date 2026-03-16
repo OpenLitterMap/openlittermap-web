@@ -125,6 +125,12 @@ Built by a single developer over 17 years.
 - `photos.remaining` is deprecated (drop post-migration) — `picked_up` is now per-tag on `photo_tags.picked_up` (nullable boolean: true/false/null). XP bonus is +5 per object quantity where `picked_up=true` (not photo-level). Brand-only, material-only, and custom-only tags don't get the picked_up bonus.
 - `users.total_images` is deprecated — profile upload counts use `Photo::where('user_id', $id)->count()` as fallback when Redis is empty. Do NOT increment/decrement `total_images` in new code.
 - School team photos: `is_public=false` until teacher approval (see `readme/SchoolPipeline.md`)
+- `users.public_photos` boolean (default true) — user-level default for photo visibility. Precedence: school team override > request `is_public` param > `users.public_photos` > `true`
+- `PATCH /api/v3/photos/{id}/visibility` toggles per-photo visibility (owner only, school photos rejected with 403)
+- Private-by-choice photos (user sets `public_photos=false`) get immediate metrics (XP, leaderboard) — only hidden from map/clusters/points API. Metrics gate checks `team->isSchool()`, NOT `is_public`
+- PhotoObserver marks dirty tiles on `is_public` change (for verified photos)
+- Own-user profile queries (geojson, location counts) include private photos. Public profile `show()` excludes them
+- `UsersUploadsController::index()` returns `is_public` and `school_team` fields per photo
 - `TagsVerifiedByAdmin` fires for ALL non-school users at tag time (leaderboard credit is immediate). Only school students wait for teacher approval
 - All public/global queries MUST use `Photo::public()` scope or `where('is_public', true)`
 - School teams must NOT be `is_trusted` (aggregate data would leak before teacher review)
