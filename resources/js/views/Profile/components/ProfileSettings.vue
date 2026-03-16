@@ -97,6 +97,12 @@
                     :value="profileStore.user.prevent_others_tagging_my_photos"
                     @toggle="saveSetting('prevent_others_tagging_my_photos', !profileStore.user.prevent_others_tagging_my_photos)"
                 />
+                <SettingsToggle
+                    :label="$t('Photos public by default')"
+                    :description="$t('New photos will appear on the public map')"
+                    :value="profileStore.user.public_photos"
+                    @toggle="saveSetting('public_photos', !profileStore.user.public_photos)"
+                />
             </div>
         </div>
 

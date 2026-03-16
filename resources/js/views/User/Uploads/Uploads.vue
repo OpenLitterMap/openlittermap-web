@@ -71,6 +71,25 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                             </button>
+                            <button
+                                class="transition-colors p-1"
+                                :class="photo.is_public
+                                    ? 'text-emerald-500 hover:text-emerald-700'
+                                    : 'text-gray-400 hover:text-gray-600'"
+                                :disabled="photo.school_team || togglingVisibility[photo.id]"
+                                :title="photo.school_team
+                                    ? $t('Managed by team leader')
+                                    : (photo.is_public ? $t('Photo is public') : $t('Photo is private'))"
+                                @click.stop="toggleVisibility(photo)"
+                            >
+                                <svg v-if="photo.is_public" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                                </svg>
+                            </button>
                             <span v-if="copyLinkStatus[photo.id]" class="text-xs text-green-600 font-medium">
                                 {{ copyLinkStatus[photo.id] }}
                             </span>
@@ -176,6 +195,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 import { usePhotosStore } from '@/stores/photos';
 import UploadTags from './UploadTags.vue';
 import UploadsHeader from './components/UploadsHeader.vue';
@@ -189,6 +209,7 @@ const selectedPhoto = ref(null);
 const copyLinkStatus = ref({});
 const photoToDelete = ref(null);
 const deleting = ref({});
+const togglingVisibility = ref({});
 
 // Computed
 const photos = computed(() => store.photos);
@@ -244,6 +265,24 @@ const deletePhoto = async (photo) => {
         console.error('Delete failed:', error);
     } finally {
         deleting.value[photo.id] = false;
+    }
+};
+
+const toggleVisibility = async (photo) => {
+    if (togglingVisibility.value[photo.id]) return;
+
+    togglingVisibility.value[photo.id] = true;
+    try {
+        const { data } = await axios.patch(`/api/v3/photos/${photo.id}/visibility`, {
+            is_public: !photo.is_public,
+        });
+        if (data.success) {
+            photo.is_public = data.is_public;
+        }
+    } catch (err) {
+        console.error('Failed to toggle visibility', err);
+    } finally {
+        togglingVisibility.value[photo.id] = false;
     }
 };
 
