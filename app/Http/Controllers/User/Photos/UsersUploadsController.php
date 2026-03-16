@@ -291,6 +291,39 @@ class UsersUploadsController extends Controller
     }
 
     /**
+     * Toggle photo visibility (public/private).
+     * School team photos cannot be toggled — managed by team leader.
+     */
+    public function toggleVisibility(Request $request, Photo $photo): JsonResponse
+    {
+        $request->validate([
+            'is_public' => ['required', 'boolean'],
+        ]);
+
+        if ((int) $photo->user_id !== (int) Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // School team photos are managed by the team leader
+        if ($photo->team_id) {
+            $team = \App\Models\Teams\Team::find($photo->team_id);
+            if ($team && $team->isSchool()) {
+                return response()->json([
+                    'message' => 'School team photos are managed by the team leader.',
+                ], 403);
+            }
+        }
+
+        $photo->is_public = $request->boolean('is_public');
+        $photo->save();
+
+        return response()->json([
+            'success' => true,
+            'is_public' => (bool) $photo->is_public,
+        ]);
+    }
+
+    /**
      * Transform new tags structure
      */
     private function getNewTags($photo): array

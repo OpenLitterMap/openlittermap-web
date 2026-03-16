@@ -80,6 +80,7 @@ Route::group(['prefix' => 'v3', 'middleware' => ['auth:sanctum']], function () {
     Route::get('/user/photos', [UsersUploadsController::class, 'index']);
     Route::get('/user/photos/stats', [UsersUploadsController::class, 'stats']);
     Route::get('/user/photos/locations', [UsersUploadsController::class, 'locations']);
+    Route::patch('/photos/{photo}/visibility', [UsersUploadsController::class, 'toggleVisibility']);
 });
 
 /*
@@ -107,9 +108,10 @@ Route::get('/locations/global', [LocationController::class, 'global']);
 Route::get('/locations/world-cup', GetDataForWorldCupController::class);
 Route::get('/locations/{type}', [LocationController::class, 'index']);
 Route::get('/locations/{type}/{id}', [LocationController::class, 'show']);
-Route::get('/locations/{type}/{id}/categories', [LocationController::class, 'categories']);
-Route::get('/locations/{type}/{id}/timeseries', [LocationController::class, 'timeseries']);
-Route::get('/locations/{type}/{id}/leaderboard', [LocationController::class, 'leaderboard']);
+// TODO: implement these LocationController methods
+// Route::get('/locations/{type}/{id}/categories', [LocationController::class, 'categories']);
+// Route::get('/locations/{type}/{id}/timeseries', [LocationController::class, 'timeseries']);
+// Route::get('/locations/{type}/{id}/leaderboard', [LocationController::class, 'leaderboard']);
 
 Route::prefix('locations/{type}/{id}/tags')->group(function () {
     Route::get('/top', [TagController::class, 'top']);

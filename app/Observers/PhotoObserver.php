@@ -77,7 +77,7 @@ class PhotoObserver
     public function saved(Photo $photo): void
     {
         if ($this->isPublicReady($photo) && $photo->tile_key) {
-            if ($photo->wasChanged(['lat', 'lon', 'verified', 'tile_key'])) {
+            if ($photo->wasChanged(['lat', 'lon', 'verified', 'tile_key', 'is_public'])) {
                 $this->clustering->markTileDirty($photo->tile_key);
             }
         }
