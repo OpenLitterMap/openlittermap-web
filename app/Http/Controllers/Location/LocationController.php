@@ -37,7 +37,11 @@ class LocationController extends Controller
         $time = $this->resolveTimeFilter();
 
         $stats = $this->getStats(LocationType::Global, 0, $time);
-        $stats['contributors'] = (int) DB::table('photos')->distinct()->count('user_id');
+        $stats['contributors'] = (int) DB::table('photos')
+            ->where('is_public', true)
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->count('user_id');
         $stats['total_users'] = (int) DB::table('users')->count();
 
         $countries = $this->getChildrenWithStats(
@@ -368,6 +372,8 @@ class LocationController extends Controller
 
         return (int) DB::table('photos')
             ->where($column, $id)
+            ->where('is_public', true)
+            ->whereNull('deleted_at')
             ->distinct()
             ->count('user_id');
     }
@@ -391,7 +397,7 @@ class LocationController extends Controller
         // Global totals for percentage (all-time)
         $global = DB::table('metrics')
             ->where('timescale', 0)
-            ->where('location_type', LocationType::Global)
+            ->where('location_type', LocationType::Global->value)
             ->where('location_id', 0)
             ->where('user_id', 0)
             ->first(['uploads', 'tags']);
@@ -403,12 +409,16 @@ class LocationController extends Controller
         $firstPhoto = DB::table('photos as p')
             ->join('users as u', 'u.id', '=', 'p.user_id')
             ->where("p.{$column}", $id)
+            ->where('p.is_public', true)
+            ->whereNull('p.deleted_at')
             ->orderBy('p.created_at')
             ->first(['p.created_at', 'u.name as username', 'u.id as user_id']);
 
         $lastPhoto = DB::table('photos as p')
             ->join('users as u', 'u.id', '=', 'p.user_id')
             ->where("p.{$column}", $id)
+            ->where('p.is_public', true)
+            ->whereNull('p.deleted_at')
             ->orderByDesc('p.created_at')
             ->first(['p.created_at', 'u.name as username', 'u.id as user_id']);
 
@@ -458,6 +468,8 @@ class LocationController extends Controller
         $contributors = DB::table('photos')
             ->select($photoColumn, DB::raw('COUNT(DISTINCT user_id) as contributors'))
             ->whereIn($photoColumn, $ids)
+            ->where('is_public', true)
+            ->whereNull('deleted_at')
             ->groupBy($photoColumn)
             ->pluck('contributors', $photoColumn);
 
@@ -465,6 +477,8 @@ class LocationController extends Controller
         $firstIds = DB::table('photos')
             ->select($photoColumn, DB::raw('MIN(id) as photo_id'))
             ->whereIn($photoColumn, $ids)
+            ->where('is_public', true)
+            ->whereNull('deleted_at')
             ->groupBy($photoColumn)
             ->pluck('photo_id', $photoColumn);
 
@@ -481,6 +495,8 @@ class LocationController extends Controller
         $lastIds = DB::table('photos')
             ->select($photoColumn, DB::raw('MAX(id) as photo_id'))
             ->whereIn($photoColumn, $ids)
+            ->where('is_public', true)
+            ->whereNull('deleted_at')
             ->groupBy($photoColumn)
             ->pluck('photo_id', $photoColumn);
 

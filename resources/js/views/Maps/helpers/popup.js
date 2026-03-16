@@ -37,6 +37,14 @@ const htmlSanitizer = {
             return '';
         }
     },
+
+    /**
+     * Escape a string for safe embedding inside a JS single-quoted string literal.
+     */
+    escapeJsString(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+    },
 };
 
 export const popupHelper = {
@@ -146,7 +154,7 @@ export const popupHelper = {
 
         // Image click: open full-size in new tab for trusted images, do nothing for waiting
         const imageClickAttr = isTrustedUser
-            ? `onclick="window.open('${safeProps.filename}', '_blank');" title="${translate('View full image')}"`
+            ? `onclick="window.open('${htmlSanitizer.escapeJsString(safeProps.filename)}', '_blank');" title="${htmlSanitizer.escapeHtml(translate('View full image'))}"`
             : '';
 
         // When there are no tags, combine the empty-state message and date into a single meta line
@@ -205,10 +213,10 @@ export const popupHelper = {
                     navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(shareUrl)}')).then(function() {
                         var btn = event.currentTarget;
                         btn.classList.add('popup-copy-btn--copied');
-                        btn.querySelector('.popup-copy-label').textContent = '${translate('Copied!')}';
+                        btn.querySelector('.popup-copy-label').textContent = '${htmlSanitizer.escapeJsString(translate('Copied!'))}';
                         setTimeout(function() {
                             btn.classList.remove('popup-copy-btn--copied');
-                            btn.querySelector('.popup-copy-label').textContent = '${translate('Copy link')}';
+                            btn.querySelector('.popup-copy-label').textContent = '${htmlSanitizer.escapeJsString(translate('Copy link'))}';
                         }, 2000);
                     });
                 " title="${translate('Copy link')}">

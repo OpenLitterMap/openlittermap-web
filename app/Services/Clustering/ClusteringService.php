@@ -141,6 +141,7 @@ class ClusteringService
                 FLOOR((lat + 90)/?) AS cell_y
                 FROM photos USE INDEX (idx_photos_fast_cluster)
               WHERE verified >= 2
+                AND is_public = 1
             ) AS grouped_photos
             GROUP BY cell_x, cell_y
             HAVING COUNT(*) >= ?
@@ -193,6 +194,7 @@ class ClusteringService
             FLOOR(cell_y / ?) AS cluster_y
           FROM photos USE INDEX (idx_photos_fast_cluster)
           WHERE verified >= 2
+            AND is_public = 1
             AND tile_key IS NOT NULL
         ) AS grouped_photos
         GROUP BY tile_key, cluster_x, cluster_y
@@ -352,6 +354,7 @@ class ClusteringService
                   FROM photos
                   WHERE team_id = ?
                     AND verified >= 1
+                    AND is_public = 1
                     AND lat BETWEEN -90 AND 90
                     AND lon BETWEEN -180 AND 180
                 ) AS grouped_photos
@@ -388,6 +391,7 @@ class ClusteringService
                   FROM photos
                   WHERE team_id = ?
                     AND verified >= 1
+                    AND is_public = 1
                     AND tile_key IS NOT NULL
                 ) AS grouped_photos
                 GROUP BY tile_key, cluster_x, cluster_y
@@ -448,6 +452,7 @@ class ClusteringService
                 FLOOR(cell_y / ?) AS cluster_y
                 FROM photos USE INDEX (idx_photos_fast_cluster)
               WHERE verified >= 2
+                AND is_public = 1
                 AND tile_key = ?
             ) AS grouped_photos
             GROUP BY tile_key, cluster_x, cluster_y

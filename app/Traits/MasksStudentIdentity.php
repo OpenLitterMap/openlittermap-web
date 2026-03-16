@@ -4,12 +4,14 @@ namespace App\Traits;
 
 use App\Models\Teams\Team;
 use App\Models\Users\User;
+use Illuminate\Support\Facades\DB;
 
 /**
  * API-level identity masking for school teams with safeguarding enabled.
  *
  * When a team has safeguarding=true, student names and usernames are replaced
- * with "Student 1", "Student 2" etc.
+ * with deterministic pseudonyms ("Student 1", "Student 2" etc.) based on
+ * team_user.id (join order), so numbering is stable across requests.
  *
  * Unmasked view is granted to:
  * - The team leader (teacher)
@@ -30,20 +32,31 @@ trait MasksStudentIdentity
             return $members;
         }
 
+        // Build stable mapping: user_id → "Student N"
+        // Ordered by pivot row creation (team_user.id), so numbering is
+        // deterministic regardless of tag counts or pagination.
+        $pseudonyms = DB::table('team_user')
+            ->where('team_id', $team->id)
+            ->where('user_id', '!=', $team->leader)
+            ->orderBy('id')
+            ->pluck('user_id')
+            ->flip()
+            ->map(fn ($index) => 'Student ' . ($index + 1))
+            ->toArray();
+
         $data = is_array($members) ? $members : $members->toArray();
-        $counter = 1;
 
         if (isset($data['data'])) {
             foreach ($data['data'] as &$member) {
-                $member['name'] = "Student {$counter}";
+                $userId = $member['id'] ?? $member['user_id'] ?? null;
+                $member['name'] = $pseudonyms[$userId] ?? 'Student';
                 $member['username'] = null;
-                $counter++;
             }
         } else {
             foreach ($data as &$member) {
-                $member['name'] = "Student {$counter}";
+                $userId = $member['id'] ?? $member['user_id'] ?? null;
+                $member['name'] = $pseudonyms[$userId] ?? 'Student';
                 $member['username'] = null;
-                $counter++;
             }
         }
 

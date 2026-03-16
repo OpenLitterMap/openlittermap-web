@@ -42,7 +42,7 @@ import androidIcon from '@/assets/icons/android.png';
 
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 
 const headings = ref([]);
 const activeHeadingIndex = ref(0);
@@ -57,19 +57,21 @@ const ios = () => {
     window.open('https://apps.apple.com/us/app/openlittermap/id1475982147', '_blank');
 };
 
-const startHeadingsAnimation = () => {
-    let interval = null;
+let headingInterval = null;
+let setAnimation = null;
 
-    function setAnimation() {
+const startHeadingsAnimation = () => {
+    setAnimation = () => {
         if (document.hidden || headings.value.length === 0) {
-            if (interval) clearInterval(interval);
+            if (headingInterval) clearInterval(headingInterval);
+            headingInterval = null;
             return;
         }
 
-        interval = setInterval(() => {
+        headingInterval = setInterval(() => {
             activeHeadingIndex.value = (activeHeadingIndex.value + 1) % headings.value.length;
         }, 5000);
-    }
+    };
 
     setAnimation();
 
@@ -93,6 +95,15 @@ onMounted(() => {
     ];
 
     startHeadingsAnimation();
+});
+
+onBeforeUnmount(() => {
+    if (setAnimation) {
+        document.removeEventListener('visibilitychange', setAnimation);
+    }
+    if (headingInterval) {
+        clearInterval(headingInterval);
+    }
 });
 </script>
 

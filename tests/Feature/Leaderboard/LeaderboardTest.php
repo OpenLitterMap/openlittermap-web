@@ -7,6 +7,8 @@ use App\Models\Location\City;
 use App\Models\Location\Country;
 use App\Models\Location\State;
 use App\Models\Photo;
+use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use App\Services\Redis\RedisKeys;
 use App\Services\Redis\RedisMetricsCollector;
@@ -417,6 +419,94 @@ class LeaderboardTest extends TestCase
 
         $this->assertEquals(2, $response['activeUsers']);
         $this->assertEquals(3, $response['totalUsers']);
+    }
+
+    public function test_leaderboard_uses_pivot_privacy_over_global_settings(): void
+    {
+        $teamType = TeamType::firstOrCreate(
+            ['team' => 'community'],
+            ['team' => 'community', 'price' => 0]
+        );
+        $team = Team::factory()->create(['type_id' => $teamType->id]);
+
+        // User has global show_name=true, but pivot show_name_leaderboards=false
+        $user = User::factory()->create([
+            'show_name' => true,
+            'show_username' => true,
+            'active_team' => $team->id,
+        ]);
+        $user->teams()->attach($team->id, [
+            'show_name_leaderboards' => false,
+            'show_username_leaderboards' => false,
+        ]);
+
+        $this->seedMetric($user->id, 100);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/api/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $this->assertCount(1, $response['users']);
+        $this->assertEquals('', $response['users'][0]['name'], 'Pivot should override global show_name');
+        $this->assertEquals('', $response['users'][0]['username'], 'Pivot should override global show_username');
+    }
+
+    public function test_leaderboard_shows_name_when_pivot_allows(): void
+    {
+        $teamType = TeamType::firstOrCreate(
+            ['team' => 'community'],
+            ['team' => 'community', 'price' => 0]
+        );
+        $team = Team::factory()->create(['type_id' => $teamType->id]);
+
+        // User has global show_name=false, but pivot show_name_leaderboards=true
+        $user = User::factory()->create([
+            'name' => 'Visible Person',
+            'username' => 'visible',
+            'show_name' => false,
+            'show_username' => false,
+            'active_team' => $team->id,
+        ]);
+        $user->teams()->attach($team->id, [
+            'show_name_leaderboards' => true,
+            'show_username_leaderboards' => true,
+        ]);
+
+        $this->seedMetric($user->id, 100);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/api/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $this->assertCount(1, $response['users']);
+        $this->assertEquals('Visible Person', $response['users'][0]['name']);
+        $this->assertEquals('@visible', $response['users'][0]['username']);
+    }
+
+    public function test_leaderboard_falls_back_to_global_when_no_active_team(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Global User',
+            'show_name' => true,
+            'show_username' => false,
+            'active_team' => null,
+        ]);
+
+        $this->seedMetric($user->id, 100);
+
+        $response = $this
+            ->actingAs($user)
+            ->getJson('/api/leaderboard')
+            ->assertOk()
+            ->json();
+
+        $this->assertCount(1, $response['users']);
+        $this->assertEquals('Global User', $response['users'][0]['name']);
+        $this->assertEquals('', $response['users'][0]['username']);
     }
 
     public function test_all_time_country_filtered_leaderboard(): void

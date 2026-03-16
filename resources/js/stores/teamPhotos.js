@@ -35,7 +35,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
         /**
          * Fetch paginated photos for a team.
          */
-        async fetchPhotos(teamId, page = 1) {
+        async fetchPhotos(teamId, page = 1, extraParams = {}) {
             this.loading = true;
 
             try {
@@ -44,6 +44,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                         team_id: teamId,
                         status: this.filter,
                         page,
+                        ...extraParams,
                     },
                 });
 

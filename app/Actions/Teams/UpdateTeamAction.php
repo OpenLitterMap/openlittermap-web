@@ -18,8 +18,14 @@ class UpdateTeamAction
             $updateData['safeguarding'] = $data['safeguarding'];
         }
 
-        if (array_key_exists('participant_sessions_enabled', $data)) {
+        // Participant sessions are school-only
+        if (array_key_exists('participant_sessions_enabled', $data) && $team->isSchool()) {
             $updateData['participant_sessions_enabled'] = $data['participant_sessions_enabled'];
+        }
+
+        // School teams must never be trusted (bypasses teacher approval)
+        if ($team->isSchool()) {
+            $updateData['is_trusted'] = false;
         }
 
         $team->update($updateData);

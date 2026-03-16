@@ -156,7 +156,7 @@ class PointsController extends Controller
                 'photos.lat',
                 'photos.lon',
                 'photos.datetime',
-                'photos.remaining',
+                'photos.remaining', // TODO: remove post-migration — use Photo::picked_up accessor
                 'photos.summary',
             ])
             ->with([
@@ -360,7 +360,7 @@ class PointsController extends Controller
                 'id' => $photo->id,
                 'datetime' => $photo->datetime,
                 'verified' => $photo->verified,
-                'picked_up' => $photo->remaining !== null ? !$photo->remaining : null,
+                'picked_up' => $photo->picked_up,
                 'summary' => $photo->summary,
                 'filename' => $this->getFilename($photo),
                 'username' => $photo->user && $photo->user->show_username_maps

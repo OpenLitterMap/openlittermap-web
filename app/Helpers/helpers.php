@@ -139,7 +139,7 @@ if (!function_exists('getDateTimeForPhoto'))
     }
 }
 
-if (!function_exists('getCoordinatesFromExif'))
+if (!function_exists('getCoordinatesFromPhoto'))
 {
     function getCoordinatesFromPhoto (array $exif): ?array
     {

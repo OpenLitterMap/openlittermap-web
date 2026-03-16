@@ -157,7 +157,7 @@ class LeaderboardController extends Controller
         }
 
         $users = User::query()
-            ->with(['team:id,name', 'teams:id,name'])
+            ->with(['team:id,name,safeguarding', 'teams:id,name'])
             ->whereIn('id', $userIds)
             ->get()
             ->keyBy('id');
@@ -174,21 +174,35 @@ class LeaderboardController extends Controller
 
             $displayRank++;
 
-            $showTeamName = $user->active_team && $user->teams
-                    ->where('pivot.team_id', $user->active_team)
-                    ->first(function ($value) {
-                        return $value->pivot->show_name_leaderboards ||
-                            $value->pivot->show_username_leaderboards;
-                    });
+            // Check team-level leaderboard privacy from pivot
+            $teamPivot = $user->active_team
+                ? $user->teams->where('pivot.team_id', $user->active_team)->first()
+                : null;
+
+            $showTeamName = $teamPivot && (
+                $teamPivot->pivot->show_name_leaderboards ||
+                $teamPivot->pivot->show_username_leaderboards
+            );
+
+            // Use pivot-level leaderboard privacy if available, fall back to global settings
+            $showName = $teamPivot
+                ? (bool) $teamPivot->pivot->show_name_leaderboards
+                : (bool) $user->show_name;
+            $showUsername = $teamPivot
+                ? (bool) $teamPivot->pivot->show_username_leaderboards
+                : (bool) $user->show_username;
+
+            // Mask identity for safeguarded school teams
+            $hasSafeguarding = $user->team && $user->team->safeguarding;
 
             $result[] = [
                 'user_id' => $data['id'],
                 'public_profile' => (bool) $user->public_profile,
-                'name' => $user->show_name ? $user->name : '',
-                'username' => $user->show_username ? ('@' . $user->username) : '',
+                'name' => $hasSafeguarding ? null : ($showName ? $user->name : ''),
+                'username' => $hasSafeguarding ? null : ($showUsername ? ('@' . $user->username) : ''),
                 'xp' => (int) $data['xp'],
-                'global_flag' => $user->global_flag,
-                'social' => !empty($user->social_links) ? $user->social_links : null,
+                'global_flag' => $hasSafeguarding ? null : $user->global_flag,
+                'social' => $hasSafeguarding ? null : (!empty($user->social_links) ? $user->social_links : null),
                 'team' => $showTeamName && $user->team ? $user->team->name : '',
                 'rank' => $displayRank,
             ];

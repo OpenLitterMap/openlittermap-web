@@ -160,11 +160,13 @@ class TeamPhotosController extends Controller
                 $tag->delete();
             });
 
-            // Reset summary and XP so AddTagsToPhotoAction regenerates them
+            // Reset summary and XP so AddTagsToPhotoAction regenerates them.
+            // Use VERIFIED (not UNVERIFIED) so school photos remain in the
+            // facilitator queue's pending filter (verified >= VERIFIED).
             $photo->update([
                 'summary' => null,
                 'xp' => 0,
-                'verified' => VerificationStatus::UNVERIFIED->value,
+                'verified' => VerificationStatus::VERIFIED->value,
             ]);
 
             // Add new tags via the standard action (generates summary, XP)
@@ -556,21 +558,24 @@ class TeamPhotosController extends Controller
 
         $metricsService = app(MetricsService::class);
 
-        // Reverse metrics for each processed photo
-        foreach ($photosToRevoke as $photo) {
-            if ($photo->processed_at !== null) {
-                $metricsService->deletePhoto($photo);
+        $revokedCount = DB::transaction(function () use ($photosToRevoke, $metricsService) {
+            // Reverse metrics for each processed photo (BEFORE state change)
+            foreach ($photosToRevoke as $photo) {
+                if ($photo->processed_at !== null) {
+                    $metricsService->deletePhoto($photo);
+                }
             }
-        }
 
-        // Atomic update — un-publish all
-        $revokedCount = Photo::whereIn('id', $photosToRevoke->pluck('id'))
-            ->update([
-                'is_public' => false,
-                'verified' => VerificationStatus::VERIFIED->value,
-                'team_approved_at' => null,
-                'team_approved_by' => null,
-            ]);
+            // Atomic update with idempotency guard — only revoke still-public photos
+            return Photo::whereIn('id', $photosToRevoke->pluck('id'))
+                ->where('is_public', true)
+                ->update([
+                    'is_public' => false,
+                    'verified' => VerificationStatus::VERIFIED->value,
+                    'team_approved_at' => null,
+                    'team_approved_by' => null,
+                ]);
+        });
 
         return response()->json([
             'success' => true,

@@ -77,10 +77,12 @@ class Team extends Model
         $query->addSelect([
             'total_photos' => Photo::query()
                 ->selectRaw('COUNT(*)')
-                ->whereColumn('photos.team_id', 'teams.id'),
+                ->whereColumn('photos.team_id', 'teams.id')
+                ->where('photos.is_public', true),
             'total_tags' => Photo::query()
                 ->selectRaw('COALESCE(SUM(total_tags), 0)')
-                ->whereColumn('photos.team_id', 'teams.id'),
+                ->whereColumn('photos.team_id', 'teams.id')
+                ->where('photos.is_public', true),
         ]);
     }
 

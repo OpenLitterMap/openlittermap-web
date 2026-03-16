@@ -19,6 +19,11 @@ class ProcessPhotoMetrics implements ShouldQueue
         $photo = Photo::find($event->photo_id);
 
         if (! $photo) {
+            \Illuminate\Support\Facades\Log::warning('ProcessPhotoMetrics: photo not found', [
+                'photo_id' => $event->photo_id,
+                'user_id' => $event->user_id,
+            ]);
+
             return;
         }
 

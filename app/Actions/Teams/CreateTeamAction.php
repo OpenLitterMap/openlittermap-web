@@ -45,6 +45,7 @@ class CreateTeamAction
             'logo' => $logoPath,
             'max_participants' => $isSchool ? ($data['max_participants'] ?? null) : null,
             'participant_sessions_enabled' => $isSchool ? (bool) ($data['participant_sessions_enabled'] ?? false) : false,
+            'is_trusted' => $isSchool ? false : (bool) ($data['is_trusted'] ?? false),
         ]);
 
         // Leader auto-joins the team

@@ -36,7 +36,7 @@ final class RedisMetricsCollector
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', $metrics['litter']);
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', $metrics['xp']);
 
-                        // Track unique contributors (append-only) - FIX: pfAdd needs array
+                        // Track unique contributors (append-only)
                         $pipe->pfAdd(RedisKeys::hll($scope), [(string)$userId]);
 
                         // Contributor ranking

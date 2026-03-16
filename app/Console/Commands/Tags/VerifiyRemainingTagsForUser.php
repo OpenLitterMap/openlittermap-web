@@ -51,7 +51,14 @@ class VerifiyRemainingTagsForUser extends Command
             $photo->verification = 1;
             $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
             $photo->save();
-            event(new TagsVerifiedByAdmin($photo->id));
+            event(new TagsVerifiedByAdmin(
+                $photo->id,
+                $photo->user_id,
+                $photo->country_id,
+                $photo->state_id,
+                $photo->city_id,
+                $photo->team_id
+            ));
         }
     }
 }

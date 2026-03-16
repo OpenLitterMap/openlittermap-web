@@ -39,21 +39,23 @@ class AddTagsToPhotoAction
      */
     public function run(int $userId, int $photoId, array $tags, bool $skipVerification = false): array
     {
-        $photoTags = $this->addTagsToPhoto($userId, $photoId, $tags);
+        return DB::transaction(function () use ($userId, $photoId, $tags, $skipVerification) {
+            $photoTags = $this->addTagsToPhoto($userId, $photoId, $tags);
 
-        // Generate summary JSON + XP — MetricsService reads from these
-        $photo = Photo::find($photoId);
-        $photo->generateSummary();
-        $photo->refresh();
+            // Generate summary JSON + XP — MetricsService reads from these
+            $photo = Photo::find($photoId);
+            $photo->generateSummary();
+            $photo->refresh();
 
-        // Handle verification + dispatch TagsVerifiedByAdmin if trusted.
-        // Admin controllers pass skipVerification=true because they handle
-        // verification and metrics themselves (atomic approve + event/processPhoto).
-        if (! $skipVerification) {
-            $this->updateVerification($userId, $photo);
-        }
+            // Handle verification + dispatch TagsVerifiedByAdmin if trusted.
+            // Admin controllers pass skipVerification=true because they handle
+            // verification and metrics themselves (atomic approve + event/processPhoto).
+            if (! $skipVerification) {
+                $this->updateVerification($userId, $photo);
+            }
 
-        return $photoTags;
+            return $photoTags;
+        });
     }
 
     /**

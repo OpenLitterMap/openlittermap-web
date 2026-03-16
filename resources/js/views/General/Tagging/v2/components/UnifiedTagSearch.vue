@@ -279,15 +279,18 @@ const groupLabel = (type) => {
     return labels[type] || type;
 };
 
+const escapeHtml = (str) =>
+    str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const highlightMatch = (text) => {
     const q = debouncedQuery.value || query.value;
-    if (!q) return text;
+    if (!q) return escapeHtml(text);
     const idx = text.toLowerCase().indexOf(q.toLowerCase());
-    if (idx === -1) return text;
-    const before = text.slice(0, idx);
-    const match = text.slice(idx, idx + q.length);
-    const after = text.slice(idx + q.length);
-    return `${before}<span class="font-bold text-white underline decoration-emerald-400/50">${match}</span>${after}`;
+    if (idx === -1) return escapeHtml(text);
+    const before = escapeHtml(text.slice(0, idx));
+    const match = escapeHtml(text.slice(idx, idx + q.length));
+    const after = escapeHtml(text.slice(idx + q.length));
+    return `${before}<mark class="bg-transparent font-bold text-white underline decoration-emerald-400/50">${match}</mark>${after}`;
 };
 
 const handleSelection = (value) => {

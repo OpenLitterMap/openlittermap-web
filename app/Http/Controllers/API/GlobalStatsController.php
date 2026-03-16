@@ -19,7 +19,7 @@ class GlobalStatsController extends Controller
     {
         $row = DB::table('metrics')
             ->where('timescale', 0)
-            ->where('location_type', LocationType::Global)
+            ->where('location_type', LocationType::Global->value)
             ->where('location_id', 0)
             ->where('user_id', 0)
             ->first(['uploads', 'tags']);

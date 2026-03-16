@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Teams;
 
 use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Tests\TestCase;
 
@@ -77,11 +78,18 @@ class UpdateTeamTest extends TestCase
 
     public function test_leader_can_toggle_participant_sessions()
     {
+        $schoolType = TeamType::firstOrCreate(
+            ['team' => 'school'],
+            ['team' => 'school']
+        );
+
         /** @var User $leader */
         $leader = User::factory()->create();
         /** @var Team $team */
         $team = Team::factory()->create([
             'leader' => $leader->id,
+            'type_id' => $schoolType->id,
+            'type_name' => 'school',
             'participant_sessions_enabled' => false,
         ]);
 

@@ -423,7 +423,10 @@ const resetFilters = () => {
 
 const reloadPhotos = async () => {
     currentIndex.value = 0;
-    await photosStore.fetchPhotos(props.teamId);
+    await photosStore.fetchPhotos(props.teamId, 1, {
+        date_from: filterDateFrom.value || undefined,
+        date_to: filterDateTo.value || undefined,
+    });
 };
 
 // ─── Actions ───────────────────────────────────────────
