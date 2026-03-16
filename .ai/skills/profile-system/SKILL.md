@@ -40,6 +40,7 @@ User profile dashboard, settings management, privacy controls, and account delet
 3. **Rank from Redis ZSET with MySQL fallback.** `ZREVRANK` on `{g}:lb:xp`; if false, count users with more XP via `User::where('xp', '>', $xp)->count() + 1`.
 4. **Level updated on profile view.** If `$user->level != calculated`, `$user->save()` syncs it.
 5. **Settings whitelist enforced server-side.** `ApiSettingsController::ALLOWED_SETTINGS = ['name', 'username', 'email', 'global_flag', 'picked_up', 'previous_tags', 'emailsub', 'public_profile']`. Any other key returns 422.
+5a. **`users.public_photos` controls upload visibility default.** Boolean, default `true`. New uploads inherit this value unless overridden by an explicit request param. School team uploads always override to `false` regardless. Updated via the settings system. Own-user photo queries (e.g. `GET /api/v3/user/photos`) include all photos regardless of `is_public` — the user sees their own private photos.
 6. **Legacy key remapping.** `items_remaining` → `picked_up` with inverted boolean (backward compat for old mobile clients).
 7. **Photos preserved on account deletion.** User hard-deleted, photos remain (public contribution to map).
 8. **Redis cleanup is comprehensive.** Removes user from XP and contributor rankings for every location scope (global, country, state, city), plus user stats hash, tags hash, and streak bitmap.
@@ -104,6 +105,9 @@ DELETE /api/photos/delete                         → ApiPhotosController@delete
 ```
 GET    /api/v3/user/photos                        → UsersUploadsController@index
 GET    /api/v3/user/photos/stats                  → UsersUploadsController@stats
+PATCH  /api/v3/photos/{id}/visibility             → PhotoVisibilityController (or inline)
+                                                     Owner only. Blocked for school team photos (403).
+                                                     Toggles is_public per-photo. Triggers dirty tile marking via PhotoObserver.
 ```
 
 ## Patterns

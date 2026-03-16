@@ -64,7 +64,7 @@ if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
 
 ## Invariants
 
-1. **School photos start private.** `PhotoObserver::creating()` sets `is_public = false` when `team.isSchool()`. This is non-negotiable.
+1. **School photos start private.** `PhotoObserver::creating()` sets `is_public = false` when `team.isSchool()`. This is non-negotiable and cannot be overridden by the user. Community team photos respect the uploading user's `public_photos` default (`users.public_photos`, boolean, default `true`).
 2. **All public queries use `Photo::public()` or `where('is_public', true)`.** Missing this leaks school data to maps, clusters, exports, and points API.
 3. **School teams must NOT be `is_trusted`.** Trust bypasses the teacher approval step entirely. School teams default to `is_trusted = false`.
 4. **Teacher approval is atomic and idempotent.** The `WHERE is_public = false` clause prevents double-processing of already-approved photos.
@@ -282,5 +282,6 @@ DB::transaction(function () use ($request, $photo, $user) {
 - **Using non-deterministic ordering for safeguarding masks.** Masks must be based on `team_user.id` (join order), not photo data.
 - **Forgetting `PhotoObserver` when creating photos in tests.** The observer auto-fires on `Photo::create()`. If testing non-school behavior, ensure `team_id` is null or team is community type.
 - **Double-approving photos.** The `WHERE is_public = false` clause in the approval query prevents this, but don't remove it.
+- **Allowing per-photo visibility toggle on school photos.** `PATCH /api/v3/photos/{id}/visibility` must return 403 for photos belonging to a school team. School photo privacy is teacher-controlled only (approve/revoke), never user-controlled.
 - **Using old category/object string format in updateTags.** `TeamPhotosController::updateTags()` uses CLO format (same as `PhotoTagsController::update`). Payload uses `category_litter_object_id`, NOT category/object key strings.
 - **Forgetting `new_tags` in team photo responses.** Both `index()` and `show()` must include `new_tags` with `category_litter_object_id`, `litter_object_type_id`, and `extra_tags` for the facilitator queue tag editor to work.

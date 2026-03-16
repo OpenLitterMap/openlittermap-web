@@ -112,6 +112,8 @@ Uses upsert with backoff: after 3 attempts, `changed_at` advances by 5 minutes. 
 
 **Note:** `dirty_teams` table was dropped (2026-03-14). Team clustering is now on-demand only via `clustering:update --team=ID` or `--all-teams`.
 
+**`is_public` changes trigger dirty tile marking.** PhotoObserver fires dirty tile logic when a photo's `is_public` changes (e.g. via `PATCH /api/v3/photos/{id}/visibility`). When a private-by-choice photo is made public (and is verified), its tile is marked dirty so the cluster updates. When a photo is made private, the tile is similarly marked dirty to remove it from future cluster renders.
+
 ## API Endpoints
 
 - `GET /api/clusters` — Public. Params: `zoom`, `bbox[]`, `lat`, `lon`. Returns GeoJSON FeatureCollection with ETag caching (304 support). Limit 5,000 clusters.

@@ -113,8 +113,9 @@ if ($updated > 0) {
 - Sets `photo.processed_at`, `processed_fp`, `processed_tags`, `processed_xp`
 
 ### recordUploadMetrics($photo, $uploadXp)
-- Gated on `$photo->is_public === false` — school photos skip entirely (deferred to approval)
-- For public photos: writes 1 upload + upload XP to metrics/Redis, sets `processed_at`
+- Gated on school team check: `$photo->team_id && $team->isSchool()` — school photos skip entirely (deferred to approval)
+- NOT gated on `is_public` — private-by-choice photos still get immediate upload XP
+- For non-school photos: writes 1 upload + upload XP to metrics/Redis, sets `processed_at`
 - At tag time, `processPhoto()` routes to `doUpdate()` (delta-based) since `processed_at` is set
 
 ### deletePhoto($photo)
@@ -217,6 +218,29 @@ Photo::public()  // →where('is_public', true)
 School pipeline: student uploads → `is_public = false` → NO upload metrics (deferred) → teacher reviews in Facilitator Queue → teacher approves → `is_public = true` + `verified = ADMIN_APPROVED` → `TagsVerifiedByAdmin` fires → `processPhoto()` → `doCreate()` handles full XP (upload + tag) in one pass + increments `users.xp`.
 
 Admin queue never sees school photos (`WHERE is_public = true` excludes them). Teachers are the sole approvers for their team via the Facilitator Queue (3-panel admin-like UI).
+
+## User Photo Visibility
+
+Users can control the public visibility of their photos independently of the school pipeline.
+
+**`users.public_photos` (boolean, default `true`):** A per-user default. New photos inherit this value unless overridden.
+
+**Visibility precedence (highest to lowest):**
+1. School team — always `is_public = false` (enforced by PhotoObserver, cannot be overridden)
+2. Explicit `is_public` param in upload request
+3. User's `public_photos` default
+4. Falls back to `true`
+
+**Private-by-choice photos** (non-school, `is_public = false` by user preference):
+- Hidden from map, clusters, and all public endpoints (same as any `is_public = false` photo)
+- Upload metrics are processed immediately (unlike school photos)
+- User appears on leaderboard with full XP credit
+
+**School photos** (`is_public = false` enforced):
+- Hidden from map AND upload metrics are deferred until teacher approval
+- `recordUploadMetrics()` is skipped (school team check, not `is_public` check)
+
+**Per-photo toggle:** `PATCH /api/v3/photos/{id}/visibility` — owner-only, requires `auth:sanctum`. Blocked for school team photos (403). PhotoObserver marks affected tiles dirty on `is_public` change so the map updates correctly.
 
 ## Spatie Roles & Permissions
 

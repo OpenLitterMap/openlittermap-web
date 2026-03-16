@@ -89,12 +89,17 @@ POST /api/auth/logout           →  Destroys session
 ### Photo lifecycle endpoints
 
 ```
-POST /api/v3/upload             →  Upload photo (web: EXIF; mobile: explicit lat/lon/date)
-GET  /api/v3/user/photos        →  List user's photos (paginated, filterable, per_page up to 100)
-GET  /api/v3/user/photos/stats  →  Aggregate counts (totalPhotos, totalTags, leftToTag)
-POST /api/v3/tags               →  Add tags to untagged photo
-PUT  /api/v3/tags               →  Replace all tags on tagged photo (edit mode, accepts empty tags: [])
-POST /api/profile/photos/delete →  Delete single photo { "photoid": 123 } (soft delete)
+POST  /api/v3/upload              →  Upload photo (web: EXIF; mobile: explicit lat/lon/date)
+GET   /api/v3/user/photos         →  List user's photos (paginated, filterable, per_page up to 100)
+                                      Response includes `is_public` (boolean) and `school_team` (boolean)
+                                      for each photo. Owner sees all photos including private ones.
+GET   /api/v3/user/photos/stats   →  Aggregate counts (totalPhotos, totalTags, leftToTag)
+POST  /api/v3/tags                →  Add tags to untagged photo
+PUT   /api/v3/tags                →  Replace all tags on tagged photo (edit mode, accepts empty tags: [])
+PATCH /api/v3/photos/{id}/visibility →  Toggle is_public for a single photo (owner only, auth:sanctum).
+                                      Returns { is_public: bool }. Blocked for school team photos (403).
+                                      PhotoObserver marks dirty tiles on change.
+POST  /api/profile/photos/delete  →  Delete single photo { "photoid": 123 } (soft delete)
 ```
 
 ### Leaderboard query parameters
@@ -156,7 +161,7 @@ GET /api/v3/user/photos?tagged=false&per_page=100&page=1&picked_up=true
 // Returns: { photos: [...], pagination: { current_page, last_page, per_page, total }, user }
 ```
 
-Response includes `picked_up` (boolean, never null) and `remaining` (deprecated inverse). Use `picked_up`.
+Response includes `picked_up` (boolean, never null) and `remaining` (deprecated inverse). Use `picked_up`. Also includes `is_public` (boolean) and `school_team` (boolean) — use these to show visibility state and to gate the per-photo toggle (`PATCH /api/v3/photos/{id}/visibility` is blocked for `school_team = true`).
 
 **`new_tags` response shape:** Each tag includes `category_litter_object_id`, `litter_object_type_id`, `quantity`, `picked_up` (bool, cast with fallback to photo-level), `category` (object or null), `object` (object or null), `extra_tags` (array). For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` are null. `filename` field on photo is a full URL, usable directly as image source.
 
