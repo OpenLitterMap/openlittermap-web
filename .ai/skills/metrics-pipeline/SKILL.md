@@ -25,6 +25,7 @@ MetricsService is the **single writer** for all metrics — MySQL time-series an
 5. **Redis is a derived cache.** Rebuildable from the `metrics` table. `RedisKeys::*` is single source of truth for key naming.
 6. **`processed_xp` must be INT UNSIGNED**, not TINYINT. Overflow bug documented in migration `2026_02_23_182605`.
 7. **Tags count excludes categories** to avoid double-counting: `tags_count = objects + materials + brands + custom_tags`.
+8. **`ProcessPhotoMetrics` logs a warning when photo not found.** If a photo is soft-deleted before the queued listener runs, `ProcessPhotoMetrics::handle()` logs a warning and returns gracefully. It does NOT throw or retry.
 
 ## Patterns
 
@@ -130,3 +131,5 @@ This keeps Redis consistent with MySQL (which filters `xp > 0`).
 - **Forgetting row locking.** Always use `Photo::whereKey($id)->lockForUpdate()->first()` inside the transaction.
 - **Assuming Redis is source of truth.** Redis is a cache. The `metrics` table is authoritative.
 - **Including categories in `tags_count`.** Categories are groupings, not countable items. Only objects + materials + brands + custom_tags.
+- **Not logging when `ProcessPhotoMetrics` can't find the photo.** `ProcessPhotoMetrics` logs a warning (`Log::warning(...)`) when the photo is not found (soft-deleted or missing). It does not throw — the job completes successfully to avoid retries.
+- **Using `is_public` as the upload metrics gate.** `UploadPhotoController` gates `recordUploadMetrics()` on `$team->isSchool()`, NOT on `$photo->is_public`. Private-by-choice photos (non-school) still get immediate upload XP. Only school photos defer metrics to teacher approval.

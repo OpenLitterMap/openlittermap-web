@@ -24,10 +24,11 @@ Rankings by XP across time and location scopes. Two backends: Redis ZSETs for al
 4. **ZSET scores are maintained by RedisMetricsCollector.** ZINCRBY for create/update, negative ZINCRBY for delete. Runs inside the Redis pipeline after MySQL commit.
 5. **Zero-XP pruning on delete.** After decrementing a ZSET score, `ZREMRANGEBYSCORE {scope}:lb:xp -inf 0` removes members with score ≤ 0. Without this, deleted users remain as ghost entries.
 6. **Daily queries MUST include `bucket_date`.** For `today`/`yesterday` (timescale=1), the query includes `WHERE bucket_date = ?`. Without it, all daily rows for the month are returned. Index `idx_leaderboard` includes `bucket_date` for this.
-7. **Privacy is enforced in `formatUserData()`.** Respects `show_name`, `show_username`, and team pivot `show_name_leaderboards`/`show_username_leaderboards`.
+7. **Privacy is enforced in `formatUserData()`.** Respects `show_name`, `show_username`, and team pivot `show_name_leaderboards`/`show_username_leaderboards`. The pivot values correctly override the global user flags — a user who shows their name globally but opted out on a specific team will be hidden on that team's leaderboard entries.
 8. **Route uses `auth:sanctum`** — not `auth:api`. Use `actingAs($user)` in tests (no guard argument).
 9. **`rewardXpToAdmin()` must update both** MySQL (`users.xp`) and Redis (`{g}:lb:xp` ZSET + `{u:ID}:stats` hash).
 10. **Rank is 1-indexed in API response.** `ZREVRANK` returns 0-indexed; `getCurrentUserRank()` adds 1.
+11. **`RewardLittercoin` uses cluster-compatible Redis keys.** All Littercoin Redis operations use `RedisKeys` pattern with hash tags for cluster compatibility. The job wraps Redis commands in a try-catch to prevent failures from blocking the queue.
 
 ## Patterns
 
@@ -92,6 +93,8 @@ RedisKeys::xpRanking(RedisKeys::city($id))       // {ci:$id}:lb:xp
 - **Querying MySQL for all-time rankings.** All-time uses Redis. Only time-filtered queries hit MySQL.
 - **Not including `xp > 0` in time-filtered queries.** Users with 0 XP should not appear on leaderboards.
 - **Directly modifying ZSET scores outside RedisMetricsCollector.** Only `rewardXpToAdmin()` is allowed to bypass the pipeline (admin-only XP).
+- **Using raw Redis key strings in `RewardLittercoin`.** Always use `RedisKeys::*` helpers with hash tags for Redis Cluster compatibility. Bare key strings like `"user:{$id}:littercoin"` break in cluster mode.
+- **Expecting the team leaderboard to ignore pivot privacy flags.** `show_name_leaderboards`/`show_username_leaderboards` on the `team_user` pivot row override the global `show_name`/`show_username` flags for that team's leaderboard. Both must be checked in `formatUserData()`.
 - **Omitting `bucket_date` for daily queries.** Without `WHERE bucket_date = ?`, daily (timescale=1) queries return ALL daily rows for the month, not just one day.
 - **Not pruning zero-XP members from ZSETs.** After delete, `ZREMRANGEBYSCORE` must run to remove ≤ 0 scores. Without it, ghost entries persist in Redis.
 - **Missing `orderBy('user_id')` for tie-breaking.** Without secondary sort, tied-XP users get non-deterministic pagination order.

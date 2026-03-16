@@ -5,7 +5,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 
 # Testing Patterns
 
-972+ tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
+1033+ tests passing (1 skipped), 0 failures, 0 flaky. PHPUnit 10 with `RefreshDatabase`. Base `TestCase` flushes Redis + array cache in `setUp()` — prevents rate limiter state leaking between tests. 0 deprecated tests remaining (all 40 previously-deprecated files resolved: 18 dead removed, 22 fixed and undeprecated). Dead tests deleted: `DecreaseTeamTotalPhotosTest`, `IncreaseTeamTotalPhotosTest` (listeners removed), `CalculateTagsDifferenceActionTest` (action removed). 32 dead files deleted across v5 audit sessions.
 
 ## Key Files
 
@@ -31,6 +31,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 - `tests/Feature/Signup/CreateNewUserTest.php` — Registration flow tests
 - `tests/Feature/Tags/ClassifyTagsServiceTest.php` — 12 tests (category aliases, deprecated tag mapping, unknown tags, getCategory)
 - `tests/Feature/User/UsersUploadsControllerTest.php` — 9 tests (picked_up filter, pagination, tagged/untagged filters)
+- `tests/Feature/Photos/PhotoVisibilityTest.php` — 7 tests (per-photo visibility toggle: owner-only, school block, is_public persistence, PhotoObserver dirty tiles)
 
 ## Invariants
 
@@ -271,3 +272,4 @@ DB_DATABASE=olm_test DB_USERNAME=root DB_PASSWORD=secret php artisan db:seed --c
 - **`HasPhotoUploads` trait double-encoding `address_array`.** The trait was `json_encode()`-ing `address_array` before insert, but the Photo model has an `'array'` cast on that column — causing double-encoding. Fixed to pass the raw array directly and let the model cast handle serialization.
 - **Empty tags on PUT /api/v3/tags returns 200, not 422.** `ReplacePhotoTagsRequest` validates `tags` as `present|array` (not `required|array|min:1`). Sending `tags: []` clears all tags on a photo. Tests expecting 422 for empty tags must be updated to expect 200.
 - **Flaky 429s from rate limiter state.** `CACHE_DRIVER=array` in phpunit.xml means rate limiter entries persist between tests in the same PHPUnit process. The base `TestCase::setUp()` calls `Cache::flush()` to prevent this. If you add a new test file that hits throttled routes and see intermittent 429s, verify it extends the base `TestCase`.
+- **Upload tests need both S3 and bbox disk fakes.** `UploadPhotoController` writes to two disks: the main S3 disk and the `bbox` disk (for thumbnail). Both must be faked: `Storage::fake('s3'); Storage::fake('bbox');`. Missing one causes a real filesystem/S3 call that fails in CI.

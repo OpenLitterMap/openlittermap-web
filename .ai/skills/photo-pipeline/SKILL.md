@@ -69,6 +69,20 @@ enum VerificationStatus: int
 3. GPS fields must exist and `dmsToDec()` must succeed (guards zero denominators)
 4. Duplicate check (same user + same EXIF datetime). **Skipped for participant uploads** (different students may share EXIF datetime since `user_id = facilitator` for all).
 
+**Error contract on `UploadPhotoRequest`:** `failedValidation()` returns a structured response:
+```json
+{ "success": false, "error": "<code>", "message": "<human string>", "errors": {} }
+```
+`resolveErrorCode()` maps failures to typed string codes:
+- `no_exif` — image has no readable EXIF data
+- `no_gps` — image has no GPS coordinates
+- `no_datetime` — image has no datetime in EXIF
+- `duplicate` — same user uploaded same EXIF datetime before
+- `invalid_coordinates` — GPS coordinates failed parsing (zero denominators, etc.)
+- `validation_error` — generic Laravel validation failure (wrong file type, size, etc.)
+
+Mobile clients should read the `error` field for programmatic handling. Note: `Handler::unauthenticated()` returns `{ message: "Unauthenticated." }` without an `error` code field (inconsistency — not yet fixed).
+
 `UploadPhotoController::__invoke()` flow:
 1. `MakeImageAction::run($file)` — extract EXIF
 2. `getDateTimeForPhoto($exif) ?? Carbon::now()` — EXIF datetime with safety fallback
@@ -82,6 +96,8 @@ enum VerificationStatus: int
 `PhotoTagsController::store()` -> `AddTagsToPhotoAction::run()`:
 
 ```php
+// AddTagsToPhotoAction::run() is wrapped in DB::transaction() — all tag creation,
+// summary generation, and verification update are atomic.
 public function run(int $userId, int $photoId, array $tags): array
 {
     $photoTags = $this->addTagsToPhoto($userId, $photoId, $tags);
@@ -230,4 +246,6 @@ Always ensure `geom` stays in `$hidden`. If you need coordinates, use `lat`/`lon
 - **Returning `'tags'` instead of `'new_tags'` in upload controller.** `UsersUploadsController` must return tags under the key `'new_tags'` — the `Uploads.vue` frontend reads `photo.new_tags` for tag counts and objects list.
 - **Using `where('verified', 0)` or `doesntHave('photoTags')` for untagged filter.** Use `whereNull('summary')` — summary is set by `GeneratePhotoSummaryService` when tags are added, regardless of verification status. After "leaderboard immediate credit," untrusted users' `verified` stays at 0 after tagging, so `where('verified', 0)` includes tagged photos.
 - **Not including `litter_object_type_id` in photo response.** `UsersUploadsController::getNewTags()` must include `litter_object_type_id` so the frontend can preserve the type dimension on edit round-trips.
-- **Replace tags without `DB::transaction()`.** If `AddTagsToPhotoAction::run()` fails after old tags are deleted, the photo loses all tag data. The entire delete-reset-add sequence must be atomic.
+- **Replace tags without `DB::transaction()`.** If `AddTagsToPhotoAction::run()` fails after old tags are deleted, the photo loses all tag data. The entire delete-reset-add sequence must be atomic. `AddTagsToPhotoAction::run()` itself is also wrapped in a transaction — both operations are independently protected.
+- **`getNewTags()` conditionally includes `category`/`object`.** For extra-tag-only PhotoTags (brand/material/custom-only), `category` and `object` fields are `null`. The serializer only includes them when both `category_id` and `litter_object_id` are non-null. Frontend must handle `null` category/object gracefully.
+- **Expecting `UploadPhotoRequest` errors to match Laravel's default shape.** `UploadPhotoRequest` overrides `failedValidation()` to return a custom `{ success, error, message, errors }` shape with typed `error` codes. Do not assert the standard Laravel `{ errors: { field: [...] } }` shape for upload failures.

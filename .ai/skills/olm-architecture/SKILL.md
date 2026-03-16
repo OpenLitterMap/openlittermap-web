@@ -23,7 +23,7 @@ Nothing writes metrics directly. Every tag creation, edit, or deletion flows thr
 ```
 User/Admin/Teacher tags a photo
     ↓
-AddTagsToPhotoAction::run($userId, $photoId, $tags)
+AddTagsToPhotoAction::run($userId, $photoId, $tags)  ← wrapped in DB::transaction()
     ├── Resolves tags:
     │   ├── Object tags: uses category_litter_object_id (CLO ID), auto-resolves category
     │   ├── Custom-only: $tag['custom'] = true, $tag['key'] = "dirty-bench"
@@ -113,8 +113,8 @@ if ($updated > 0) {
 - Sets `photo.processed_at`, `processed_fp`, `processed_tags`, `processed_xp`
 
 ### recordUploadMetrics($photo, $uploadXp)
-- Gated on school team check: `$photo->team_id && $team->isSchool()` — school photos skip entirely (deferred to approval)
-- NOT gated on `is_public` — private-by-choice photos still get immediate upload XP
+- Gated on `$team->isSchool()` check — school photos skip entirely (deferred to approval). The gate is a school team check, NOT an `is_public` check.
+- Private-by-choice photos (non-school, `is_public = false` by user preference) still get immediate upload XP
 - For non-school photos: writes 1 upload + upload XP to metrics/Redis, sets `processed_at`
 - At tag time, `processPhoto()` routes to `doUpdate()` (delta-based) since `processed_at` is set
 
@@ -195,6 +195,12 @@ photo_tag_extra_tags (
 **v4 vs v5:** v4 stored tags in 16+ separate category tables (smoking_id, food_id, etc on photos). v5 uses the unified PhotoTags table. Legacy v4 endpoints and the `ConvertV4TagsAction` shim have been removed (2026-03-01). Mobile now uses v3 endpoints with CLO format. Category FK columns on photos are deprecated.
 
 **Frontend sends CLO IDs:** The web frontend sends `category_litter_object_id` (pre-resolved from the search index). Backend auto-resolves `category_id` from the CLO pivot. Category need NOT be sent separately.
+
+**No unique constraint on `photo_tags`:** There is no unique constraint on `(photo_id, category_litter_object_id, litter_object_type_id)`. Duplicate CLO+type combinations are possible (each row is a separate PhotoTag). Extra-tag deduplication (materials/brands) is handled via upsert within a single PhotoTag row, not across rows. Do NOT add a unique constraint expecting one row per (photo, CLO, type) combination.
+
+**`getNewTags()` conditional inclusion:** `UsersUploadsController::getNewTags()` conditionally includes `category` and `object` only when both resolve (i.e., when both `category_id` and `litter_object_id` are non-null). Extra-tag-only PhotoTags (brand/material/custom-only) return `category: null` and `object: null`.
+
+**Upload error contract:** `UploadPhotoRequest::failedValidation()` returns `{ success: false, error: <code>, message: <string>, errors: {...} }`. `resolveErrorCode()` maps validation failures to typed string codes: `no_exif`, `no_gps`, `no_datetime`, `duplicate`, `invalid_coordinates`, `validation_error`. Mobile clients should read the `error` field for programmatic handling.
 
 ## School Privacy — The is_public Gate
 
@@ -361,7 +367,7 @@ Photos need `verified >= ADMIN_APPROVED` and `is_public = true` to appear in clu
 - Reset Spatie permissions cache: `app()[PermissionRegistrar::class]->forgetCachedPermissions()`
 - `TeamType::create(['team' => 'community', 'price' => 0])` — `price` has no default
 
-1010+ tests passing (1 skipped). See `testing-patterns` skill for full details.
+1033+ tests passing (1 skipped). See `testing-patterns` skill for full details.
 
 ## Common Mistakes
 
