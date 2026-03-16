@@ -102,7 +102,7 @@ class ProfileController extends Controller
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lat, $photo->lon]
+                    'coordinates' => [$photo->lon, $photo->lat]
                 ],
                 'properties' => [
                     'photo_id' => $photo->id,
@@ -156,6 +156,7 @@ class ProfileController extends Controller
             : 0;
 
         $locationCounts = Photo::where('user_id', $id)
+            ->where('is_public', true)
             ->whereNotNull('country_id')
             ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
             ->first();
@@ -248,7 +249,7 @@ class ProfileController extends Controller
             ->count();
         $totalAchievements = DB::table('achievements')->count();
 
-        // Location counts from user's photos
+        // Location counts from user's photos (all photos, including private-by-choice)
         $locationCounts = Photo::where('user_id', $userId)
             ->whereNotNull('country_id')
             ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
@@ -286,6 +287,7 @@ class ProfileController extends Controller
                 'previous_tags' => (bool) $user->previous_tags,
                 'emailsub' => (bool) $user->emailsub,
                 'prevent_others_tagging_my_photos' => (bool) $user->prevent_others_tagging_my_photos,
+                'public_photos' => (bool) $user->public_photos,
             ],
             'stats' => [
                 'uploads' => $uploads,

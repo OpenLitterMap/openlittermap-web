@@ -22,6 +22,7 @@ use LaravelAndVueJS\Traits\LaravelPermissionToVueJS;
 
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,11 +44,11 @@ class User extends Authenticatable
         parent::boot();
 
         static::creating(function($user) {
-            $user->token = str_random(30);
+            $user->token = Str::random(30);
         });
 
         static::creating(function($user) {
-            $user->sub_token = str_random(30);
+            $user->sub_token = Str::random(30);
         });
 
         static::addGlobalScope('photosCount', function($builder) {
@@ -117,6 +118,7 @@ class User extends Authenticatable
         'show_name' => 'boolean',
         'show_username' => 'boolean',
         'public_profile' => 'boolean',
+        'public_photos' => 'boolean',
         'verification_required' => 'boolean',
         'username_flagged' => 'boolean',
         'prevent_others_tagging_my_photos' => 'boolean',

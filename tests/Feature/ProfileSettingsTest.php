@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Location\Country;
+use App\Models\Photo;
 use App\Models\Users\User;
 use Tests\TestCase;
 
@@ -173,5 +175,124 @@ class ProfileSettingsTest extends TestCase
 
         $response->assertOk();
         $this->assertNull($response->json('user.picked_up'));
+    }
+
+    // ---------------------------------------------------------------
+    // Profile location counts — is_public filtering
+    // ---------------------------------------------------------------
+
+    public function test_profile_index_location_counts_include_all_own_photos(): void
+    {
+        $country = Country::factory()->create();
+        $user = User::factory()->create();
+
+        // Public photo
+        Photo::factory()->create([
+            'user_id' => $user->id,
+            'country_id' => $country->id,
+            'is_public' => true,
+        ]);
+
+        // Private photo (same country)
+        Photo::factory()->create([
+            'user_id' => $user->id,
+            'country_id' => $country->id,
+            'is_public' => false,
+        ]);
+
+        $response = $this->actingAs($user)->getJson('/api/user/profile/index');
+
+        $response->assertOk();
+        // Authenticated user's own profile should count all their photos
+        $this->assertEquals(1, $response->json('locations.countries'));
+    }
+
+    public function test_public_photos_can_be_set_to_false(): void
+    {
+        $user = User::factory()->create(['public_photos' => true]);
+        $response = $this->actingAs($user)->postJson('/api/settings/update', [
+            'key' => 'public_photos',
+            'value' => false,
+        ]);
+        $response->assertOk();
+        $this->assertFalse((bool) $user->fresh()->public_photos);
+    }
+
+    public function test_public_photos_can_be_set_to_true(): void
+    {
+        $user = User::factory()->create(['public_photos' => false]);
+        $response = $this->actingAs($user)->postJson('/api/settings/update', [
+            'key' => 'public_photos',
+            'value' => true,
+        ]);
+        $response->assertOk();
+        $this->assertTrue((bool) $user->fresh()->public_photos);
+    }
+
+    public function test_profile_index_returns_public_photos_setting(): void
+    {
+        $user = User::factory()->create(['public_photos' => false]);
+        $response = $this->actingAs($user)->getJson('/api/user/profile/index');
+        $response->assertOk();
+        $response->assertJsonPath('user.public_photos', false);
+    }
+
+    public function test_own_geojson_includes_private_photos(): void
+    {
+        $user = User::factory()->create();
+        $country = \App\Models\Location\Country::factory()->create();
+        Photo::factory()->create([
+            'user_id' => $user->id, 'country_id' => $country->id,
+            'is_public' => true, 'verified' => \App\Enums\VerificationStatus::ADMIN_APPROVED->value, 'datetime' => now(),
+        ]);
+        Photo::factory()->create([
+            'user_id' => $user->id, 'country_id' => $country->id,
+            'is_public' => false, 'verified' => \App\Enums\VerificationStatus::ADMIN_APPROVED->value, 'datetime' => now(),
+        ]);
+        $response = $this->actingAs($user)->getJson('/api/user/profile/map?' . http_build_query([
+            'period' => 'created_at', 'start' => now()->subDay()->toDateString(), 'end' => now()->addDay()->toDateString(),
+        ]));
+        $response->assertOk();
+        $this->assertCount(2, $response->json('geojson.features'));
+    }
+
+    public function test_own_profile_index_location_counts_include_private_photos(): void
+    {
+        $country1 = \App\Models\Location\Country::factory()->create();
+        $country2 = \App\Models\Location\Country::factory()->create();
+        $user = User::factory()->create();
+        Photo::factory()->create(['user_id' => $user->id, 'country_id' => $country1->id, 'is_public' => true]);
+        Photo::factory()->create(['user_id' => $user->id, 'country_id' => $country2->id, 'is_public' => false]);
+        $response = $this->actingAs($user)->getJson('/api/user/profile/index');
+        $response->assertOk();
+        $this->assertEquals(2, $response->json('locations.countries'));
+    }
+
+    public function test_public_profile_location_counts_exclude_private_photos(): void
+    {
+        $country1 = Country::factory()->create();
+        $country2 = Country::factory()->create();
+        $user = User::factory()->create(['public_profile' => true]);
+
+        // Public photo in country1
+        Photo::factory()->create([
+            'user_id' => $user->id,
+            'country_id' => $country1->id,
+            'is_public' => true,
+        ]);
+
+        // Private photo in country2 — should be excluded from public profile
+        Photo::factory()->create([
+            'user_id' => $user->id,
+            'country_id' => $country2->id,
+            'is_public' => false,
+        ]);
+
+        $response = $this->getJson("/api/user/profile/{$user->id}");
+
+        $response->assertOk();
+        $this->assertTrue($response->json('public'));
+        // Public profile should only count public photos
+        $this->assertEquals(1, $response->json('locations.countries'));
     }
 }

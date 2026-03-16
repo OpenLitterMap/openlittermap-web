@@ -21,6 +21,7 @@ class ApiSettingsController extends Controller
         'previous_tags' => 'boolean',
         'emailsub' => 'boolean',
         'public_profile' => 'boolean',
+        'public_photos' => 'boolean',
         'prevent_others_tagging_my_photos' => 'boolean',
     ];
 
