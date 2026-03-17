@@ -4,12 +4,10 @@ on:
   push:
     branches:
       - master
-      - staging
       - upgrade/tagging-2025
   pull_request:
     branches:
       - master
-      - staging
       - upgrade/tagging-2025
 
 jobs:
@@ -60,26 +58,13 @@ jobs:
       x500_AWS_REGION: us-east-1
       x500_AWS_BUCKET: olm-public-bbox
       x500_AWS_ENDPOINT: http://127.0.0.1:9000
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: false
-          MYSQL_ROOT_PASSWORD: secret
-          MYSQL_ROOT_HOST: '%'
-          MYSQL_DATABASE: olm_test
-        ports:
-          - 3306/tcp
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-      redis:
-        image: redis
-        ports:
-          - 6379/tcp
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      # redis
+      REDIS_PORT: 6379
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Copy test fixture image
         run: |
@@ -94,11 +79,6 @@ jobs:
         with:
           php-version: 8.2
           extensions: mbstring, dom, fileinfo, mysql, pdo_mysql
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
       - name: Prepare .env
         run: cp .env.testing .env
@@ -118,21 +98,8 @@ jobs:
       - name: Discover packages
         run: php artisan package:discover --ansi
 
-      - name: Generate Passport encryption keys
-        run: php artisan passport:keys --force
-
-      - name: Install Passport (keys + clients)
-        run: php artisan passport:install --no-interaction
-
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
 
-      - name: npm ci & build (optional)
-        run: |
-          npm ci --silent --force
-          npm run build --if-present
-
       - name: PHPUnit
         run: vendor/bin/phpunit --colors=always
-        env:
-          REDIS_PORT: ${{ job.services.redis.ports[6379] }}

@@ -209,6 +209,8 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/XP.md` — XP scoring, quantity rules, special objects, levels, admin XP
 - `readme/Taggingarchitecturespec.md` — v5.1 tagging architecture spec (types dimension, CLO IDs)
 - `readme/TaggingAuditReport.md` — v5.1 smoke test audit report
+- `readme/Terms.md` — Terms & Conditions source content (Vue component renders this)
+- `readme/Privacy.md` — Privacy Policy source content with GDPR legal basis (Vue component renders this)
 
 <laravel-boost-guidelines>
 === foundation rules ===

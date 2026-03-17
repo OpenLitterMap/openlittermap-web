@@ -11,11 +11,41 @@ use GuzzleHttp\Exception\GuzzleException;
 class ResolveLocationAction
 {
     /**
+     * OSM admin-level keys in priority order for state-level resolution.
+     * Covers Nominatim/LocationIQ address fields across all countries.
+     * @see https://wiki.openstreetmap.org/wiki/Key:admin_level
+     */
+    public const STATE_KEYS = [
+        'state',           // admin_level ~4 (US states, DE Bundesländer, etc.)
+        'region',          // admin_level ~4-6 (FR régions, IT regioni)
+        'province',        // admin_level ~4-6 (ES provincias, PH provinces)
+        'state_district',  // admin_level ~5-6 (IN districts, sub-state)
+        'county',          // admin_level ~6 (US counties, UK counties)
+        'district',        // admin_level ~6-8 (RO judete, TR ilçe, IN districts)
+        'municipality',    // admin_level ~7-8 (SE kommun, NO kommune)
+        'borough',         // admin_level ~8-9 (NYC boroughs, London boroughs)
+    ];
+
+    /**
+     * OSM keys in priority order for city-level resolution.
+     */
+    public const CITY_KEYS = [
+        'city',            // admin_level ~8 (primary city name)
+        'town',            // smaller than city
+        'city_district',   // sub-city district
+        'village',         // rural settlement
+        'hamlet',          // tiny settlement
+        'locality',        // named place
+        'suburb',          // when no higher-level name exists
+        'quarter',         // city quarter/neighbourhood
+        'county',          // fallback for areas without city-level divisions
+    ];
+
+    /**
      * Reverse geocode lat/lon and resolve to Country, State, City.
      *
-     * Gracefully handles incomplete geocoding data — state and city may
-     * be null if the API response doesn't include them. The photo is
-     * still uploaded; location can be fixed later.
+     * Only country is required. State and city are best-effort — the photo
+     * is still uploaded if they can't be resolved. Location can be fixed later.
      *
      * @throws GeocodingException only if country_code is missing (minimum requirement)
      * @throws GuzzleException
@@ -55,7 +85,7 @@ class ResolveLocationAction
 
     private function resolveState(Country $country, array $address): ?State
     {
-        $name = $this->lookup($address, ['state', 'county', 'region', 'state_district']);
+        $name = $this->lookup($address, self::STATE_KEYS);
 
         if (!$name) {
             return null;
@@ -69,9 +99,7 @@ class ResolveLocationAction
 
     private function resolveCity(Country $country, State $state, array $address): ?City
     {
-        $name = $this->lookup($address, [
-            'city', 'town', 'city_district', 'village', 'hamlet', 'locality', 'county'
-        ]);
+        $name = $this->lookup($address, self::CITY_KEYS);
 
         if (!$name) {
             return null;

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\tmp\v5\Migration\Locations;
 
+use App\Actions\Locations\ResolveLocationAction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -1060,68 +1061,69 @@ class LocationCleanupCommand extends Command
             ];
         }
 
-        // Resolve state (same fallback chain as ResolveLocationAction)
-        $stateName = $address['state']
-            ?? $address['county']
-            ?? $address['region']
-            ?? $address['state_district']
-            ?? null;
-
-        if (!$stateName) {
-            return null;
+        // Resolve state (same fallback chain as ResolveLocationAction::STATE_KEYS)
+        $stateKeys = ResolveLocationAction::STATE_KEYS;
+        $stateName = null;
+        foreach ($stateKeys as $key) {
+            if (!empty($address[$key])) {
+                $stateName = $address[$key];
+                break;
+            }
         }
 
-        $state = DB::table('states')
-            ->where('country_id', $country->id)
-            ->where('state', $stateName)
-            ->first();
+        $state = null;
+        if ($stateName) {
+            $state = DB::table('states')
+                ->where('country_id', $country->id)
+                ->where('state', $stateName)
+                ->first();
 
-        if (!$state) {
-            $state = (object) [
-                'id' => DB::table('states')->insertGetId([
-                    'state' => $stateName,
-                    'country_id' => $country->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]),
-            ];
+            if (!$state) {
+                $state = (object) [
+                    'id' => DB::table('states')->insertGetId([
+                        'state' => $stateName,
+                        'country_id' => $country->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]),
+                ];
+            }
         }
 
-        // Resolve city (same fallback chain as ResolveLocationAction)
-        $cityName = $address['city']
-            ?? $address['town']
-            ?? $address['city_district']
-            ?? $address['village']
-            ?? $address['hamlet']
-            ?? $address['locality']
-            ?? $address['county']
-            ?? null;
-
-        if (!$cityName) {
-            return null;
+        // Resolve city (same fallback chain as ResolveLocationAction::CITY_KEYS)
+        $cityKeys = ResolveLocationAction::CITY_KEYS;
+        $cityName = null;
+        foreach ($cityKeys as $key) {
+            if (!empty($address[$key])) {
+                $cityName = $address[$key];
+                break;
+            }
         }
 
-        $city = DB::table('cities')
-            ->where('state_id', $state->id)
-            ->where('city', $cityName)
-            ->first();
+        $city = null;
+        if ($cityName && $state) {
+            $city = DB::table('cities')
+                ->where('state_id', $state->id)
+                ->where('city', $cityName)
+                ->first();
 
-        if (!$city) {
-            $city = (object) [
-                'id' => DB::table('cities')->insertGetId([
-                    'city' => $cityName,
-                    'state_id' => $state->id,
-                    'country_id' => $country->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]),
-            ];
+            if (!$city) {
+                $city = (object) [
+                    'id' => DB::table('cities')->insertGetId([
+                        'city' => $cityName,
+                        'state_id' => $state->id,
+                        'country_id' => $country->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]),
+                ];
+            }
         }
 
         return [
             'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
+            'state_id' => $state?->id,
+            'city_id' => $city?->id,
         ];
     }
 
@@ -1142,16 +1144,18 @@ class LocationCleanupCommand extends Command
             throw new \RuntimeException("ABORTING — photo count changed after {$afterStep}");
         }
 
-        // Check broken FKs
+        // Check broken FKs (state_id and city_id are nullable)
         $broken = DB::select("
             SELECT 'country' as type, COUNT(*) as cnt FROM photos p
             WHERE NOT EXISTS (SELECT 1 FROM countries c WHERE c.id = p.country_id)
             UNION ALL
             SELECT 'state', COUNT(*) FROM photos p
-            WHERE NOT EXISTS (SELECT 1 FROM states s WHERE s.id = p.state_id)
+            WHERE p.state_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM states s WHERE s.id = p.state_id)
             UNION ALL
             SELECT 'city', COUNT(*) FROM photos p
-            WHERE NOT EXISTS (SELECT 1 FROM cities c WHERE c.id = p.city_id)
+            WHERE p.city_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM cities c WHERE c.id = p.city_id)
         ");
 
         $hasBroken = false;

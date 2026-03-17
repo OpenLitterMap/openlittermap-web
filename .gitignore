@@ -18,5 +18,3 @@ yarn-error.log
 .idea
 .eslintignore
 /storage/seeders/brands.txt
-/readme/*.md
-/readme/Strategy/*.md
