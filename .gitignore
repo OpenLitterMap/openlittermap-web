@@ -17,4 +17,5 @@ yarn-error.log
 .vscode
 .idea
 .eslintignore
+.DS_Store
 /storage/seeders/brands.txt
