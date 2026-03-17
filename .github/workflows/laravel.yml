@@ -20,11 +20,11 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: secret
           MYSQL_DATABASE: olm_test
+          MYSQL_NATIVE_PASSWORD: "ON"
         ports: [3306:3306]
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret"
           --health-interval=10s --health-timeout=5s --health-retries=3
-          --default-authentication-plugin=mysql_native_password
 
       redis:
         image: redis:7
