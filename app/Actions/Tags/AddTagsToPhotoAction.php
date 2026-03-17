@@ -2,7 +2,6 @@
 
 namespace App\Actions\Tags;
 
-use App\Actions\Badges\CheckLocationTypeAward;
 use App\Enums\VerificationStatus;
 use App\Enums\XpScore;
 use App\Events\TagsVerifiedByAdmin;
@@ -22,9 +21,7 @@ use Illuminate\Validation\ValidationException;
 
 class AddTagsToPhotoAction
 {
-    public function __construct(
-        private CheckLocationTypeAward $checkLocationTypeAward,
-    ) {}
+    public function __construct() {}
 
     /**
      * Add tags to a photo, generate summary, calculate XP, and handle verification.
@@ -246,10 +243,10 @@ class AddTagsToPhotoAction
             'picked_up' => $pickedUp,
         ]);
 
-        // Badge check for bags_litter + picked_up
-        if ($object?->key === 'bags_litter' && $pickedUp) {
-            $this->checkLocationTypeAward->checkLandUseAward($userId, $photoTag);
-        }
+        // TODO: Re-enable CheckLocationTypeAward when badge system is ready
+        // if ($object?->key === 'bags_litter' && $pickedUp) {
+        //     $this->checkLocationTypeAward->checkLandUseAward($userId, $photoTag);
+        // }
 
         // Custom tag as primary (legacy format: { custom: true, key: "..." })
         if (isset($tag['custom']) && $tag['custom'] && isset($tag['key'])) {
