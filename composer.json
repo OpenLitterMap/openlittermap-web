@@ -20,7 +20,6 @@
         "laravel/framework": "^11.0",
         "laravel/helpers": "^1.2",
         "laravel/horizon": "^5.0",
-        "laravel/passport": "^12.0",
         "laravel/pulse": "^1.2",
         "laravel/reverb": "@beta",
         "laravel/sanctum": "^4.1",
