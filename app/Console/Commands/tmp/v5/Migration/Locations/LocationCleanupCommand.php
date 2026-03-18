@@ -791,7 +791,7 @@ class LocationCleanupCommand extends Command
 
             // Verify no remaining duplicates before adding constraint
             $dupeCheck = match ($table) {
-                'countries' => DB::select("SELECT shortcode, COUNT(*) as cnt FROM countries GROUP BY shortcode HAVING cnt > 1"),
+                'countries' => DB::select("SELECT shortcode, COUNT(*) as cnt FROM countries WHERE shortcode IS NOT NULL AND shortcode != '' GROUP BY shortcode HAVING cnt > 1"),
                 'states' => DB::select("SELECT country_id, state, COUNT(*) as cnt FROM states GROUP BY country_id, state HAVING cnt > 1"),
                 'cities' => DB::select("SELECT state_id, city, COUNT(*) as cnt FROM cities GROUP BY state_id, city HAVING cnt > 1"),
             };
@@ -834,9 +834,9 @@ class LocationCleanupCommand extends Command
         $brokenCityCount = $brokenCities->cnt ?? 0;
 
         if ($brokenCityCount > 0) {
-            $this->warn("  ⚠ {$brokenCityCount} cities reference non-existent states — these photos will be skipped");
+            $this->warn("  ⚠ {$brokenCityCount} cities reference non-existent states");
 
-            // Log the affected photo count for visibility
+            // Count affected photos
             $affectedPhotos = DB::selectOne("
                 SELECT COUNT(*) as cnt
                 FROM photos p
@@ -844,7 +844,34 @@ class LocationCleanupCommand extends Command
                 LEFT JOIN states s ON s.id = c.state_id
                 WHERE s.id IS NULL
             ");
-            $this->warn("  ⚠ {$affectedPhotos->cnt} photos affected by broken city→state references");
+
+            if ($affectedPhotos->cnt > 0) {
+                if ($this->dryRun) {
+                    $this->line("  [DRY] Would null city_id on {$affectedPhotos->cnt} photos pointing to cities with broken state references");
+                } else {
+                    // Null city_id on affected photos — city record is broken, keeping it is worse
+                    DB::update("
+                        UPDATE photos p
+                        JOIN cities c ON c.id = p.city_id
+                        LEFT JOIN states s ON s.id = c.state_id
+                        SET p.city_id = NULL
+                        WHERE s.id IS NULL
+                    ");
+                    $this->line("  ✓ Nulled city_id on {$affectedPhotos->cnt} photos with broken city→state references");
+                }
+            }
+
+            // Delete the broken city records (they're now orphaned)
+            if (!$this->dryRun) {
+                $deleted = DB::delete("
+                    DELETE c FROM cities c
+                    LEFT JOIN states s ON s.id = c.state_id
+                    WHERE s.id IS NULL
+                ");
+                $this->line("  ✓ Deleted {$deleted} cities with non-existent state references");
+            } else {
+                $this->line("  [DRY] Would delete {$brokenCityCount} cities with non-existent state references");
+            }
         }
 
         // Pass 1: Fix cities.country_id to match their state's country_id
@@ -853,7 +880,7 @@ class LocationCleanupCommand extends Command
             SELECT COUNT(*) as cnt
             FROM cities c
             JOIN states s ON s.id = c.state_id
-            WHERE c.country_id != s.country_id
+            WHERE NOT (c.country_id <=> s.country_id)
         ");
 
         $cityTableCount = $cityTableMismatch->cnt ?? 0;
@@ -866,7 +893,7 @@ class LocationCleanupCommand extends Command
                     UPDATE cities c
                     JOIN states s ON s.id = c.state_id
                     SET c.country_id = s.country_id
-                    WHERE c.country_id != s.country_id
+                    WHERE NOT (c.country_id <=> s.country_id)
                 ");
                 $this->line("  ✓ Fixed {$cityTableCount} cities: country_id aligned with state's country_id");
             }
@@ -881,7 +908,7 @@ class LocationCleanupCommand extends Command
             FROM photos p
             JOIN cities c ON c.id = p.city_id
             JOIN states s ON s.id = c.state_id
-            WHERE p.state_id != c.state_id
+            WHERE NOT (p.state_id <=> c.state_id)
         ");
 
         $photoStateCount = $photoStateMismatch->cnt ?? 0;
@@ -895,7 +922,7 @@ class LocationCleanupCommand extends Command
                     JOIN cities c ON c.id = p.city_id
                     JOIN states s ON s.id = c.state_id
                     SET p.state_id = c.state_id
-                    WHERE p.state_id != c.state_id
+                    WHERE NOT (p.state_id <=> c.state_id)
                 ");
                 $this->line("  ✓ Fixed {$photoStateCount} photos: state_id aligned with city's state_id");
             }
@@ -911,7 +938,7 @@ class LocationCleanupCommand extends Command
             FROM photos p
             JOIN cities c ON c.id = p.city_id
             JOIN states s ON s.id = c.state_id
-            WHERE p.country_id != c.country_id
+            WHERE NOT (p.country_id <=> c.country_id)
         ");
 
         $photoCountryCount = $photoCountryMismatch->cnt ?? 0;
@@ -925,7 +952,7 @@ class LocationCleanupCommand extends Command
                     JOIN cities c ON c.id = p.city_id
                     JOIN states s ON s.id = c.state_id
                     SET p.country_id = c.country_id
-                    WHERE p.country_id != c.country_id
+                    WHERE NOT (p.country_id <=> c.country_id)
                 ");
                 $this->line("  ✓ Fixed {$photoCountryCount} photos: country_id aligned with city's country_id");
             }
@@ -1174,15 +1201,15 @@ class LocationCleanupCommand extends Command
         $tierMismatch = DB::select("
             SELECT 'state_country' as type, COUNT(*) as cnt
             FROM photos p JOIN states s ON s.id = p.state_id
-            WHERE p.country_id != s.country_id
+            WHERE NOT (p.country_id <=> s.country_id)
             UNION ALL
             SELECT 'city_state', COUNT(*)
             FROM photos p JOIN cities c ON c.id = p.city_id
-            WHERE p.state_id != c.state_id
+            WHERE NOT (p.state_id <=> c.state_id)
             UNION ALL
             SELECT 'city_country', COUNT(*)
             FROM photos p JOIN cities c ON c.id = p.city_id
-            WHERE p.country_id != c.country_id
+            WHERE NOT (p.country_id <=> c.country_id)
         ");
 
         $hasMismatch = false;
@@ -1224,9 +1251,9 @@ class LocationCleanupCommand extends Command
         // Tier consistency
         $tierMismatch = DB::selectOne("
             SELECT
-                (SELECT COUNT(*) FROM photos p JOIN states s ON s.id = p.state_id WHERE p.country_id != s.country_id) as state_country,
-                (SELECT COUNT(*) FROM photos p JOIN cities c ON c.id = p.city_id WHERE p.state_id != c.state_id) as city_state,
-                (SELECT COUNT(*) FROM photos p JOIN cities c ON c.id = p.city_id WHERE p.country_id != c.country_id) as city_country
+                (SELECT COUNT(*) FROM photos p JOIN states s ON s.id = p.state_id WHERE NOT (p.country_id <=> s.country_id)) as state_country,
+                (SELECT COUNT(*) FROM photos p JOIN cities c ON c.id = p.city_id WHERE NOT (p.state_id <=> c.state_id)) as city_state,
+                (SELECT COUNT(*) FROM photos p JOIN cities c ON c.id = p.city_id WHERE NOT (p.country_id <=> c.country_id)) as city_country
         ");
         $totalMismatch = ($tierMismatch->state_country ?? 0) + ($tierMismatch->city_state ?? 0) + ($tierMismatch->city_country ?? 0);
 
