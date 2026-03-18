@@ -14,7 +14,7 @@
 
     <script src="https://kit.fontawesome.com/c0364fbb6d.js" crossorigin="anonymous"></script>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/js/app.js'])
 
     <script>
         window.PUSHER_APP_KEY = '{{ config('broadcasting.connections.pusher.key') }}';
