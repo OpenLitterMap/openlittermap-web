@@ -14,6 +14,7 @@ use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -335,6 +336,9 @@ class ParticipantSessionTest extends TestCase
 
     public function test_participant_can_delete_unapproved_photo(): void
     {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
         $participants = $this->createSlots(1);
         $token = $participants[0]->session_token;
 
