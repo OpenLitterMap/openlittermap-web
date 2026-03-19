@@ -35,6 +35,6 @@ class CreateAlcoholTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('alcohol');
     }
 }

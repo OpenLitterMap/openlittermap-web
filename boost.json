@@ -1,0 +1,22 @@
+{
+    "agents": [
+        "claude_code"
+    ],
+    "guidelines": true,
+    "herd_mcp": false,
+    "mcp": true,
+    "nightwatch_mcp": false,
+    "sail": false,
+    "skills": [
+        "tailwindcss-development",
+        "leaderboard-system",
+        "location-system",
+        "metrics-pipeline",
+        "mobile-shim",
+        "photo-pipeline",
+        "tagging-system",
+        "teams-safeguarding",
+        "testing-patterns",
+        "v5-migration"
+    ]
+}

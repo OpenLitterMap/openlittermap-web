@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Photo;
-use App\Models\User\User;
+use App\Enums\LocationType;
+use App\Models\Users\User;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -29,22 +29,36 @@ class CommunityController extends Controller
 
     private function getPhotosPerMonth(): int
     {
-        return Photo::query()
-            ->where('created_at', '>', now()->subDays(30)->endOfDay())
-            ->count();
+        $row = DB::table('metrics')
+            ->where('timescale', 3)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('user_id', 0)
+            ->where('year', now()->year)
+            ->where('month', now()->month)
+            ->first(['uploads']);
+
+        return (int) ($row->uploads ?? 0);
     }
 
     private function getLitterTagsPerMonth(): int
     {
-        return Photo::query()
-            ->where('created_at', '>', now()->subDays(30)->endOfDay())
-            ->sum('total_litter');
+        $row = DB::table('metrics')
+            ->where('timescale', 3)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('user_id', 0)
+            ->where('year', now()->year)
+            ->where('month', now()->month)
+            ->first(['tags']);
+
+        return (int) ($row->tags ?? 0);
     }
 
     private function getUsersPerMonth(): int
     {
         return User::query()
-            ->where('created_at', '>', now()->subDays(30)->endOfDay())
+            ->where('created_at', '>=', now()->startOfMonth())
             ->count();
     }
 
@@ -52,6 +66,7 @@ class CommunityController extends Controller
     {
         // Not using models to avoid appended extra queries
         $photos = DB::table('photos')
+            ->where('is_public', true)
             ->selectRaw("
                 count(id) as total,
                 date_format(created_at, '%b %Y') as period

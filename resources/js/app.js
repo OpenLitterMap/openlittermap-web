@@ -1,53 +1,48 @@
-import './bootstrap';
+import './bootstrap.js';
 import '../css/app.css';
 
-import Vue from 'vue';
-import store from './store';
-import VueRouter from 'vue-router';
-import router from './routes';
+// Main app files
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
 import i18n from './i18n';
-import VueLocalStorage from 'vue-localstorage';
-import VueSweetalert2 from 'vue-sweetalert2';
-import 'sweetalert2/dist/sweetalert2.min.css';
-import VueToastify from 'vue-toastify';
-import VueNumber from 'vue-number-animation';
-import VueEcho from 'vue-echo-laravel';
-import Buefy from 'buefy';
-import fullscreen from 'vue-fullscreen';
-import LaravelPermissionToVueJS from './extra/laravel-permission-to-vuejs';
 
-import VueImg from 'v-img';
-import VueTypedJs from 'vue-typed-js'
+// Pinia global store
+import { createPinia } from 'pinia';
+const pinia = createPinia();
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
+pinia.use(piniaPluginPersistedstate);
 
-import RootContainer from './views/RootContainer.vue';
+// Load libraries
+import Toast from 'vue-toastification';
+import { LoadingPlugin } from 'vue-loading-overlay';
+import { RecycleScroller } from 'vue-virtual-scroller';
+import FloatingVue from 'floating-vue';
 
-Vue.use(Buefy);
-Vue.use(VueRouter);
-Vue.use(VueLocalStorage);
-Vue.use(VueSweetalert2);
-Vue.use(VueToastify, {
-    theme: 'dark',
-    errorDuration: 5000,
-});
-// Vue.use(VueMask)
-Vue.use(VueNumber);
-Vue.use(VueEcho, window.Echo);
-Vue.use(fullscreen);
-Vue.use(VueImg);
-Vue.use(VueTypedJs);
-Vue.use(LaravelPermissionToVueJS);
+// Global global components
+import Nav from './components/Nav.vue';
+import Modal from './components/Modal/Modal.vue';
 
-// Format a number with commas: "10,000"
-Vue.filter('commas', value => {
-    return parseInt(value).toLocaleString();
-});
+// Import CSS
+import 'vue-toastification/dist/index.css';
+import 'vue-loading-overlay/dist/css/index.css';
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+import 'floating-vue/dist/style.css';
 
-const vm = new Vue({
-    el: '#app',
-    store,
-    router,
-    i18n,
-    components: {
-        RootContainer
-    }
-});
+// Disable on mobile
+FloatingVue.options.themes.tooltip.disabled = window.innerWidth <= 768;
+
+// Register app, components and use plugins
+const app = createApp(App, window.initialProps);
+
+app.component('Nav', Nav);
+app.component('Modal', Modal);
+app.component('RecycleScroller', RecycleScroller);
+
+app.use(i18n);
+app.use(router);
+app.use(pinia);
+app.use(Toast, { position: 'bottom-right' });
+app.use(LoadingPlugin);
+app.use(FloatingVue);
+app.mount('#app');

@@ -14,7 +14,7 @@ class AddTotalArtToUsers extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->integer('total_art')->unsigned()->nullable(); 
+            $table->integer('total_art')->unsigned()->nullable();
         });
     }
 
@@ -26,7 +26,7 @@ class AddTotalArtToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('total_art');
         });
     }
 }

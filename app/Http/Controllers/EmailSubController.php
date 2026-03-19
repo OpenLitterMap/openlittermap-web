@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Log;
 use Auth;
-use App\Models\User\User;
+use App\Models\Users\User;
+use App\Subscriber;
 use Illuminate\Http\Request;
 
 class EmailSubController extends Controller
@@ -17,15 +18,20 @@ class EmailSubController extends Controller
     {
         $user = User::where('sub_token', $subToken)->first();
 
-        $user->emailsub = 0;
-        $user->save();
+        if ($user) {
+            $user->emailsub = 0;
+            $user->save();
 
-        $auth = false;
-        $user = null;
-        $verified = false;
-        $unsub = true;
+            return redirect('/?unsub=1');
+        }
 
-        return view('root', compact('auth', 'user', 'verified', 'unsub'));
+        $subscriber = Subscriber::where('sub_token', $subToken)->first();
+
+        if ($subscriber) {
+            $subscriber->delete();
+        }
+
+        return redirect('/?unsub=1');
     }
 
     /**

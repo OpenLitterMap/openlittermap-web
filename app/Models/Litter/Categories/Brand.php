@@ -3,11 +3,24 @@
 namespace App\Models\Litter\Categories;
 
 use App\Models\Litter\LitterCategory;
+use App\Models\Litter\Tags\PhotoTag;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @deprecated
+ */
 class Brand extends LitterCategory
 {
-    public static function types(): array
+    protected $guarded = [];
+
+    public function photoTags (): HasMany
     {
+        return $this->hasMany(PhotoTag::class, 'brand_id');
+    }
+
+    public static function types (): array
+    {
+
         return [
             'aadrink',
             'acadia',

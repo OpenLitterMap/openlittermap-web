@@ -1,121 +1,86 @@
 <template>
-	<div>
-		<p v-show="errorLogin" style="color: red;">{{ errorLogin }}</p>
+    <div class="p-6">
+        <p v-if="errorLogin" class="text-red-400 text-sm mb-4 text-center">{{ errorLogin }}</p>
 
-		<form role="form" method="post" @submit.prevent="login" style="padding: 1em 2em;">
+        <form class="space-y-4 text-center" @submit.prevent="login">
+            <input
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                :placeholder="$t('Email or username')"
+                type="text"
+                name="identifier"
+                required
+                v-model="identifier"
+                @keydown="clearLoginError"
+                autocomplete="username"
+            />
 
-			<input
-				class="input mb1em fs125"
-				placeholder="you@email.com"
-				type="email"
-				name="email"
-				required
-				v-model="email"
-				@keydown="clearLoginError"
-				autocomplete="email"
-			/>
+            <input
+                class="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                :placeholder="$t('Your Password')"
+                type="password"
+                name="password"
+                required
+                v-model="password"
+                @keydown="clearPwError"
+                autocomplete="current-password"
+            />
 
-			<input
-				class="input mb1em fs125"
-				placeholder="Your Password"
-				type="password"
-				name="password"
-				required
-				v-model="password"
-				@keydown="clearPwError"
-				autocomplete="current-password"
-			/>
-
-			<button
-                id="login-button"
-                :class="button"
+            <button
+                class="w-full px-6 py-2.5 rounded-lg text-white font-medium transition-colors"
+                :class="processing ? 'bg-white/10 text-white/30 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400'"
                 :disabled="processing"
-            >{{ $t('auth.login.login-btn') }}</button>
-		 </form>
+            >
+                {{ $t('Login') }}
+            </button>
+        </form>
 
-        <footer class="modal-card-foot" style="height: 50px;">
-            <div class="column is-half">
-                <a href="/signup">{{ $t('auth.login.signup-text') }}</a>
-            </div>
-
-            <div class="column is-half">
-                <a href="/password/reset" class="has-text-right">{{ $t('auth.login.forgot-password') }}</a>
+        <footer class="mt-6 border-t border-white/10 pt-4">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <router-link
+                    to="/signup"
+                    class="inline-flex items-center justify-center px-4 py-2 text-emerald-400 hover:text-emerald-300 transition-colors"
+                    @click="closeModal"
+                >
+                    {{ $t('Sign up') }}
+                </router-link>
+                <router-link
+                    to="/password/reset"
+                    class="inline-flex items-center justify-center px-4 py-2 text-white/40 hover:text-white/60 transition-colors"
+                    @click="closeModal"
+                >
+                    {{ $t('Forgot Password') }}
+                </router-link>
             </div>
         </footer>
-	 </div>
+    </div>
 </template>
 
-<script>
-export default {
-	name: 'Login',
-	data ()
-	{
-		return {
-			email: '',
-			password: '',
-			processing: false,
-			btn: 'button is-medium is-primary'
-		};
-	},
-	computed: {
+<script setup>
+import { ref, computed } from 'vue';
+import { useUserStore } from '@/stores/user';
+import { useModalStore } from '@/stores/modal';
 
-		/**
-		 * Add ' is-loading' when processing is true
-		 */
-		button ()
-		{
-			return this.processing ? this.btn + ' is-loading' : this.btn;
-		},
+const userStore = useUserStore();
+const modalStore = useModalStore();
+const identifier = ref('');
+const password = ref('');
+const processing = ref(false);
 
-        /**
-         * Get errors from login (email)
-         */
-        errorLogin ()
-        {
-            return this.$store.state.user.errorLogin;
-        }
-	},
-	methods: {
+const errorLogin = computed(() => userStore.errorLogin);
 
-	    /**
-         *
-         */
-        clearLoginError ()
-        {
-            this.$store.commit('errorLogin', '');
-        },
+const clearLoginError = () => userStore.clearErrorLogin();
+const clearPwError = () => {};
 
-		/**
-		 * Try to log the user in
-		 */
-		async login ()
-		{
-			this.processing = true;
+const closeModal = () => {
+    modalStore.hideModal();
+};
 
-			await this.$store.dispatch('LOGIN', {
-				email: this.email,
-				password: this.password
-			});
-
-			this.processing = false;
-        },
-
-		/**
-		 * Remove password errors
-		 */
-		clearPwError ()
-		{
-        	this.error = false;
-        	this.errormessage = '';
-        }
-	},
-}
+const login = async () => {
+    processing.value = true;
+    await userStore.LOGIN({
+        identifier: identifier.value,
+        password: password.value,
+    });
+    processing.value = false;
+};
 </script>
-
-
-<style>
-
-	.fs125 {
-		font-size: 1.25em;
-	}
-</style>

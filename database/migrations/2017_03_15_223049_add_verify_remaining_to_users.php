@@ -26,7 +26,7 @@ class AddVerifyRemainingToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('verify_remaining');
         });
     }
 }

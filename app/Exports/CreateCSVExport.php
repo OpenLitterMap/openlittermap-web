@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Litter\Tags\Category;
 use App\Models\Photo;
 
 use Illuminate\Bus\Queueable;
@@ -22,31 +23,42 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     /** @var array */
     private $dateFilter;
 
+    /**
+     * Canonical category → objects mapping, loaded once from the DB.
+     * Structure: [['id' => int, 'key' => string, 'objects' => [['id' => int, 'key' => string], ...]], ...]
+     */
+    private array $categoryObjects = [];
+
     public $timeout = 240;
 
-    /**
-     * Init args
-     */
-    public function __construct ($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [])
+    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [])
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
         $this->team_id = $team_id;
         $this->user_id = $user_id;
         $this->dateFilter = $dateFilter;
+
+        $this->categoryObjects = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($cat) => [
+                'id' => $cat->id,
+                'key' => $cat->key,
+                'objects' => $cat->litterObjects->map(fn ($obj) => [
+                    'id' => $obj->id,
+                    'key' => $obj->key,
+                ])->values()->toArray(),
+            ])
+            ->toArray();
     }
 
     /**
-     * Define column titles
+     * Define column titles.
      *
-     * Todo - Add Country / State / City name
-     * Todo - Allow the user to determine what data they want on the frontend
-     * Todo - Import these from elsewhere
-     * Todo - Separate brands by country
-     * Todo - Insert translated string instead of hard-coded 1-language title
-     * Todo - When downloading per team, show team member, if privacy true. (We need to create the privacy option first).
+     * Layout: fixed columns, then [CATEGORY, object, object, ...] per category, then custom tags.
      */
-    public function headings (): array
+    public function headings(): array
     {
         $result = [
             'id',
@@ -56,32 +68,28 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'date_uploaded',
             'lat',
             'lon',
-//            'city',
-//            'state',
-//            'country',
             'picked up',
             'address',
-            'total_litter',
+            'total_tags',
         ];
 
-        foreach (Photo::categories() as $category) {
-            $result[] = strtoupper($category);
+        foreach ($this->categoryObjects as $category) {
+            $result[] = strtoupper($category['key']);
 
-            // We make a temporary model to get the types, without persisting it
-            $photo = new Photo;
-            $model = $photo->$category()->make();
-            $result = array_merge($result, $model->types());
+            foreach ($category['objects'] as $object) {
+                $result[] = $object['key'];
+            }
         }
 
         return array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
     }
 
     /**
-     * Map over query response
-     * This will insert the each row under each heading
+     * Map a photo row to CSV columns using the summary JSON.
+     *
      * @param Photo $row
      */
-    public function map ($row): array
+    public function map($row): array
     {
         $result = [
             $row->id,
@@ -91,84 +99,64 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->created_at,
             $row->lat,
             $row->lon,
-//            $row->city_id, // todo -> name
-//            $row->state_id, // todo -> name
-//            $row->country_id, // todo -> name
-            $row->remaining ? 'No' : 'Yes', // column name is "picked up"
+            $row->remaining ? 'No' : 'Yes',
             $row->display_name,
-            $row->total_litter,
+            $row->summary['totals']['litter'] ?? $row->total_tags,
         ];
 
-        foreach (Photo::categories() as $category) {
-            $result[] = null;
+        $tags = $row->summary['tags'] ?? [];
 
-            // We make a temporary model to get the types, without persisting it
-            $tags = $row->$category()->make()->types();
+        // Build lookup: category_id → object_id → quantity (from flat tags array)
+        $tagLookup = [];
+        foreach ($tags as $tag) {
+            $catId = $tag['category_id'] ?? 0;
+            $objId = $tag['object_id'] ?? 0;
+            $tagLookup[$catId][$objId] = ($tagLookup[$catId][$objId] ?? 0) + ($tag['quantity'] ?? 0);
+        }
 
-            foreach ($tags as $tag) {
-                $result[] = $row->$category ? $row->$category->$tag : null;
+        foreach ($this->categoryObjects as $category) {
+            $result[] = null; // category separator column
+
+            foreach ($category['objects'] as $object) {
+                $result[] = $tagLookup[$category['id']][$object['id']] ?? null;
             }
         }
 
-        return array_merge($result, $row->customTags->take(3)->pluck('tag')->toArray());
+        // Custom tags from extra_tags (eager-loaded in query())
+        $customTagNames = $row->photoTags
+            ->flatMap(fn ($pt) => $pt->extraTags->where('tag_type', 'custom_tag'))
+            ->take(3)
+            ->map(fn ($extra) => $extra->extraTag?->key)
+            ->values()
+            ->toArray();
+
+        return array_merge($result, array_pad($customTagNames, 3, null));
     }
 
     /**
-     * Create a query which we will loop over in the map function
-     * no need to use ->get();
+     * Create a query which we will loop over in the map function.
      */
-    public function query ()
+    public function query()
     {
-        $query = Photo::with(Photo::categories());
+        $query = Photo::with(['photoTags.extraTags.extraTag']);
 
-        if (!empty($this->dateFilter))
-        {
+        if (!empty($this->dateFilter)) {
             $query->whereBetween(
                 $this->dateFilter['column'],
                 [$this->dateFilter['fromDate'], $this->dateFilter['toDate']]
             );
         }
 
-        if ($this->user_id)
-        {
-            return $query->where([
-                'user_id' => $this->user_id
-            ]);
-        }
-
-        else if ($this->team_id)
-        {
-            return $query->where([
-                'team_id' => $this->team_id,
-                'verified' => 2
-            ]);
-        }
-
-        else
-        {
-            if ($this->location_type === 'city')
-            {
-                return $query->where([
-                    'city_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-            }
-
-            else if ($this->location_type === 'state')
-            {
-                return $query->where([
-                    'state_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-            }
-
-            else
-            {
-                return $query->where([
-                    'country_id' => $this->location_id,
-                    'verified' => 2
-                ]);
-            }
+        if ($this->user_id) {
+            return $query->where(['user_id' => $this->user_id]);
+        } elseif ($this->team_id) {
+            return $query->where(['team_id' => $this->team_id, 'verified' => 2]);
+        } elseif ($this->location_type === 'city') {
+            return $query->where(['city_id' => $this->location_id, 'verified' => 2]);
+        } elseif ($this->location_type === 'state') {
+            return $query->where(['state_id' => $this->location_id, 'verified' => 2]);
+        } else {
+            return $query->where(['country_id' => $this->location_id, 'verified' => 2]);
         }
     }
 }

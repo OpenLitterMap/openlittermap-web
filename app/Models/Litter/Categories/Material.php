@@ -8,6 +8,9 @@ class Material extends LitterCategory
 {
     protected $table = 'material';
 
+    /**
+     * @deprecated - use Materials::class instead
+     */
     public static function types(): array
     {
         return [

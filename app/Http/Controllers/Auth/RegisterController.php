@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User\User;
-use App\Mail\NewUserRegMail;
+use App\Models\Users\User;
+use App\Mail\WelcomeToOpenLitterMap;
 use App\Events\UserSignedUp;
+use App\Services\UsernameGeneratorService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
@@ -14,92 +17,71 @@ use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Register Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles the registration of new users as well as their
-    | validation and creation. By default this controller uses a trait to
-    | provide this functionality without requiring any additional code.
-    |
-    */
+    protected string $redirectTo = '/upload';
 
-    /**
-     * Where to redirect users after registration.
-     */
-    protected string $redirectTo = '/submit';
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct ()
+    public function __construct()
     {
-        $this->middleware('guest');
+        $this->middleware('guest')->except(['confirmEmail']);
     }
 
-    /**
-     * Create a new user instance after a valid registration.
-     */
-    protected function create (array $data): User
+    protected function create(array $data): User
     {
+        $username = ! empty($data['username'])
+            ? $data['username']
+            : UsernameGeneratorService::generate();
+
         return User::create([
-            'name' => $data['name'],
-            'username' => $data['username'],
+            'name' => null,
+            'username' => $username,
             'email' => $data['email'],
             'password' => $data['password'],
         ]);
     }
 
     /**
-     * Handle a registration request for the application.
+     * Handle a registration request for both web and API.
+     *
+     * Returns a Sanctum token for mobile clients and also logs in
+     * the session for SPA clients.
      *
      * @throws ValidationException
      */
-    public function register (Request $request): array
+    public function register(Request $request): JsonResponse
     {
         $this->validate($request, [
-            'name' => 'required|min:3|max:25',
-            'username' => 'required|min:3|max:20|unique:users|different:password',
+            'username' => 'sometimes|nullable|string|min:3|max:255|unique:users|regex:/^[a-zA-Z0-9_-]+$/',
             'email' => 'required|email|max:75|unique:users',
-            'password' => ['required', Password::min(5)]
-//            'g-recaptcha-response' => 'required|captcha'
+            'password' => ['required', Password::min(8)],
         ]);
 
         event(new Registered($user = $this->create($request->all())));
 
-        Mail::to($request->email)->send(new NewUserRegMail($user));
+        if ($user->emailsub !== 0) {
+            Mail::to($request->email)->send(new WelcomeToOpenLitterMap($user));
+        }
 
         event(new UserSignedUp(now()));
 
-        $user->images_remaining = 1000;
-        $user->verify_remaining = 5000;
-        $user->save();
+        Auth::login($user);
 
-        return [
-            'user_id' => $user->id,
-            'email' => $user->email
-        ];
+        $token = $user->createToken('mobile');
+
+        return response()->json([
+            'token' => $token->plainTextToken,
+            'user' => $user,
+        ]);
     }
 
-   /**
-    * The user clicked the confirm email link
-    */
-    public function confirmEmail ($token)
+    /**
+     * The user clicked the confirm email link.
+     */
+    public function confirmEmail($token)
     {
         /** @var User $user */
         $user = User::whereToken($token)->first();
 
         $verified = $user && $user->confirmEmail();
 
-        $auth = false;
-        $user = null;
-        $unsub = false;
-
-        return view('root', compact('auth', 'user', 'verified', 'unsub'));
+        return redirect('/?verified=' . ($verified ? '1' : '0'));
     }
-
-
 }

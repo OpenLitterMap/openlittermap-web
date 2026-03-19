@@ -1,104 +1,106 @@
-name: Laravel
+name: Laravel CI
 
 on:
   push:
-    branches: [ master, staging ]
+    branches:
+      - master
+      - upgrade/tagging-2025
   pull_request:
-    branches: [ master, staging ]
+    branches:
+      - master
+      - upgrade/tagging-2025
 
 jobs:
-  laravel-tests:
-
+  tests:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: olm_test
+          MYSQL_NATIVE_PASSWORD: "ON"
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -psecret"
+          --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7
+        ports: [6379:6379]
 
     env:
       APP_ENV: testing
+
+      # database
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
       DB_DATABASE: olm_test
       DB_USERNAME: root
       DB_PASSWORD: secret
+
+      # misc drivers
       BROADCAST_DRIVER: log
       CACHE_DRIVER: array
       QUEUE_CONNECTION: sync
       SESSION_DRIVER: array
-      AWS_KEY: minioadmin
-      AWS_SECRET: minioadmin
-      AWS_REGION: us-east-1
+
+      # fake S3/MinIO (used only by tests)
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: true
       AWS_BUCKET: olm-public
       AWS_ENDPOINT: http://127.0.0.1:9000
-      x500_AWS_KEY: minioadmin
-      x500_AWS_SECRET: minioadmin
+      x500_AWS_ACCESS_KEY_ID: minioadmin
+      x500_AWS_SECRET_ACCESS_KEY: minioadmin
       x500_AWS_REGION: us-east-1
       x500_AWS_BUCKET: olm-public-bbox
       x500_AWS_ENDPOINT: http://127.0.0.1:9000
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: false
-          MYSQL_ROOT_PASSWORD: secret
-          MYSQL_ROOT_HOST: '%'
-          MYSQL_DATABASE: olm_test
-        ports:
-          - 3306/tcp
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-      redis:
-        image: redis
-        ports:
-          - 6379/tcp
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      # redis
+      REDIS_PORT: 6379
 
     steps:
-    - uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, dom, fileinfo, mysql
-        # coverage: xdebug #optional
-    - uses: actions/checkout@v3
-      with:
-        node-version: 18.20.3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18.20.3
-    - name: Start mysql service
-      run: sudo service mysql start
-    - name: Setup minio
-      run: |
-          docker run -d -p 9000:9000 --name minio \
-                     -e "MINIO_ACCESS_KEY=minioadmin" \
-                     -e "MINIO_SECRET_KEY=minioadmin" \
-                     -v /tmp/data:/data \
-                     -v /tmp/config:/root/.minio \
-                     minio/minio server /data
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-          export AWS_ACCESS_KEY_ID=minioadmin
-          export AWS_SECRET_ACCESS_KEY=minioadmin
-          export AWS_EC2_METADATA_DISABLED=true
+      - name: Copy test fixture image
+        run: |
+          mkdir -p storage/framework/testing
+          cp tests/Unit/img_with_exif.JPG storage/framework/testing/img_with_exif.JPG
 
-          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public
-          aws --endpoint-url http://127.0.0.1:9000/ s3 mb s3://olm-public-bbox
-    - name: Copy .env
-      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-    - name: Install Dependencies
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-    - name: Generate key
-      run: php artisan key:generate
-    - name: Install Passport
-      run: php artisan passport:keys
-    - name: Clear Config
-      run: php artisan config:clear
-    - name: Run Migration
-      run: php artisan migrate -v
-      env:
-          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
-          REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
-    - name: Directory Permissions
-      run: chmod -R 777 storage bootstrap/cache
-    - name: Install NPM assets
-      run: npm install --silent --force
-    - name: Compile NPM assets
-      run: npm run build --silent
-    - name: Execute tests (Unit and Feature tests) via PHPUnit
-      run: vendor/bin/phpunit
-      env:
-          DB_PORT: ${{ job.services.mysql.ports['3306'] }}
-          REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
+      - name: Remove old config cache
+        run: rm -f bootstrap/cache/config.php
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: mbstring, dom, fileinfo, mysql, pdo_mysql
+
+      - name: Prepare .env
+        run: cp .env.testing .env
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            nc -z 127.0.0.1 3306 && exit 0
+            echo "Waiting for MySQL…"
+            sleep 2
+          done
+          exit 1
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+      - name: Discover packages
+        run: php artisan package:discover --ansi
+
+      - name: Run migrations
+        run: php artisan migrate --force --no-interaction -vvv
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit --colors=always

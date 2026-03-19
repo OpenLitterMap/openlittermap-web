@@ -1,143 +1,70 @@
 <template>
-    <div class="jtc">
-        <h1 class="title is-2">{{ $t('teams.dashboard.join-a-team') }}</h1>
+    <div class="max-w-lg">
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">{{ $t('Join a Team') }}</h1>
+        <p class="text-slate-500 mb-6">{{ $t('Enter the team identifier shared by your team leader.') }}</p>
 
-        <div class="columns mt3">
-
-            <div class="column is-one-third">
-                <p class="mb1">{{ $t('teams.join.enter-team-identifier') }}</p>
+        <form class="bg-white rounded-xl p-6 shadow-sm space-y-5" @submit.prevent="submit">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">{{ $t('Team identifier') }}</label>
+                <input
+                    v-model="identifier"
+                    type="text"
+                    required
+                    autofocus
+                    placeholder="e.g. Awesome2026"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    :class="errors.identifier ? 'border-red-400' : ''"
+                    @input="teamsStore.clearError('identifier')"
+                />
+                <p v-if="errors.identifier" class="text-red-500 text-xs mt-1">{{ errors.identifier[0] }}</p>
             </div>
 
-            <div class="column is-half card p2">
-                <form @submit.prevent="submit">
-                    <div class="control mb2">
-                        <label for="join">{{ $t('teams.join.team-identifier') }}</label>
-                        <input
-                            class="input"
-                            name="join"
-                            id="join"
-                            :placeholder="$t('teams.join.enter-id-to-join-placeholder')"
-                            required
-                            v-model="identifier"
-                            @input="clearError"
-                            autofocus
-                        />
-                        <p
-                            class="is-danger"
-                            v-if="errorExists('identifier')"
-                            v-text="getFirstError('identifier')"
-                        />
-                    </div>
+            <button
+                type="submit"
+                :disabled="processing"
+                class="w-full py-2 rounded-lg text-white font-medium text-sm transition-colors"
+                :class="processing ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+            >
+                {{ processing ? $t('Joining...') : $t('Join Team') }}
+            </button>
 
-                    <div class="has-text-right">
-                        <button :class="button" :disabled="processing">{{ $t('teams.join.join-team') }}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            <p v-if="successMessage" class="text-green-600 text-sm font-medium">{{ successMessage }}</p>
+        </form>
     </div>
 </template>
 
 <script>
+import { ref, computed } from 'vue';
+import { useTeamsStore } from '@/stores/teams';
+
 export default {
     name: 'JoinTeam',
-    data ()
-    {
-        return {
-            btn: 'button is-medium is-primary',
-            identifier: '',
-            processing: false
+    setup() {
+        const teamsStore = useTeamsStore();
+
+        const identifier = ref('');
+        const processing = ref(false);
+        const successMessage = ref('');
+
+        const errors = computed(() => teamsStore.errors);
+
+        const submit = async () => {
+            processing.value = true;
+            successMessage.value = '';
+
+            const team = await teamsStore.joinTeam(identifier.value);
+
+            processing.value = false;
+
+            if (team) {
+                successMessage.value = `Joined "${team.name}" successfully!`;
+                identifier.value = '';
+            }
         };
+
+        teamsStore.clearErrors();
+
+        return { identifier, processing, successMessage, errors, submit, teamsStore };
     },
-    computed: {
-
-        /**
-         * Show spinner when processing
-         */
-        button ()
-        {
-            return this.processing ? this.btn + ' is-loading' : this.btn;
-        },
-
-        /**
-         * Error object from TeamsController
-         */
-        errors ()
-        {
-            return this.$store.state.teams.errors;
-        }
-
-    },
-    methods: {
-
-        /**
-         * Clear all errors
-         */
-        clearErrors ()
-        {
-            this.$store.commit('teamErrors', []);
-        },
-
-        /**
-         * Clear an error with this key
-         */
-        clearError (key)
-        {
-            if (this.errors[key]) this.$store.commit('clearTeamsError', key);
-        },
-
-        /**
-         * Check if any errors exist for this key
-         */
-        errorExists (key)
-        {
-            return this.errors.hasOwnProperty(key);
-        },
-
-        /**
-         * Get the first error from errors object
-         */
-        getFirstError (key)
-        {
-            return this.errors[key][0];
-        },
-
-        /**
-         * Dispatch action to join a team by identifier
-         */
-        async submit ()
-        {
-            this.processing = true;
-
-            await this.$store.dispatch('JOIN_TEAM', this.identifier);
-
-            this.processing = false;
-        }
-    },
-    mounted () {
-        this.clearErrors();
-    }
-}
+};
 </script>
-
-<style scoped>
-
-    .jtc {
-        margin-top: 1em;
-        margin-left: 5em;
-    }
-
-    .team-error {
-        color: red;
-        font-weight: 600;
-        margin-bottom: 1em;
-    }
-
-    @media screen and (max-width: 768px)
-    {
-        .jtc {
-            margin-top: 0;
-            margin-left: 0;
-        }
-    }
-</style>

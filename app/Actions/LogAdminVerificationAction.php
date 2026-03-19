@@ -4,7 +4,7 @@ namespace App\Actions;
 
 use App\Models\AdminVerificationLog;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 class LogAdminVerificationAction
 {

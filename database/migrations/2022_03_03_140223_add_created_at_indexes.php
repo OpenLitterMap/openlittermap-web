@@ -28,5 +28,11 @@ class AddCreatedAtIndexes extends Migration
      */
     public function down()
     {
+        Schema::table('photos', function (Blueprint $table) {
+            $table->dropIndex(['created_at']);
+        });
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropIndex(['created_at']);
+        });
     }
 }

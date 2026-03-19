@@ -4,7 +4,7 @@ namespace Database\Factories\AI;
 
 use App\Models\AI\Annotation;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AnnotationFactory extends Factory

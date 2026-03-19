@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class UserTest extends TestCase
@@ -22,13 +22,13 @@ class UserTest extends TestCase
         $this->assertTrue($user->fresh()->is_trusted);
     }
 
-    public function test_a_user_has_a_picked_up_attribute()
+    public function test_a_user_has_a_picked_up_column()
     {
-        $user = User::factory()->create(['items_remaining' => true]);
+        $user = User::factory()->create(['picked_up' => false]);
 
         $this->assertFalse($user->picked_up);
 
-        $user = User::factory()->create(['items_remaining' => false]);
+        $user = User::factory()->create(['picked_up' => true]);
 
         $this->assertTrue($user->picked_up);
     }

@@ -29,7 +29,10 @@ class AddShowNameusernameLocations extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('show_name_maps');
+            $table->dropColumn('show_username_maps');
+            $table->dropColumn('show_name_createdby');
+            $table->dropColumn('show_username_createdby');
         });
     }
 }

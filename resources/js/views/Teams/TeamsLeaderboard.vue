@@ -1,110 +1,105 @@
 <template>
-    <section>
-        <div class="my-teams-container">
-            <h1 class="title is-2">{{ $t('teams.leaderboard.title') }}</h1>
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-6">Teams Leaderboard</h1>
 
-            <p v-if="loading">{{ $t('common.loading') }}</p>
+        <p v-if="loading" class="text-slate-500">Loading leaderboard...</p>
 
-            <table v-else class="table is-fullwidth is-hoverable has-text-centered">
-                <thead>
-                    <th>{{ $t('teams.leaderboard.position-header') }}</th>
-                    <th>{{ $t('teams.leaderboard.name-header') }}</th>
-                    <th>{{ $t('teams.leaderboard.litter-header') }}</th>
-                    <th>{{ $t('teams.leaderboard.photos-header') }}</th>
-                    <!-- Total members -->
-                    <!-- Last Upload -->
-                    <th>{{ $t('teams.leaderboard.created-at-header') }}</th>
-                </thead>
+        <template v-else>
+            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-600 text-left">
+                        <tr>
+                            <th class="px-4 py-3 font-medium text-center w-16">#</th>
+                            <th class="px-4 py-3 font-medium">Team</th>
+                            <th class="px-4 py-3 font-medium text-right">Litter</th>
+                            <th class="px-4 py-3 font-medium text-right">Photos</th>
+                            <th class="px-4 py-3 font-medium text-right">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr
+                            v-for="(team, i) in teams"
+                            :key="team.id"
+                            class="hover:bg-slate-50"
+                        >
+                            <td class="px-4 py-3 text-center font-medium"
+                                :class="{
+                                    'text-yellow-500': rank(i) === 1,
+                                    'text-slate-400': rank(i) === 2,
+                                    'text-amber-600': rank(i) === 3,
+                                    'text-slate-500': rank(i) > 3,
+                                }"
+                            >
+                                {{ rank(i) }}
+                            </td>
+                            <td class="px-4 py-3 font-medium">{{ team.name }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums">{{ team.total_tags?.toLocaleString() }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums">{{ team.total_photos?.toLocaleString() }}</td>
+                            <td class="px-4 py-3 text-right text-slate-500 text-xs">
+                                {{ formatDate(team.created_at) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <tbody>
-                    <tr v-for="(team, index) in teams">
-                        <td>
-                            <div class="medal-container">
-                                <img
-                                    v-show="index < 3"
-                                    :src="medal(index)"
-                                    class="medal"
-                                />
-                                <span>{{ index + 1 }}</span>
-                            </div>
-                        </td>
-                        <td>{{ team.name }}</td>
-                        <td>{{ team.total_litter }}</td>
-                        <td>{{ team.total_images }}</td>
-                        <!-- Total members -->
-                        <!-- Last Upload -->
-                        <td>{{ getDate(team.created_at) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
+                <p v-if="!teams.length" class="p-6 text-center text-slate-400">
+                    No teams on the leaderboard yet.
+                </p>
+            </div>
+
+            <!-- Pagination -->
+            <div v-if="lastPage > 1" class="flex items-center justify-between mt-4">
+                <p class="text-sm text-slate-500">
+                    {{ total }} {{ total === 1 ? 'team' : 'teams' }}
+                </p>
+                <div class="flex gap-1">
+                    <button
+                        v-for="p in lastPage"
+                        :key="p"
+                        class="px-3 py-1 rounded text-sm font-medium transition-colors"
+                        :class="p === currentPage
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                        @click="goToPage(p)"
+                    >
+                        {{ p }}
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
 </template>
 
-<script>
-import moment from 'moment'
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useTeamsStore } from '@/stores/teams';
 
-export default {
-    name: "TeamsLeaderboard",
-    data () {
-        return {
-            loading: true
-        };
-    },
-    async created ()
-    {
-        await this.$store.dispatch('GET_TEAMS_LEADERBOARD');
+const teamsStore = useTeamsStore();
+const loading = ref(true);
 
-        this.loading = false;
-    },
-    computed: {
+const teams = computed(() => teamsStore.leaderboard.data);
+const currentPage = computed(() => teamsStore.leaderboard.current_page);
+const lastPage = computed(() => teamsStore.leaderboard.last_page);
+const total = computed(() => teamsStore.leaderboard.total);
 
-        /**
-         * Array of teams in the leaderboard
-         */
-        teams ()
-        {
-            return this.$store.state.teams.leaderboard;
-        }
-    },
-    methods: {
+const rank = (index) => (currentPage.value - 1) * 25 + index + 1;
 
-        /**
-         *
-         */
-        getDate (date)
-        {
-            return moment(date).format('LL');
-        },
+const formatDate = (date) => {
+    return new Intl.DateTimeFormat('en-IE', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    }).format(new Date(date));
+};
 
-        /**
-         * Return medal for 1st, 2nd and 3rd
-         */
-        medal (i)
-        {
-            if (i === 0) return '/assets/icons/gold-medal.png';
-            if (i === 1) return '/assets/icons/silver-medal.png';
-            if (i === 2) return '/assets/icons/bronze-medal.svg';
+const goToPage = async (page) => {
+    loading.value = true;
+    await teamsStore.fetchLeaderboard(page);
+    loading.value = false;
+};
 
-            return '';
-        }
-    }
-}
+onMounted(async () => {
+    await teamsStore.fetchLeaderboard();
+    loading.value = false;
+});
 </script>
-
-<style scoped>
-
-    .medal-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative
-    }
-
-    .medal {
-        height: 1em;
-        position: absolute;
-        left: 2em;
-    }
-
-</style>

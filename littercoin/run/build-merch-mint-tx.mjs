@@ -1,18 +1,18 @@
 import {
-    Address, 
-    Assets, 
-    bytesToHex, 
+    Address,
+    Assets,
+    bytesToHex,
     CoinSelection,
-    ConstrData, 
-    hexToBytes, 
+    ConstrData,
+    hexToBytes,
     NetworkParams,
-    Program, 
+    Program,
     PubKeyHash,
-    Value, 
+    Value,
     textToBytes,
     TxOutput,
-    Tx, 
-    UTxO 
+    Tx,
+    UTxO
 } from "../lib/helios.mjs";
 
 import { getLittercoinContractDetails } from "./lc-info.mjs";
@@ -20,8 +20,8 @@ import { signTx } from "./sign-tx.mjs";
 
 
 /**
- * Main calling function via the command line 
- * Usage: node build-merch-mint-tx.js destAddr cBorChangeAddr [cborUtxo1,cborUtxo2,...]
+ * Main calling function via the command line
+ * Usage: node build-merch-mint-tx.old_js destAddr cBorChangeAddr [cborUtxo1,cborUtxo2,...]
  * @params {string, string, string[]}
  * @output {string} cborTx
  */
@@ -43,7 +43,7 @@ const main = async () => {
         // Add 1 year expiry date for merchant token name
         const today = Date.now().toString();
         const merchTokenName = process.env.MERCH_TOKEN_NAME + " | " + today.toString();
-  
+
         // Get the change address from the wallet
         const changeAddr = Address.fromHex(hexChangeAddr);
 
@@ -53,7 +53,7 @@ const main = async () => {
 
         // Get littercoin smart contract and related script details
         const lcDetails = await getLittercoinContractDetails();
-        
+
         // Start building the transaction
         const tx = new Tx();
 
@@ -69,7 +69,7 @@ const main = async () => {
         // a plutus script transaction even if we don't actually use it.
         const merchRedeemer = new ConstrData(0, []);
         const merchToken = [[textToBytes(merchTokenName), BigInt(1)]];
-        
+
         // Add the mint to the tx
         tx.mintTokens(
             merchTokenMPH,
@@ -88,7 +88,7 @@ const main = async () => {
 
         // Network Params
         const networkParams = new NetworkParams(JSON.parse(lcDetails.netParams));
-   
+
         // Send any change back to the buyer
         await tx.finalize(networkParams, changeAddr, utxos[1]);
 
@@ -117,4 +117,4 @@ const main = async () => {
 main();
 
 
-  
+

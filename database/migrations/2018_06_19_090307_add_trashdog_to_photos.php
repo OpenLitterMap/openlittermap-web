@@ -27,7 +27,8 @@ class AddTrashdogToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['trashdog_id']);
+            $table->dropColumn('trashdog_id');
         });
     }
 }

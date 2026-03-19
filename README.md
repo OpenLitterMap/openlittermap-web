@@ -1,113 +1,219 @@
+# OpenLitterMap
 
-<img src="https://openlittermap.com/assets/logo_small.png" />
-<h3>About OpenLitterMap</h3>
-<hr>
-<p>OpenLitterMap is an open, interactive, and accessible database of the world's litter and plastic pollution.</p>
-<p>We are building a fun data-collection experience to harness the unprecedented potential of citizen scientists around the world.</p>
-<p>We believe that science on pollution should be an open, transparent and democratic process- not limited or controlled by anyone or any group.</p>
-<p>If you would like to help shape the future of OpenLitterMap, we would love to have you in our <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-fdctasud-mu~OBQKReRdC9Ai9KgGROw">Slack Channel</a></p>
-<p>Every Friday, 6pm Irish time, we run a community zoom call for ~1 hour where anyone interested in OpenLitterMap can listen in to learn more, and share ideas to help the future direction of the platform.</p>
-<p>OpenLitterMap is underdeveloped, but we are a community of over 3,600 contributors who have crowdsourced more than 100,000 uploads from 80 countries.</p>
-<p>All of our data is available to explore on the <a href="https://openlittermap.com/global">Global Map</a> and more sophisticated <a href="https://openlittermap.com/world/The%20Netherlands/Zuid-Holland/Wassenaar/map">"city grid maps"</a> are also available to explore. Anyone can download all of our data for free (bulk photo downloading currently unavailable).</p>
-<hr>
-<p>We have a <a href="https://www.gofundme.com/f/openlittermap-a-revolutionary-app-to-map-litter">GoFundMe</a> which includes our first promotional video and a demo video showing how to use our app.</p>
-<p>The source code for the mobile app (React Native) has launched, and will be followed by the OpenLitterAI and our smart contacts.</p>
-<p>OpenLitterMap is the first project to reward users with cryptocurrency for the production of geographic information. By using the app and doing "proof of work", users are "mining" Littercoin which we are experimenting with to reward and incentivize the sharing of geospatial data on plastic pollution.</p>
-<br>
-<p>STAY TUNED FOR LOTS OF EXCITING UPDATES</p>
-<hr>
-<p>OpenLitterMap-web is built with <a href="https://laravel.com">Laravel</a>, <a href="http://vuejs.org/">Vue.js</a> and <a href="https://bulma.io">Bulma</a></p>
-<p>To install this project locally on your machine, download and install <a href="https://laravel.com/docs/5.8/homestead">Homestead</a></p>
-<p>First, download <a href="https://www.virtualbox.org/wiki/Downloads">Virtual box</a> which will give you a Virtual Machine. This is used to give us all the same development environment. Alternatively, if you use mac, you can use <a href="https://laravel.com/docs/5.8/valet">Laravel Valet</a></p>
-<p>Second, you are going to need to download <a href="https://www.vagrantup.com/downloads.html">Vagrant</a> which you will use to provision, turn on and shut down your VM.</p>
-<p>In your root directory, add the vagrant box with</p>  
+**Open-source platform for mapping litter and plastic pollution.**
 
-`vagrant box add laravel/homestead`
+Built in Cork, Ireland. Used in 110+ countries. 500,000+ geotagged observations. 850,000+ classified tags. Cited in [98+ peer-reviewed publications](/references) including Nature and the World Bank. Previously identified as a Digital Public Good by the Digital Public Goods Alliance.
 
-then clone the box with `git clone https://github.com/laravel/homestead.git ~/Homestead`
+**Code:** [GPL v3](https://www.gnu.org/licenses/gpl-3.0.en.html) | **Data:** [ODbL](https://opendatacommons.org/licenses/odbl/) | **Privacy:** [Anonymous by default](/privacy)
 
-You should now have a "Homestead" folder on your machine at `~/Users/You/Homestead`
+---
 
-<p>Before turning on the VM, we are going to set up the Homestead.yaml file. Every time you save a file, Homestead.yaml will mirror your local code and copy it to the VM which your web-server (VM) will interact with.</p>
-<p>Open the Homestead.yaml file, add a new site and create a database.</p>
+## Tech Stack
 
-```
-ip: "192.168.10.10"
-memory: 2048
-cpus: 1
-provider: virtualbox
+- **Backend:** PHP 8.2, Laravel 11
+- **Frontend:** Vue 3 (Composition API), Pinia, Vue Router 4, Tailwind CSS 3, Vite 6
+- **Database:** MySQL 5.7+, Redis 7+
+- **Auth:** Laravel Passport + Sanctum
+- **Real-time:** Laravel Reverb (WebSockets)
+- **Storage:** AWS S3 (prod), MinIO (dev)
+- **Payments:** Stripe via Laravel Cashier
 
-authorize: ~/.ssh/id_rsa.pub
+---
 
-keys:
-    - ~/.ssh/id_rsa
+## Getting Started
 
-folders:
-    - map: ~/Code
-      to: /home/vagrant/Code
+### Prerequisites
 
-sites:
-    - map: olm.test
-      to: /home/vagrant/Code/openlittermap-web/public
+- PHP 8.2+, Composer
+- Node v20.20.0, npm v10.8.2
+- MySQL 5.7+, Redis 7+
+- [Laravel Valet](https://laravel.com/docs/11.x/valet) (macOS)
 
-databases:
-    - olm
-    - olm_test
+### Install
 
-features:
-    - mysql: true
-    - minio: true
+```bash
+git clone https://github.com/OpenLitterMap/openlittermap-web.git
+cd openlittermap-web
 
-buckets:
-    - name: olm-public
-      policy: public
-    - name: olm-public-bbox
-      policy: public
+composer install
+npm install
+
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
 ```
 
-Next, update your hosts file on your host machine (`sudo nano /etc/hosts` on windows it's `C:\Windows\System32\Drivers\etc\hosts`) and include `192.168.10.10 olm.test`
+### HTTPS with Valet
 
-When you want to boot up the VM, cd into the Homestead folder on your host machine and run `vagrant up`
+The app runs at `https://olm.test`. Set up Valet:
 
-<p>Download the repo and save it locally into your "Code" folder</p> 
-
-`~/Users/You/Code/openlittermap-web`
-
-If this is your first time installing, you need to run `vagrant provision` 
-
-<p>You also need to install composer and npm dependencies.</p>
-
-Locally, run `npm install`
-
-SSH into the VM with `vagrant ssh`. cd into Code/openlittermap-web, and then run `composer install`
-You can migrate and seed the tables with `php artisan migrate --seed`
-
-Once you're done, run `npm run watch` which will build the project into the `public` folder.
-
-You should now be able to open the browser and visit olm.test
-
-
-If you would like to contribute something, make a new branch locally `git checkout -b feature/my-new-feature`. We would love to see your pull requests!
-
-<p>You might notice there are some websocket errors in the browser. Some operations like adding photos broadcast live events to the client. It's easy to get websockets set up to resolve this.</p>
-
-```
-In your .env file, add "WEBSOCKET_BROADCAST_HOST=192.168.10.10"
-In broadcasting.php, change 'host' => env('WEBSOCKET_BROADCAST_HOST')
-In one window, run `php artisan websockets:serve --host=192.168.10.10`
-Then, in another window, run `php artisan horizon`
-To test it's working, open another window. Open tinker and run event new(\App\Events\UserSignedUp(1));
+```bash
+valet trust
+valet secure olm
+valet restart
 ```
 
-If you would want to generate some dummy photos for development purposes, you can do so by
-using the `php artisan olm:photos:generate-dummy-photos` command to generate 1500 dummy photos. It also takes
-arguments so you can do for e.g. `php artisan olm:photos:generate-dummy-photos 2000` and 2000 photos will be generated.
-After running the above command, run `php artisan clusters:generate-all` and the photos should be visible in the `Global Map`
-tab and in http://olm.test/world/Ireland/County%20Cork/Cork/map
+Update `.env`:
 
-The project uses AWS S3 to store photos on production. On development, however, it uses [Minio](https://laravel.com/docs/8.x/homestead#configuring-minio),
-an open source object storage server with an Amazon S3 compatible API. If you copied the .env.example file into .env
-you should be able to access the Minio control panel at http://192.168.10.10:9600 (homestead:secretkey).
-Remember to update the Access Policy to public for your buckets, on the admin panel.
-<p>You are now ready to get started!</p>
-<p>Have fun and thanks for taking an interest in OpenLitterMap</p>
+```env
+APP_URL=https://olm.test
+```
+
+See [readme/Setup.md](readme/Setup.md) for Reverb TLS configuration and troubleshooting.
+
+### Start Everything
+
+The app needs several processes running at once. Create a startup script:
+
+**1. Create the script:**
+
+```bash
+mkdir -p ~/scripts
+cat > ~/scripts/olm.sh << 'SCRIPT'
+#!/bin/zsh
+
+# Update this to your project directory
+PROJECT_DIR="/Users/youruser/Code/openlittermap-web"
+
+open_new_tab() {
+  local command="$1"
+  osascript <<EOF
+  tell application "Terminal"
+    activate
+    tell application "System Events"
+      tell process "Terminal"
+        keystroke "t" using command down
+        delay 0.2
+      end tell
+    end tell
+    do script "cd $PROJECT_DIR && $command" in front window
+  end tell
+EOF
+}
+
+open_new_tab "npm run dev"
+open_new_tab "php artisan reverb:start"
+open_new_tab "php artisan queue:work"
+open_new_tab "php artisan horizon"
+open_new_tab "php artisan tinker"
+open_new_tab "php artisan serve --host=0.0.0.0 --port=8000"
+
+# Open browser
+if [ -x "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" ]; then
+  open -a "Brave Browser" "https://olm.test"
+elif [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+  open -a "Google Chrome" "https://olm.test"
+else
+  open "https://olm.test"
+fi
+SCRIPT
+chmod +x ~/scripts/olm.sh
+```
+
+**2. Add to your PATH** (in `~/.zshrc`):
+
+```bash
+export PATH=$PATH:~/scripts
+```
+
+**3. Run it:**
+
+```bash
+olm.sh
+```
+
+This opens a terminal tab for each process and launches the browser:
+
+| Tab | Command | Purpose |
+|-----|---------|---------|
+| Vite | `npm run dev` | Frontend HMR |
+| Reverb | `php artisan reverb:start` | WebSocket server |
+| Queue | `php artisan queue:work` | Background jobs |
+| Horizon | `php artisan horizon` | Queue dashboard |
+| Tinker | `php artisan tinker` | PHP REPL for debugging |
+| Serve | `php artisan serve --host=0.0.0.0 --port=8000` | HTTP server for mobile dev |
+
+---
+
+## Running Tests
+
+```bash
+php artisan test                                          # All tests (~1000+)
+php artisan test tests/Feature/Teams/CreateTeamTest.php   # Single file
+php artisan test --filter=test_method_name                # Single test
+```
+
+---
+
+## Project Structure
+
+```
+app/
+  Actions/           # Command-pattern action classes
+  Http/Controllers/  # Thin controllers
+  Http/Requests/     # Form request validation
+  Http/Resources/    # API response transformers
+  Models/            # Eloquent models
+  Services/          # Business logic (MetricsService, ClassifyTagsService, etc.)
+  Enums/             # VerificationStatus, CategoryKey, etc.
+
+resources/js/
+  views/             # Page components (by feature)
+  components/        # Reusable components
+  stores/            # Pinia stores
+  router/index.js    # Vue Router config
+  langs/             # Translation files (i18n)
+
+routes/
+  api.php            # API routes (v3)
+  web.php            # SPA catch-all
+
+tests/
+  Feature/           # Integration tests
+  Unit/              # Unit tests
+```
+
+---
+
+## Documentation
+
+Detailed docs live in `readme/`:
+
+| Doc | What it covers |
+|-----|---------------|
+| [Setup.md](readme/Setup.md) | Full local dev setup, HTTPS, Reverb TLS, troubleshooting |
+| [API.md](readme/API.md) | API endpoint reference (source of truth for all contracts) |
+| [Tags.md](readme/Tags.md) | Tagging system, categories, litter objects |
+| [Teams.md](readme/Teams.md) | Teams, permissions, safeguarding |
+| [SchoolPipeline.md](readme/SchoolPipeline.md) | School approval pipeline |
+| [Metrics.md](readme/Metrics.md) | Metrics pipeline and aggregation |
+| [Clustering.md](readme/Clustering.md) | Map clustering system |
+| [Leaderboards.md](readme/Leaderboards.md) | Leaderboard system |
+| [XP.md](readme/XP.md) | XP scoring and levels |
+| [Admin.md](readme/Admin.md) | Admin verification system |
+| [Profile.md](readme/Profile.md) | User profile, privacy, account deletion |
+| [Upload.md](readme/Upload.md) | Photo upload pipeline |
+| [Locations.md](readme/Locations.md) | Location and geography system |
+| [Terms.md](readme/Terms.md) | Terms & Conditions |
+| [Privacy.md](readme/Privacy.md) | Privacy Policy (GDPR) |
+
+---
+
+## Contributing
+
+1. Fork the repo
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Make your changes, add tests
+4. Submit a pull request
+
+File issues and feature requests at [github.com/OpenLitterMap](https://github.com/OpenLitterMap).
+
+---
+
+## Links
+
+- **Website:** [openlittermap.com](https://openlittermap.com)
+- **Global Map:** [openlittermap.com/global](https://openlittermap.com/global)
+- **Training:** [LitterWeek.org](https://litterweek.org)
+- **Contact:** info@openlittermap.com

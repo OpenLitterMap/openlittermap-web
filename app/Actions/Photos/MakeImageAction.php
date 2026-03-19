@@ -5,8 +5,12 @@ namespace App\Actions\Photos;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Intervention\Image\Facades\Image;
 
+/**
+ * @deprecated - find another way to convert HEIC
+ */
 class MakeImageAction
 {
     private const TEMP_HEIC_STORAGE_DIR = 'app/heic_images/';
@@ -26,13 +30,57 @@ class MakeImageAction
 
         if ($resize) {
             $imageAndExifData['image']->resize(500, 500);
-
-            $imageAndExifData['image']->resize(500, 500, function ($constraint) {
-                $constraint->aspectRatio();
-            });
         }
 
         return $imageAndExifData;
+    }
+
+    /**
+     * Check if the file is HEIC/HEIF by extension, MIME type, or magic bytes.
+     *
+     * iOS often sends HEIC files with a .jpg extension and image/jpeg MIME,
+     * so we also inspect the ftyp box in the file header.
+     */
+    protected function isHeic(UploadedFile $file): bool
+    {
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mimeType = strtolower($file->getMimeType());
+
+        if (in_array($extension, ['heif', 'heic'])
+            || in_array($mimeType, ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'])) {
+            return true;
+        }
+
+        // Check ftyp box magic bytes — handles iOS HEIC disguised as JPEG
+        return $this->hasHeicMagicBytes($file->getRealPath());
+    }
+
+    /**
+     * Read the ISO BMFF ftyp box to detect HEIC/HEIF containers.
+     * Bytes 4-7 = "ftyp", bytes 8-11 = brand code.
+     */
+    protected function hasHeicMagicBytes(string $path): bool
+    {
+        $handle = @fopen($path, 'rb');
+        if (!$handle) {
+            return false;
+        }
+
+        $header = fread($handle, 12);
+        fclose($handle);
+
+        if (strlen($header) < 12) {
+            return false;
+        }
+
+        // ftyp marker at bytes 4-7
+        if (substr($header, 4, 4) !== 'ftyp') {
+            return false;
+        }
+
+        // Brand code at bytes 8-11
+        $brand = substr($header, 8, 4);
+        return in_array($brand, ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1']);
     }
 
     /**
@@ -43,48 +91,97 @@ class MakeImageAction
     protected function getImageAndExifData (UploadedFile $file): array
     {
         $extension = $file->getClientOriginalExtension();
+        $mimeType = $file->getMimeType();
+        $originalName = $file->getClientOriginalName();
+        $fileSize = $file->getSize();
+        $realPath = $file->getRealPath();
 
-        // If the image is not type HEIC, HEIF
-        // We can assume its jpg, png, and can be handled by the default GD image library
-        // Otherwise, we are going to have to handle HEIC separately.
-        if (!in_array(strtolower($extension), ['heif', 'heic'])) {
-            $image = Image::make($file)->orientate();
+        // Check extension, MIME type, AND magic bytes for HEIC detection
+        if (!$this->isHeic($file)) {
+            try {
+                $image = Image::make($file)->orientate();
+                $exif = $image->exif();
+
+                return compact('image', 'exif');
+            } catch (Exception $e) {
+                // Last resort: try ImageMagick conversion in case HEIC detection missed it
+                Log::warning('MakeImageAction: Image::make failed, attempting ImageMagick fallback', [
+                    'original_name' => $originalName,
+                    'extension' => $extension,
+                    'mime_type' => $mimeType,
+                    'file_size' => $fileSize,
+                    'error' => $e->getMessage(),
+                ]);
+
+                try {
+                    return $this->convertViaImageMagick($file->getRealPath(), $originalName, $extension, $mimeType);
+                } catch (Exception $fallbackException) {
+                    // Both paths failed — throw the original error
+                    throw $e;
+                }
+            }
+        }
+
+        Log::info('MakeImageAction: HEIC detected, converting via ImageMagick', [
+            'original_name' => $originalName,
+            'extension' => $extension,
+            'mime_type' => $mimeType,
+        ]);
+
+        return $this->convertViaImageMagick($file->getRealPath(), $originalName, $extension, $mimeType);
+    }
+
+    /**
+     * Convert an image to JPEG via ImageMagick shell command.
+     *
+     * @throws Exception
+     */
+    protected function convertViaImageMagick(string $sourcePath, string $originalName, string $extension, string $mimeType): array
+    {
+        $randomFilename = bin2hex(random_bytes(8));
+
+        $tempDir = storage_path(self::TEMP_HEIC_STORAGE_DIR);
+        if (!File::isDirectory($tempDir)) {
+            File::makeDirectory($tempDir, 0755, true);
+        }
+
+        $tmpFilepath = storage_path(self::TEMP_HEIC_STORAGE_DIR . $randomFilename . '.heic');
+        $convertedFilepath = storage_path(self::TEMP_HEIC_STORAGE_DIR . $randomFilename . '.jpg');
+
+        try {
+            copy($sourcePath, $tmpFilepath);
+
+            $output = [];
+            $returnCode = 0;
+            exec('magick convert ' . escapeshellarg($tmpFilepath) . ' ' . escapeshellarg($convertedFilepath) . ' 2>&1', $output, $returnCode);
+
+            if ($returnCode !== 0 || !file_exists($convertedFilepath)) {
+                Log::error('MakeImageAction: ImageMagick conversion failed', [
+                    'original_name' => $originalName,
+                    'return_code' => $returnCode,
+                    'output' => implode("\n", $output),
+                ]);
+
+                throw new Exception('Failed to convert image. ImageMagick returned code ' . $returnCode);
+            }
+
+            Log::info('MakeImageAction: ImageMagick conversion successful', [
+                'original_name' => $originalName,
+                'converted_size' => filesize($convertedFilepath),
+            ]);
+
+            $image = Image::make($convertedFilepath)->orientate();
             $exif = $image->exif();
 
             return compact('image', 'exif');
+        } finally {
+            // Always clean up temp files
+            if (file_exists($tmpFilepath)) {
+                @unlink($tmpFilepath);
+            }
+            if (file_exists($convertedFilepath)) {
+                @unlink($convertedFilepath);
+            }
         }
-
-        // Generating a random filename, and not using the image's
-        // original filename to handle cases
-        // that contain spaces or other weird characters
-        $randomFilename = bin2hex(random_bytes(8));
-
-        // Path for a temporary file from the upload -> storage/app/heic_images/sample1.heic
-        $tmpFilepath = storage_path(
-            self::TEMP_HEIC_STORAGE_DIR .
-            $randomFilename . ".$extension"
-        );
-
-        // Path for a converted temporary file -> storage/app/heic_images/sample1.jpg
-        $convertedFilepath = storage_path(
-            self::TEMP_HEIC_STORAGE_DIR .
-            $randomFilename . '.jpg'
-        );
-
-        // Store the uploaded HEIC file on the server
-        File::put($tmpFilepath, $file->getContent());
-
-        // Run a shell command to execute ImageMagick conversion
-        exec('magick convert ' . $tmpFilepath . ' ' . $convertedFilepath);
-
-        // Make the image from the new converted file
-        $image = Image::make($convertedFilepath)->orientate();
-        $exif = $image->exif();
-
-        // Remove the temporary files from storage
-        unlink($tmpFilepath);
-        unlink($convertedFilepath);
-
-        return compact('image', 'exif');
     }
 }

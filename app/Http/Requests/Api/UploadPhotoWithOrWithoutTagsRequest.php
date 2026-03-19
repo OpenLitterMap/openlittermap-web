@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Api;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class UploadPhotoWithOrWithoutTagsRequest extends FormRequest
 {
@@ -34,5 +36,30 @@ class UploadPhotoWithOrWithoutTagsRequest extends FormRequest
 //            'custom_tags' => 'sometimes|array|max:3',
 //            'custom_tags.*' => 'sometimes|distinct:ignore_case|min:3|max:100'
         ];
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        $file = $this->file('photo');
+
+        $photoInfo = [];
+        if ($file instanceof \Illuminate\Http\UploadedFile) {
+            $photoInfo = [
+                'photo_original_name' => $file->getClientOriginalName(),
+                'photo_mime' => $file->getMimeType(),
+                'photo_extension' => $file->getClientOriginalExtension(),
+                'photo_size' => $file->getSize(),
+                'photo_error' => $file->getError(),
+            ];
+        }
+
+        Log::warning('Mobile upload v2: validation failed', array_merge([
+            'user_id' => auth()->id(),
+            'errors' => $validator->errors()->toArray(),
+            'has_photo' => $this->hasFile('photo'),
+            'content_type' => $this->header('Content-Type'),
+        ], $photoInfo));
+
+        parent::failedValidation($validator);
     }
 }

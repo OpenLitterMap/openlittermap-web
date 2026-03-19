@@ -26,7 +26,7 @@ class AddCountCorrectlyVerifiedToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('count_correctly_verified');
         });
     }
 }

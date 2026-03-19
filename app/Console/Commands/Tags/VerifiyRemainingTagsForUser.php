@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Tags;
 
+use App\Enums\VerificationStatus;
 use App\Models\Photo;
 use App\Events\TagsVerifiedByAdmin;
 
@@ -48,9 +49,16 @@ class VerifiyRemainingTagsForUser extends Command
         foreach ($photos as $photo)
         {
             $photo->verification = 1;
-            $photo->verified = 2;
+            $photo->verified = VerificationStatus::ADMIN_APPROVED->value;
             $photo->save();
-            event(new TagsVerifiedByAdmin($photo->id));
+            event(new TagsVerifiedByAdmin(
+                $photo->id,
+                $photo->user_id,
+                $photo->country_id,
+                $photo->state_id,
+                $photo->city_id,
+                $photo->team_id
+            ));
         }
     }
 }

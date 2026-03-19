@@ -2,189 +2,97 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User\User;
 use App\Models\Photo;
 use App\Models\Location\City;
-use App\Models\Location\State;
-use App\Models\Location\Country;
-use App\DynamicLoading;
-
-use Log;
-use JavaScript;
-use Carbon\Carbon;
-use App\GlobalLevel;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 
 class MapController extends Controller
 {
-	// Get Leaderboard and location creator for each location
-	use DynamicLoading;
-
-	/**
-	 * Load the City data, maybe pass a filtered city request.
-	 */
-	public function getCity ()
+    /**
+     * Load city-level photo GeoJSON data for the map.
+     */
+    public function getCity()
     {
-        $country = urldecode(request()->country);
-        $state = urldecode(request()->state);
         $city = urldecode(request()->city);
 
-        $minFilt = null;
-        $maxFilt = null;
-        $hex = 100;
+        $cityModel = City::where('city', $city)->firstOrFail();
 
-		if (request()->min)
-		{
-			$minFilt = str_replace('-', ':', request()->min);
-			$maxFilt = str_replace('-', ':', request()->max);
-			$hex = request()->hex;
-		}
+        $query = Photo::query()
+            ->where('city_id', $cityModel->id)
+            ->where('is_public', true)
+            ->where('verified', '>', 0)
+            ->with(['user:id,name,username,show_name_maps,show_username_maps,social_links'])
+            ->orderBy('datetime', 'asc');
 
-		$litterGeojson = self::buildGeojson($city, $minFilt, $maxFilt);
+        // Optional date range filter
+        if (request()->min) {
+            $minTime = \DateTime::createFromFormat('d:m:Y', str_replace('-', ':', request()->min))
+                ->format('Y-m-d 00:00:00');
+            $maxTime = \DateTime::createFromFormat('d:m:Y', str_replace('-', ':', request()->max))
+                ->format('Y-m-d 23:59:59');
 
-		return [
-			  'center_map' => $this->latlong,
-				'map_zoom' => 13,
-		   'litterGeojson' => $litterGeojson,
-				   	 'hex' => $hex
-		];
-	}
+            $minTime = substr_replace($minTime, '2', 0, 1);
+            $maxTime = substr_replace($maxTime, '2', 0, 1);
 
-	/**
-	 * Dynamically build GeoJSON data for web-mapping
-	 */
-	private function buildGeojson ($city, $minfilter = null, $maxfilter = null)
-	{
-		$cityId = City::where('city', $city)->first()->id;
+            $query->where('datetime', '>=', $minTime)
+                  ->where('datetime', '<=', $maxTime);
+        }
 
-		if ($minfilter)
-		{
-			$minTime = \DateTime::createFromFormat('d:m:Y', $minfilter)->format('Y-m-d 00:00:00'); // 0018-mm-dd 00:00:00
-			$maxTime = \DateTime::createFromFormat('d:m:Y', $maxfilter)->format('Y-m-d 23:59:59');
+        $photoData = $query->get();
 
-			$minTime = substr_replace($minTime,'2',0,1); //  2018-mm-dd hh:mm:ss
-		    $maxTime = substr_replace($maxTime,'2',0,1);
+        if ($photoData->isEmpty()) {
+            return [
+                'center_map' => [0, 0],
+                'map_zoom' => 13,
+                'litterGeojson' => ['type' => 'FeatureCollection', 'features' => []],
+                'hex' => request()->hex ?? 100,
+            ];
+        }
 
-            $photoData = Photo::with([
-                'smoking',
-                'food',
-                'coffee',
-                'alcohol',
-                'softdrinks',
-                'sanitary',
-                'other',
-                'coastal',
-                'brands',
-                'dumping',
-                'industrial',
-                'material',
-//				 'art',
-//				'trashdog',
-                'customTags:photo_id,tag',
-                'user'
-            ])->where([
-                ['city_id', $cityId],
-                ['verified', '>', 0],
-                ['datetime', '>=', $minTime],
-                ['datetime', '<=', $maxTime]
-            ])->orderBy('datetime', 'asc')->get();
+        $geojson = [
+            'type' => 'FeatureCollection',
+            'features' => [],
+        ];
 
-			$this->getInitialPhotoLatLon($photoData[0]);
-			$this->photoCount = $photoData->count();
+        foreach ($photoData as $photo) {
+            $properties = [
+                'photo_id' => $photo->id,
+                'filename' => $photo->filename,
+                'model' => $photo->model,
+                'datetime' => $photo->datetime,
+                'lat' => $photo->lat,
+                'lon' => $photo->lon,
+                'verified' => $photo->verified,
+                'picked_up' => $photo->picked_up,
+                'remaining' => $photo->remaining, // @deprecated — use picked_up
+                'display_name' => $photo->display_name,
+                'summary' => $photo->summary,
+            ];
 
-		} else {
-
-			$photoData = Photo::with([
-				'smoking',
-				'food',
-				'coffee',
-                'alcohol',
-                'softdrinks',
-                'sanitary',
-                'other',
-                'coastal',
-                'brands',
-                'dumping',
-                'industrial',
-                'material',
-//				 'art',
-//				'trashdog',
-                'customTags:photo_id,tag',
-                'user'
-            ])->where([
-                ['city_id', $cityId],
-                ['verified', '>', 0]
-            ])->orderBy('datetime', 'asc')->get();
-
-			$this->getInitialPhotoLatLon($photoData[0]);
-			$this->photoCount = $photoData->count();
-		}
-
-		$geojson = array(
-   			'type'      => 'FeatureCollection',
-   			'features'  => array()
-		);
-
-		foreach ($photoData as $c)
-		{
-			$feature = array(
-				'type' => 'Feature',
-				'geometry' => array(
-					'type' => 'Point',
-					'coordinates' => array($c["lon"], $c["lat"])
-				),
-
-			'properties' => array(
-				   'photo_id' => $c["id"],
-				   'filename' => $c["filename"],
-					  'model' => $c["model"],
-				   'datetime' => $c["datetime"],
-					    'lat' => $c["lat"],
-					    'lon' => $c["lon"],
-			       'verified' => $c["verified"],
-				  'remaining' => $c["remaining"],
-			   'display_name' => $c["display_name"],
-			   'result_string' => $c["result_string"],
-			   'picked_up' => $c->picked_up,
-                    'social' => $c->user->social_links,
-                    'custom_tags' => $c->customTags->pluck('tag'),
-
-					// data
-					'smoking' => $c->smoking,
-					   'food' => $c->food,
-					 'coffee' => $c->coffee,
-					'alcohol' => $c->alcohol,
-				 'softdrinks' => $c->softdrinks,
-					  'drugs' => $c->drugs,
-				   'sanitary' => $c->sanitary,
-					  'other' => $c->other,
-					'coastal' => $c->coastal,
-					'pathway' => $c->pathway,
-//						'art' => $c->art,
-					 'brands' => $c->brands,
-					'dumping' => $c->dumping,
-				 'industrial' => $c->industrial,
-				 'material' => $c->material,
-//				   'trashdog' => $c->trashdog,
-			   'total_litter' => $c->total_litter
-				)
-			);
-
-            if ($c->user->show_name_maps) {
-                $feature["properties"]["name"] = $c->user->name;
+            if ($photo->user) {
+                if ($photo->user->show_name_maps) {
+                    $properties['name'] = $photo->user->name;
+                }
+                if ($photo->user->show_username_maps) {
+                    $properties['username'] = $photo->user->username;
+                }
+                $properties['social'] = $photo->user->social_links;
             }
 
-            if ($c->user->show_username_maps) {
-                $feature["properties"]["username"] = $c->user->username;
-            }
+            $geojson['features'][] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [$photo->lon, $photo->lat],
+                ],
+                'properties' => $properties,
+            ];
+        }
 
-			// Add features to feature collection array
-			array_push($geojson["features"], $feature);
-		}
-
-		json_encode($geojson, JSON_NUMERIC_CHECK);
-
-		return $geojson;
-	}
+        return [
+            'center_map' => [$photoData[0]->lat, $photoData[0]->lon],
+            'map_zoom' => 13,
+            'litterGeojson' => $geojson,
+            'hex' => request()->hex ?? 100,
+        ];
+    }
 }

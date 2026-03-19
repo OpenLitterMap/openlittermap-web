@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands\Twitter;
 
 use App\Helpers\Twitter;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 use Spatie\Browsershot\Browsershot;
 
 class WeeklyImpactReportTweet extends Command
@@ -12,36 +15,42 @@ class WeeklyImpactReportTweet extends Command
 
     protected $description = 'Generates an image of the weekly impact report and tweets it via OLM_bot';
 
-    public function handle()
+    public function handle(): int
     {
-        $url = "https://openlittermap.com/impact";
-        $year = now()->year;
-        $month = now()->month;
-        $week = now()->weekOfYear;
-        $dir = public_path("images/reports/weekly/$year/$month/$week");
+        $lastWeek = now()->subWeek();
+        $isoYear  = (int) $lastWeek->format('o');
+        $isoWeek  = (int) $lastWeek->format('W');
 
-        if (!file_exists($dir)) {
+        $url = "https://openlittermap.com/impact/weekly/{$isoYear}/{$isoWeek}";
+        $dir = public_path("images/reports/weekly/{$isoYear}/{$isoWeek}");
+
+        if (! file_exists($dir)) {
             mkdir($dir, 0755, true);
         }
 
-        $path = "$dir/impact-report.png";
+        $path = "{$dir}/impact-report.png";
 
-        Browsershot::url($url)
-            ->windowSize(1200, 800)
-            ->setOption('logLevel', 'debug')
-            ->setChromePath('/snap/bin/chromium')
-            ->save($path);
+        try {
+            Browsershot::url($url)
+                ->windowSize(1200, 800)
+                ->setChromePath('/snap/bin/chromium')
+                ->save($path);
+        } catch (\Throwable $e) {
+            $this->error("Browsershot failed: {$e->getMessage()}");
+            return self::FAILURE;
+        }
 
-        $this->info("Image saved to $path");
+        $this->info("Image saved to {$path}");
 
-        $msg = "Weekly Impact Report for week $week of $year. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
+        $msg = "Weekly Impact Report for week {$isoWeek} of {$isoYear}."
+            . " Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
-        // Tweet the image
         Twitter::sendTweetWithImage($msg, $path);
 
-        $this->info("Tweet sent");
+        $this->info('Tweet sent');
 
-        // Delete the image
-        unlink($path);
+        @unlink($path);
+
+        return self::SUCCESS;
     }
 }

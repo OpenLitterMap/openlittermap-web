@@ -2,36 +2,54 @@
 
 namespace App\Events;
 
+use App\Models\Teams\Team;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
 
-// When events are namespaced inside another folder, they are not being registered on Echo.
+/**
+ * Fired when a new team is created.
+ *
+ * PRIVACY: School teams broadcast on a PRIVATE channel only.
+ * Community teams broadcast on the public 'teams' channel.
+ *
+ * School team names contain school identity ("St. X 1st Years 2026")
+ * — broadcasting them publicly creates a directory of targets.
+ */
 class TeamCreated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets;
 
-    public $teamName;
+    public function __construct(
+        public Team $team,
+    ) {}
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
-    public function __construct ($teamName)
+    public function broadcastOn(): Channel|PrivateChannel
     {
-        $this->teamName = $teamName;
+        if ($this->team->isSchool()) {
+            return new PrivateChannel("team.{$this->team->id}");
+        }
+
+        return new Channel('teams');
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
-    public function broadcastOn()
+    public function broadcastAs(): string
     {
-        return new Channel('main');
+        return 'team.created';
+    }
+
+    public function broadcastWith(): array
+    {
+        // Never broadcast school name, roll number, etc.
+        if ($this->team->isSchool()) {
+            return ['team_id' => $this->team->id];
+        }
+
+        return [
+            'team_id' => $this->team->id,
+            'team_name' => $this->team->name,
+        ];
     }
 }

@@ -2,27 +2,24 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Enums\LocationType;
+use App\Enums\VerificationStatus;
 use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
 use App\Jobs\EmailUserExportCompleted;
-use App\Level;
 use App\Models\CustomTag;
 use App\Models\Photo;
-use App\Models\User\User;
+use App\Models\Users\User;
+use App\Services\LevelService;
+use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
-    /**
-     * Apply middleware to all of these routes
-     */
-    public function __construct ()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Dispatch a request to download the users data
      *
@@ -74,20 +71,23 @@ class ProfileController extends Controller
      */
     public function geojson ()
     {
+        $allowedPeriods = ['created_at', 'datetime', 'updated_at'];
+        $period = in_array(request()->period, $allowedPeriods, true)
+            ? request()->period
+            : 'created_at';
+
         $photos = Photo::query()
-            ->where([
-                ['user_id', auth()->user()->id],
-                'verified' => 2
-            ])
+            ->where('user_id', auth()->user()->id)
+            ->where('verified', '>=', VerificationStatus::ADMIN_APPROVED->value)
             ->with([
                 'user:id,name,username,show_username_maps,show_name_maps,settings',
                 'user.team:is_trusted',
                 'team:id,name',
                 'customTags:photo_id,tag',
             ])
-            ->whereDate(request()->period, '>=', request()->start)
-            ->whereDate(request()->period, '<=', request()->end)
-            ->orderBy(request()->period, 'asc')
+            ->whereDate($period, '>=', request()->start)
+            ->whereDate($period, '<=', request()->end)
+            ->orderBy($period, 'asc')
             ->get();
 
         // Populate geojson object
@@ -96,18 +96,18 @@ class ProfileController extends Controller
             $name = $photo->user->show_name_maps ? $photo->user->name : null;
             $username = $photo->user->show_username_maps ? $photo->user->username : null;
             $team = $photo->team ? $photo->team->name : null;
-            $filename = ($photo->user->is_trusted || $photo->verified >= 2) ? $photo->filename : '/assets/images/waiting.png';
-            $resultString = $photo->verified >= 2 ? $photo->result_string : null;
+            $filename = ($photo->user->is_trusted || $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) ? $photo->filename : '/assets/images/waiting.png';
+            $summary = $photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value ? $photo->summary : null;
 
             $features[] = [
                 'type' => 'Feature',
                 'geometry' => [
                     'type' => 'Point',
-                    'coordinates' => [$photo->lat, $photo->lon]
+                    'coordinates' => [$photo->lon, $photo->lat]
                 ],
                 'properties' => [
                     'photo_id' => $photo->id,
-                    'result_string' => $resultString,
+                    'summary' => $summary,
                     'filename' => $filename,
                     'datetime' => $photo->datetime,
                     'time' => $photo->datetime,
@@ -132,49 +132,269 @@ class ProfileController extends Controller
     }
 
     /**
-     * Get the total number of users, and the current users position
-     * To get the current position, we need to count how many users have more XP than current users
-     *
-     * @return array
+     * Get a public user profile by ID.
      */
-    public function index ()
+    public function show(int $id): array
+    {
+        $user = User::findOrFail($id);
+
+        if (! $user->public_profile) {
+            return ['public' => false];
+        }
+
+        $stats = $this->resolveUserStats($id, $user);
+        $uploads = $stats['uploads'];
+        $tags = $stats['tags'];
+        $xp = $stats['xp'];
+
+        $levelInfo = LevelService::getUserLevel($xp);
+
+        $totalRanked = Cache::remember('users:count', 3600, fn () => User::count());
+        $globalPosition = $this->getGlobalRank($id, $xp);
+
+        $percentile = $totalRanked > 0
+            ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
+            : 0;
+
+        $locationCounts = Photo::where('user_id', $id)
+            ->where('is_public', true)
+            ->whereNotNull('country_id')
+            ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
+            ->first();
+
+        $unlockedCount = DB::table('user_achievements')->where('user_id', $id)->count();
+        $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
+
+        return [
+            'public' => true,
+            'user' => [
+                'id' => $id,
+                'name' => $user->show_name ? $user->name : null,
+                'username' => $user->show_username ? $user->username : null,
+                'avatar' => $user->avatar,
+                'global_flag' => $user->global_flag,
+                'member_since' => $user->created_at->format('F Y'),
+            ],
+            'stats' => [
+                'uploads' => $uploads,
+                'tags' => $tags,
+                'xp' => $xp,
+            ],
+            'level' => $levelInfo,
+            'rank' => [
+                'global_position' => $globalPosition,
+                'global_total' => $totalRanked,
+                'percentile' => $percentile,
+            ],
+            'achievements' => [
+                'unlocked' => $unlockedCount,
+                'total' => $totalAchievements,
+            ],
+            'locations' => [
+                'countries' => (int) ($locationCounts->countries ?? 0),
+                'states' => (int) ($locationCounts->states ?? 0),
+                'cities' => (int) ($locationCounts->cities ?? 0),
+            ],
+        ];
+    }
+
+    /**
+     * Get comprehensive profile data for the authenticated user.
+     */
+    public function index(): array
     {
         /** @var User $user */
-        $user = Auth::user()->append('xp_redis');
+        $user = Auth::user();
+        $userId = $user->id;
 
-        // Todo - Store this metadata in another table
-        $totalUsers = User::count();
+        // Refresh user to pick up any query-builder updates (e.g. MetricsService
+        // syncs users.xp via User::where()->increment(), which doesn't update
+        // the cached model attributes)
+        $user->refresh();
 
-        $usersPosition = $user->position;
+        $stats = $this->resolveUserStats($userId, $user);
+        $uploads = $stats['uploads'];
+        $tags = $stats['tags'];
+        $xp = $stats['xp'];
 
-        // Todo - Store this metadata in Redis
-        $totalPhotosAllUsers = Photo::count();
-        // Todo - Store this metadata in Redis
-        $totalTagsAllUsers = Photo::sum('total_litter') + CustomTag::count(); // this doesn't include brands
+        // Level
+        $levelInfo = LevelService::getUserLevel($xp);
 
-        $usersTotalTags = $user->total_tags;
-
-        $photoPercent = ($user->total_images && $totalPhotosAllUsers) ? ($user->total_images / $totalPhotosAllUsers) : 0;
-        $tagPercent = ($usersTotalTags && $totalTagsAllUsers) ? ($usersTotalTags / $totalTagsAllUsers) : 0;
-
-        // XP needed to reach the next level
-        $nextLevel = Level::where('xp', '>', $user->xp_redis)->first();
-        $requiredXp = $nextLevel->xp - $user->xp_redis;
-        $currentLevel = $nextLevel->level - 1;
-
-        // Update the user's current level if needed
-        if ($user->level != $currentLevel) {
-            $user->level = $currentLevel;
+        if ($user->level != $levelInfo['level']) {
+            $user->level = $levelInfo['level'];
             $user->save();
         }
 
+        // Rank from metrics table (all-time), consistent with LeaderboardController
+        $totalRanked = Cache::remember('users:count', 3600, fn () => User::count());
+        $globalPosition = $this->getGlobalRank($userId, (int) $user->xp);
+
+        $percentile = $totalRanked > 0
+            ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
+            : 0;
+
+        // Global stats from metrics table, with cached photo count fallback
+        $globalRow = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('user_id', 0)
+            ->first(['uploads', 'tags']);
+        $globalPhotos = (int) ($globalRow->uploads ?? 0)
+            ?: (int) Cache::remember('photos:public:count', 300, fn () => Photo::where('is_public', true)->count());
+        $globalTags = (int) ($globalRow->tags ?? 0)
+            ?: (int) DB::table('metrics')
+                ->where('user_id', '>', 0)
+                ->where('timescale', 0)
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('year', 0)
+                ->where('month', 0)
+                ->sum('tags');
+
+        // Achievements
+        $unlockedCount = DB::table('user_achievements')
+            ->where('user_id', $userId)
+            ->count();
+        $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
+
+        // Location counts from user's photos (all photos, including private-by-choice)
+        $locationCounts = Photo::where('user_id', $userId)
+            ->whereNotNull('country_id')
+            ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
+            ->first();
+
+        // Percentage of global contribution
+        $photoPercent = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
+        $tagPercent = ($tags && $globalTags) ? round($tags / $globalTags * 100, 2) : 0;
+
+        // Active team
+        $team = null;
+        if ($user->active_team) {
+            $teamModel = $user->team;
+            if ($teamModel) {
+                $team = ['id' => $teamModel->id, 'name' => $teamModel->name];
+            }
+        }
+
         return [
-            'totalUsers' => $totalUsers,
-            'usersPosition' => $usersPosition,
-            'tagPercent' => $tagPercent,
-            'photoPercent' => $photoPercent,
-            'requiredXp' => $requiredXp
+            'user' => [
+                'id' => $userId,
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'created_at' => $user->created_at->toIso8601String(),
+                'member_since' => $user->created_at->format('F Y'),
+                'global_flag' => $user->global_flag,
+                'public_profile' => (bool) $user->public_profile,
+                'show_name' => (bool) $user->show_name,
+                'show_username' => (bool) $user->show_username,
+                'show_name_maps' => (bool) $user->show_name_maps,
+                'show_username_maps' => (bool) $user->show_username_maps,
+                'picked_up' => $user->picked_up === null ? null : (bool) $user->picked_up,
+                'previous_tags' => (bool) $user->previous_tags,
+                'emailsub' => (bool) $user->emailsub,
+                'prevent_others_tagging_my_photos' => (bool) $user->prevent_others_tagging_my_photos,
+                'public_photos' => (bool) $user->public_photos,
+            ],
+            'stats' => [
+                'uploads' => $uploads,
+                'tags' => $tags,
+                'xp' => $xp,
+                'streak' => $stats['streak'],
+                'littercoin' => (int) ($user->total_littercoin ?? 0),
+                'photo_percent' => $photoPercent,
+                'tag_percent' => $tagPercent,
+            ],
+            'level' => $levelInfo,
+            'rank' => [
+                'global_position' => $globalPosition,
+                'global_total' => $totalRanked,
+                'percentile' => $percentile,
+            ],
+            'global_stats' => [
+                'total_photos' => $globalPhotos,
+                'total_tags' => $globalTags,
+            ],
+            'achievements' => [
+                'unlocked' => $unlockedCount,
+                'total' => $totalAchievements,
+            ],
+            'locations' => [
+                'countries' => (int) ($locationCounts->countries ?? 0),
+                'states' => (int) ($locationCounts->states ?? 0),
+                'cities' => (int) ($locationCounts->cities ?? 0),
+            ],
+            'team' => $team,
         ];
+    }
+
+    /**
+     * Resolve user stats from Redis with MySQL fallbacks.
+     */
+    private function resolveUserStats(int $userId, User $user): array
+    {
+        $redisMetrics = RedisMetricsCollector::getUserMetrics($userId);
+
+        // Total tags from metrics table (single indexed row lookup)
+        $metricsRow = DB::table('metrics')
+            ->where('user_id', $userId)
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('year', 0)
+            ->where('month', 0)
+            ->first(['uploads', 'tags', 'xp']);
+
+        $uploads = (int) ($metricsRow->uploads ?? 0);
+        $tags = (int) ($metricsRow->tags ?? 0);
+        $xp = (int) ($metricsRow->xp ?? 0);
+
+        // Fallback to Redis/DB when no metrics row exists yet
+        if (! $uploads) {
+            $uploads = $redisMetrics['uploads'] ?: (int) Photo::where('user_id', $userId)->count();
+        }
+        if (! $xp) {
+            $xp = $redisMetrics['xp'] ?: (int) $user->xp;
+        }
+
+        return [
+            'uploads' => $uploads,
+            'tags' => $tags,
+            'xp' => $xp,
+            'streak' => $redisMetrics['streak'],
+        ];
+    }
+
+    /**
+     * Get the user's global rank position from the all-time metrics table.
+     * Falls back to users.xp count if no metrics row exists yet.
+     */
+    private function getGlobalRank(int $userId, int $fallbackXp): int
+    {
+        $metricsRow = DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('year', 0)
+            ->where('month', 0)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($metricsRow && $metricsRow->xp > 0) {
+            return DB::table('metrics')
+                ->where('timescale', 0)
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('year', 0)
+                ->where('month', 0)
+                ->where('user_id', '>', 0)
+                ->where('xp', '>', $metricsRow->xp)
+                ->count() + 1;
+        }
+
+        return User::where('xp', '>', $fallbackXp)->count() + 1;
     }
 
     /**

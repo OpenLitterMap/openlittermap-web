@@ -1,404 +1,238 @@
 <template>
-    <div class="tsc">
-        <h1 class="title is-2">{{ $t('teams.dashboard.settings') }}</h1>
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-6">{{ $t('Team Settings') }}</h1>
 
-        <p v-if="!loading && !teams.length" class="mb1">{{ $t('teams.myteams.no-joined-team') }}.</p>
+        <p v-if="!hasTeams" class="text-slate-500">{{ $t("You haven't joined any teams yet.") }}</p>
 
-        <div v-if="teams.length" class="columns mt3 mb3">
-            <div class="column is-one-third pt0">
-                <h1 class="title">{{ $t('teams.settings.privacy-title') }}</h1>
-                <p class="mb1">{{ $t('teams.settings.privacy-text') }}</p>
-            </div>
+        <template v-else>
+            <!-- Privacy Settings -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-700 mb-2">{{ $t('Privacy') }}</h2>
+                    <p class="text-sm text-slate-500">
+                        {{ $t('Control how your name and username appear on team maps and leaderboards.') }}
+                    </p>
+                </div>
 
-            <div class="column is-half card p2">
-
-                <p v-if="loading">{{ $t('common.loading') }}</p>
-
-                <div v-else>
-                    <select v-model="privacySectionSelectedTeamId" class="input mb2">
-                        <option v-for="team in teams" :value="team.id">
+                <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm space-y-5">
+                    <select
+                        v-model="privacyTeamId"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                    >
+                        <option v-for="team in teams" :key="team.id" :value="team.id">
                             {{ team.name }}
                         </option>
                     </select>
 
-                    <!-- Team Map -->
-                    <h1 class="title is-4">{{ $t('teams.settings.maps.team-map') }}:</h1>
-                    <label class="checkbox mb1">
-                        <input type="checkbox" v-model="show_name_maps" />
-                        {{ $t('settings.privacy.credit-name') }}
-                    </label>
+                    <div v-if="privacyTeam">
+                        <!-- Maps -->
+                        <h3 class="text-sm font-semibold text-slate-600 mb-2">{{ $t('Team Map') }}</h3>
+                        <label class="flex items-center gap-2 mb-1 cursor-pointer">
+                            <input type="checkbox" v-model="privacy.show_name_maps" class="rounded" />
+                            <span class="text-sm">{{ $t('Show my name') }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 mb-3 cursor-pointer">
+                            <input type="checkbox" v-model="privacy.show_username_maps" class="rounded" />
+                            <span class="text-sm">{{ $t('Show my username') }}</span>
+                        </label>
 
-                    <br>
+                        <p v-if="!privacy.show_name_maps && !privacy.show_username_maps"
+                           class="text-xs text-red-500 mb-3">
+                            {{ $t("You won't appear on the team map.") }}
+                        </p>
 
-                    <label class="checkbox mb1">
-                        <input type="checkbox" v-model="show_username_maps" />
-                        {{ $t('settings.privacy.credit-username') }}
-                    </label>
+                        <!-- Leaderboards -->
+                        <h3 class="text-sm font-semibold text-slate-600 mb-2 mt-4">{{ $t('Team Leaderboard') }}</h3>
+                        <label class="flex items-center gap-2 mb-1 cursor-pointer">
+                            <input type="checkbox" v-model="privacy.show_name_leaderboards" class="rounded" />
+                            <span class="text-sm">{{ $t('Show my name') }}</span>
+                        </label>
+                        <label class="flex items-center gap-2 mb-3 cursor-pointer">
+                            <input type="checkbox" v-model="privacy.show_username_leaderboards" class="rounded" />
+                            <span class="text-sm">{{ $t('Show my username') }}</span>
+                        </label>
 
-                    <p v-show="show_name_maps" class="is-green">{{ $t('teams.settings.maps.name-will-appear') }}</p>
-                    <p v-show="show_username_maps" class="is-green">{{ $t('teams.settings.maps.username-will-appear') }}</p>
-                    <p v-show="! show_name_maps && ! show_username_maps" class="is-red">{{ $t('teams.settings.maps.will-not-appear') }}</p>
-
-                    <!-- Team Leaderboard -->
-                    <h1 class="title is-4 mt1">{{ $t('teams.settings.leaderboards.team-leaderboard') }}:</h1>
-                    <label class="checkbox mb1">
-                        <input type="checkbox" v-model="show_name_leaderboards" />
-                        <!-- Credit my username -->
-                        {{ $t('settings.privacy.credit-name') }}
-                    </label>
-
-                    <br>
-
-                    <label class="checkbox mb1">
-                        <input type="checkbox" v-model="show_username_leaderboards" />
-                        {{ $t('settings.privacy.credit-username') }}
-                    </label>
-
-                    <p v-show="show_name_leaderboards" class="is-green">{{ $t('teams.settings.leaderboards.name-will-appear') }}</p>
-                    <p v-show="show_username_leaderboards" class="is-green">{{ $t('teams.settings.leaderboards.username-will-appear') }}</p>
-                    <p v-show="! show_name_leaderboards && ! show_username_leaderboards" class="is-red">{{ $t('teams.settings.leaderboards.will-not-appear') }}</p>
-
-                    <div class="flex">
-                        <button :class="submitButton" @click="submit(false)" :disabled="disabled">{{ $t('teams.settings.submit-one-team') }}</button>
-                        <button :class="allButton" @click="submit(true)" :disabled="disabled">{{ $t('teams.settings.apply-all-teams') }}</button>
+                        <div class="flex gap-3 pt-3 border-t border-slate-100">
+                            <button
+                                :disabled="privacySaving"
+                                class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                @click="savePrivacy(false)"
+                            >
+                                {{ $t('Save for this team') }}
+                            </button>
+                            <button
+                                :disabled="privacySaving"
+                                class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 disabled:opacity-50"
+                                @click="savePrivacy(true)"
+                            >
+                                {{ $t('Apply to all teams') }}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <div v-if="teamsLedByUser.length" class="columns mb3">
-            <div class="column is-one-third pt0">
-                <h1 class="title">{{ $t('teams.settings.team-update-title') }}</h1>
-                <p class="mb1">{{ $t('teams.settings.team-update-text') }}</p>
-            </div>
+            <!-- Team Attributes (leader only) -->
+            <section v-if="teamsLed.length" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-700 mb-2">{{ $t('Edit Team') }}</h2>
+                    <p class="text-sm text-slate-500">
+                        {{ $t('Update the name or identifier for teams you lead.') }}
+                    </p>
+                </div>
 
-            <div class="column is-half card p2">
+                <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm">
+                    <form class="space-y-4" @submit.prevent="submitUpdate">
+                        <select
+                            v-model="editTeamId"
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                        >
+                            <option v-for="team in teamsLed" :key="team.id" :value="team.id">
+                                {{ team.name }}
+                            </option>
+                        </select>
 
-                <p v-if="loading">{{ $t('common.loading') }}</p>
-
-                <div v-else>
-                    <form method="post" @submit.prevent="updateTeam">
-                        <div class="control pb2">
-                            <p>{{ $t('teams.create.select-team') }}</p>
-                            <div class="select">
-                                <select v-model="attributesSectionSelectedTeamId">
-                                    <option v-for="team in teamsLedByUser" :value="team.id">
-                                        {{ team.name }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="control pb2">
-                            <label for="name">{{ $t('teams.create.team-name') }}</label>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">{{ $t('Team name') }}</label>
                             <input
-                                class="input"
-                                name="name"
-                                :placeholder="$t('teams.create.my-awesome-team-placeholder')"
-                                v-model="attributesTeamName"
+                                v-model="editName"
                                 type="text"
                                 required
-                                @keydown="clearError('name')"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                                :class="errors.name ? 'border-red-400' : ''"
+                                @input="teamsStore.clearError('name')"
                             />
-                            <p
-                                class="is-danger"
-                                v-if="getFirstError('name')"
-                                v-text="getFirstError('name')"
-                            />
-                        </div>
-
-                        <div class="control pb2">
-                            <label for="identifier">{{ $t('teams.create.unique-team-id') }}</label>
-                            <br>
-                            <small>{{ $t('teams.create.id-to-join-team') }}</small>
-                            <input
-                                class="input"
-                                id="identifier"
-                                name="identifier"
-                                placeholder="Awesome2021"
-                                required
-                                v-model="attributesTeamIdentifier"
-                                @keydown="clearError('identifier')"
-                            />
-                            <p
-                                class="is-danger"
-                                v-if="getFirstError('identifier')"
-                                v-text="getFirstError('identifier')"
-                            />
+                            <p v-if="errors.name" class="text-red-500 text-xs mt-1">{{ errors.name[0] }}</p>
                         </div>
 
                         <div>
-                            <button :class="btnAll" :disabled="attributesProcessing">{{ $t('teams.create.update-team') }}</button>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">{{ $t('Team identifier') }}</label>
+                            <input
+                                v-model="editIdentifier"
+                                type="text"
+                                required
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                                :class="errors.identifier ? 'border-red-400' : ''"
+                                @input="teamsStore.clearError('identifier')"
+                            />
+                            <p v-if="errors.identifier" class="text-red-500 text-xs mt-1">{{ errors.identifier[0] }}</p>
                         </div>
-                    </form>
 
+                        <button
+                            type="submit"
+                            :disabled="updating"
+                            class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {{ updating ? $t('Saving...') : $t('Update Team') }}
+                        </button>
+                    </form>
                 </div>
-            </div>
-        </div>
+            </section>
+        </template>
     </div>
 </template>
 
 <script>
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useTeamsStore } from '@/stores/teams';
+import { useUserStore } from '@/stores/user';
+
 export default {
     name: 'TeamSettings',
-    data () {
+    setup() {
+        const teamsStore = useTeamsStore();
+        const userStore = useUserStore();
+
+        // ── Privacy ──
+        const privacyTeamId = ref(null);
+        const privacySaving = ref(false);
+
+        const privacy = reactive({
+            show_name_maps: false,
+            show_username_maps: false,
+            show_name_leaderboards: false,
+            show_username_leaderboards: false,
+        });
+
+        const teams = computed(() => teamsStore.teams);
+        const hasTeams = computed(() => teamsStore.hasTeams);
+        const errors = computed(() => teamsStore.errors);
+
+        const privacyTeam = computed(() =>
+            teams.value.find((t) => t.id === privacyTeamId.value)
+        );
+
+        // Sync privacy checkboxes when selected team changes
+        watch(privacyTeamId, () => {
+            const pivot = privacyTeam.value?.pivot;
+            if (pivot) {
+                privacy.show_name_maps = !!pivot.show_name_maps;
+                privacy.show_username_maps = !!pivot.show_username_maps;
+                privacy.show_name_leaderboards = !!pivot.show_name_leaderboards;
+                privacy.show_username_leaderboards = !!pivot.show_username_leaderboards;
+            }
+        }, { immediate: true });
+
+        const savePrivacy = async (all) => {
+            privacySaving.value = true;
+            await teamsStore.savePrivacySettings({
+                teamId: privacyTeamId.value,
+                all,
+                settings: { ...privacy },
+            });
+            privacySaving.value = false;
+        };
+
+        // ── Edit team attributes (leader only) ──
+        const editTeamId = ref(null);
+        const editName = ref('');
+        const editIdentifier = ref('');
+        const updating = ref(false);
+
+        const teamsLed = computed(() => {
+            const uid = userStore.user?.id;
+            return teams.value.filter((t) => t.leader === uid);
+        });
+
+        // Sync edit form when selected team changes
+        watch(editTeamId, (id) => {
+            const team = teamsLed.value.find((t) => t.id === id);
+            if (team) {
+                editName.value = team.name;
+                editIdentifier.value = team.identifier;
+            }
+        });
+
+        const submitUpdate = async () => {
+            updating.value = true;
+
+            const result = await teamsStore.updateTeam({
+                teamId: editTeamId.value,
+                name: editName.value,
+                identifier: editIdentifier.value,
+            });
+
+            updating.value = false;
+
+            if (result) {
+                await teamsStore.fetchMyTeams();
+            }
+        };
+
+        // ── Init ──
+        onMounted(async () => {
+            if (!hasTeams.value) await teamsStore.fetchMyTeams();
+            teamsStore.clearErrors();
+
+            privacyTeamId.value = teams.value[0]?.id ?? null;
+            editTeamId.value = teamsLed.value[0]?.id ?? null;
+        });
+
         return {
-            loading: true,
-            privacySectionSelectedTeamId: 0,
-            attributesSectionSelectedTeamId: 0,
-            privacyAllProcessing: false,
-            privacySubmitProcessing: false,
-            attributesProcessing: false,
-            attributesTeamName: '',
-            attributesTeamIdentifier: '',
-            btnAll: 'button is-medium is-primary mt1',
-            btn: 'button is-medium is-warning mt1 mr1',
+            teams, hasTeams, errors, teamsStore,
+            privacyTeamId, privacyTeam, privacy, privacySaving, savePrivacy,
+            editTeamId, editName, editIdentifier, updating, teamsLed, submitUpdate,
         };
     },
-    async created ()
-    {
-        this.loading = true;
-
-        if (this.teams.length === 0) await this.$store.dispatch('GET_USERS_TEAMS');
-
-        this.privacySectionSelectedTeamId = this.teams[0]?.id;
-        this.attributesSectionSelectedTeamId = this.teamsLedByUser[0]?.id;
-
-        this.clearErrors();
-
-        this.loading = false;
-    },
-    watch: {
-        attributesSectionSelectedTeam () {
-            this.attributesTeamName = this.attributesSectionSelectedTeam.name;
-            this.attributesTeamIdentifier = this.attributesSectionSelectedTeam.identifier;
-        }
-    },
-    computed: {
-
-        /**
-         * Add spinner when processing
-         */
-        allButton ()
-        {
-            return this.privacyAllProcessing ? this.btnAll + ' is-loading' : this.btnAll;
-        },
-
-        /**
-         * Return true to disable the buttons
-         */
-        disabled ()
-        {
-            return (this.privacyAllProcessing || this.privacySubmitProcessing);
-        },
-
-        /**
-         * Add spinner when processing
-         */
-        submitButton ()
-        {
-            return this.privacySubmitProcessing ? this.btn + ' is-loading' : this.btn;
-        },
-
-        /**
-         *
-         */
-        show_name_leaderboards: {
-            get () {
-                return this.team.pivot.show_name_leaderboards;
-            },
-            set (v) {
-                this.$store.commit('team_settings', {
-                    team_id: this.privacySectionSelectedTeamId,
-                    key: 'show_name_leaderboards',
-                    v
-                });
-            }
-        },
-
-        /**
-         *
-         */
-        show_username_leaderboards: {
-            get () {
-                return this.team.pivot.show_username_leaderboards;
-            },
-            set (v) {
-                this.$store.commit('team_settings', {
-                    team_id: this.privacySectionSelectedTeamId,
-                    key: 'show_username_leaderboards',
-                    v
-                });
-            }
-        },
-
-        /**
-         *
-         */
-        show_name_maps: {
-            get () {
-                return this.team.pivot.show_name_maps;
-            },
-            set (v) {
-                this.$store.commit('team_settings', {
-                    team_id: this.privacySectionSelectedTeamId,
-                    key: 'show_name_maps',
-                    v
-                });
-            }
-        },
-
-        /**
-         *
-         */
-        show_username_maps: {
-            get () {
-                return this.team.pivot.show_username_maps;
-            },
-            set (v) {
-                this.$store.commit('team_settings', {
-                    team_id: this.privacySectionSelectedTeamId,
-                    key: 'show_username_maps',
-                    v
-                });
-            }
-        },
-
-        /**
-         * Current team we are viewing on privacy section
-         */
-        team ()
-        {
-            return this.teams.find(team => team.id === this.privacySectionSelectedTeamId);
-        },
-
-        /**
-         * Current team we are viewing on attributes section
-         */
-        attributesSectionSelectedTeam ()
-        {
-            return this.teamsLedByUser.find(team => team.id === this.attributesSectionSelectedTeamId);
-        },
-
-        /**
-         * Array of the users teams
-         */
-        teams ()
-        {
-            return this.$store.state.teams.teams;
-        },
-
-        /**
-         * Current user
-         */
-        user ()
-        {
-            return this.$store.state.user.user;
-        },
-
-        /**
-         * Array of the teams where the user is the leader
-         */
-        teamsLedByUser ()
-        {
-            return this.teams.filter((team) => team.leader === this.user.id);
-        },
-
-        /**
-         * Errors object from teams
-         */
-        errors ()
-        {
-            return this.$store.state.teams.errors;
-        },
-    },
-    methods: {
-
-        /**
-         * Apply these settings to this team for this user
-         */
-        async submit (all)
-        {
-            all ? this.privacyAllProcessing = true : this.privacySubmitProcessing = true;
-
-            await this.$store.dispatch('SAVE_TEAM_SETTINGS', {
-                all,
-                team_id: this.privacySectionSelectedTeamId
-            });
-
-            this.privacySubmitProcessing = false;
-            this.privacyAllProcessing = false;
-        },
-
-        /**
-         * Apply the updated attributes to this team
-         */
-        async updateTeam ()
-        {
-            this.attributesProcessing = true;
-
-            await this.$store.dispatch('UPDATE_TEAM', {
-                teamId: this.attributesSectionSelectedTeamId,
-                name: this.attributesTeamName,
-                identifier: this.attributesTeamIdentifier,
-            });
-
-            this.attributesProcessing = false;
-
-            if (Object.keys(this.errors).length) return;
-
-            // This will refresh the teams for other screens too
-            await this.$store.dispatch('GET_USERS_TEAMS');
-
-            // Refreshes the user's active team
-            if (this.user.active_team === this.attributesSectionSelectedTeamId) {
-                let updatedTeam = this.teams.find(team => team.id === this.attributesSectionSelectedTeamId)
-                this.$store.commit('usersTeam', updatedTeam)
-            }
-
-        },
-
-        /**
-         * Clear all errors
-         */
-        clearErrors ()
-        {
-            this.$store.commit('teamErrors', []);
-        },
-
-        /**
-         * Clear an error with this key
-         */
-        clearError (key)
-        {
-            if (this.errors[key]) this.$store.commit('clearTeamsError', key);
-        },
-
-        /**
-         * Get the first error from errors object
-         */
-        getFirstError (key)
-        {
-            return this.errors[key] ? this.errors[key][0] : null;
-        }
-    }
 };
 </script>
-
-<style scoped>
-
-    .tsc {
-        margin-top: 1em;
-        margin-left: 5em;
-    }
-
-
-    @media screen and (max-width: 768px)
-    {
-        .tsc {
-            margin-top: 0;
-            margin-left: 0;
-        }
-    }
-
-</style>

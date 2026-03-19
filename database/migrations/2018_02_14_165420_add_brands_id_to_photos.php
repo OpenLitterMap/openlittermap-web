@@ -27,7 +27,8 @@ class AddBrandsIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['brands_id']);
+            $table->dropColumn('brands_id');
         });
     }
 }

@@ -13,6 +13,10 @@ class CreateIndustryTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('industrial')) {
+            return;
+        }
+
         Schema::create('industrial', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('oil')->unsigned()->nullable();

@@ -5,11 +5,11 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="Unit">
-            <directory suffix="Test.php">./tests/Unit</directory>
-        </testsuite>
         <testsuite name="Feature">
             <directory suffix="Test.php">./tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
         </testsuite>
     </testsuites>
     <php>
@@ -21,8 +21,8 @@
         <server name="QUEUE_CONNECTION" value="sync" />
         <server name="SESSION_DRIVER" value="array" />
         <server name="TELESCOPE_ENABLED" value="false" />
-        <server name="BROADCAST_DRIVER" value="log" />
-        <env name="REDIS_DB" value="3" />
-        <env name="REDIS_CACHE_DB" value="3" />
+        <server name="BROADCAST_DRIVER" value="null" />
+        <env name="REDIS_DB" value="2" />
+        <env name="REDIS_CACHE_DB" value="1" />
     </php>
 </phpunit>

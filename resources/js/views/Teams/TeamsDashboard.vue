@@ -1,182 +1,87 @@
 <template>
-    <section class="tdc">
-        <p class="subtitle is-centered is-3">{{ $t('teams.dashboard.teams-dashboard') }}</p>
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-6">{{ $t('Teams Dashboard') }}</h1>
 
-        <div class="columns">
-            <div class="column teams-card">
-                <span class="title is-2" style="color: #7b848e;">{{ photos_count }}</span>
-                <br>
-                {{ $t('teams.dashboard.photos-uploaded') }} {{ this.getPeriod() }}
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-6 text-center shadow-sm">
+                <span class="text-3xl font-bold text-slate-600">{{ dashboard.photos_count }}</span>
+                <p class="text-sm text-slate-500 mt-1">{{ $t('Photos uploaded') }} {{ periodLabel }}</p>
             </div>
-
-            <div class="column teams-card">
-                <span class="title is-2" style="color: #7b848e;">{{ litter_count }}</span>
-                <br>
-                {{ $t('teams.dashboard.litter-tagged') }} {{ this.getPeriod() }}
+            <div class="bg-white rounded-xl p-6 text-center shadow-sm">
+                <span class="text-3xl font-bold text-slate-600">{{ dashboard.litter_count }}</span>
+                <p class="text-sm text-slate-500 mt-1">{{ $t('Litter tagged') }} {{ periodLabel }}</p>
             </div>
-
-            <div class="column teams-card">
-                <span class="title is-2" style="color: #7b848e;">{{ members_count }}</span>
-                <br>
-                {{ $t('teams.dashboard.members-uploaded') }} {{ this.getPeriod() }}
+            <div class="bg-white rounded-xl p-6 text-center shadow-sm">
+                <span class="text-3xl font-bold text-slate-600">{{ dashboard.members_count }}</span>
+                <p class="text-sm text-slate-500 mt-1">{{ $t('Members active') }} {{ periodLabel }}</p>
             </div>
         </div>
 
-        <div class="mobile-teams-select">
-            <!-- Change time period -->
-            <select v-model="period" @change="changeTeamOrTime" class="input dash-time">
-                <option v-for="time in timePeriods" :value="time">{{ getPeriod(time) }}</option>
+        <!-- Filters -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+            <select
+                v-model="period"
+                class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                @change="refresh"
+            >
+                <option value="today">{{ $t('Today') }}</option>
+                <option value="week">{{ $t('This week') }}</option>
+                <option value="month">{{ $t('This month') }}</option>
+                <option value="year">{{ $t('This year') }}</option>
+                <option value="all">{{ $t('All time') }}</option>
             </select>
 
-            <div style="flex: 0.1;" />
-
-            <!-- All or Select Team -->
-            <select v-model="viewTeam" @change="changeTeamOrTime" class="input dash-time">
-                <option value="0" selected>{{ $t('teams.dashboard.all-teams') }}</option>
-                <option v-for="team in teams" :value="team.id">{{ team.name }}</option>
+            <select
+                v-model="viewTeamId"
+                class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                @change="refresh"
+            >
+                <option :value="0">{{ $t('All teams') }}</option>
+                <option v-for="team in teams" :key="team.id" :value="team.id">
+                    {{ team.name }}
+                </option>
             </select>
         </div>
-
-        <TeamMap :team-id="viewTeam" />
-
-    </section>
+    </div>
 </template>
 
 <script>
-import TeamMap from '../../components/Teams/TeamMap.vue';
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useTeamsStore } from '@/stores/teams';
 
 export default {
     name: 'TeamsDashboard',
-    components: {
-        TeamMap
-    },
-    async created ()
-    {
-        await this.changeTeamOrTime();
-    },
-    data ()
-    {
-        return {
-            period: 'all',
-            timePeriods: [
-                'today',
-                'week',
-                'month',
-                'year',
-                'all'
-            ],
-            viewTeam: 0
+    setup() {
+        const { t } = useI18n();
+        const teamsStore = useTeamsStore();
+
+        const period = ref('all');
+        const viewTeamId = ref(0);
+
+        const periodLabels = {
+            today: t('today'),
+            week: t('this week'),
+            month: t('this month'),
+            year: t('this year'),
+            all: '',
         };
-    },
-    computed: {
 
-        /**
-         * Total litter uploaded during this period
-         */
-        litter_count ()
-        {
-            return this.$store.state.teams.allTeams.litter_count ?? 0;
-        },
+        const dashboard = computed(() => teamsStore.dashboard);
+        const teams = computed(() => teamsStore.teams);
+        const periodLabel = computed(() => periodLabels[period.value] || '');
 
-        /**
-         * Total photos uploaded during this period
-         */
-        photos_count ()
-        {
-            return this.$store.state.teams.allTeams.photos_count ?? 0;
-        },
-
-        /**
-         * Total number of members who uploaded photos during this period
-         */
-        members_count ()
-        {
-            return this.$store.state.teams.allTeams.members_count ?? 0;
-        },
-
-        /**
-         * Teams the user has joined
-         *
-         * Show active team
-         */
-        teams ()
-        {
-            return this.$store.state.teams.teams;
-        }
-    },
-    methods: {
-
-        /**
-         * Change the time period for what data is visible on the dashboard
-         */
-        async changeTeamOrTime ()
-        {
-            await this.$store.dispatch('GET_TEAM_DASHBOARD_DATA', {
-                period: this.period,
-                team_id: this.viewTeam
+        const refresh = () => {
+            teamsStore.fetchDashboard({
+                teamId: viewTeamId.value,
+                period: period.value,
             });
-        },
+        };
 
-        /**
-         * Return translated time period
-         */
-        getPeriod (period)
-        {
-            if (! period) period = this.period;
+        onMounted(refresh);
 
-            return this.$t('teams.dashboard.times.' + period)
-        },
-    }
-}
+        return { period, viewTeamId, dashboard, teams, periodLabel, refresh };
+    },
+};
 </script>
-
-<style scoped>
-
-    .dash-time {
-        width: 25%;
-    }
-
-    .mobile-teams-select {
-        display: flex;
-        justify-content: center;
-    }
-
-    .tdc {
-        padding-left: 2em;
-        padding-right: 2em;
-    }
-
-    .teams-card {
-        background: white;
-        text-align: center;
-        margin: 1em;
-        padding: 5em;
-    }
-
-    .teams-dashboard-subtitle {
-        margin-bottom: 1em;
-    }
-
-    @media screen and (max-width: 768px)
-    {
-        .dash-time {
-            width: 100%;
-            margin-bottom: 1em;
-        }
-
-        .mobile-teams-select {
-            display: block;
-            justify-content: center;
-        }
-
-        .teams-card {
-            padding: 3em;
-        }
-
-        .teams-dashboard-subtitle {
-            margin-bottom: 2em;
-        }
-    }
-
-
-</style>

@@ -2,8 +2,8 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Laravel\Passport\Exceptions\OAuthServerException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -13,9 +13,7 @@ class Handler extends ExceptionHandler
      *
      * @var array
      */
-    protected $dontReport = [
-        OAuthServerException::class
-    ];
+    protected $dontReport = [];
 
     /**
      * A list of the inputs that are never flashed for validation exceptions.
@@ -52,5 +50,16 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         return parent::render($request, $exception);
+    }
+
+    /**
+     * Convert an authentication exception into a JSON 401 response.
+     *
+     * SPA with no server-side login page — always return JSON 401
+     * instead of redirecting to a named 'login' route.
+     */
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        return response()->json(['message' => 'Unauthenticated.'], 401);
     }
 }

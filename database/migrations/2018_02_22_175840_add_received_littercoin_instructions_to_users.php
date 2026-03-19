@@ -26,7 +26,7 @@ class AddReceivedLittercoinInstructionsToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('littercoin_instructions_received');
         });
     }
 }

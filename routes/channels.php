@@ -29,3 +29,7 @@ Broadcast::channel('home', function (){
 Broadcast::channel('main', function (){
     return true;
 });
+
+Broadcast::channel('team.{teamId}', function ($user, $teamId) {
+    return $user->teams()->where('team_id', $teamId)->exists();
+});

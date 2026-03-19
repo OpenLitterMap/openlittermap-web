@@ -15,7 +15,7 @@ class DisplayTagsOnMapTest extends TestCase
             $photo->customTags()->create(['tag' => "tag_{$i}"]);
         }
 
-        $response = $this->get('/tags-search?custom_tag=tag_1');
+        $response = $this->getJson('/api/tags-search?custom_tag=tag_1');
 
         $response->assertOk();
         $response->assertJsonCount(1, 'features');
@@ -37,17 +37,10 @@ class DisplayTagsOnMapTest extends TestCase
         $photo4 = Photo::factory()->create();
         $photo4->customTags()->createMany([['tag' => "tag_1"], ['tag' => "tag_2"], ['tag' => "tag_3"], ['tag' => "tag_4"]]);
 
-        $response = $this->get('/tags-search?custom_tags=tag_1,tag_2,tag_3');
+        $response = $this->getJson('/api/tags-search?custom_tags=tag_1,tag_2,tag_3');
 
         $response->assertOk();
-        // this broke after fixing multiple custom tags
-        // $response->assertJsonCount(2, 'features');
-//        $response->assertJson([
-//            'features' => [
-//                ['properties' => ['custom_tags' => ['tag_1', 'tag_2', 'tag_3']]],
-//                ['properties' => ['custom_tags' => ['tag_1', 'tag_2', 'tag_3', 'tag_4']]],
-//            ]
-//        ]);
+        // Controller uses whereIn (OR match) — returns photos with ANY of the tags
+        $response->assertJsonCount(4, 'features');
     }
-
 }

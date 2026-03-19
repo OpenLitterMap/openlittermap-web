@@ -3,7 +3,8 @@
 namespace Tests\Feature\Api\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Teams\TeamType;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class UpdateTeamTest extends TestCase
@@ -22,7 +23,7 @@ class UpdateTeamTest extends TestCase
         $newTeamName = 'New team name';
         $newTeamIdentifier = 'New identifier';
 
-        $this->actingAs($leader, 'api');
+        $this->actingAs($leader);
 
         $response = $this->patchJson("/api/teams/update/{$team->id}", [
             'name' => $newTeamName,
@@ -55,7 +56,7 @@ class UpdateTeamTest extends TestCase
         $newTeamIdentifier = 'New identifier';
 
         // Random users can't update a team
-        $this->actingAs(User::factory()->create(), 'api');
+        $this->actingAs(User::factory()->create());
 
         $response = $this->patchJson("/api/teams/update/{$team->id}", [
             'name' => $newTeamName,
@@ -75,6 +76,50 @@ class UpdateTeamTest extends TestCase
         $response->assertJsonFragment(['success' => false, 'message' => 'member-not-allowed']);
     }
 
+    public function test_leader_can_toggle_participant_sessions()
+    {
+        $schoolType = TeamType::firstOrCreate(
+            ['team' => 'school'],
+            ['team' => 'school']
+        );
+
+        /** @var User $leader */
+        $leader = User::factory()->create();
+        /** @var Team $team */
+        $team = Team::factory()->create([
+            'leader' => $leader->id,
+            'type_id' => $schoolType->id,
+            'type_name' => 'school',
+            'participant_sessions_enabled' => false,
+        ]);
+
+        $leader->teams()->attach($team);
+
+        $this->actingAs($leader);
+
+        // Enable participant sessions
+        $response = $this->patchJson("/api/teams/update/{$team->id}", [
+            'name' => $team->name,
+            'identifier' => $team->identifier,
+            'participant_sessions_enabled' => true,
+        ]);
+
+        $response->assertOk()->assertJsonStructure(['team']);
+        $team->refresh();
+        $this->assertTrue($team->participant_sessions_enabled);
+
+        // Disable participant sessions
+        $response = $this->patchJson("/api/teams/update/{$team->id}", [
+            'name' => $team->name,
+            'identifier' => $team->identifier,
+            'participant_sessions_enabled' => false,
+        ]);
+
+        $response->assertOk();
+        $team->refresh();
+        $this->assertFalse($team->participant_sessions_enabled);
+    }
+
     public function test_fields_are_validated()
     {
         /** @var User $leader */
@@ -86,7 +131,7 @@ class UpdateTeamTest extends TestCase
 
         $leader->teams()->attach($team);
 
-        $this->actingAs($leader, 'api');
+        $this->actingAs($leader);
 
         // Empty input
         $response = $this->patchJson("/api/teams/update/{$team->id}", [

@@ -31,6 +31,6 @@ class CreateSanitaryTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('sanitary');
     }
 }

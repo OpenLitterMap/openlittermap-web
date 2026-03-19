@@ -1,138 +1,143 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands\Twitter;
 
 use Carbon\Carbon;
-use App\Models\Photo;
-use Spatie\Emoji\Emoji;
+use App\Enums\LocationType;
 use App\Helpers\Twitter;
-use App\Models\User\User;
-use App\Models\CustomTag;
+use App\Models\Users\User;
 use App\Models\Littercoin;
 use Illuminate\Console\Command;
-use App\Models\Location\Country;
+use Illuminate\Support\Facades\DB;
 
 class DailyReportTweet extends Command
 {
     protected $signature = 'twitter:daily-report';
 
-    protected $description = 'Send a daily report about OLM to Twitter OLM_bot account';
+    protected $description = 'Tweet yesterday\'s OLM daily summary via OLM_bot';
 
-    public function handle ()
+    public function handle(): void
     {
-        $startOfYesterday = Carbon::yesterday()->startOfDay();
-        $endOfYesterday = Carbon::yesterday()->endOfDay();
+        $yesterday = Carbon::yesterday();
 
-        // total users
-        $users = User::whereDate('created_at', '>=', $startOfYesterday)
-            ->whereDate('created_at', '<=', $endOfYesterday)
-            ->count();
+        $daily = $this->getDailyMetrics($yesterday);
 
-        // total uploads/photos
-        $todaysPhotosCount = Photo::whereDate('created_at', '>=', $startOfYesterday)
-            ->whereDate('created_at', '<=', $endOfYesterday)
-            ->count();
+        if ((int) ($daily->uploads ?? 0) === 0) {
+            $this->info('No uploads yesterday — skipping tweet.');
+            return;
+        }
 
-        $countries = Country::whereDate('updated_at', '>=', $startOfYesterday)
-            ->whereDate('updated_at', '<=', $endOfYesterday)
-            ->count();
-
+        $newUsers  = User::whereDate('created_at', $yesterday)->count();
         $totalUsers = User::count();
+        $littercoin = Littercoin::whereDate('created_at', $yesterday)->count();
 
-        $tags = Photo::whereDate('created_at', '>=', $startOfYesterday)
-            ->whereDate('created_at', '<=', $endOfYesterday)
-            ->sum('total_litter');
+        $topCountries = $this->getTopCountries($yesterday, 3);
+        $flags = $this->buildFlagString($topCountries);
 
-        $tags += CustomTag::whereDate('created_at', '>=', $startOfYesterday)
-            ->whereDate('created_at', '<=', $endOfYesterday)
-            ->count();
+        $uploads = number_format((int) ($daily->uploads ?? 0));
+        $tags    = number_format((int) ($daily->tags ?? 0));
 
-        // new locations
+        // Active countries = countries with uploads yesterday
+        $activeCountries = $this->getActiveCountryCount($yesterday);
 
-        // total littercoin
-        $littercoinCount = Littercoin::whereDate('created_at', '>=', $startOfYesterday)
-            ->whereDate('created_at', '<=', $endOfYesterday)
-            ->count();
+        $message = "Yesterday we signed up {$newUsers} users"
+            . " and uploaded {$uploads} photos from {$activeCountries} countries!"
+            . " We added {$tags} tags."
+            . " We now have " . number_format($totalUsers) . " users!";
 
-        // top countries
-        $photos = Photo::select('id', 'created_at', 'country_id', 'total_litter')
-            ->whereDate('created_at', '>=', $startOfYesterday)
-            ->whereDate('created_at', '<=', $endOfYesterday)
-            ->orWhereHas('customTags', function ($query) use ($startOfYesterday, $endOfYesterday) {
-                $query->whereDate('created_at', '>=', $startOfYesterday)
-                    ->whereDate('created_at', '<=', $endOfYesterday);
-            })
-            ->get();
-
-        $countryIds = [];
-
-        foreach ($photos as $photo)
-        {
-            if (!array_key_exists($photo->country_id, $countryIds))
-            {
-                $countryIds[$photo->country_id] = 0;
-            }
-
-            $countryIds[$photo->country_id] += $photo->total_litter;
+        if ($littercoin > 0) {
+            $message .= " {$littercoin} littercoin were mined.";
         }
 
-        arsort($countryIds);
-
-        $first_three_keys = array_slice(array_keys($countryIds), 0, 3);
-
-        $firstFlag = false;
-        $secondFlag = false;
-        $thirdFlag = false;
-
-        if (isset($first_three_keys[0])) {
-            $firstCountryId = $first_three_keys[0];
-
-            $firstCountry = Country::select('id', 'shortcode')
-                ->where('id', $firstCountryId)
-                ->first();
-
-            $firstFlag = Emoji::countryFlag($firstCountry->shortcode);
+        if ($flags) {
+            $message .= " {$flags}";
         }
 
-        if (isset($first_three_keys[1])) {
-            $secondCountryId = $first_three_keys[1];
+        $message .= ' #openlittermap #OLMbot 🌍';
 
-            $secondCountry = Country::select('id', 'shortcode')
-                ->where('id', $secondCountryId)
-                ->first();
-
-            $secondFlag = Emoji::countryFlag($secondCountry->shortcode);
+        // Twitter has a 280 character limit
+        if (mb_strlen($message) > 280) {
+            $message = mb_substr($message, 0, 277) . '...';
         }
-
-        if (isset($first_three_keys[2])) {
-            $thirdCountryId = $first_three_keys[2];
-
-            $thirdCountry = Country::select('id', 'shortcode')
-                ->where('id', $thirdCountryId)
-                ->first();
-
-            $thirdFlag = Emoji::countryFlag($thirdCountry->shortcode);
-        }
-
-        $message = "Today we signed up $users users and uploaded $todaysPhotosCount photos from $countries countries!";
-        $message .= " We added $tags tags.";
-        $message .= " We now have $totalUsers users!";
-        $message .= " $littercoinCount littercoin were mined.";
-
-        if ($firstFlag) {
-            $message .= " 1st $firstFlag ";
-
-            if ($secondFlag) {
-                $message .= " 2nd $secondFlag ";
-
-                if ($thirdFlag) {
-                    $message .= " 3rd $thirdFlag";
-                }
-            }
-        }
-
-        $message .= " #openlittermap #OLMbot 🌍";
 
         Twitter::sendTweet($message);
+
+        $this->info('Tweet sent: ' . $message);
+    }
+
+    /**
+     * Daily metrics row from the metrics table (timescale=1).
+     */
+    private function getDailyMetrics(Carbon $date): ?object
+    {
+        return DB::table('metrics')
+            ->where('timescale', 1)
+            ->where('location_type', LocationType::Global)
+            ->where('location_id', 0)
+            ->where('user_id', 0)
+            ->where('bucket_date', $date->toDateString())
+            ->first(['uploads', 'tags', 'brands', 'litter', 'xp']);
+    }
+
+    /**
+     * Top N countries by tags for the day (single query).
+     */
+    private function getTopCountries(Carbon $date, int $limit): array
+    {
+        return DB::table('metrics as m')
+            ->join('countries as c', 'c.id', '=', 'm.location_id')
+            ->where('m.timescale', 1)
+            ->where('m.location_type', LocationType::Country)
+            ->where('m.user_id', 0)
+            ->where('m.bucket_date', $date->toDateString())
+            ->where('m.tags', '>', 0)
+            ->orderByDesc('m.tags')
+            ->limit($limit)
+            ->pluck('c.shortcode')
+            ->toArray();
+    }
+
+    /**
+     * Count of countries with uploads yesterday.
+     */
+    private function getActiveCountryCount(Carbon $date): int
+    {
+        return (int) DB::table('metrics')
+            ->where('timescale', 1)
+            ->where('location_type', LocationType::Country)
+            ->where('user_id', 0)
+            ->where('bucket_date', $date->toDateString())
+            ->where('uploads', '>', 0)
+            ->count();
+    }
+
+    /**
+     * Build "1st 🇮🇪 2nd 🇳🇱 3rd 🇺🇸" string from shortcodes.
+     */
+    private function buildFlagString(array $shortcodes): string
+    {
+        $ordinals = ['1st', '2nd', '3rd'];
+        $parts = [];
+
+        foreach ($shortcodes as $i => $code) {
+            if (! $code || strlen($code) !== 2) continue;
+
+            $flag = $this->countryFlag($code);
+            $parts[] = "{$ordinals[$i]} {$flag}";
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
+     * Convert 2-letter country code to flag emoji.
+     */
+    private function countryFlag(string $code): string
+    {
+        return collect(str_split(strtoupper($code)))
+            ->map(fn (string $char) => mb_chr(127397 + ord($char)))
+            ->implode('');
     }
 }

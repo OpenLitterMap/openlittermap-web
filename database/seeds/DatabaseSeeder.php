@@ -1,18 +1,18 @@
 <?php
 
-namespace Database\Seeders; // With laravel 8+, seeders are now namespaced
+namespace Database\Seeders;
 
+use Database\Seeders\Tags\CreateAllTagsSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
-     *
-     * @return void
+     * Populate the application's database
      */
-    public function run()
+    public function run (): void
     {
+        // Before creating users & photos
         $this->call(PlanSeeder::class);
         $this->call(TeamTypeSeeder::class);
         $this->call(DonationAmountsSeeder::class);
@@ -20,10 +20,14 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(PermissionSeeder::class);
         $this->call(RoleHasPermissionsSeeder::class);
+
+        // Create Locations
+        $this->call(LocationsSeeder::class);
+
+        // Create Users & Photos & reward XP
         $this->call(UserSeeder::class);
         $this->call(PhotosSeeder::class);
-        // $this->call(CountriesSeeder::class);
-        // missing states seeder
-        // $this->call(CitiesSeeder::class);
+
+        $this->call(CreateAllTagsSeeder::class);
     }
 }

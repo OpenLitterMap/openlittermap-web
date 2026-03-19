@@ -2,66 +2,133 @@
 
 namespace App\Http\Controllers\Teams;
 
+use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class TeamsDataController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     /**
-     * Get the combined effort for 1 or all of the users teams for the time-period
+     * Get the combined effort for 1 or all of the user's teams for the time-period.
      *
-     * @return array
+     * GET /api/teams/data?team_id=0&period=all
+     *
+     * Stats are queried from the photos table directly — NOT from stale
+     * teams.total_images / teams.total_litter counters (listeners deleted in v5).
+     *
+     * Uses photos.total_tags (v5) — NOT total_litter (deprecated, scheduled for drop).
      */
-    public function index ()
+    public function index(): JsonResponse
     {
         $teamIds = $this->getTeamIds();
 
-        // period
-        if (request()->period === 'today') $period = now()->startOfDay();
-        else if (request()->period === 'week') $period = now()->startOfWeek();
-        else if (request()->period === 'month') $period = now()->startOfMonth();
-        else if (request()->period === 'year') $period = now()->startOfYear();
-        else if (request()->period === 'all') $period = '2020-11-22 00:00:00'; // date of writing
+        if (empty($teamIds)) {
+            return response()->json([
+                'photos_count' => 0,
+                'litter_count' => 0,
+                'members_count' => 0,
+                'verification' => $this->emptyVerification(),
+            ]);
+        }
 
-        $query = Photo::query()
+        $period = $this->resolvePeriod(request()->input('period', 'all'));
+
+        // Photos uploaded in period
+        $photosQuery = Photo::query()
             ->whereIn('team_id', $teamIds)
-            ->whereDate('created_at', '>=', $period);
+            ->where('created_at', '>=', $period);
 
-        $photosCount = $query->count();
+        $photosCount = $photosQuery->count();
+        $membersCount = (clone $photosQuery)->distinct()->count('user_id');
 
-        $membersCount = $query->distinct()->count('user_id');
+        // Litter tagged in period (admin-approved or better)
+        $litterCount = Photo::query()
+            ->whereIn('team_id', $teamIds)
+            ->where('created_at', '>=', $period)
+            ->where('verified', '>=', VerificationStatus::ADMIN_APPROVED->value)
+            ->sum('total_tags');
 
-        // might need photo.verified_at
-        $litterCount = Photo::whereIn('team_id', $teamIds)
-            ->whereDate('updated_at', '>=', $period)
-            ->where('verified', 2)
-            ->sum('total_litter');
+        // Verification breakdown
+        $verification = $this->verificationBreakdown($teamIds, $period);
+
+        return response()->json([
+            'photos_count' => $photosCount,
+            'litter_count' => (int) $litterCount,
+            'members_count' => $membersCount,
+            'verification' => $verification,
+        ]);
+    }
+
+    /**
+     * Verification status breakdown for dashboard display.
+     */
+    protected function verificationBreakdown(array $teamIds, string $period): array
+    {
+        $base = Photo::query()
+            ->whereIn('team_id', $teamIds)
+            ->where('created_at', '>=', $period);
 
         return [
-            'photos_count' => $photosCount,
-            'litter_count' => $litterCount,
-            'members_count' => $membersCount
+            'unverified' => (clone $base)
+                ->where('verified', VerificationStatus::UNVERIFIED->value)
+                ->count(),
+            'verified' => (clone $base)
+                ->where('verified', VerificationStatus::VERIFIED->value)
+                ->count(),
+            'admin_approved' => (clone $base)
+                ->where('verified', VerificationStatus::ADMIN_APPROVED->value)
+                ->count(),
+            'bbox_applied' => (clone $base)
+                ->where('verified', VerificationStatus::BBOX_APPLIED->value)
+                ->count(),
+            'bbox_verified' => (clone $base)
+                ->where('verified', VerificationStatus::BBOX_VERIFIED->value)
+                ->count(),
+            'ai_ready' => (clone $base)
+                ->where('verified', VerificationStatus::AI_READY->value)
+                ->count(),
+        ];
+    }
+
+    protected function emptyVerification(): array
+    {
+        return [
+            'unverified' => 0,
+            'verified' => 0,
+            'admin_approved' => 0,
+            'bbox_applied' => 0,
+            'bbox_verified' => 0,
+            'ai_ready' => 0,
         ];
     }
 
     /**
-     * Returns the team ids depending on user request
-     * If 0, we want to use all teamIds
-     * If it's not 0, we only want the data for this team
+     * Resolve the period start date from a named period.
+     */
+    protected function resolvePeriod(string $period): string
+    {
+        return match ($period) {
+            'today' => now()->startOfDay()->toDateTimeString(),
+            'week' => now()->startOfWeek()->toDateTimeString(),
+            'month' => now()->startOfMonth()->toDateTimeString(),
+            'year' => now()->startOfYear()->toDateTimeString(),
+            default => '2020-01-01 00:00:00',
+        };
+    }
+
+    /**
+     * Get the team IDs to query.
      */
     protected function getTeamIds(): array
     {
         $teamIds = Auth::user()->teams->pluck('id')->toArray();
 
-        if (request()->team_id && in_array(request()->team_id, $teamIds))
-        {
-            $teamIds = [request()->team_id];
+        $requestedTeamId = request()->input('team_id');
+
+        if ($requestedTeamId && in_array((int) $requestedTeamId, $teamIds, true)) {
+            return [(int) $requestedTeamId];
         }
 
         return $teamIds;

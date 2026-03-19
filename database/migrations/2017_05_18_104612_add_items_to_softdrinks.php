@@ -30,7 +30,11 @@ class AddItemsToSoftdrinks extends Migration
     public function down()
     {
         Schema::table('soft_drinks', function (Blueprint $table) {
-            //
+            $table->dropColumn('straws');
+            $table->dropColumn('plastic_cups');
+            $table->dropColumn('plastic_cup_tops');
+            $table->dropColumn('milk_bottle');
+            $table->dropColumn('milk_carton');
         });
     }
 }

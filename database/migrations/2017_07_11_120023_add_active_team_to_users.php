@@ -27,7 +27,8 @@ class AddActiveTeamToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropForeign(['active_team']);
+            $table->dropColumn('active_team');
         });
     }
 }

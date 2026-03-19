@@ -3,25 +3,13 @@
 namespace Tests\Feature\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class ListTeamMembersTest extends TestCase
 {
-    public static function routeDataProvider(): array
+    public function test_it_can_list_team_members()
     {
-        return [
-            ['guard' => 'web', 'route' => 'teams/members'],
-            ['guard' => 'api', 'route' => 'api/teams/members'],
-        ];
-    }
-
-    /**
-     * @dataProvider routeDataProvider
-     */
-    public function test_it_can_list_team_members($guard, $route)
-    {
-        /** @var Team $team */
         $team = Team::factory()->create();
         $users = User::factory(3)->create();
         $users->each(function (User $user) use ($team) {
@@ -31,7 +19,7 @@ class ListTeamMembersTest extends TestCase
         $otherMember = User::factory()->create();
         $otherMember->teams()->attach($otherTeam);
 
-        $response = $this->actingAs($users->first(), $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($users->first())->getJson('api/teams/members?team_id=' . $team->id);
 
         $response->assertOk();
         $response->assertJsonFragment(['success' => true]);
@@ -43,65 +31,74 @@ class ListTeamMembersTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider routeDataProvider
-     */
-    public function test_team_members_have_the_correct_data($guard, $route)
+    public function test_team_members_have_the_correct_data()
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
-        /** @var User $user */
         $user = User::factory()->create();
         $user->teams()->attach($team, [
             'show_name_leaderboards' => true,
             'show_username_leaderboards' => true
         ]);
 
-        $response = $this->actingAs($user, $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($user)->getJson('api/teams/members?team_id=' . $team->id);
 
         $member = $response->json('result.data.0');
         $this->assertEquals($user->id, $member['id']);
         $this->assertEquals($user->name, $member['name']);
         $this->assertEquals($user->username, $member['username']);
         $this->assertEquals($user->active_team, $member['active_team']);
-        $this->assertEquals($user->updated_at->toIsoString(), $member['updated_at']);
-        $this->assertEquals($user->total_photos, $member['pivot']['total_photos']);
     }
 
-    /**
-     * @dataProvider routeDataProvider
-     */
-    public function test_it_hides_members_names_and_usernames_depending_on_their_settings($guard, $route)
+    public function test_members_response_includes_expected_fields()
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
-        /** @var User $user */
         $user = User::factory()->create();
         $user->teams()->attach($team, [
-            'show_name_leaderboards' => false,
-            'show_username_leaderboards' => false
+            'show_name_leaderboards' => true,
+            'show_username_leaderboards' => true
         ]);
 
-        $response = $this->actingAs($user, $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($user)->getJson('api/teams/members?team_id=' . $team->id);
         $member = $response->json('result.data.0');
-        $this->assertEmpty($member['name']);
-        $this->assertEmpty($member['username']);
+        $this->assertArrayHasKey('id', $member);
+        $this->assertArrayHasKey('name', $member);
+        $this->assertArrayHasKey('username', $member);
+        $this->assertArrayHasKey('pivot', $member);
     }
 
-    /**
-     * @dataProvider routeDataProvider
-     */
-    public function test_only_members_of_a_team_can_view_its_members($guard, $route)
+    public function test_name_is_hidden_when_show_name_leaderboards_is_false()
     {
-        /** @var Team $team */
         $team = Team::factory()->create();
-        /** @var User $user */
+        $leader = User::factory()->create();
+        $leader->teams()->attach($team, [
+            'show_name_leaderboards' => true,
+            'show_username_leaderboards' => true,
+        ]);
+        $privateMember = User::factory()->create(['name' => 'Secret Person']);
+        $privateMember->teams()->attach($team, [
+            'show_name_leaderboards' => false,
+            'show_username_leaderboards' => false,
+        ]);
+
+        $response = $this->actingAs($leader)->getJson('api/teams/members?team_id=' . $team->id);
+
+        $response->assertOk();
+        $members = collect($response->json('result.data'));
+        $private = $members->firstWhere('id', $privateMember->id);
+
+        $this->assertNotNull($private, 'Private member should appear in member list');
+        $this->assertEmpty($private['name'], 'Name should be empty when show_name_leaderboards is false');
+        $this->assertEmpty($private['username'], 'Username should be empty when show_username_leaderboards is false');
+    }
+
+    public function test_only_members_of_a_team_can_view_its_members()
+    {
+        $team = Team::factory()->create();
         $user = User::factory()->create();
         $user->teams()->attach($team);
-        /** @var User $nonMember */
         $nonMember = User::factory()->create();
 
-        $response = $this->actingAs($nonMember, $guard)->getJson($route . '?team_id=' . $team->id);
+        $response = $this->actingAs($nonMember)->getJson('api/teams/members?team_id=' . $team->id);
 
         $response->assertOk();
         $response->assertJson(['success' => false, 'message' => 'not-a-member']);

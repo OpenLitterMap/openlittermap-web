@@ -3,8 +3,10 @@
 namespace App\Traits\Photos;
 
 use App\Models\Photo;
-use GeoHash;
 
+/**
+ * @deprecated
+ */
 trait FilterPhotos
 {
     /**

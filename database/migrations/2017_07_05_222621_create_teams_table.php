@@ -33,6 +33,11 @@ class CreateTeamsTable extends Migration
      */
     public function down()
     {
+        Schema::table('teams', function (Blueprint $table) {
+            $table->dropForeign(['leader']);
+            $table->dropColumn('leader');
+        });
+
         Schema::dropIfExists('teams');
     }
 }

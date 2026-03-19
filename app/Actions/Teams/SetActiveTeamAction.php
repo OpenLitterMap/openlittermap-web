@@ -2,7 +2,7 @@
 
 namespace App\Actions\Teams;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 
 class SetActiveTeamAction
 {

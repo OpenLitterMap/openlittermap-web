@@ -25,8 +25,8 @@ class AddStripeActiveToSubscriptions extends Migration
      */
     public function down()
     {
-        Schema::table('subscriptions', function (Blueprint $table) {
-            //
-        });
+//        Schema::table('subscriptions', function (Blueprint $table) {
+//            $table->dropColumn('stripe_active');
+//        });
     }
 }

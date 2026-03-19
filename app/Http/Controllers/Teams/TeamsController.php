@@ -15,8 +15,9 @@ use App\Http\Requests\Teams\LeaveTeamRequest;
 use App\Http\Requests\Teams\UpdateTeamRequest;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
-use App\Models\User\User;
+use App\Models\Users\User;
 
+use App\Traits\MasksStudentIdentity;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,10 +26,7 @@ use App\Http\Controllers\Controller;
 
 class TeamsController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
+    use MasksStudentIdentity;
 
     /**
      * Change the users currently active team
@@ -77,11 +75,13 @@ class TeamsController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->remaining_teams === 0) return ['success' => false, 'msg' => 'max-created'];
+        $result = $action->run($user, $request->all());
 
-        $team = $action->run($user, $request->all());
+        if (is_array($result)) {
+            return $result;
+        }
 
-        return ['success' => true, 'team' => $team];
+        return ['success' => true, 'team' => $result];
     }
 
     /**
@@ -179,11 +179,11 @@ class TeamsController extends Controller
     }
 
     /**
-     * Array of teams the user has joined
+     * Array of teams the user has joined, with live-computed stats.
      */
     public function joined ()
     {
-        return Auth::user()->teams;
+        return Auth::user()->teams()->withPhotoStats()->get();
     }
 
     /**
@@ -203,6 +203,7 @@ class TeamsController extends Controller
         $totalMembers = $team->users->count();
 
         $result = $action->run($team);
+        $result = $this->applySafeguarding($result, $team, $user);
 
         return [
             'success' => true,

@@ -2,39 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Photo;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 
+/**
+ * @deprecated Forwards to AdminQueueController with photo_id filter.
+ */
 class FindPhotoByIdController extends Controller
 {
-    /**
-     * Admin can load any photo by its ID
-     */
-    public function __invoke (Request $request): JsonResponse
+    public function __invoke(Request $request)
     {
-        $photo = Photo::with([
-            'customTags',
-            'user' => function ($q) {
-                $q->select('id', 'username');
-            }
-        ])
-        ->where('id', $request['photoId'])
-        ->first();
-
-        if (!$photo) {
-            return response()->json([
-                'success' => false,
-                'photo' => null
-            ]);
-        }
-
-        $photo->tags();
-
-        return response()->json([
-            'success' => true,
-            'photo' => $photo
-        ]);
+        return app(AdminQueueController::class)(
+            $request->merge(['photo_id' => $request->id ?? $request->photoId])
+        );
     }
 }

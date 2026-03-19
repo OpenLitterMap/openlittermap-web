@@ -32,7 +32,13 @@ class AddStuffToOther extends Migration
     public function down()
     {
         Schema::table('others', function (Blueprint $table) {
-            //
+            $table->dropColumn('plastic_bags');
+            $table->dropColumn('election_posters');
+            $table->dropColumn('forsale_posters');
+            $table->dropColumn('books');
+            $table->dropColumn('magazine');
+            $table->dropColumn('paper');
+            $table->dropColumn('stationary');
         });
     }
 }

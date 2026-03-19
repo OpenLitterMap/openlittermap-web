@@ -2,37 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 
 class UsersController extends Controller
 {
-    /*
-    * Apply middleware to all of these routes
-    */
-    public function __construct ()
-    {
-        return $this->middleware('auth');
-    }
+    // Auth middleware applied via route groups in routes/api.php (auth:sanctum).
+    // Constructor middleware removed — it used the 'web' guard which conflicts
+    // with Sanctum token auth from mobile apps.
 
     /**
-     * Get the currently authenticated user on login
+     * Update the users name, username and email.
      *
-     * Eager load any roles assigned to the user
-     */
-    public function getAuthUser ()
-    {
-        return Auth::user()->load('roles')->append('xp_redis');
-    }
-
-    /**
-     * Update the users name, username and email
-     *
-     * Todo - invalidate email
-     *      - send new email
-     *      - notify the user
+     * @deprecated Use POST /api/settings/update with key/value pairs instead.
+     *             This endpoint does not flag username changes for admin review.
      */
     public function details (Request $request)
     {
@@ -89,81 +74,16 @@ class UsersController extends Controller
         return ['message' => 'fail'];
     }
 
-    /*
-    * Update the users security settings
-    */
-    public function updateSecurity(Request $request) {
+    // updateSecurity — removed: wrote to non-existent `first_name`/`user_name` columns
 
-        $user = Auth::user();
 
-        // return dd($request);
-
-        // public profile not yet configured
-        // if($request->has('public_profile')) {
-        //     $user->settings->public_profile = $request->public_profile;
-        //     $user->save();
-        // }
-        // if(!$request->has('public_profile')) {
-        //     $user->settings->public_profile = $request->public_profile;
-        // }
-
-        if($request->has('first_name')) {
-            $user->first_name = true;
-            $user->save();
-        }
-        if(!$request->has('first_name')) {
-            $user->first_name = false;
-            $user->save();
-        }
-
-        if($request->has('user_name')) {
-            $user->user_name = true;
-            $user->save();
-        }
-        if(!$request->has('user_name')) {
-            $user->user_name = false;
-            $user->save();
-        }
-
-        if($request->has('items_remaining')) {
-            $user->items_remaining = true;
-            $user->save();
-        }
-        if(!$request->has('items_remaining')) {
-            $user->items_remaining = false;
-            $user->save();
-        }
-
-        return redirect('/settings#/general');
-    }
-
+    // destroy — removed: had no relationship cleanup. Use DeleteAccountController instead.
 
     /**
-     * The user can delete their profile and all associated records.
-     */
-    public function destroy (Request $request)
-    {
-        $this->validate($request, [
-            'password' => 'required'
-        ]);
-
-        $user = Auth::user();
-
-        // Remove user.id from redis leaderboards
-
-        if (\Hash::check($request->password, $user->password))
-        {
-            // delete their photos, etc
-            // maybe don't delete, but remove all personal information and keep user.id
-            $user->delete();
-            return ['message' => 'success'];
-        }
-
-        else return ['message' => 'password'];
-    }
-
-    /**
-     * Toggle a Users privacy
+     * Toggle a Users privacy.
+     *
+     * @deprecated Use individual POST /api/settings/privacy/{toggle} endpoints instead.
+     *             This bulk endpoint has no response body and no validation.
      */
     public function togglePrivacy (Request $request)
     {
@@ -204,7 +124,7 @@ class UsersController extends Controller
         $user->emailsub = 0;
         $user->save();
 
-        Alert::message('You are now unsubscribed');
+        return redirect('/?unsub=1');
     }
 
     /**
@@ -221,54 +141,41 @@ class UsersController extends Controller
     /**
      * Remove a users phone number from the database
      */
-    public function removePhone (Request $request)
+    public function removePhone(Request $request): array
     {
         $user = Auth::user();
-        $user->phone = '';
+        $user->phone = null;
         $user->save();
+
+        return ['message' => 'success'];
     }
 
     /**
-     * Toggle the users items_remaining value (Default = True == Remaining)
+     * Toggle the user's picked_up preference.
      *
-     * Todo - move settings to new table
-     * and use new picked_up column
+     * @deprecated Use POST /api/settings/update with key='picked_up' instead.
      */
     public function togglePresence (Request $request)
     {
         $user = Auth::user();
-        $user->items_remaining = ! $user->items_remaining;
+        $user->picked_up = ! $user->picked_up;
         $user->save();
 
         return [
             'message' => 'success',
-            'value' => $user->items_remaining
+            'picked_up' => $user->picked_up,
         ];
     }
 
     /**
      * Upload a users profile photo
+     *
+     * TODO: Implement proper profile photo upload with image validation,
+     * resizing, and S3 storage. The old implementation had broken date
+     * parsing and never saved the URL to the user's avatar column.
      */
-    public function uploadProfilePhoto (Request $request)
+    public function uploadProfilePhoto(Request $request): \Illuminate\Http\JsonResponse
     {
-        $file = $request->file('file'); // -> /tmp/php7S8v..
-
-        $dateTime = new DateTime;
-
-        // Create filename and move to AWS S3
-        $explode = explode(':', $dateTime);
-        $y = $explode[0];
-        $m = $explode[1];
-        $d = substr($explode[2], 0, 2);
-
-        $filename = $file->hashName();
-        $filepath = $y.'/'.$m.'/'.$d.'/'.$filename;
-        $imageName = '';
-
-        if (app()->environment('production')) {
-            $s3 = \Storage::disk('s3');
-            $s3->put($filepath, file_get_contents($file), 'public');
-            $imageName = $s3->url($filepath);
-        }
+        abort(501, 'Profile photo upload is not yet implemented.');
     }
 }

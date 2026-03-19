@@ -2,65 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Photos\DeletePhotoAction;
-use App\Actions\CalculateTagsDifferenceAction;
-use App\Actions\Photos\DeleteTagsFromPhotoAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
-
-use App\Events\ImageDeleted;
+use App\Actions\Tags\AddTagsToPhotoAction;
+use App\Enums\VerificationStatus;
+use App\Events\TagsVerifiedByAdmin;
 use App\Models\Littercoin;
+use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
-use App\Models\User\User;
-
-use App\Traits\AddTagsTrait;
-
+use App\Models\Users\User;
+use App\Services\Metrics\MetricsService;
 use Carbon\Carbon;
-
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
-use App\Events\TagsVerifiedByAdmin;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 class AdminController extends Controller
 {
-    use AddTagsTrait;
-
-    protected DeleteTagsFromPhotoAction $deleteTagsAction;
-    protected UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
-    protected DeletePhotoAction $deletePhotoAction;
-    protected CalculateTagsDifferenceAction $calculateTagsDiffAction;
-
     /**
      * Apply IsAdmin middleware to all of these routes
-     *
-     * @param DeleteTagsFromPhotoAction $deleteTagsAction
-     * @param UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-     * @param DeletePhotoAction $deletePhotoAction
-     * @param CalculateTagsDifferenceAction $calculateTagsDiffAction
      */
-    public function __construct (
-        DeleteTagsFromPhotoAction $deleteTagsAction,
-        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction,
-        DeletePhotoAction $deletePhotoAction,
-        CalculateTagsDifferenceAction $calculateTagsDiffAction
-    )
-    {
+    public function __construct(
+        private MetricsService $metricsService,
+        private AddTagsToPhotoAction $addTagsAction,
+    ) {
         $this->middleware('admin');
-
-        $this->deleteTagsAction = $deleteTagsAction;
-        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
-        $this->deletePhotoAction = $deletePhotoAction;
-        $this->calculateTagsDiffAction = $calculateTagsDiffAction;
     }
 
     /**
      * Get the total number of users who have signed up
      */
-    public function getUserCount ()
+    public function getUserCount()
     {
         $users = User::where('verified', 1)
             ->orWhere('name', 'default')
@@ -69,32 +41,30 @@ class AdminController extends Controller
 
         $totalUsers = $users->count();
 
-        $users = $users->groupBy(function($val) {
+        $users = $users->groupBy(function ($val) {
             return Carbon::parse($val->created_at)->format('m-y');
         });
 
         $upm = [];
         $months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        foreach($users as $index => $monthlyUser)
-        {
+        foreach ($users as $index => $monthlyUser) {
             $month = $months[(int) substr($index, 0, 2)];
             $year = substr($index, 2, 5);
-            $upm[$month.$year] = $monthlyUser->count(); // Mar-17
+            $upm[$month . $year] = $monthlyUser->count();
         }
         $upm = json_encode($upm);
 
-        $usersUploaded = User::where('has_uploaded', 1)->get();
+        $usersUploaded = User::whereHas('photos')->get();
 
-        $usersUploaded = $usersUploaded->groupBy(function($val) {
+        $usersUploaded = $usersUploaded->groupBy(function ($val) {
             return Carbon::parse($val->created_at)->format('m-y');
-        });;
+        });
 
         $uupm = [];
-        foreach($usersUploaded as $index => $userUploaded)
-        {
-            $month = $months[(int)$substr = substr($index, 0, 2)];
+        foreach ($usersUploaded as $index => $userUploaded) {
+            $month = $months[(int) $substr = substr($index, 0, 2)];
             $year = substr($index, 2, 5);
-            $uupm[$month.$year] = $userUploaded->count(); // Mar-17
+            $uupm[$month . $year] = $userUploaded->count();
         }
         $uupm = json_encode($uupm);
 
@@ -102,52 +72,71 @@ class AdminController extends Controller
     }
 
     /**
-     * Verify an image, delete the image
+     * Approve a photo — sets verified to ADMIN_APPROVED, fires metrics event.
+     *
+     * Idempotent: atomic WHERE prevents double-processing.
+     * Photos must have tags (summary not null) before approval.
+     * S3 images are NOT deleted — photos remain viewable after approval.
      */
-    public function verify (Request $request): JsonResponse
+    public function verify(Request $request): JsonResponse
     {
-        /** @var Photo $photo */
         $photo = Photo::findOrFail($request->photoId);
 
-        $this->deletePhotoAction->run($photo);
+        // Precondition: photo must have tags
+        if ($photo->summary === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Photo has no tags to approve.',
+            ], 422);
+        }
 
-        $photo->verification = 1;
-        $photo->verified = 2;
-        $photo->filename = '/assets/verified.jpg';
-        $photo->save();
-
-        rewardXpToAdmin();
+        // Atomic update — only affects photos not yet admin-approved and public
+        $affected = Photo::where('id', $photo->id)
+            ->where('is_public', true)
+            ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value)
+            ->update(['verified' => VerificationStatus::ADMIN_APPROVED->value]);
 
         logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
-        event (new TagsVerifiedByAdmin($photo->id));
+        if ($affected > 0) {
+            $photo->refresh();
+
+            event(new TagsVerifiedByAdmin(
+                $photo->id,
+                $photo->user_id,
+                $photo->country_id,
+                $photo->state_id,
+                $photo->city_id,
+                $photo->team_id,
+            ));
+
+            rewardXpToAdmin();
+        }
 
         return response()->json([
-            'success' => true
+            'success' => true,
+            'approved' => $affected > 0,
         ]);
     }
 
     /**
-     * Delete an image and its records
+     * Delete a photo — reverses metrics, soft-deletes the row.
+     *
+     * MetricsService::deletePhoto() runs BEFORE the soft delete.
+     * If metrics reversal fails, the delete is aborted.
      */
-    public function destroy (Request $request): JsonResponse
+    public function destroy(Request $request): JsonResponse
     {
         $photo = Photo::findOrFail($request->photoId);
-        $user = User::find($photo->user_id);
 
-        $this->deletePhotoAction->run($photo);
+        // Reverse metrics before soft delete (if photo was processed)
+        if ($photo->processed_at !== null) {
+            $this->metricsService->deletePhoto($photo);
+        }
 
-        $tagUpdates = $this->calculateTagsDiffAction->run(
-            $photo->tags(),
-            [],
-            $photo->customTags->pluck('tag')->toArray(),
-            []
-        );
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
-        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
-
-        $this->deleteTagsAction->run($photo);
-
+        // Detach Littercoin if linked
         $littercoin = Littercoin::where('photo_id', $photo->id)->first();
 
         if ($littercoin) {
@@ -155,56 +144,77 @@ class AdminController extends Controller
             $littercoin->save();
         }
 
+        // Soft delete (SoftDeletes trait)
         $photo->delete();
-
-        $totalXp = $tagUpdates['removedUserXp'] + 1; // 1xp from uploading
-
-        $user->total_images = $user->total_images > 0 ? $user->total_images - 1 : 0;
-        $user->save();
-
-        // This will also update the users XP
-        $this->updateLeaderboardsAction->run($photo, $user->id, -$totalXp);
 
         rewardXpToAdmin();
 
-        event(new ImageDeleted(
-            $user,
-            $photo->country_id,
-            $photo->state_id,
-            $photo->city_id,
-            $photo->team_id
-        ));
-
         return response()->json([
-            'success' => true
+            'success' => true,
         ]);
     }
 
     /**
-     * Update the contents of an Image, Delete the image
+     * Edit tags on a photo, then approve it.
+     *
+     * Replaces all existing PhotoTags with the new tag set inside a transaction.
+     * Uses AddTagsToPhotoAction to create v5 PhotoTag records + generate summary + XP.
+     * Then sets verified = ADMIN_APPROVED and fires metrics event.
      */
-    public function updateDelete (Request $request)
+    public function updateDelete(Request $request): JsonResponse
     {
-        /** @var Photo $photo */
-        $photo = Photo::find($request->photoId);
+        $photo = Photo::findOrFail($request->photoId);
 
-        $this->deletePhotoAction->run($photo);
+        // Replace tags inside a transaction
+        DB::transaction(function () use ($request, $photo) {
+            // Delete existing tags
+            PhotoTag::where('photo_id', $photo->id)->delete();
 
-        $photo->filename = '/assets/verified.jpg';
+            // Create new tags via v5 action (generates summary + XP)
+            // skipVerification: admin controller handles approval + metrics itself
+            $this->addTagsAction->run(
+                $photo->user_id,
+                $photo->id,
+                $request->tags ?? [],
+                skipVerification: true
+            );
+        });
 
-        $photo->verification = 1;
-        $photo->verified = 2;
-        $photo->total_litter = 0;
-        $photo->save();
+        $photo->refresh();
 
-        // TODO categories and custom_tags are not provided in the front-end
-        $tagUpdates = $this->addTags($request->categories ?? [], $request->custom_tags ?? [], $photo->id);
+        // Atomic approve — same pattern as verify()
+        $affected = Photo::where('id', $photo->id)
+            ->where('is_public', true)
+            ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value)
+            ->update(['verified' => VerificationStatus::ADMIN_APPROVED->value]);
 
-        rewardXpToAdmin(1 + $tagUpdates['rewardedAdminXp']);
+        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod());
 
-        logAdminAction($photo, Route::getCurrentRoute()->getActionMethod(), $tagUpdates);
+        if ($affected > 0) {
+            // First-time approval — fire event for metrics + Littercoin
+            $photo->refresh();
 
-        event(new TagsVerifiedByAdmin($photo->id));
+            event(new TagsVerifiedByAdmin(
+                $photo->id,
+                $photo->user_id,
+                $photo->country_id,
+                $photo->state_id,
+                $photo->city_id,
+                $photo->team_id,
+            ));
+        } elseif ($photo->is_public && $photo->processed_at !== null) {
+            // Re-tag of already-approved photo — update metrics directly
+            // (no Littercoin reward on re-tag, only on first approval)
+            $this->metricsService->processPhoto($photo);
+        }
+
+        rewardXpToAdmin();
+
+        return response()->json([
+            'success' => true,
+            'approved' => $affected > 0,
+            'photo' => $photo->fresh(),
+        ]);
     }
 
     /**
@@ -213,9 +223,11 @@ class AdminController extends Controller
      */
     public function getCountriesWithPhotos(): Collection
     {
-        $totalsQuery = Photo::onlyFromUsersThatAllowTagging()
+        $totalsQuery = Photo::query()
             ->selectRaw('country_id, count(*) as total')
-            ->whereIn('verification', [0, 0.1])
+            ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value)
+            ->where('is_public', true)
+            ->whereNotNull('summary')
             ->groupBy('country_id');
 
         // Using DB to avoid extra appended properties

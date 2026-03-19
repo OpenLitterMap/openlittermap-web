@@ -56,6 +56,10 @@
             display: flex;
             justify-content: space-between;
         }
+        .stats p.total {
+            font-size: 13px;
+            color: #999;
+        }
         .categories {
             display: flex;
             justify-content: center;
@@ -86,14 +90,13 @@
             justify-content: center;
             align-items: center;
             width: 48px;
-
-            img {
-                border-radius: 50%;
-                width: 32px;
-                height: 32px;
-                object-fit: fill;
-                margin-right: 10px;
-            }
+        }
+        .flag img {
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            object-fit: fill;
+            margin-right: 10px;
         }
         .relative {
             position: relative;
@@ -101,55 +104,103 @@
         .medal {
             display: flex;
             align-items: center;
-            margin-right: 1em;
+            width: 36px;
+            flex-shrink: 0;
         }
         .rank {
             display: flex;
             flex-direction: row;
-            width: 96px;
-            gap: 0;
-            text-align: center;
+            width: 80px;
+            flex-shrink: 0;
             align-items: center;
         }
         .details {
             display: flex;
             align-items: center;
-            max-width: 200px;
+            flex: 1;
+            min-width: 0;
             text-align: left;
+        }
+        .details span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .social-container {
             display: flex;
-            flex: 1;
             flex-direction: row;
-            gap: 0.3rem;
-            justify-content: flex-end;
+            gap: 0.4rem;
             color: #3273dc;
             align-items: center;
-
-            a {
-                width: 20px;
-                text-decoration: none;
-            }
-            a:hover {
-                transform: scale(1.1);
-                color: #3273dc;
-            }
-
-            i {
-                color: #3273dc;
-            }
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .social-container a {
+            width: 20px;
+            text-decoration: none;
+        }
+        .social-container a:hover {
+            transform: scale(1.1);
+            color: #3273dc;
+        }
+        .social-container i {
+            color: #3273dc;
         }
         .top-user-row {
             display: flex;
-            position: relative;
-            height: 50px;
+            flex-direction: column;
+            padding: 6px 0;
+            border-bottom: 1px solid #e8eff3;
+        }
+        .top-user-row:last-child {
+            border-bottom: none;
+        }
+        .user-main {
+            display: flex;
+            align-items: center;
+            height: 36px;
+        }
+        .user-stats {
+            display: flex;
+            gap: 1rem;
+            margin-left: 116px;
+            font-size: 11px;
+            color: #888;
+            padding-top: 2px;
+        }
+        .user-stats span {
+            white-space: nowrap;
         }
         .top-litter-row {
-            height: 50px;
+            height: 32px;
             margin: 0;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
+            padding: 0 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #e8eff3;
+        }
+        .top-litter-row:last-of-type {
+            border-bottom: none;
+        }
+        .top-litter-row .label {
+            color: #333;
+        }
+        .top-litter-row .qty {
+            font-weight: bold;
+            color: #3273dc;
+        }
+        .empty-state {
+            color: #999;
+            padding: 2em 0;
+            font-style: italic;
+        }
+        .report-footer {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            padding: 10px 0 4px;
         }
     </style>
 </head>
@@ -179,21 +230,21 @@
                 <div class="stats">
                     <div>
                         <p><strong>{{ number_format($newUsers) }}</strong> New Users</p>
-                        <p><strong>{{ number_format($totalUsers) }}</strong> Total Users</p>
+                        <p class="total">{{ number_format($totalUsers) }} Total Users</p>
                     </div>
                 </div>
 
                 <div class="stats">
                     <div>
                         <p><strong>{{ number_format($newPhotos) }}</strong> New Photos</p>
-                        <p><strong>{{ number_format($totalPhotos) }}</strong> Total Photos</p>
+                        <p class="total">{{ number_format($totalPhotos) }} Total Photos</p>
                     </div>
                 </div>
 
                 <div class="stats">
                     <div>
                         <p><strong>{{ number_format($newTags) }}</strong> New Tags</p>
-                        <p><strong>{{ number_format($totalTags) }}</strong> Total Tags</p>
+                        <p class="total">{{ number_format($totalTags) }} Total Tags</p>
                     </div>
                 </div>
             </div>
@@ -205,76 +256,93 @@
         <div class="category-card" style="flex: 1.5;">
             <h3>Top 10 Users</h3>
 
-            @if (count($topUsers) > 0)
-            @foreach ($topUsers as $index => $topUser)
+            @forelse ($topUsers as $index => $topUser)
                 <div class="top-user-row" title="{{ $topUser['xp'] }} XP">
-
-                    <div class="medal">
-                        @if ($index <= 2)
-                            <img
-                                src="{{ $medals[$index]['src'] }}"
-                                alt="{{ $medals[$index]['alt'] }}"
-                                style="display: flex; align-items: center; margin-left: 1em; width: 20px;"
-                            />
-                        @else
-                            <div style="width: 20px; margin-left: 1em;"></div>
-                        @endif
-                    </div>
-
-                    <div class="rank">
-                        <span style="flex: 1;">{{ $topUser['ordinal'] }}</span>
-
-                        <div class="flag">
-                            @if ($topUser['global_flag'])
+                    <div class="user-main">
+                        <div class="medal">
+                            @if ($index <= 2)
                                 <img
-                                    src="https://openlittermap.com/assets/icons/flags/{{ strtolower($topUser['global_flag']) }}.png"
-                                    alt="{{ $topUser['global_flag'] }} Flag"
+                                    src="{{ $medals[$index]['src'] }}"
+                                    alt="{{ $medals[$index]['alt'] }}"
+                                    style="width: 20px;"
                                 />
+                            @else
+                                <div style="width: 20px;"></div>
                             @endif
                         </div>
-                    </div>
 
-                    <div class="details">
-                        @if($topUser['name'] || $topUser['username'])
-                            <span>{{ $topUser['name'] }} {{ $topUser['username'] }}</span>
-                        @else
-                            <span>Anonymous</span>
+                        <div class="rank">
+                            <span style="flex: 1;">{{ $topUser['ordinal'] }}</span>
+
+                            <div class="flag">
+                                @if ($topUser['global_flag'])
+                                    <img
+                                        src="https://openlittermap.com/assets/icons/flags/{{ strtolower($topUser['global_flag']) }}.png"
+                                        alt="{{ $topUser['global_flag'] }} Flag"
+                                    />
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="details">
+                            @if($topUser['name'] || $topUser['username'])
+                                <span>{{ $topUser['name'] }} {{ $topUser['username'] }}</span>
+                            @else
+                                <span>Anonymous</span>
+                            @endif
+                        </div>
+
+                        @if (!empty($topUser['social']) && is_array($topUser['social']))
+                            <div class="social-container">
+                                @foreach (array_slice($topUser['social'], 0, 3) as $social => $url)
+                                    <a href="{{ $url }}" target="_blank" rel="noopener">
+                                        <i class="fa {{ $social === 'personal' ? 'fa-link' : 'fa-' . $social }}"></i>
+                                    </a>
+                                @endforeach
+                            </div>
                         @endif
                     </div>
 
-                    @if ($topUser['social'])
-                        <div class="social-container">
-                            @foreach (array_slice($topUser['social'], 0, 3) as $social => $url)
-                                <a href="{{ $url }}" target="_blank">
-                                    <i class="fa {{ $social === 'personal' ? 'fa-link' : 'fa-' . $social }}"></i>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
+                    <div class="user-stats">
+                        <span><strong>{{ $topUser['xp'] }} XP</strong></span>
+                        <span>{{ $topUser['uploads'] }} photos</span>
+                        <span>{{ $topUser['tags'] }} tags</span>
+                    </div>
                 </div>
-            @endforeach
-            @endif
+            @empty
+                <p class="empty-state">No user activity recorded this period.</p>
+            @endforelse
         </div>
 
         <div class="category-card">
             <h3>Top 10 Tags</h3>
 
-            @if (count($topTags) > 0)
-                @foreach ($topTags as $tag => $quantity)
-                    <p class="top-litter-row">{{ $tag }}: {{ $quantity }}</p>
-                @endforeach
-            @endif
+            @forelse ($topTags as $tag => $quantity)
+                <div class="top-litter-row">
+                    <span class="label">{{ $tag }}</span>
+                    <span class="qty">{{ number_format($quantity) }}</span>
+                </div>
+            @empty
+                <p class="empty-state">No litter tagged this period.</p>
+            @endforelse
         </div>
 
         <div class="category-card">
             <h3>Top 10 Brands</h3>
 
-            @if (count($topBrands) > 0)
-                @foreach ($topBrands as $brand => $quantity)
-                    <p class="top-litter-row">{{ $brand }}: {{ $quantity }}</p>
-                @endforeach
-            @endif
+            @forelse ($topBrands as $brand => $quantity)
+                <div class="top-litter-row">
+                    <span class="label">{{ $brand }}</span>
+                    <span class="qty">{{ number_format($quantity) }}</span>
+                </div>
+            @empty
+                <p class="empty-state">No branded litter recorded this period.</p>
+            @endforelse
         </div>
+    </div>
+
+    <div class="report-footer">
+        openlittermap.com/impact · Generated {{ now()->format('j M Y') }}
     </div>
 </div>
 

@@ -12,10 +12,13 @@ class Authenticate extends Middleware
      * @param  \Illuminate\Http\Request  $request
      * @return string|null
      */
-    protected function redirectTo($request)
+    protected function redirectTo($request): ?string
     {
         if (! $request->expectsJson()) {
-            return route('login');
+            // SPA — no server-side login page. Return null to trigger 401.
+            return null;
         }
+
+        return null;
     }
 }

@@ -38,7 +38,6 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            // 'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'database' => ':memory:',
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', false),
@@ -120,11 +119,11 @@ return [
 
     'redis' => [
 
-        'client' => env('REDIS_CLIENT', 'predis'), // was phpredis
+        'client' => env('REDIS_CLIENT', 'phpredis'),
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            // 'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix'  => '',
         ],
 
         'default' => [
@@ -132,8 +131,9 @@ return [
             'host' => env('REDIS_HOST', '127.0.0.1'),
             'password' => env('REDIS_PASSWORD', null),
             'port' => env('REDIS_PORT', '6379'),
-            'database' => env('REDIS_DB', '1'),
-            // 'read_write_timeout' => 0,
+            'database' => env('REDIS_DB', '0'),
+            'read_write_timeout' => 0,
+            'persistent' => true, // disable this after the migration script
         ],
 
         'cache' => [
@@ -144,6 +144,11 @@ return [
             'database' => env('REDIS_CACHE_DB', '1'),
         ],
 
+        'testing' => [
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'password' => env('REDIS_PASSWORD', null),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_TEST_DB', 15), // Use a separate DB for tests
+        ],
     ],
-
 ];

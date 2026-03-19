@@ -3,19 +3,13 @@
 namespace App\Actions\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 
 class JoinTeamAction
 {
     public function run(User $user, Team $team)
     {
-        // Have the user join this team and restore their contributions
-        $userPhotosOnThisTeam = $user->photos()->whereTeamId($team->id);
-
-        $user->teams()->attach($team, [
-            'total_photos' => $userPhotosOnThisTeam->count(),
-            'total_litter' => $userPhotosOnThisTeam->sum('total_litter')
-        ]);
+        $user->teams()->attach($team);
 
         $this->setAsActiveTeamIfNull($user, $team);
 

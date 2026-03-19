@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -17,9 +17,6 @@ class TeamTest extends TestCase
                 'id',
                 'name',
                 'members',
-                'images_remaining',
-                'total_images',
-                'total_litter',
                 'leader',
                 'created_at',
                 'updated_at',
@@ -28,7 +25,15 @@ class TeamTest extends TestCase
                 'created_by',
                 'identifier',
                 'leaderboards',
-                'is_trusted'
+                'is_trusted',
+                'safeguarding',
+                'contact_email',
+                'academic_year',
+                'class_group',
+                'county',
+                'logo',
+                'max_participants',
+                'participant_sessions_enabled',
             ],
             Schema::getColumnListing('teams')
         );

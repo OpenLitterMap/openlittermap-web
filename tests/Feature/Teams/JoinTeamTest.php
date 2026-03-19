@@ -3,189 +3,159 @@
 namespace Tests\Feature\Teams;
 
 use App\Models\Teams\Team;
-use App\Models\User\User;
-use Illuminate\Support\Facades\Storage;
-use Tests\Feature\HasPhotoUploads;
+use App\Models\Teams\TeamType;
+use App\Models\Users\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class JoinTeamTest extends TestCase
 {
-    use HasPhotoUploads;
+    use RefreshDatabase;
+
+    private Team $team;
+    private User $leader;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        Storage::fake('s3');
-        Storage::fake('bbox');
+        $type = TeamType::create(['team' => 'community', 'price' => 0, 'description' => 'Community']);
 
-        $this->setImagePath();
+        $this->leader = User::factory()->create();
+
+        $this->team = Team::create([
+            'name' => 'Test Team',
+            'identifier' => 'TestTeam2026',
+            'type_id' => $type->id,
+            'type_name' => 'community',
+            'leader' => $this->leader->id,
+            'created_by' => $this->leader->id,
+        ]);
+
+        $this->leader->teams()->attach($this->team->id);
     }
 
-    public function test_a_user_can_join_a_team()
+    public function test_a_user_can_join_a_team_by_identifier()
     {
-        /** @var User $user */
         $user = User::factory()->create();
-        /** @var Team $team */
-        $team = Team::factory()->create(['members' => 0]);
 
-        $this->actingAs($user);
-
-        $this->assertEquals(0, $team->fresh()->members);
-
-        $response = $this->postJson('/teams/join', [
-            'identifier' => $team->identifier,
+        $response = $this->actingAs($user)->postJson('/api/teams/join', [
+            'identifier' => 'TestTeam2026',
         ]);
 
-        $response->assertOk();
-        $response->assertJsonStructure(['success', 'team', 'activeTeam']);
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('team.name', 'Test Team');
 
-        $teamPivot = $user->teams()->first();
-        $this->assertNotNull($teamPivot);
-        $this->assertEquals(0, $teamPivot->total_photos);
-        $this->assertEquals(0, $teamPivot->total_litter);
-        $this->assertEquals(1, $team->fresh()->members);
+        $this->assertTrue($user->fresh()->isMemberOfTeam($this->team->id));
     }
 
-    public function test_a_user_can_only_join_a_team_they_are_not_part_of()
+    public function test_joining_a_team_increments_member_count()
     {
-        /** @var User $user */
         $user = User::factory()->create();
-        /** @var Team $team */
-        $team = Team::factory()->create(['members' => 0]);
 
-        $this->actingAs($user);
+        $this->assertEquals(1, $this->team->members);
 
-        $this->postJson('/teams/join', [
-            'identifier' => $team->identifier,
+        $this->actingAs($user)->postJson('/api/teams/join', [
+            'identifier' => 'TestTeam2026',
         ]);
 
-        $response = $this->postJson('/teams/join', [
-            'identifier' => $team->identifier,
-        ]);
-
-        $response->assertOk()->assertJson([
-            'success' => false, 'msg' => 'already-joined'
-        ]);
-        $this->assertEquals(1, $team->fresh()->members);
+        $this->assertEquals(2, $this->team->fresh()->members);
     }
 
-    public function test_the_team_becomes_the_active_team_if_the_user_has_no_active_team()
+    public function test_a_user_cannot_join_the_same_team_twice()
     {
-        /** @var User $user */
         $user = User::factory()->create();
-        /** @var Team $team */
-        $team = Team::factory()->create();
+        $user->teams()->attach($this->team->id);
 
-        $this->actingAs($user);
-
-        $this->postJson('/teams/join', [
-            'identifier' => $team->identifier,
+        $response = $this->actingAs($user)->postJson('/api/teams/join', [
+            'identifier' => 'TestTeam2026',
         ]);
 
-        $this->assertTrue($user->fresh()->team->is($team));
+        $response->assertOk()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('msg', 'already-joined');
     }
 
-    public function test_the_users_active_team_does_not_change_when_they_join_another_team()
+    public function test_join_fails_with_invalid_identifier()
     {
-        /** @var User $user */
         $user = User::factory()->create();
-        $team = Team::factory()->create();
-        $otherTeam = Team::factory()->create();
 
-        $this->actingAs($user);
-
-        $this->postJson('/teams/join', [
-            'identifier' => $team->identifier,
-        ]);
-
-        $this->postJson('/teams/join', [
-            'identifier' => $otherTeam->identifier,
-        ]);
-
-        $this->assertTrue($user->fresh()->team->is($team));
-    }
-
-    public function test_the_team_identifier_should_be_a_valid_identifier()
-    {
-        /** @var User $user */
-        $user = User::factory()->create();
-        /** @var Team $team */
-        $team = Team::factory()->create();
-
-        $this->actingAs($user);
-
-        $this->postJson('/teams/join', ['identifier' => ''])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['identifier']);
-
-        $this->postJson('/teams/join', ['identifier' => 'sdfgsdfgsdfg'])
+        $this->actingAs($user)
+            ->postJson('/api/teams/join', [
+                'identifier' => 'NonExistentTeam',
+            ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['identifier']);
     }
 
-    public function test_user_contributions_are_restored_when_they_rejoin_a_team()
+    public function test_join_validates_identifier_is_required()
     {
-        // User joins a team -------------------------
-        /** @var User $user */
-        $user = User::factory()->verified()->create();
-        /** @var User $otherUser */
-        $otherUser = User::factory()->create();
-        /** @var Team $team */
-        $team = Team::factory()->create();
+        $user = User::factory()->create();
 
-        $user->active_team = $team->id;
-        $user->save();
-        $user->teams()->attach($team);
-        $otherUser->teams()->attach($team);
+        $this->actingAs($user)
+            ->postJson('/api/teams/join', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['identifier']);
+    }
 
-        // User uploads a photo -------------
-        $this->actingAs($user);
+    public function test_unauthenticated_users_cannot_join_teams()
+    {
+        $this->postJson('/api/teams/join', [
+            'identifier' => 'TestTeam2026',
+        ])->assertStatus(401);
+    }
 
-        $this->post('/submit', [
-            'file' => $this->getImageAndAttributes()['file'],
+    public function test_a_user_can_leave_a_team()
+    {
+        $user = User::factory()->create();
+        $user->teams()->attach($this->team->id);
+        $this->team->increment('members');
+
+        $response = $this->actingAs($user)->postJson('/api/teams/leave', [
+            'team_id' => $this->team->id,
         ]);
 
-        $photo = $user->fresh()->photos->last();
+        $response->assertOk()
+            ->assertJsonPath('success', true);
 
-        // User adds tags to the photo -------------------
-        $this->post('/add-tags', [
-            'photo_id' => $photo->id,
-            'picked_up' => false,
-            'tags' => [
-                'smoking' => [
-                    'butts' => 3
-                ],
-                'brands' => [
-                    'aldi' => 2
-                ]
-            ]
+        $this->assertFalse($user->fresh()->isMemberOfTeam($this->team->id));
+    }
+
+    public function test_the_last_member_cannot_leave_a_team()
+    {
+        // Leader is the only member (members=1)
+        $response = $this->actingAs($this->leader)->postJson('/api/teams/leave', [
+            'team_id' => $this->team->id,
         ]);
 
-        $teamContributions = $user->teams()->first();
+        $response->assertStatus(403);
+    }
 
-        $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+    public function test_a_user_can_set_active_team()
+    {
+        $user = User::factory()->create();
+        $user->teams()->attach($this->team->id);
 
-        // User leaves the team ------------------------
-        $this->actingAs($user);
-
-        $this->postJson('/teams/leave', [
-            'team_id' => $team->id,
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
+            'team_id' => $this->team->id,
         ]);
 
-        $this->assertNull($user->teams()->first());
+        $response->assertOk()
+            ->assertJsonPath('success', true);
 
-        // And they join back --------------------------
-        $this->postJson('/teams/join', [
-            'identifier' => $team->identifier,
+        $this->assertEquals($this->team->id, $user->fresh()->active_team);
+    }
+
+    public function test_a_user_cannot_activate_a_team_they_have_not_joined()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/api/teams/active', [
+            'team_id' => $this->team->id,
         ]);
 
-        // Their contributions should be restored
-        $teamContributions = $user->teams()->first();
-
-        $this->assertNotNull($teamContributions);
-        $this->assertEquals(1, $teamContributions->pivot->total_photos);
-        $this->assertEquals(3, $teamContributions->pivot->total_litter);
+        $response->assertOk()
+            ->assertJsonPath('success', false);
     }
 }

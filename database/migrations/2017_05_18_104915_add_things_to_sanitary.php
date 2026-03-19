@@ -28,7 +28,9 @@ class AddThingsToSanitary extends Migration
     public function down()
     {
         Schema::table('sanitary', function (Blueprint $table) {
-            //
+            $table->dropColumn('ear_swabs');
+            $table->dropColumn('tooth_pick');
+            $table->dropColumn('tooth_brush');
         });
     }
 }

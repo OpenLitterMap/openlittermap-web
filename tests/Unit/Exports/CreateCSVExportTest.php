@@ -2,25 +2,37 @@
 
 namespace Tests\Unit\Exports;
 
-
 use App\Exports\CreateCSVExport;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
+use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Photo;
+use Database\Seeders\Tags\GenerateTagsSeeder;
 use Tests\TestCase;
 
 class CreateCSVExportTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(GenerateTagsSeeder::class);
+    }
+
     public function test_it_has_correct_headings_for_all_categories_and_tags()
     {
-        $expected = ['id', 'verification', 'phone', 'date_taken', 'date_uploaded', 'lat', 'lon', 'picked up', 'address', 'total_litter'];
-        foreach (Photo::categories() as $category) {
-            $photo = Photo::factory()->make();
-            $types = $photo->$category()->make()->types();
-            $expected[] = strtoupper($category);
-            $expected = array_merge($expected, $types);
+        $expected = ['id', 'verification', 'phone', 'date_taken', 'date_uploaded', 'lat', 'lon', 'picked up', 'address', 'total_tags'];
+
+        $categories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
+        foreach ($categories as $category) {
+            $expected[] = strtoupper($category->key);
+            foreach ($category->litterObjects as $object) {
+                $expected[] = $object->key;
+            }
         }
         $expected = array_merge($expected, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
-        // We make this assertion to be sure that
-        // the exporter does not persist extra models
+
         $this->assertDatabaseCount('photos', 0);
 
         $export = new CreateCSVExport('null', 1, null, null);
@@ -31,46 +43,82 @@ class CreateCSVExportTest extends TestCase
 
     public function test_it_has_correct_mappings_for_all_categories_and_tags()
     {
-        /** @var Photo $photo */
+        // Pick a category with at least 2 objects (unclassified only has 1)
+        $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+            ->orderBy('id')
+            ->get()
+            ->first(fn ($c) => $c->litterObjects->count() >= 2);
+        $objects = $category->litterObjects;
+        $obj1 = $objects[0];
+        $obj2 = $objects[1];
+
+        $cloId1 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj1->id)->value('id');
+        $cloId2 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj2->id)->value('id');
+
         $photo = Photo::factory()->create([
-            'verified' => 1,
+            'verified' => 2,
             'model' => 'Redmi Note 8 pro',
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
             'lon' => 42.0,
             'remaining' => true,
-            'display_name' => '12345 Street',
-            'total_litter' => 500
+            'address_array' => ['road' => '12345 Street', 'country' => 'Ireland'],
+            'total_tags' => 15,
+            'summary' => [
+                'tags' => [
+                    ['clo_id' => $cloId1, 'category_id' => $category->id, 'object_id' => $obj1->id, 'quantity' => 5, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],
+                    ['clo_id' => $cloId2, 'category_id' => $category->id, 'object_id' => $obj2->id, 'quantity' => 10, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],
+                ],
+                'totals' => ['litter' => 15, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0],
+            ],
         ]);
-        $photo->customTags()->createMany([['tag' => 'tag 1'], ['tag' => 'tag 2'], ['tag' => 'tag 3']]);
-        $expected = [
-            $photo->id,
-            $photo->verified,
-            $photo->model,
-            $photo->datetime,
-            $photo->created_at,
-            $photo->lat,
-            $photo->lon,
-            $photo->remaining ? 'No' : 'Yes',
-            $photo->display_name,
-            $photo->total_litter,
-        ];
-        foreach (Photo::categories() as $category) {
-            $model = $this->createCategoryWithTags($photo, $category);
 
-            // The category name has a null value
-            $expected[] = null;
-            // The category tags
-            foreach ($model->types() as $type) {
-                $expected[] = $model->$type;
-            }
-        }
-        $expected = array_merge($expected, ['tag 1', 'tag 2', 'tag 3']);
-        // We make this assertion to be sure that
-        // the exporter does not persist extra models
+        // Create custom tags via v5 photo_tags
+        $customTag1 = CustomTagNew::firstOrCreate(['key' => 'my_custom_1']);
+        $customTag2 = CustomTagNew::firstOrCreate(['key' => 'my_custom_2']);
+        $customTag3 = CustomTagNew::firstOrCreate(['key' => 'my_custom_3']);
+        $unclassifiedCloId = $this->getUnclassifiedOtherCloId();
+        $pt1 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt1->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag1->id, 'quantity' => 1]);
+        $pt2 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt2->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag2->id, 'quantity' => 1]);
+        $pt3 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt3->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag3->id, 'quantity' => 1]);
+
         $this->assertDatabaseCount('photos', 1);
 
         $export = new CreateCSVExport('null', 1, null, null);
+
+        // Build expected row
+        $expected = [
+            $photo->id,
+            $photo->verified,
+            'Redmi Note 8 pro',
+            $photo->datetime,
+            $photo->created_at,
+            42.0,
+            42.0,
+            'No', // remaining=true means not picked up
+            $photo->display_name,
+            15, // total_objects from summary
+        ];
+
+        // Category/object columns — only the two tagged objects have values
+        $allCategories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
+        foreach ($allCategories as $cat) {
+            $expected[] = null; // category separator
+            foreach ($cat->litterObjects as $obj) {
+                if ($cat->id === $category->id && $obj->id === $obj1->id) {
+                    $expected[] = 5;
+                } elseif ($cat->id === $category->id && $obj->id === $obj2->id) {
+                    $expected[] = 10;
+                } else {
+                    $expected[] = null;
+                }
+            }
+        }
+
+        $expected = array_merge($expected, ['my_custom_1', 'my_custom_2', 'my_custom_3']);
 
         $this->assertEquals($expected, $export->map($photo->fresh()));
         $this->assertDatabaseCount('photos', 1);
@@ -78,72 +126,45 @@ class CreateCSVExportTest extends TestCase
 
     public function test_it_maps_to_null_values_for_all_missing_categories()
     {
-        /** @var Photo $photo */
         $photo = Photo::factory()->create([
-            'verified' => 1,
+            'verified' => 2,
             'model' => 'Redmi Note 8 pro',
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
             'lon' => 42.0,
             'remaining' => true,
-            'display_name' => '12345 Street',
-            'total_litter' => 500
+            'address_array' => ['road' => '12345 Street', 'country' => 'Ireland'],
+            'summary' => [
+                'tags' => [],
+                'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0],
+            ],
         ]);
 
         $expected = [
             $photo->id,
             $photo->verified,
-            $photo->model,
+            'Redmi Note 8 pro',
             $photo->datetime,
             $photo->created_at,
-            $photo->lat,
-            $photo->lon,
-            $photo->remaining ? 'No' : 'Yes',
+            42.0,
+            42.0,
+            'No',
             $photo->display_name,
-            $photo->total_litter,
+            0, // total_objects from summary
         ];
 
-        foreach (Photo::categories() as $category) {
-            $model = $photo->$category()->make();
-
-            // The category name has a null value
-            $expected[] = null;
-            // The category tags also have null values
-            foreach ($model->types() as $type) {
-                $expected[] = $model->$type;
+        $allCategories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
+        foreach ($allCategories as $cat) {
+            $expected[] = null; // category separator
+            foreach ($cat->litterObjects as $obj) {
+                $expected[] = null;
             }
         }
+
+        $expected = array_merge($expected, [null, null, null]);
 
         $export = new CreateCSVExport('null', 1, null, null);
 
         $this->assertEquals($expected, $export->map($photo->fresh()));
     }
-
-    /**
-     * Creates a category
-     * sets all it's tags to a unique number from 1 to n
-     * updates the photo's category_id
-     *
-     * @param Photo $photo
-     * @param string $category
-     * @return mixed
-     */
-    protected function createCategoryWithTags(Photo $photo, string $category)
-    {
-        static $counter = 1;
-
-        $types = $photo->$category()->make()->types();
-
-        $withTypes = [];
-        foreach ($types as $type) {
-            $withTypes[$type] = $counter++;
-        }
-
-        $model = $photo->$category()->create($withTypes);
-
-        $photo->update([$category . "_id" => $model->id]);
-
-        return $model;
-    }
-
 }

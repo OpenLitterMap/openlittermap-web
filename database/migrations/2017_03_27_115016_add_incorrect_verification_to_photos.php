@@ -26,7 +26,7 @@ class AddIncorrectVerificationToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropColumn('incorrect_verification');
         });
     }
 }

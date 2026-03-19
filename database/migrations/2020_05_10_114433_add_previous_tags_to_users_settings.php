@@ -26,7 +26,7 @@ class AddPreviousTagsToUsersSettings extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('previous_tags');
         });
     }
 }

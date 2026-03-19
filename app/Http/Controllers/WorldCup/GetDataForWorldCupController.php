@@ -8,8 +8,12 @@ use App\Helpers\Get\LocationHelper;
 use App\Models\Leaderboard\Leaderboard;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Redis;
 
+/**
+ * @deprecated
+ */
 class GetDataForWorldCupController extends Controller
 {
     use LocationHelper;
@@ -26,7 +30,7 @@ class GetDataForWorldCupController extends Controller
      *
      * @return array
      */
-    public function __invoke (): array
+    public function __invoke (): JsonResponse
     {
         $littercoin = Littercoin::count();
 
@@ -140,7 +144,7 @@ class GetDataForWorldCupController extends Controller
         $leaderboardIds = Redis::zrevrange("leaderboard:users:$year:$month:$day", 0, 9, 'withscores');
         $globalLeaders = Leaderboard::getLeadersByUserIds($leaderboardIds);
 
-        return [
+        return response()->json([
             'countries' => $countries,
             'total_litter' => $total_litter,
             'total_photos' => $total_photos,
@@ -149,6 +153,6 @@ class GetDataForWorldCupController extends Controller
             'nextXp' => $nextXp,
             'littercoin' => $littercoin,
             'owed' => 0
-        ];
+        ]);
     }
 }

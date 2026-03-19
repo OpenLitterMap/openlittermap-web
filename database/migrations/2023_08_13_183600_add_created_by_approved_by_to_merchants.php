@@ -30,10 +30,8 @@ class AddCreatedByApprovedByToMerchants extends Migration
     public function down()
     {
         Schema::table('merchants', function (Blueprint $table) {
-            $table->dropForeign([
-                'created_by',
-                'approved_by'
-            ]);
+            $table->dropForeign(['created_by']);
+            $table->dropForeign(['approved_by']);
 
             $table->dropColumn('created_by');
             $table->dropColumn('approved_by');

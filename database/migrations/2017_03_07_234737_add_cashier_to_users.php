@@ -27,8 +27,10 @@ class AddCashierToUsers extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-        });
+//        Schema::table('users', function (Blueprint $table) {
+//             $table->dropColumn('card_brand');
+//             $table->dropColumn('card_last_four');
+//             $table->dropColumn('trial_ends_at');
+//        });
     }
 }

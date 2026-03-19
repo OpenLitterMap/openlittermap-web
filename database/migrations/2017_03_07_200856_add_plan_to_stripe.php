@@ -26,7 +26,7 @@ class AddPlanToStripe extends Migration
     public function down()
     {
         Schema::table('stripe', function (Blueprint $table) {
-            //
+            $table->dropColumn('plan');
         });
     }
 }

@@ -26,7 +26,7 @@ class AddDescriptionToPlans extends Migration
     public function down()
     {
         Schema::table('plans', function (Blueprint $table) {
-            //
+            $table->dropColumn('subtitle');
         });
     }
 }

@@ -2,24 +2,34 @@
 
 namespace App\Actions\Teams;
 
-
 use App\Models\Teams\Team;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ListTeamLeaderboardsAction
 {
     /**
-     * Load Teams ranked by total litter
-     * Todo - paginate this
-     * @return Builder[]|Collection
+     * Load Teams ranked by total tags (live query), paginated.
      */
-    public function run()
+    public function run(int $perPage = 25): LengthAwarePaginator
     {
-        return Team::query()
-            ->select('name', 'total_litter', 'total_images', 'created_at')
+        $paginator = Team::query()
+            ->select('teams.*')
+            ->withPhotoStats()
             ->where('leaderboards', true)
-            ->orderBy('total_litter', 'desc')
-            ->get();
+            ->orderByDesc('total_tags')
+            ->paginate($perPage);
+
+        $paginator->getCollection()->transform(fn ($team) => [
+            'id' => $team->id,
+            'name' => $team->name,
+            'type_name' => $team->type_name,
+            'total_members' => $team->members,
+            'total_tags' => (int) $team->total_tags,
+            'total_photos' => (int) $team->total_photos,
+            'created_at' => $team->created_at,
+            'updated_at' => $team->updated_at,
+        ]);
+
+        return $paginator;
     }
 }

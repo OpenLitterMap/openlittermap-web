@@ -27,7 +27,8 @@ class AddCoastalIdToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropForeign(['coastal_id']);
+            $table->dropColumn('coastal_id');
         });
     }
 }

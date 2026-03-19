@@ -1,0 +1,492 @@
+/* Leaflet Popup Styles */
+
+.leaflet-pane .leaflet-shadow-pane {
+    display: none;
+}
+
+/* Remove padding from popup wrapper */
+.leaflet-popup-content-wrapper {
+    padding: 0 !important;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* Remove margin from popup content and add border radius */
+.leaflet-popup-content {
+    margin: 0 !important;
+    overflow-y: auto;
+    border-radius: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.leaflet-popup-content div:last-of-type {
+    margin-bottom: 0 !important;
+}
+
+.leaflet-popup-content div:first-of-type {
+    margin-top: 0 !important;
+}
+
+/* ========================================
+   Image Area
+   ======================================== */
+
+.popup-image-wrap {
+    position: relative;
+    line-height: 0;
+}
+
+/* Image should take full width with border radius on top corners */
+.leaflet-litter-img {
+    width: 100%;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+/* Waiting/unverified image — centered with padding */
+.leaflet-litter-img--waiting {
+    padding: 16px;
+    cursor: default;
+    object-fit: contain;
+}
+
+/* Gradient overlay at bottom of image for smooth transition */
+.popup-image-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.6));
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    pointer-events: none;
+}
+
+/* ========================================
+   Popup Body — content below image
+   ======================================== */
+
+.popup-body {
+    padding: 14px 16px 0;
+}
+
+/* ----------------------------------------
+   Tags Section
+   ---------------------------------------- */
+
+.popup-tags-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.popup-tags-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.popup-tag-total {
+    font-size: 10px;
+    font-weight: 700;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.popup-tag-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.popup-tag-category {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 2px;
+}
+
+.popup-tag-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.popup-tag-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.3;
+}
+
+.popup-tag-qty {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 1px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.popup-tag-extras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+    margin-bottom: 2px;
+}
+
+/* Chips — material, brand, custom tag */
+.popup-chip {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.popup-chip-mat {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.popup-chip-brand {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+.popup-chip-custom {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+/* Empty state (no tags / awaiting verification) */
+.popup-empty-state {
+    font-size: 13px;
+    color: #9ca3af;
+    font-style: italic;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Inline empty state — sits inside .popup-meta alongside the date */
+.popup-empty-inline {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* ----------------------------------------
+   Meta Row — picked up pill + date
+   ---------------------------------------- */
+
+.popup-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Picked up pills */
+.popup-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    line-height: 1.3;
+}
+
+.popup-pill-picked {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.popup-pill-remaining {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+/* Date */
+.popup-meta .popup-date {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* ----------------------------------------
+   Attribution — user name, handle, team
+   ---------------------------------------- */
+
+.popup-attribution {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 8px 0;
+}
+
+.popup-user-name {
+    font-weight: 600;
+    color: #374151;
+}
+
+.popup-user-handle {
+    color: #6b7280;
+}
+
+.popup-user-team {
+    color: #2563eb;
+    font-weight: 500;
+}
+
+.popup-team-icon {
+    font-size: 10px;
+    margin-right: 4px;
+    opacity: 0.7;
+}
+
+.popup-team-only {
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* User country flag */
+.popup-user-flag {
+    font-size: 16px;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* ----------------------------------------
+   Footer — social links + copy link
+   ---------------------------------------- */
+
+.popup-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0 14px;
+    margin-top: 4px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.popup-social {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.popup-social a {
+    font-size: 15px;
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.popup-social a:hover {
+    color: #2563eb;
+    transform: scale(1.15);
+}
+
+/* Copy link button */
+.popup-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+    line-height: 1.3;
+}
+
+.popup-copy-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.popup-copy-btn--copied {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.popup-copy-btn i {
+    font-size: 12px;
+}
+
+/* ----------------------------------------
+   Share Link (legacy, kept for compat)
+   ---------------------------------------- */
+
+.popup-share-link {
+    display: inline-block;
+    font-size: 15px;
+    color: #6b7280;
+    transition: color 0.15s ease;
+    margin-top: 2px;
+}
+
+.popup-share-link:hover {
+    color: #2563eb;
+}
+
+/* ----------------------------------------
+   Admin Info
+   ---------------------------------------- */
+
+.popup-admin {
+    font-size: 11px;
+    color: #9ca3af;
+    font-style: italic;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #f3f4f6;
+    line-height: 1.5;
+}
+
+/* ========================================
+   Cleanup Popup Styles
+   ======================================== */
+
+.leaflet-cleanup-container {
+    padding: 1.2em;
+}
+
+.cleanup-name {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 0.5em;
+}
+
+.cleanup-attendance,
+.cleanup-description,
+.cleanup-time,
+.cleanup-time-diff {
+    font-size: 14px;
+    margin-bottom: 0.5em;
+}
+
+.cleanup-action-link {
+    color: #3273dc;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.cleanup-action-link:hover {
+    color: #1577c6;
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+/* Tablet and above */
+@media (min-width: 768px) {
+    .popup-body {
+        padding: 16px 20px 0;
+    }
+
+    .popup-tag-name {
+        font-size: 15px;
+    }
+
+    .popup-tag-qty {
+        font-size: 13px;
+    }
+
+    .popup-chip {
+        font-size: 11px;
+    }
+
+    .popup-meta .popup-date {
+        font-size: 13px;
+    }
+
+    .popup-attribution {
+        font-size: 14px;
+    }
+
+    .popup-social a {
+        font-size: 16px;
+    }
+
+    .popup-footer {
+        padding: 10px 0 16px;
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+    .popup-body {
+        padding: 12px 14px 0;
+    }
+
+    .popup-tags-section {
+        gap: 8px;
+        padding-bottom: 10px;
+    }
+
+    .popup-tag-category {
+        font-size: 9px;
+    }
+
+    .popup-tag-name {
+        font-size: 13px;
+    }
+
+    .popup-tag-qty {
+        font-size: 11px;
+    }
+
+    .popup-chip {
+        font-size: 9px;
+        padding: 1px 6px;
+    }
+
+    .popup-meta {
+        padding: 8px 0;
+    }
+
+    .popup-pill {
+        font-size: 10px;
+        padding: 2px 8px;
+    }
+
+    .popup-footer {
+        padding: 8px 0 12px;
+    }
+
+    .popup-copy-btn {
+        font-size: 10px;
+        padding: 4px 10px;
+    }
+}

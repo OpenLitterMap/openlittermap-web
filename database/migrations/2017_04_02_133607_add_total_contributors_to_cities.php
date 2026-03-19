@@ -26,7 +26,7 @@ class AddTotalContributorsToCities extends Migration
     public function down()
     {
         Schema::table('cities', function (Blueprint $table) {
-            //
+            $table->dropColumn('total_contributors');
         });
     }
 }

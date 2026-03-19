@@ -29,6 +29,7 @@ class UpdateTeamRequest extends FormRequest
                 'max:15',
                 Rule::unique('teams')->ignore($this->route('team'))
             ],
+            'participant_sessions_enabled' => ['sometimes', 'boolean'],
         ];
     }
 }

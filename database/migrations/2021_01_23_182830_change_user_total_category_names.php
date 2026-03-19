@@ -29,7 +29,10 @@ class ChangeUserTotalCategoryNames extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->renameColumn('total_softdrinks', 'total_softDrinks');
+            $table->dropColumn('total_dumping');
+            $table->dropColumn('total_industrial');
+            $table->dropColumn('total_coastal');
         });
     }
 }

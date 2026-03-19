@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Actions\Photos\GetPreviousCustomTagsAction;
-use App\Jobs\Photos\AddTagsToPhoto;
+use App\Actions\Photos\DeletePhotoAction;
 use App\Models\Photo;
+use App\Services\Metrics\MetricsService;
 use App\Traits\Photos\FilterPhotos;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class UserPhotoController extends Controller
 {
@@ -18,56 +20,57 @@ class UserPhotoController extends Controller
     use FilterPhotos;
 
     /**
-     * Add Many Tags to Many Photos
-     *
-     * @return array
+     * @deprecated No frontend consumer. Use POST /api/v3/tags for individual photo tagging.
      */
-    public function bulkTag (Request $request)
+    public function bulkTag(Request $request): JsonResponse
     {
-        foreach ($request->photos as $photoId => $data) {
-             dispatch (new AddTagsToPhoto(
-                 $photoId,
-                 $data['picked_up'] ?? false,
-                 $data['tags'] ?? [],
-                 $data['custom_tags'] ?? []
-             ));
-        }
-
-        return ['success' => true];
+        return response()->json(['message' => 'Use POST /api/v3/tags for tagging'], 410);
     }
 
     /**
-     * Todo - test this on production
+     * Bulk delete user's own photos.
      *
-     * @return array
+     * Reverses metrics, removes S3 files, soft-deletes each photo,
+     * and decrements user counters.
      */
-    public function destroy (Request $request)
+    public function destroy(Request $request): array
     {
         $user = Auth::user();
-        $s3 = \Storage::disk('s3');
+        $metricsService = app(MetricsService::class);
+        $deletePhotoAction = app(DeletePhotoAction::class);
 
         $ids = ($request->selectAll) ? $request->exclIds : $request->inclIds;
 
         $photos = $this->filterPhotos(json_encode($request->filters), $request->selectAll, $ids)->get();
 
-        foreach ($photos as $photo)
-        {
-            try
-            {
-                if ($user->id === $photo->user_id)
-                {
-                    if (app()->environment('production'))
-                    {
-                        $path = substr($photo->filename, 42);
-                        $s3->delete($path);
-                    }
-                    $photo->delete();
+        $deleted = 0;
+
+        foreach ($photos as $photo) {
+            try {
+                if ($user->id !== $photo->user_id) {
+                    continue;
                 }
-            } catch (Exception $e) {
-                // could not be deleted
-                \Log::info(["Photo could not be deleted", $e->getMessage()]);
+
+                // Reverse metrics before soft delete (if photo was processed)
+                // MetricsService::deletePhoto() reverses both upload XP and tag XP
+                // from MySQL metrics, Redis, and users.xp
+                if ($photo->processed_at !== null) {
+                    $metricsService->deletePhoto($photo);
+                }
+
+                // Delete S3 files
+                $deletePhotoAction->run($photo);
+
+                // Soft delete
+                $photo->delete();
+
+                $deleted++;
+            } catch (\Exception $e) {
+                Log::info(["Photo could not be deleted", $e->getMessage()]);
             }
         }
+
+        // Note: total_images is deprecated — profile reads Photo::count() as fallback
 
         return ['success' => true];
     }
@@ -97,12 +100,9 @@ class UserPhotoController extends Controller
      */
     public function index ()
     {
-        $query = Photo::select('id', 'filename', 'total_litter', 'verified', 'datetime', 'created_at')
-            ->where([
-                'user_id' => auth()->user()->id,
-                'verified' => 0,
-                'verification' => 0
-            ]);
+        $query = Photo::select('id', 'filename', 'verified', 'datetime', 'created_at')
+            ->where('user_id', auth()->user()->id)
+            ->whereNull('summary');
 
         return [
             'paginate' => $query->simplePaginate($this->paginate),
@@ -110,11 +110,4 @@ class UserPhotoController extends Controller
         ];
     }
 
-    /**
-     * List of the user's previously added custom tags
-     */
-    public function previousCustomTags (GetPreviousCustomTagsAction $previousTagsAction)
-    {
-        return $previousTagsAction->run(request()->user());
-    }
 }

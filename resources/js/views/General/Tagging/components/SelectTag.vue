@@ -1,0 +1,245 @@
+<template>
+    <div class="mb-4">
+        <Combobox as="div" :modelValue="internalSelected" @update:modelValue="onChange" by="id">
+            <div class="relative">
+                <!-- The users text input -->
+                <ComboboxInput
+                    :displayValue="displayValue"
+                    @input="onInput"
+                    :placeholder="`${placeholder}`"
+                    @keydown.enter="handleSubmit"
+                    @blur="handleSubmit"
+                    class="capitalize rounded-md border border-gray-300 bg-white py-2 px-3 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                    :style="size === 'small' ? 'height: 35px' : ''"
+                />
+
+                <!-- Clear selected input -->
+                <!-- Material.id is a string -->
+                <button
+                    v-if="internalSelected.id !== 0"
+                    @click="clearSelected"
+                    class="absolute inset-y-0 right-8 flex items-center 2xl:pr-2"
+                    type="button"
+                >
+                    <svg
+                        class="h-4 w-4 text-gray-400 cursor-pointer"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <!-- The dropdown toggle button -->
+                <ComboboxButton class="absolute inset-y-0 right-0 flex items-center pr-2">
+                    <!-- Dropdown icon -->
+                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </ComboboxButton>
+            </div>
+
+            <transition
+                enter="transition duration-150 ease-out"
+                enter-from="transform scale-95 opacity-0"
+                enter-to="transform scale-100 opacity-100"
+                leave="transition duration-100 ease-in"
+                leave-from="transform scale-100 opacity-100"
+                leave-to="transform scale-95 opacity-0"
+            >
+                <!-- If we have filtered results, show the dropdown -->
+                <ComboboxOptions
+                    v-if="filteredOptions?.length"
+                    class="absolute z-10 mt-1 w-[20em] max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                >
+                    <ComboboxOption
+                        v-for="option in filteredOptions"
+                        :key="option.id + '-' + option.key + '-' + option.hasOwnProperty('text') ? option.text : ''"
+                        :value="option"
+                        :class="
+                            ({ active }) => [
+                                'relative cursor-pointer select-none py-2 pl-3 pr-9',
+                                active ? 'bg-indigo-600 text-white' : 'text-gray-900',
+                            ]
+                        "
+                        v-slot="{ active, selected }"
+                    >
+                        <li
+                            :class="{
+                                'bg-blue-500 text-white': active,
+                                'bg-white text-black': !active,
+                            }"
+                            class="flex py-2 px-4 cursor-pointer"
+                        >
+                            <span class="flex-1 capitalize">{{
+                                option.hasOwnProperty('text') ? option.text : option.key
+                            }}</span>
+
+                            <CheckIcon v-show="selected" class="h-4 w-4" />
+                        </li>
+                    </ComboboxOption>
+                </ComboboxOptions>
+            </transition>
+        </Combobox>
+    </div>
+</template>
+
+<script setup>
+import { computed, defineEmits, defineProps, ref, watch } from 'vue';
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/vue';
+import { CheckIcon } from '@heroicons/vue/20/solid';
+
+const props = defineProps({
+    modelValue: {
+        type: Object,
+        default: () => ({ id: 0, key: '', text: '' }),
+    },
+    tags: {
+        type: Array,
+        required: false,
+    },
+    placeholder: {
+        type: String,
+        default: '',
+        required: false,
+    },
+    size: {
+        type: String,
+        default: 'normal',
+        required: false,
+    },
+    emitOnSelect: {
+        type: Boolean,
+        default: false,
+        required: false,
+    },
+    parentTagId: {
+        type: String,
+        default: '',
+        required: false,
+    },
+});
+
+const emit = defineEmits(['update:modelValue', 'addCustomTag', 'selectedTag']);
+
+// The user's typed text
+const searchQuery = ref('');
+
+// The Combobox local selection.
+// We watch the parent to keep it in sync.
+const internalSelected = ref(props.modelValue);
+
+watch(
+    () => props.modelValue,
+    (newVal) => {
+        internalSelected.value = newVal;
+    }
+);
+
+/**
+ * Pre-process the tags to pre-compute lowercase (ie translations will go here)
+ */
+const processedTags = computed(() => {
+    if (!props.tags) return [];
+
+    return props.tags
+        .filter((tag) => tag && typeof tag.key === 'string')
+        .map((tag) => ({
+            ...tag,
+            lowerKey: tag.key.toLowerCase(),
+            lowerText: tag.hasOwnProperty('text') ? tag.text.toLowerCase() : tag.key.toLowerCase(),
+        }));
+});
+
+const filteredOptions = computed(() => {
+    const q = searchQuery.value.toLowerCase();
+
+    return processedTags.value.filter((c) => c.lowerText.includes(q)).slice(0, 100);
+});
+
+/**
+ * De-select the current selection.
+ * We create a new object to trigger a re-render
+ */
+function clearSelected() {
+    const emptySelection = { id: 0, key: '', text: '' };
+
+    internalSelected.value = emptySelection;
+
+    searchQuery.value = '';
+
+    emit('update:modelValue', { ...emptySelection });
+}
+
+/**
+ * Display function:
+ * If something is selected, show its key.
+ * Otherwise, show the typed search.
+ */
+function displayValue(selectedObj) {
+    if (selectedObj && selectedObj.text) {
+        return selectedObj.text;
+    }
+
+    return selectedObj && selectedObj.key ? selectedObj.key : searchQuery.value;
+}
+
+/**
+ * Handle direct user typing in the input
+ */
+function onInput(event) {
+    searchQuery.value = event.target.value;
+}
+
+/**
+ * Called when user selects an item from the dropdown.
+ * This is the crucial step: We emit 'update:modelValue'
+ * so the parent’s v-model is updated.
+ */
+function onChange(newSelection) {
+    emit('update:modelValue', newSelection);
+
+    // NEW: Emit event when a predefined tag is selected
+    if (props.emitOnSelect) {
+        newSelection['parentTagId'] = props.parentTagId;
+
+        emit('selectedTag', newSelection);
+    }
+
+    const emptySelection = { id: 0, key: '', text: '' };
+    internalSelected.value = emptySelection;
+
+    // internalSelected.value = newSelection;
+    // Clear the search query
+    searchQuery.value = '';
+}
+
+function handleSubmit() {
+    // If the user typed a custom tag, create and emit it.
+    const trimmed = searchQuery.value.trim();
+
+    if (trimmed !== '') {
+        const customTag = {
+            id: Date.now(),
+            custom: true, // deprecate this
+            type: 'custom', // use this instead
+            key: trimmed,
+            quantity: 1,
+            pickedUp: true, // change to users default value
+            extraTags: [],
+        };
+
+        emit('addCustomTag', customTag);
+    }
+
+    // Clear the search query & input
+    // Create a new object to re-render
+    internalSelected.value = { id: 0, key: '', text: '' };
+    searchQuery.value = '';
+
+    // emit('tagSelected', internalSelected.value);
+}
+</script>

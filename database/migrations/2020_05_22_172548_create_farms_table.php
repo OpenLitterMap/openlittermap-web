@@ -13,6 +13,11 @@ class CreateFarmsTable extends Migration
      */
     public function up()
     {
+        // Check if the table exists
+        if (Schema::hasTable('farming')) {
+            return;
+        }
+
         Schema::create('farming', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('plastic')->unsigned()->nullable();

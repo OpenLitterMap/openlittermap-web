@@ -26,7 +26,7 @@ class AddTotalLitterToPhotos extends Migration
     public function down()
     {
         Schema::table('photos', function (Blueprint $table) {
-            //
+            $table->dropColumn('total_litter');
         });
     }
 }

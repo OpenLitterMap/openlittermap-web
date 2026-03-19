@@ -2,343 +2,202 @@
 
 namespace App\Http\Controllers\Uploads;
 
-use Carbon\Carbon;
-use Geohash\GeoHash;
+use App\Models\Photo;
 
+use App\Events\ImageUploaded;
 use App\Events\NewCityAdded;
 use App\Events\NewCountryAdded;
 use App\Events\NewStateAdded;
-use App\Helpers\Post\UploadHelper;
-use App\Models\Photo;
-use App\Models\User\User;
-use App\Events\ImageUploaded;
-use App\Events\Photo\IncrementPhotoMonth;
-use App\Http\Requests\UploadPhotoRequest;
-use App\Exceptions\InvalidCoordinates;
 
 use App\Actions\Photos\MakeImageAction;
 use App\Actions\Photos\UploadPhotoAction;
-use App\Actions\Locations\ReverseGeocodeLocationAction;
-use App\Actions\Locations\UpdateLeaderboardsForLocationAction;
+use App\Actions\Locations\ResolveLocationAction;
+use App\Enums\XpScore;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UploadPhotoRequest;
+
+use App\Services\Metrics\MetricsService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class UploadPhotoController extends Controller
 {
-    protected UploadHelper $uploadHelper;
-    private MakeImageAction $makeImageAction;
-    private UploadPhotoAction $uploadPhotoAction;
-    private UpdateLeaderboardsForLocationAction $updateLeaderboardsAction;
-
-    public function __construct (
-        MakeImageAction $makeImageAction,
-        UploadPhotoAction $uploadPhotoAction,
-        UploadHelper $uploadHelper,
-        UpdateLeaderboardsForLocationAction $updateLeaderboardsAction
-    )
-    {
-        $this->makeImageAction = $makeImageAction;
-        $this->uploadPhotoAction = $uploadPhotoAction;
-        $this->uploadHelper = $uploadHelper;
-        $this->updateLeaderboardsAction = $updateLeaderboardsAction;
-    }
+    public function __construct(
+        private MakeImageAction $makeImageAction,
+        private UploadPhotoAction $uploadPhotoAction,
+        private ResolveLocationAction $resolveLocationAction,
+        private MetricsService $metricsService,
+    ) {}
 
     /**
-     * The user wants to upload a photo
+     * Upload a photo with GPS coordinates.
      *
-     * Check for GPS co-ordinates or abort
-     * Get/Create Country, State, and City for the lat/lon
+     * Supports two modes:
+     * - Web: extracts lat/lon/date from EXIF (default)
+     * - Mobile: accepts explicit lat, lon, date fields (overrides EXIF)
      *
-     * Move photo to AWS S3 in production || local in development
-     * then persist new record to photos table
-     *
-     * @param UploadPhotoRequest $request
-     * @return JsonResponse
+     * Awards XpScore::Upload (5) XP per upload to MySQL users.xp.
+     * Redis XP is handled by MetricsService when tags are processed
+     * (XpCalculator includes upload base in photo.xp — no Redis push here to avoid double-counting).
      */
-    public function __invoke (UploadPhotoRequest $request): JsonResponse
+    public function __invoke(UploadPhotoRequest $request): JsonResponse
     {
         $user = Auth::user();
+        $file = $request->file('photo');
+        $hasExplicit = $request->hasExplicitCoordinates();
 
-        \Log::channel('photos')->info([
-            'web_upload' => $request->all(),
-            'user_id' => $user->id
-        ]);
+        // 1. Process image & extract EXIF
+        $imageAndExif = $this->makeImageAction->run($file);
+        $image = $imageAndExif['image'];
+        $exif = $imageAndExif['exif'];
 
-        if (!$user->has_uploaded) {
-            $user->has_uploaded = 1;
+        // 2. Resolve coordinates and datetime
+        if ($hasExplicit) {
+            // Mobile: explicit lat/lon/date from request
+            $lat = (float) $request->input('lat');
+            $lon = (float) $request->input('lon');
+
+            $dateInput = $request->input('date');
+            $dateTime = is_numeric($dateInput)
+                ? Carbon::createFromTimestamp((int) $dateInput)
+                : Carbon::parse($dateInput);
+        } else {
+            // Web: extract from EXIF
+            $dateTime = getDateTimeForPhoto($exif) ?? Carbon::now();
+            $coordinates = getCoordinatesFromPhoto($exif);
+            $lat = $coordinates[0];
+            $lon = $coordinates[1];
         }
 
-        $file = $request->file('file'); // /tmp/php7S8v..
-
-        $imageAndExifData = $this->makeImageAction->run($file);
-        $image = $imageAndExifData['image'];
-        $exif = $imageAndExifData['exif'];
-
-        // Step 1: Verification
-        if (is_null($exif))
-        {
-            abort(500, "Sorry, no GPS on this one.");
-        }
-
-        // Check if the EXIF has GPS data
-        // todo - make this error appear on the frontend dropzone without clicking the "X"
-        // todo - translate the error
-        if (!array_key_exists("GPSLatitudeRef", $exif))
-        {
-            abort(500, "Sorry, no GPS on this one.");
-        }
-
-        // Check for 0 value
-        if ($exif["GPSLatitude"][0] === "0/0" && $exif["GPSLongitude"][0] === "0/0")
-        {
-            abort(500,
-                "Error: Your Images have GeoTags, but they have values of zero. 
-                You may have lost the geotags when transferring images across devices
-                or you might need to enable another setting to make them available."
-            );
-        }
-
-        $dateTime = '';
-
-        // Some devices store the timestamp key in a different format and using a different key.
-        if (array_key_exists('DateTimeOriginal', $exif))
-        {
-            $dateTime = $exif["DateTimeOriginal"];
-        }
-        if (!$dateTime)
-        {
-            if (array_key_exists('DateTime', $exif))
-            {
-                $dateTime = $exif["DateTime"];
-            }
-        }
-        if (!$dateTime)
-        {
-            if (array_key_exists('FileDateTime', $exif))
-            {
-                $dateTime = $exif["FileDateTime"];
-                $dateTime = Carbon::createFromTimestamp($dateTime);
-            }
-        }
-
-        // convert to YYYY-MM-DD hh:mm:ss format
-        $dateTime = Carbon::parse($dateTime);
-
-        // Check if the user has already uploaded this image
-        // todo - load error automatically without clicking it
-        // todo - translate
-        if (app()->environment() === "production")
-        {
-            if (Photo::where(['user_id' => $user->id, 'datetime' => $dateTime])->first())
-            {
-                abort(500, "You have already uploaded this file!");
-            }
-        }
-        // End Step 1: Verification
-
-        // Step 2: Upload The Image(s)
-        // Upload images to both 's3' and 'bbox' disks, resized for 'bbox'
+        // 3. Upload full image + bbox thumbnail to S3
         $imageName = $this->uploadPhotoAction->run(
             $image,
             $dateTime,
             $file->hashName()
         );
 
-        // We should do this asynchronously after everything else is complete
         $bboxImageName = $this->uploadPhotoAction->run(
             $this->makeImageAction->run($file, true)['image'],
             $dateTime,
             $file->hashName(),
             'bbox'
         );
-        // End Step 2: Upload The Image(s)
 
-        // Step 3: Get GPS & Check for Locations
-        // Get coordinates
-        $lat_ref   = $exif["GPSLatitudeRef"];
-        $lat       = $exif["GPSLatitude"];
-        $long_ref  = $exif["GPSLongitudeRef"];
-        $lon       = $exif["GPSLongitude"];
+        // 4. Resolve location from GPS coordinates
+        $location = $this->resolveLocationAction->run($lat, $lon);
 
-        $latlong = self::dmsToDec($lat, $lon, $lat_ref, $long_ref);
-
-        $latitude = $latlong[0];
-        $longitude = $latlong[1];
-
-        if (($latitude === 0 && $longitude === 0) || ($latitude === '0' && $longitude === '0'))
-        {
-            \Log::info("invalid coordinates found for userId $user->id \n");
-            abort(500,
-                "Error: Your Images have GeoTags, but they have values of zero. 
-                You may have lost the geotags when transferring images across devices
-                or you might need to enable another setting to make them available."
-            );
+        // 5. Determine remaining/picked_up and device model
+        // At upload time: explicit request value wins, then user default, then true (remaining)
+        if ($request->has('picked_up')) {
+            $remaining = ! $request->boolean('picked_up');
+        } elseif ($user->picked_up !== null) {
+            $remaining = ! $user->picked_up;
+        } else {
+            $remaining = true; // null preference → default to remaining (unknown)
         }
 
-        // Use OpenStreetMap to Reverse Geocode the coordinates into an Address.
-        $revGeoCode = app(ReverseGeocodeLocationAction::class)->run($latitude, $longitude);
+        $deviceModel = $request->input('model', $exif['Model'] ?? 'Unknown');
 
-        // The entire address as a string
-        $display_name = $revGeoCode["display_name"];
+        // 6a. Determine photo visibility: request value → user default → true
+        // PhotoObserver::creating() overrides to false for school teams
+        if ($request->has('is_public')) {
+            $isPublic = $request->boolean('is_public');
+        } else {
+            $isPublic = $user->public_photos ?? true;
+        }
 
-        // Extract the address array
-        $addressArray = $revGeoCode["address"];
-        $location = array_values($addressArray)[0];
-        $road = array_values($addressArray)[1];
-
-        // todo- check all locations for "/" and replace with "-"
-        // this should return wasRecentlyCreated. This would enable us to create the photo,
-        // and include the photo ID when we dispatch notifications.
-        $country = $this->uploadHelper->getCountryFromAddressArray($addressArray);
-        $state = $this->uploadHelper->getStateFromAddressArray($country, $addressArray);
-        $city = $this->uploadHelper->getCityFromAddressArray($country, $state, $addressArray, $latitude, $longitude);
-        // End Step 3: Get GPS & Check for Locations
-
-        // Step 4: Create the Photo
-        // prepare data we need to create
-        $geohasher = new GeoHash();
-        $geohash = $geohasher->encode($latlong[0], $latlong[1]);
-
-        // Get phone model
-        $model = (array_key_exists('Model', $exif) && !empty($exif["Model"]))
-            ? $exif["Model"]
-            : 'Unknown';
-
-        /** Create the $var Photo $photo */
+        // 6. Create Photo — FKs only, no string duplication
         $photo = Photo::create([
             'user_id' => $user->id,
             'filename' => $imageName,
             'datetime' => $dateTime,
-            'remaining' => !$user->picked_up,
-            'lat' => $latlong[0],
-            'lon' => $latlong[1],
-            'display_name' => $display_name,
-            'location' => $location,
-            'road' => $road,
-            'city' => $city->city,
-            'county' => $state->state,
-            'country' => $country->country,
-            'country_code' => $country->shortcode,
-            'model' => $model,
-            'country_id' => $country->id,
-            'state_id' => $state->id,
-            'city_id' => $city->id,
-            'platform' => 'web',
-            'geohash' => $geohash,
-            'team_id' => $user->active_team,
+            'remaining' => $remaining,
+            'lat' => $lat,
+            'lon' => $lon,
+            'model' => $deviceModel,
+            'country_id' => $location->country->id,
+            'state_id' => $location->state?->id,
+            'city_id' => $location->city?->id,
+            'platform' => $hasExplicit ? 'mobile' : 'web',
+            'is_public' => $isPublic,
+            'team_id' => $request->attributes->get('participant_team')?->id ?? $user->active_team,
+            'participant_id' => $request->attributes->get('participant')?->id,
             'five_hundred_square_filepath' => $bboxImageName,
-            'address_array' => json_encode($addressArray)
+            'address_array' => $location->addressArray,
         ]);
-        // End Step 4: Create the Photo
 
-        // Step 5: Reward XP, update resources & Update Leaderboards
-        // $user->images_remaining -= 1;
-
-        // move this to redis
-        // Since a user can upload multiple photos at once,
-        // we might get old values for xp, so we update the values directly
-        // without retrieving them
-        $user->update(['total_images' => DB::raw('ifnull(total_images, 0) + 1')]);
-
-        $user->refresh();
-
-        // Update the Leaderboards and give xp.
-        $this->updateLeaderboardsAction->run(
-            $photo,
-            $user->id,
-            1
-        );
-        // End Step 5: Update Leaderboards
-
-        // Step 6: Dispatch Events & Notifications
-        // Broadcast this event to anyone viewing the global map
-        // This will also update country, state, and city.total_contributors_redis
+        // 7. Broadcast to real-time map
         event(new ImageUploaded(
             $user,
             $photo,
-            $country,
-            $state,
-            $city,
+            $location->country,
+            $location->state,
+            $location->city,
         ));
 
-        // Broadcast an event to anyone viewing the Global Map
-        // Sends Notification to Twitter & Slack
-        if ($country->wasRecentlyCreated) {
-            event(new NewCountryAdded($country->country, $country->shortcode, now()));
-        }
-
-        if ($state->wasRecentlyCreated) {
-            event(new NewStateAdded($state->state, $country->country, now()));
-        }
-
-        if ($city->wasRecentlyCreated) {
-            event(new NewCityAdded(
-                $city->city,
-                $state->state,
-                $country->country,
+        // 8. Notify on new locations
+        if ($location->country->wasRecentlyCreated) {
+            event(new NewCountryAdded(
+                $location->country->country,
+                $location->country->shortcode,
                 now(),
-                $city->id,
-                $latitude,
-                $longitude,
+                $user->id
+            ));
+        }
+
+        if ($location->state?->wasRecentlyCreated) {
+            event(new NewStateAdded(
+                $location->state->state,
+                $location->country->country,
+                now(),
+                $user->id
+            ));
+        }
+
+        if ($location->city->wasRecentlyCreated) {
+            event(new NewCityAdded(
+                $location->city->city,
+                $location->state->state,
+                $location->country->country,
+                now(),
+                $location->city->id,
+                $lat,
+                $lon,
                 $photo->id
             ));
         }
 
-        // Increment the { Month-Year: int } value for each location
-        // Todo - this needs debugging
-        // Todo: Capture PhotosPerDay & PhotosPerWeek
-        event(new IncrementPhotoMonth(
-            $country->id,
-            $state->id,
-            $city->id,
-            $dateTime
-        ));
-        // End step 6: Dispatch Events & Notifications
+        // 9. Award upload XP to MySQL (immediate feedback for profile)
+        // and metrics table (so user appears on time-filtered leaderboards).
+        // Skip for school team photos — deferred until teacher approval,
+        // when MetricsService::processPhoto() handles the full XP.
+        // Private-by-choice photos (user setting) still get immediate XP.
+        $uploadXp = XpScore::Upload->xp();
+        $xpAwarded = 0;
+
+        $isSchoolPhoto = $photo->team_id
+            && ($team = \App\Models\Teams\Team::find($photo->team_id))
+            && $team->isSchool();
+
+        if (! $isSchoolPhoto) {
+            $user->increment('xp', $uploadXp);
+            $this->metricsService->recordUploadMetrics($photo, $uploadXp);
+            $xpAwarded = $uploadXp;
+        }
 
         return response()->json([
-            'success' => true
+            'success' => true,
+            'photo_id' => $photo->id,
+            'lat' => $photo->lat,
+            'lon' => $photo->lon,
+            'city' => $location->city?->city,
+            'state' => $location->state?->state,
+            'country' => $location->country?->country,
+            'display_name' => $location->displayName,
+            'xp_awarded' => $xpAwarded,
+            'user_xp_total' => $user->xp,
         ]);
-    }
-
-    /**
-     * Convert Degrees, Minutes and Seconds to Lat, Long
-     * Cheers to Hassan for this!
-     *
-     *  "GPSLatitude" => array:3 [ might be an array
-    0 => "51/1"
-    1 => "50/1"
-    2 => "888061/1000000"
-    ]
-     */
-    private static function dmsToDec ($lat, $lon, $lat_ref, $long_ref)
-    {
-        $lat[0] = explode("/", $lat[0]);
-        $lat[1] = explode("/", $lat[1]);
-        $lat[2] = explode("/", $lat[2]);
-
-        $lon[0] = explode("/", $lon[0]);
-        $lon[1] = explode("/", $lon[1]);
-        $lon[2] = explode("/", $lon[2]);
-
-        $lat[0] = (int)$lat[0][0] / (int)$lat[0][1];
-        $lon[0] = (int)$lon[0][0] / (int)$lon[0][1];
-
-        $lat[1] = (int)$lat[1][0] / (int)$lat[1][1];
-        $lon[1] = (int)$lon[1][0] / (int)$lon[1][1];
-
-        $lat[2] = (int)$lat[2][0] / (int)$lat[2][1];
-        $lon[2] = (int)$lon[2][0] / (int)$lon[2][1];
-
-        $lat = $lat[0]+((($lat[1]*60)+($lat[2]))/3600);
-        $lon = $lon[0]+((($lon[1]*60)+($lon[2]))/3600);
-
-        if ($lat_ref === "S") $lat = $lat * -1;
-        if ($long_ref === "W") $lon = $lon * -1;
-
-        return [$lat, $lon];
     }
 }

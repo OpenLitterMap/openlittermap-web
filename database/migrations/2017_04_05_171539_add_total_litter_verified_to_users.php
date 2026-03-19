@@ -26,7 +26,7 @@ class AddTotalLitterVerifiedToUsers extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn('total_verified_litter');
         });
     }
 }
