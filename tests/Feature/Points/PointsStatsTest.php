@@ -415,10 +415,10 @@ class PointsStatsTest extends TestCase
         // Act
         $stats = $this->service->getStats([
             'bbox' => [
-                'left' => 100,
-                'bottom' => 100,
-                'right' => 101,
-                'top' => 101
+                'left' => 170,
+                'bottom' => 80,
+                'right' => 171,
+                'top' => 81
             ],
             'zoom' => 16
         ]);

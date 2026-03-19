@@ -64,15 +64,27 @@ class QueryBuilder
     }
 
     /**
-     * Apply spatial bounding box filter
+     * Apply spatial bounding box filter using the SPATIAL index on geom
      */
     private function applySpatialFilter($query, array $params): void
     {
         if (!empty($params['bbox'])) {
             $bbox = $params['bbox'];
             if (is_array($bbox) && isset($bbox['left'], $bbox['bottom'], $bbox['right'], $bbox['top'])) {
-                $query->whereBetween('lat', [$bbox['bottom'], $bbox['top']])
-                    ->whereBetween('lon', [$bbox['left'], $bbox['right']]);
+                // SRID 4326 axis order: latitude first, longitude second
+                // Tiny epsilon expansion (~1m) so ST_Contains includes boundary points
+                $e = 0.00001;
+                $query->whereRaw(
+                    'ST_Contains(ST_GeomFromText(?, 4326), geom)',
+                    [sprintf(
+                        'POLYGON((%.8F %.8F,%.8F %.8F,%.8F %.8F,%.8F %.8F,%.8F %.8F))',
+                        $bbox['bottom'] - $e, $bbox['left'] - $e,
+                        $bbox['bottom'] - $e, $bbox['right'] + $e,
+                        $bbox['top'] + $e, $bbox['right'] + $e,
+                        $bbox['top'] + $e, $bbox['left'] - $e,
+                        $bbox['bottom'] - $e, $bbox['left'] - $e
+                    )]
+                );
             }
         }
     }

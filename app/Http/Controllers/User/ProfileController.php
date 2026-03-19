@@ -15,6 +15,7 @@ use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
@@ -148,7 +149,7 @@ class ProfileController extends Controller
 
         $levelInfo = LevelService::getUserLevel($xp);
 
-        $totalRanked = User::count();
+        $totalRanked = Cache::remember('users:count', 3600, fn () => User::count());
         $globalPosition = $this->getGlobalRank($id, $xp);
 
         $percentile = $totalRanked > 0
@@ -162,7 +163,7 @@ class ProfileController extends Controller
             ->first();
 
         $unlockedCount = DB::table('user_achievements')->where('user_id', $id)->count();
-        $totalAchievements = DB::table('achievements')->count();
+        $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
 
         return [
             'public' => true,
@@ -225,29 +226,37 @@ class ProfileController extends Controller
         }
 
         // Rank from metrics table (all-time), consistent with LeaderboardController
-        $totalRanked = User::count();
+        $totalRanked = Cache::remember('users:count', 3600, fn () => User::count());
         $globalPosition = $this->getGlobalRank($userId, (int) $user->xp);
 
         $percentile = $totalRanked > 0
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
             : 0;
 
-        // Global stats from MySQL (source of truth for percentage calculations)
-        $globalPhotos = (int) Photo::where('is_public', true)->count();
-        $globalTags = (int) DB::table('metrics')
-            ->where('user_id', '>', 0)
+        // Global stats from metrics table, with cached photo count fallback
+        $globalRow = DB::table('metrics')
             ->where('timescale', 0)
             ->where('location_type', LocationType::Global->value)
             ->where('location_id', 0)
-            ->where('year', 0)
-            ->where('month', 0)
-            ->sum('tags');
+            ->where('user_id', 0)
+            ->first(['uploads', 'tags']);
+        $globalPhotos = (int) ($globalRow->uploads ?? 0)
+            ?: (int) Cache::remember('photos:public:count', 300, fn () => Photo::where('is_public', true)->count());
+        $globalTags = (int) ($globalRow->tags ?? 0)
+            ?: (int) DB::table('metrics')
+                ->where('user_id', '>', 0)
+                ->where('timescale', 0)
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('year', 0)
+                ->where('month', 0)
+                ->sum('tags');
 
         // Achievements
         $unlockedCount = DB::table('user_achievements')
             ->where('user_id', $userId)
             ->count();
-        $totalAchievements = DB::table('achievements')->count();
+        $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
 
         // Location counts from user's photos (all photos, including private-by-choice)
         $locationCounts = Photo::where('user_id', $userId)

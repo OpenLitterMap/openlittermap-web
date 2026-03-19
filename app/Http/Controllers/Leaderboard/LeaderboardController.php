@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Leaderboard;
 use App\Enums\LocationType;
 use App\Http\Controllers\Controller;
 use App\Models\Users\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class LeaderboardController extends Controller
@@ -89,7 +90,7 @@ class LeaderboardController extends Controller
             ->where('xp', '>', 0)
             ->count();
 
-        $totalUsers = User::count();
+        $totalUsers = Cache::remember('users:count', 3600, fn () => User::count());
 
         return [
             'success' => true,

@@ -37,11 +37,13 @@ class LocationController extends Controller
         $time = $this->resolveTimeFilter();
 
         $stats = $this->getStats(LocationType::Global, 0, $time);
-        $stats['contributors'] = (int) DB::table('photos')
-            ->where('is_public', true)
-            ->whereNull('deleted_at')
-            ->distinct()
-            ->count('user_id');
+        $stats['contributors'] = (int) DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', LocationType::Global->value)
+            ->where('location_id', 0)
+            ->where('user_id', '>', 0)
+            ->where('xp', '>', 0)
+            ->count();
         $stats['total_users'] = (int) DB::table('users')->count();
 
         $countries = $this->getChildrenWithStats(
@@ -359,38 +361,22 @@ class LocationController extends Controller
 
     private function countContributors(LocationType $type, int $id): int
     {
-        $column = match ($type) {
-            LocationType::Country => 'country_id',
-            LocationType::State   => 'state_id',
-            LocationType::City    => 'city_id',
-            default               => null,
-        };
-
-        if (!$column) {
-            return 0;
-        }
-
-        return (int) DB::table('photos')
-            ->where($column, $id)
-            ->where('is_public', true)
-            ->whereNull('deleted_at')
-            ->distinct()
-            ->count('user_id');
+        return (int) DB::table('metrics')
+            ->where('timescale', 0)
+            ->where('location_type', $type->value)
+            ->where('location_id', $id)
+            ->where('user_id', '>', 0)
+            ->where('xp', '>', 0)
+            ->count();
     }
 
     /**
-     * Get location meta: % of global, created by, last updated by, created date.
+     * Get location meta: % of global, averages.
+     * First/last uploader queries removed — they caused full table scans on photos.
      */
     private function getLocationMeta(LocationType $type, int $id, array $stats): array
     {
-        $column = match ($type) {
-            LocationType::Country => 'country_id',
-            LocationType::State   => 'state_id',
-            LocationType::City    => 'city_id',
-            default               => null,
-        };
-
-        if (!$column) {
+        if (!in_array($type, [LocationType::Country, LocationType::State, LocationType::City])) {
             return [];
         }
 
@@ -405,23 +391,6 @@ class LocationController extends Controller
         $globalPhotos = (int) ($global->uploads ?? 0);
         $globalTags = (int) ($global->tags ?? 0);
 
-        // First and last photo in this location
-        $firstPhoto = DB::table('photos as p')
-            ->join('users as u', 'u.id', '=', 'p.user_id')
-            ->where("p.{$column}", $id)
-            ->where('p.is_public', true)
-            ->whereNull('p.deleted_at')
-            ->orderBy('p.created_at')
-            ->first(['p.created_at', 'u.name as username', 'u.id as user_id']);
-
-        $lastPhoto = DB::table('photos as p')
-            ->join('users as u', 'u.id', '=', 'p.user_id')
-            ->where("p.{$column}", $id)
-            ->where('p.is_public', true)
-            ->whereNull('p.deleted_at')
-            ->orderByDesc('p.created_at')
-            ->first(['p.created_at', 'u.name as username', 'u.id as user_id']);
-
         return [
             'pct_photos' => $globalPhotos > 0 ? round(($stats['photos'] / $globalPhotos) * 100, 2) : 0,
             'pct_tags' => $globalTags > 0 ? round(($stats['tags'] / $globalTags) * 100, 2) : 0,
@@ -429,16 +398,6 @@ class LocationController extends Controller
                 ? round($stats['photos'] / $stats['contributors'], 1) : 0,
             'avg_tags_per_person' => $stats['contributors'] > 0
                 ? round($stats['tags'] / $stats['contributors'], 1) : 0,
-            'created_at' => $firstPhoto?->created_at,
-            'created_by' => $firstPhoto ? [
-                'id' => $firstPhoto->user_id,
-                'name' => $firstPhoto->username,
-            ] : null,
-            'last_updated_at' => $lastPhoto?->created_at,
-            'last_updated_by' => $lastPhoto ? [
-                'id' => $lastPhoto->user_id,
-                'name' => $lastPhoto->username,
-            ] : null,
         ];
     }
 
@@ -453,8 +412,8 @@ class LocationController extends Controller
     }
 
     /**
-     * Batch-enrich a children collection with contributors, %, averages, and first/last uploader.
-     * Three queries total regardless of children count.
+     * Batch-enrich a children collection with contributors, %, and averages.
+     * Single query against the metrics table (indexed).
      */
     private function enrichChildrenMeta($children, string $photoColumn, array $parentStats): void
     {
@@ -464,69 +423,35 @@ class LocationController extends Controller
 
         $ids = $children->pluck('id')->all();
 
-        // 1. Contributors per location
-        $contributors = DB::table('photos')
-            ->select($photoColumn, DB::raw('COUNT(DISTINCT user_id) as contributors'))
-            ->whereIn($photoColumn, $ids)
-            ->where('is_public', true)
-            ->whereNull('deleted_at')
-            ->groupBy($photoColumn)
-            ->pluck('contributors', $photoColumn);
+        // Resolve location type from the photo column
+        $locationType = match ($photoColumn) {
+            'country_id' => LocationType::Country,
+            'state_id'   => LocationType::State,
+            'city_id'    => LocationType::City,
+        };
 
-        // 2. First photo per location (MIN id with tie-break)
-        $firstIds = DB::table('photos')
-            ->select($photoColumn, DB::raw('MIN(id) as photo_id'))
-            ->whereIn($photoColumn, $ids)
-            ->where('is_public', true)
-            ->whereNull('deleted_at')
-            ->groupBy($photoColumn)
-            ->pluck('photo_id', $photoColumn);
-
-        $firstUploaders = collect();
-        if ($firstIds->isNotEmpty()) {
-            $firstUploaders = DB::table('photos as p')
-                ->join('users as u', 'u.id', '=', 'p.user_id')
-                ->whereIn('p.id', $firstIds->values())
-                ->get(["p.{$photoColumn} as loc_id", 'p.created_at', 'u.name as username', 'u.id as user_id'])
-                ->keyBy('loc_id');
-        }
-
-        // 3. Last photo per location (MAX id with tie-break)
-        $lastIds = DB::table('photos')
-            ->select($photoColumn, DB::raw('MAX(id) as photo_id'))
-            ->whereIn($photoColumn, $ids)
-            ->where('is_public', true)
-            ->whereNull('deleted_at')
-            ->groupBy($photoColumn)
-            ->pluck('photo_id', $photoColumn);
-
-        $lastUploaders = collect();
-        if ($lastIds->isNotEmpty()) {
-            $lastUploaders = DB::table('photos as p')
-                ->join('users as u', 'u.id', '=', 'p.user_id')
-                ->whereIn('p.id', $lastIds->values())
-                ->get(["p.{$photoColumn} as loc_id", 'p.created_at', 'u.name as username', 'u.id as user_id'])
-                ->keyBy('loc_id');
-        }
+        // Count contributors per location from metrics (uses idx_leaderboard)
+        $contributors = DB::table('metrics')
+            ->select('location_id', DB::raw('COUNT(*) as contributors'))
+            ->where('timescale', 0)
+            ->where('location_type', $locationType->value)
+            ->whereIn('location_id', $ids)
+            ->where('user_id', '>', 0)
+            ->where('xp', '>', 0)
+            ->groupBy('location_id')
+            ->pluck('contributors', 'location_id');
 
         $parentPhotos = $parentStats['photos'] ?: 1;
         $parentTags = $parentStats['tags'] ?: 1;
 
         foreach ($children as $child) {
-            $id = $child->id;
-            $contribs = (int) ($contributors[$id] ?? 0);
-            $first = $firstUploaders[$id] ?? null;
-            $last = $lastUploaders[$id] ?? null;
+            $contribs = (int) ($contributors[$child->id] ?? 0);
 
             $child->total_members = $contribs;
             $child->pct_tags = round(($child->total_tags / $parentTags) * 100, 1);
             $child->pct_photos = round(($child->total_images / $parentPhotos) * 100, 1);
             $child->avg_tags_per_person = $contribs > 0 ? round($child->total_tags / $contribs, 1) : 0;
             $child->avg_photos_per_person = $contribs > 0 ? round($child->total_images / $contribs, 1) : 0;
-            $child->created_at = $first?->created_at;
-            $child->created_by = $first?->username;
-            $child->last_updated_at = $last?->created_at;
-            $child->last_updated_by = $last?->username;
         }
     }
 

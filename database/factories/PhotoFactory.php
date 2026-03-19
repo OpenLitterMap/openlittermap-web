@@ -7,7 +7,6 @@ use App\Models\Location\State;
 use App\Models\Photo;
 use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\DB;
 
 class PhotoFactory extends Factory
 {
@@ -15,19 +14,16 @@ class PhotoFactory extends Factory
 
     public function definition()
     {
-        $lat = $this->faker->latitude;
-        $lon = $this->faker->longitude;
-
         return [
             'user_id' => User::factory(),
             'filename' => $this->faker->name . '.' . $this->faker->randomElement(['jpg', 'png', 'heic']),
             'model' => 'Unknown',
             'datetime' => $this->faker->dateTime,
-            'lat' => $lat,
-            'lon' => $lon,
+            'lat' => $this->faker->latitude,
+            'lon' => $this->faker->longitude,
             'country_id' => Country::factory(),
             'state_id' => State::factory(),
-            'geom' => DB::raw("ST_GeomFromText('POINT($lat $lon)', 4326)"),
+            // geom is auto-synced from lat/lon by MySQL trigger (photos_bi_geom)
         ];
     }
 }

@@ -163,14 +163,24 @@ class PointsController extends Controller
                 'user:id,name,username,show_username_maps,show_name_maps,settings,global_flag',
                 'team:id,name,safeguarding'
             ])
-            ->where('is_public', true)
-            ->whereNotNull('lat')
-            ->whereNotNull('lon');
+            ->where('is_public', true);
 
-        // Filter by rectangle
-        $query
-            ->whereBetween('photos.lon', [$bbox['left'], $bbox['right']])
-            ->whereBetween('photos.lat', [$bbox['bottom'], $bbox['top']]);
+        // Filter by bounding box using spatial index (photos_geom_sidx)
+        // SRID 4326 axis order: latitude first, longitude second
+        // Tiny epsilon expansion (~1m) so ST_Contains includes boundary points,
+        // matching the old inclusive whereBetween behavior.
+        $e = 0.00001;
+        $query->whereRaw(
+            'ST_Contains(ST_GeomFromText(?, 4326), geom)',
+            [sprintf(
+                'POLYGON((%.8F %.8F,%.8F %.8F,%.8F %.8F,%.8F %.8F,%.8F %.8F))',
+                $bbox['bottom'] - $e, $bbox['left'] - $e,
+                $bbox['bottom'] - $e, $bbox['right'] + $e,
+                $bbox['top'] + $e, $bbox['right'] + $e,
+                $bbox['top'] + $e, $bbox['left'] - $e,
+                $bbox['bottom'] - $e, $bbox['left'] - $e
+            )]
+        );
 
         // Apply all filters
         $this->applyFilters($query, $params);
