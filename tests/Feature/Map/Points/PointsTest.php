@@ -336,25 +336,13 @@ class PointsTest extends TestCase
     }
 
     /** @test */
-    public function it_shows_correct_filename_based_on_verification()
+    public function it_does_not_expose_filename_in_points_response()
     {
-        $user = User::factory()->create();
-
-        $verifiedPhoto = Photo::factory()->create([
-            'user_id' => $user->id,
+        $photo = Photo::factory()->create([
             'lat' => 52.145,
             'lon' => 4.420,
             'verified' => 2,
-            'filename' => 'verified-photo.jpg',
-            'datetime' => now()
-        ]);
-
-        $unverifiedPhoto = Photo::factory()->create([
-            'user_id' => $user->id,
-            'lat' => 52.145,
-            'lon' => 4.421,
-            'verified' => 0,
-            'filename' => 'unverified-photo.jpg',
+            'filename' => 'should-not-appear.jpg',
             'datetime' => now()
         ]);
 
@@ -365,13 +353,8 @@ class PointsTest extends TestCase
 
         $response->assertOk();
 
-        $features = collect($response->json('features'));
-
-        $verified = $features->firstWhere('properties.id', $verifiedPhoto->id);
-        $this->assertEquals('verified-photo.jpg', $verified['properties']['filename']);
-
-        $unverified = $features->firstWhere('properties.id', $unverifiedPhoto->id);
-        $this->assertEquals('/assets/images/waiting.png', $unverified['properties']['filename']);
+        $feature = collect($response->json('features'))->firstWhere('properties.id', $photo->id);
+        $this->assertArrayNotHasKey('filename', $feature['properties']);
     }
 
     /** @test */

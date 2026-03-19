@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Points;
 
-use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Points\PointsRequest;
 use App\Models\Photo;
@@ -41,7 +40,6 @@ class PointsController extends Controller
             'lon' => $photo->lon,
             'datetime' => $photo->datetime,
             'verified' => $photo->verified,
-            'filename' => $this->getFilename($photo),
             'username' => $isSafeguarded ? null : ($photo->user && $photo->user->show_username_maps ? $photo->user->username : null),
             'name' => $isSafeguarded ? null : ($photo->user && $photo->user->show_name_maps ? $photo->user->name : null),
             'social' => $isSafeguarded ? null : $photo->user?->social_links,
@@ -432,17 +430,6 @@ class PointsController extends Controller
             'to_item' => $paginationData['to'],      // Renamed to avoid collision
             'has_more_pages' => $paginationData['has_more_pages'],
         ];
-    }
-
-    private function getFilename($photo)
-    {
-        // Only show actual filename if photo is verified (level 2 or higher)
-        if ($photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value) {
-            return $photo->filename;
-        }
-
-        // For unverified photos, always show waiting image
-        return '/assets/images/waiting.png';
     }
 
     private function buildCacheKey(array $params): string

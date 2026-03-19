@@ -6,6 +6,7 @@ use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class PhotoSignedUrlController extends Controller
@@ -22,9 +23,7 @@ class PhotoSignedUrlController extends Controller
     public function __invoke(int $id): JsonResponse
     {
         // Origin check — only allow requests from openlittermap.com
-        $origin = request()->header('Origin') ?? request()->header('Referer') ?? '';
-
-        if (! $this->isAllowedOrigin($origin)) {
+        if (! $this->isAllowedOrigin()) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
@@ -37,6 +36,10 @@ class PhotoSignedUrlController extends Controller
         // Only serve actual photo URL for verified (approved) photos
         if ($photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value && $photo->filename) {
             $url = $this->generateSignedUrl($photo->filename);
+
+            if (! $url) {
+                return response()->json(['error' => 'Image unavailable'], 503);
+            }
         } else {
             $url = self::WAITING_IMAGE;
         }
@@ -47,31 +50,32 @@ class PhotoSignedUrlController extends Controller
         ]);
     }
 
-    private function generateSignedUrl(string $filename): string
+    private function generateSignedUrl(string $filename): ?string
     {
-        // Extract the S3 key from the full URL
         $disk = Storage::disk('s3');
         $baseUrl = str_replace('__placeholder__', '', $disk->url('__placeholder__'));
         $path = str_replace($baseUrl, '', $filename);
         $path = ltrim($path, '/');
 
-        // Generate a temporary signed URL
         try {
             return $disk->temporaryUrl($path, now()->addMinutes(self::URL_TTL_MINUTES));
         } catch (\RuntimeException $e) {
-            // Fallback for local dev / MinIO without signed URL support
-            return $filename;
+            Log::warning('Failed to generate signed URL', ['path' => $path, 'error' => $e->getMessage()]);
+
+            return null;
         }
     }
 
-    private function isAllowedOrigin(string $origin): bool
+    private function isAllowedOrigin(): bool
     {
+        $origin = request()->header('Origin') ?? '';
+        $referer = request()->header('Referer') ?? '';
+
         $allowed = [
             'https://openlittermap.com',
             'https://www.openlittermap.com',
         ];
 
-        // Allow localhost in non-production environments
         if (! app()->isProduction()) {
             $allowed[] = 'http://localhost';
             $allowed[] = 'https://localhost';
@@ -79,10 +83,17 @@ class PhotoSignedUrlController extends Controller
             $allowed[] = 'https://olm.test';
         }
 
-        foreach ($allowed as $domain) {
-            if (str_starts_with($origin, $domain)) {
-                return true;
-            }
+        // Check Origin header (exact match — no prefix matching)
+        if ($origin !== '' && in_array(rtrim($origin, '/'), $allowed, true)) {
+            return true;
+        }
+
+        // Fall back to Referer: extract scheme + host
+        if ($referer !== '') {
+            $parsed = parse_url($referer);
+            $refererOrigin = ($parsed['scheme'] ?? '') . '://' . ($parsed['host'] ?? '');
+
+            return in_array($refererOrigin, $allowed, true);
         }
 
         return false;
