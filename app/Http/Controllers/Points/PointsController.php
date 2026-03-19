@@ -150,7 +150,6 @@ class PointsController extends Controller
             ->select([
                 'photos.id',
                 'photos.verified',
-                'photos.filename', // provide if verified >=2
                 'photos.user_id',
                 'photos.team_id',
                 'photos.lat',
@@ -372,7 +371,6 @@ class PointsController extends Controller
                 'verified' => $photo->verified,
                 'picked_up' => $photo->picked_up,
                 'summary' => $photo->summary,
-                'filename' => $this->getFilename($photo),
                 'username' => $photo->user && $photo->user->show_username_maps
                     ? $photo->user->username : null,
                 'name' => $photo->user && $photo->user->show_name_maps

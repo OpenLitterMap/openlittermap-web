@@ -44,6 +44,7 @@ use App\Http\Controllers\Location\TagController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\Maps\Search\FindCustomTagsController;
 use App\Http\Controllers\Merchants\BecomeAMerchantController;
+use App\Http\Controllers\Photos\PhotoSignedUrlController;
 use App\Http\Controllers\PhotosController;
 use App\Http\Controllers\Points\PointsController;
 use App\Http\Controllers\Points\PointsStatsController;
@@ -94,6 +95,9 @@ Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
 Route::get('/points', [PointsController::class, 'index']);
 Route::get('/points/stats', [PointsStatsController::class, 'index']);
 Route::get('/points/{id}', [PointsController::class, 'show'])->where('id', '[0-9]+');
+Route::get('/photos/{id}/signed-url', PhotoSignedUrlController::class)
+    ->where('id', '[0-9]+')
+    ->middleware('throttle:60,1');
 Route::get('/global/stats-data', [GlobalStatsController::class, 'index']);
 Route::get('/mobile-app-version', MobileAppVersionController::class);
 Route::get('/levels', fn () => response()->json(config('levels.thresholds')));
