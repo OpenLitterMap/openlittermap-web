@@ -27,6 +27,16 @@ use Illuminate\Support\Facades\DB;
 class LocationController extends Controller
 {
     /**
+     * GET /api/locations/global
+     *
+     * Alias for index() — used by the non-versioned route.
+     */
+    public function global(): JsonResponse
+    {
+        return $this->index();
+    }
+
+    /**
      * GET /api/v1/locations?year=2025&month=6
      *
      * Global stats + all countries with their stats.

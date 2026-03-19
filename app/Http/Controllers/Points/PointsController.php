@@ -41,7 +41,7 @@ class PointsController extends Controller
             'lon' => $photo->lon,
             'datetime' => $photo->datetime,
             'verified' => $photo->verified,
-            'filename' => $photo->filename,
+            'filename' => $this->getFilename($photo),
             'username' => $isSafeguarded ? null : ($photo->user && $photo->user->show_username_maps ? $photo->user->username : null),
             'name' => $isSafeguarded ? null : ($photo->user && $photo->user->show_name_maps ? $photo->user->name : null),
             'social' => $isSafeguarded ? null : $photo->user?->social_links,

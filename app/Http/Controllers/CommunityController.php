@@ -58,7 +58,7 @@ class CommunityController extends Controller
     private function getUsersPerMonth(): int
     {
         return User::query()
-            ->where('created_at', '>', now()->subDays(30)->endOfDay())
+            ->where('created_at', '>=', now()->startOfMonth())
             ->count();
     }
 
