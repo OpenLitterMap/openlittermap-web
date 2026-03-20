@@ -26,7 +26,17 @@ class LeaderboardTest extends TestCase
     }
 
     /**
-     * Insert a per-user metrics row for leaderboard testing.
+     * Seed Redis ZSET for all-time leaderboard testing.
+     */
+    private function seedRedisXp(int $userId, float $xp, string $scope = null): void
+    {
+        $scope = $scope ?? RedisKeys::global();
+        $key = RedisKeys::xpRanking($scope);
+        Redis::zAdd($key, $xp, (string) $userId);
+    }
+
+    /**
+     * Insert a per-user metrics row for time-filtered leaderboard testing.
      */
     private function seedMetric(
         int $userId,
@@ -61,9 +71,9 @@ class LeaderboardTest extends TestCase
     {
         $users = User::factory(3)->create();
 
-        $this->seedMetric($users[0]->id, 300);
-        $this->seedMetric($users[1]->id, 100);
-        $this->seedMetric($users[2]->id, 200);
+        $this->seedRedisXp($users[0]->id, 300);
+        $this->seedRedisXp($users[1]->id, 100);
+        $this->seedRedisXp($users[2]->id, 200);
 
         $response = $this
             ->actingAs($users[0])
@@ -87,8 +97,9 @@ class LeaderboardTest extends TestCase
         $country = Country::factory()->create();
         $users = User::factory(2)->create();
 
-        $this->seedMetric($users[0]->id, 50, 0, LocationType::Country->value, $country->id);
-        $this->seedMetric($users[1]->id, 150, 0, LocationType::Country->value, $country->id);
+        // All-time location-scoped uses Redis ZSET
+        $this->seedRedisXp($users[0]->id, 50, RedisKeys::country($country->id));
+        $this->seedRedisXp($users[1]->id, 150, RedisKeys::country($country->id));
 
         $response = $this
             ->actingAs($users[0])
@@ -129,9 +140,9 @@ class LeaderboardTest extends TestCase
     {
         $users = User::factory(3)->create();
 
-        $this->seedMetric($users[0]->id, 300);
-        $this->seedMetric($users[1]->id, 200);
-        $this->seedMetric($users[2]->id, 100);
+        $this->seedRedisXp($users[0]->id, 300);
+        $this->seedRedisXp($users[1]->id, 200);
+        $this->seedRedisXp($users[2]->id, 100);
 
         // Page 1 should return all 3 (PER_PAGE = 100)
         $response = $this
@@ -160,7 +171,7 @@ class LeaderboardTest extends TestCase
             'show_username' => false,
         ]);
 
-        $this->seedMetric($user->id, 100);
+        $this->seedRedisXp($user->id, 100);
 
         $response = $this
             ->actingAs($user)
@@ -186,9 +197,9 @@ class LeaderboardTest extends TestCase
     {
         $users = User::factory(3)->create();
 
-        $this->seedMetric($users[0]->id, 300);
-        $this->seedMetric($users[1]->id, 200);
-        $this->seedMetric($users[2]->id, 100);
+        $this->seedRedisXp($users[0]->id, 300);
+        $this->seedRedisXp($users[1]->id, 200);
+        $this->seedRedisXp($users[2]->id, 100);
 
         // Acting as user with 200 XP (rank 2)
         $response = $this
@@ -204,7 +215,7 @@ class LeaderboardTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // No metrics seeded for this user
+        // No Redis entry for this user
         $response = $this
             ->actingAs($user)
             ->getJson('/api/leaderboard')
@@ -313,8 +324,8 @@ class LeaderboardTest extends TestCase
         $state = State::factory()->create();
         $users = User::factory(2)->create();
 
-        $this->seedMetric($users[0]->id, 80, 0, LocationType::State->value, $state->id);
-        $this->seedMetric($users[1]->id, 120, 0, LocationType::State->value, $state->id);
+        $this->seedRedisXp($users[0]->id, 80, RedisKeys::state($state->id));
+        $this->seedRedisXp($users[1]->id, 120, RedisKeys::state($state->id));
 
         $response = $this
             ->actingAs($users[0])
@@ -334,8 +345,8 @@ class LeaderboardTest extends TestCase
         $city = City::factory()->create();
         $users = User::factory(2)->create();
 
-        $this->seedMetric($users[0]->id, 200, 0, LocationType::City->value, $city->id);
-        $this->seedMetric($users[1]->id, 75, 0, LocationType::City->value, $city->id);
+        $this->seedRedisXp($users[0]->id, 200, RedisKeys::city($city->id));
+        $this->seedRedisXp($users[1]->id, 75, RedisKeys::city($city->id));
 
         $response = $this
             ->actingAs($users[0])
@@ -345,7 +356,7 @@ class LeaderboardTest extends TestCase
 
         $this->assertTrue($response['success']);
         $this->assertCount(2, $response['users']);
-        $this->assertEquals('200', $response['users'][0]['xp']);
+        $this->assertEquals(200, $response['users'][0]['xp']);
         $this->assertEquals(75, $response['users'][1]['xp']);
         $this->assertEquals(2, $response['total']);
     }
@@ -390,8 +401,8 @@ class LeaderboardTest extends TestCase
     {
         $users = User::factory(2)->create();
 
-        $this->seedMetric($users[0]->id, 100);
-        $this->seedMetric($users[1]->id, 0);
+        // Only seed user with XP > 0 in Redis (zero-XP users are never in ZSET)
+        $this->seedRedisXp($users[0]->id, 100);
 
         $response = $this
             ->actingAs($users[0])
@@ -405,11 +416,11 @@ class LeaderboardTest extends TestCase
 
     public function test_response_includes_active_and_total_user_counts(): void
     {
-        // 3 users total, 2 with global all-time XP
+        // 3 users total, 2 with global all-time XP in Redis
         $users = User::factory(3)->create();
 
-        $this->seedMetric($users[0]->id, 300);
-        $this->seedMetric($users[1]->id, 100);
+        $this->seedRedisXp($users[0]->id, 300);
+        $this->seedRedisXp($users[1]->id, 100);
 
         $response = $this
             ->actingAs($users[0])
@@ -440,7 +451,7 @@ class LeaderboardTest extends TestCase
             'show_username_leaderboards' => false,
         ]);
 
-        $this->seedMetric($user->id, 100);
+        $this->seedRedisXp($user->id, 100);
 
         $response = $this
             ->actingAs($user)
@@ -474,7 +485,7 @@ class LeaderboardTest extends TestCase
             'show_username_leaderboards' => true,
         ]);
 
-        $this->seedMetric($user->id, 100);
+        $this->seedRedisXp($user->id, 100);
 
         $response = $this
             ->actingAs($user)
@@ -496,7 +507,7 @@ class LeaderboardTest extends TestCase
             'active_team' => null,
         ]);
 
-        $this->seedMetric($user->id, 100);
+        $this->seedRedisXp($user->id, 100);
 
         $response = $this
             ->actingAs($user)
@@ -516,9 +527,9 @@ class LeaderboardTest extends TestCase
         $users = User::factory(3)->create();
 
         // User 0 and 1 in country1, user 2 in country2
-        $this->seedMetric($users[0]->id, 500, 0, LocationType::Country->value, $country1->id);
-        $this->seedMetric($users[1]->id, 300, 0, LocationType::Country->value, $country1->id);
-        $this->seedMetric($users[2]->id, 900, 0, LocationType::Country->value, $country2->id);
+        $this->seedRedisXp($users[0]->id, 500, RedisKeys::country($country1->id));
+        $this->seedRedisXp($users[1]->id, 300, RedisKeys::country($country1->id));
+        $this->seedRedisXp($users[2]->id, 900, RedisKeys::country($country2->id));
 
         // Country 1 should only show 2 users
         $response = $this
@@ -530,6 +541,6 @@ class LeaderboardTest extends TestCase
         $this->assertCount(2, $response['users']);
         $this->assertEquals(2, $response['total']);
         $this->assertEquals(500, $response['users'][0]['xp']);
-        $this->assertEquals('300', $response['users'][1]['xp']);
+        $this->assertEquals(300, $response['users'][1]['xp']);
     }
 }
