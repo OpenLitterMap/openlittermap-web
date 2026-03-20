@@ -72,6 +72,8 @@ GET /api/leaderboard
     ],
     "hasNextPage": true,
     "total": 500,
+    "activeUsers": 350,
+    "totalUsers": 12000,
     "currentUserRank": 42
 }
 ```

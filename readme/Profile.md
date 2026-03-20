@@ -124,7 +124,7 @@ Password-confirmed. Cleans up: AdminVerificationLog, cleanups, location ownershi
     "stats": { "uploads", "litter", "xp", "streak" },
     "level": { "level", "title", "xp", "xp_into_level", "xp_for_next", "xp_remaining", "progress_percent" },
     "rank": { "global_position", "global_total", "percentile" },
-    "global_stats": { "total_photos", "total_litter" },
+    "global_stats": { "total_photos", "total_tags" },
     "achievements": { "unlocked", "total" },
     "locations": { "countries", "states", "cities" }
 }
@@ -136,10 +136,10 @@ Password-confirmed. Cleans up: AdminVerificationLog, cleanups, location ownershi
 |-------|--------|
 | `stats` | `resolveUserStats()` — Redis `getUserMetrics()` with uploads fallback to `Photo::where('user_id', $id)->count()` instead of stale `users.total_images` column. Shared by `index()` and `show()`. |
 | `level` | `LevelService::getUserLevel($xp)` |
-| `rank` | `getGlobalRank()` — MySQL `metrics` table (all-time, timescale=0, Global, year=0, month=0), fallback to `users.xp` count |
-| `global_stats` | Redis `HGETALL` on `{g}:stats` |
-| `achievements` | DB counts on `user_achievements` + `achievements` |
-| `locations` | `Photo::where(user_id)` distinct country/state/city counts |
+| `rank` | `getGlobalRank()` — Redis `ZREVRANK` on `{g}:lb:xp`, fallback to `users.xp` count |
+| `global_stats` | Cached 5 min — metrics aggregate row (user_id=0), fallback to photo count |
+| `achievements` | DB counts on `user_achievements` + cached `achievements` count |
+| `locations` | Cached 5 min — `Photo::where(user_id)` distinct country/state/city counts (keyed by photo count for auto-invalidation) |
 
 ---
 

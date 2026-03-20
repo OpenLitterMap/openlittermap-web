@@ -122,21 +122,28 @@ return [
     'rank' => [global_position, global_total, percentile],
     'achievements' => [unlocked, total],
     'locations' => [countries, states, cities],
+    'global_stats' => [total_photos, total_tags],
     'team' => [id, name] | null,
 ];
 ```
 
-Note: `global_stats` section was removed from `ProfileController@index`. ProfileDashboard frontend shows Achievements above Global Rank.
+### Caching
+
+- **Global stats** cached 5 min (`profile:global_stats`) — from metrics aggregate row (user_id=0)
+- **Location counts** cached 5 min (`profile:{userId}:locations:{photoCount}`) — keyed by photo count for auto-invalidation on upload
+- **Public profile location counts** cached 5 min (`profile:{id}:public_locations:{photoCount}`)
+- **Rank** uses Redis ZREVRANK (O(log n)), MySQL fallback only when user not in ZSET
+- **User count** cached 1 hour (`users:count`)
+- **Achievements count** cached 1 hour (`achievements:count`)
 
 ### Redis + MySQL fallback pattern
 
 ```php
 $metrics = RedisMetricsCollector::getUserMetrics($userId);
-// resolveUserStats() batches fallback into single query:
-// Photo::where('user_id', $userId)->selectRaw('COUNT(*) as uploads, SUM(total_tags) as litter')->first()
-$uploads = $metrics['uploads'] ?: $dbFallback->uploads;
-$litter  = $metrics['litter']  ?: $dbFallback->litter;  // Photo::sum('total_tags'), NOT users.total_litter
-$xp      = $metrics['xp']      ?: (int) $user->xp;
+// resolveUserStats() uses metrics table first, falls back to Redis, then DB
+$metricsRow = DB::table('metrics')->where(...)->first(['uploads', 'tags', 'xp']);
+$uploads = (int) ($metricsRow->uploads ?? 0) ?: $redisMetrics['uploads'] ?: Photo::count();
+$xp = (int) ($metricsRow->xp ?? 0) ?: $redisMetrics['xp'] ?: (int) $user->xp;
 ```
 
 ### Rank calculation

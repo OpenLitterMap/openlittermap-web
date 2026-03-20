@@ -14,7 +14,7 @@ Rankings by XP across time and location scopes. Two backends: Redis ZSETs for al
 - `app/Services/Redis/RedisMetricsCollector.php` — ZINCRBY in pipeline for create/update/delete
 - `app/Services/Metrics/MetricsService.php` — Builds per-user rows (user_id > 0) alongside aggregates
 - `app/Helpers/helpers.php` — `rewardXpToAdmin()` increments ZSET + user stats hash
-- `tests/Feature/Leaderboard/LeaderboardTest.php` — 14 tests covering all paths (global, country, state, city scopes)
+- `tests/Feature/Leaderboard/LeaderboardTest.php` — 21 tests covering all paths (global, country, state, city scopes, privacy, pagination, Redis ZSET pruning)
 
 ## Invariants
 
