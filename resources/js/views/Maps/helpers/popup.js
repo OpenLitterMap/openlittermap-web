@@ -104,6 +104,7 @@ export const popupHelper = {
         // Sanitize all user-provided content
         const safeProps = {
             id: properties.id,
+            verified: properties.verified,
             filename: htmlSanitizer.sanitizeUrl(properties.filename) || '/assets/images/waiting.png',
             name: htmlSanitizer.escapeHtml(properties.name),
             username: htmlSanitizer.escapeHtml(properties.username),
@@ -130,7 +131,12 @@ export const popupHelper = {
                 : null,
         };
 
-        const isTrustedUser = safeProps.filename !== '/assets/images/waiting.png';
+        // A photo is "trusted" if it has been admin-approved (verified >= 2)
+        // The signed URL will be fetched async, so we derive trust from verification status
+        const verifiedValue = typeof safeProps.verified === 'object'
+            ? safeProps.verified?.value ?? 0
+            : parseInt(safeProps.verified) || 0;
+        const isTrustedUser = verifiedValue >= 2;
         const tagsHtml = popupHelper.parseSummaryTags(safeProps.summary, isTrustedUser, translate);
         const dateFormatted = popupHelper.formatPhotoTakenTime(safeProps.datetime);
         const userHtml = popupHelper.formatUser(safeProps.name, safeProps.username, safeProps.team, safeProps.flag, translate);
@@ -152,10 +158,8 @@ export const popupHelper = {
         const hasFooterContent = hasSocialLinks || shareUrl;
         const isEmptyState = tagsHtml && tagsHtml.includes('popup-empty-state');
 
-        // Image click: open full-size in new tab for trusted images, do nothing for waiting
-        const imageClickAttr = isTrustedUser
-            ? `onclick="window.open('${htmlSanitizer.escapeJsString(safeProps.filename)}', '_blank');" title="${htmlSanitizer.escapeHtml(translate('View full image'))}"`
-            : '';
+        // Image click handler is set by fetchAndSetSignedUrl after the signed URL loads
+        const imageClickAttr = '';
 
         // When there are no tags, combine the empty-state message and date into a single meta line
         const metaHtml = isEmptyState
@@ -166,13 +170,12 @@ export const popupHelper = {
             <div class="popup-image-wrap">
                 <img
                     src="${safeProps.filename}"
-                    class="leaflet-litter-img${isTrustedUser ? '' : ' leaflet-litter-img--waiting'}"
+                    class="leaflet-litter-img leaflet-litter-img--waiting"
                     ${imageClickAttr}
                     alt="${translate('Photo')}"
                     loading="lazy"
                     onerror="this.src='/assets/images/error.png'"
                 />
-                ${isTrustedUser ? '<div class="popup-image-gradient"></div>' : ''}
             </div>
             <div class="popup-body">
                 ${metaHtml}
@@ -564,6 +567,48 @@ export const popupHelper = {
     },
 
     /**
+     * Fetch a signed S3 URL for a photo and update the popup image
+     */
+    fetchAndSetSignedUrl: async (photoId, popupElement) => {
+        if (!photoId) return;
+
+        const img = popupElement?.querySelector('.leaflet-litter-img');
+        if (!img) return;
+
+        try {
+            const response = await fetch(`/api/photos/${photoId}/signed-url`, {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            if (!data.url || data.url === '/assets/images/waiting.png') return;
+
+            // Guard: popup may have been closed or replaced while we were fetching
+            if (!img.isConnected) return;
+
+            img.src = data.url;
+            img.classList.remove('leaflet-litter-img--waiting');
+
+            // Add click-to-open behavior for the loaded image
+            img.style.cursor = 'pointer';
+            img.title = 'View full image';
+            img.onclick = () => window.open(data.url, '_blank');
+
+            // Add the gradient overlay if not already present
+            const wrap = img.closest('.popup-image-wrap');
+            if (wrap && !wrap.querySelector('.popup-image-gradient')) {
+                const gradient = document.createElement('div');
+                gradient.className = 'popup-image-gradient';
+                wrap.appendChild(gradient);
+            }
+        } catch (error) {
+            // Silently fail — the waiting image remains
+        }
+    },
+
+    /**
      * Render a Leaflet popup for a specific feature
      */
     renderLeafletPopup: (feature, latlng, t, mapInstance) => {
@@ -576,6 +621,10 @@ export const popupHelper = {
 
         // Scroll popup to bottom after opening (for tall images)
         popup.on('popupopen', popupHelper.scrollPopupToBottom);
+
+        // Fetch signed URL and update the image
+        const popupElement = popup.getElement();
+        popupHelper.fetchAndSetSignedUrl(feature.properties.id, popupElement);
 
         return popup;
     },
