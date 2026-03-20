@@ -11,12 +11,14 @@ use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\LevelService;
+use App\Services\Redis\RedisKeys;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class ProfileController extends Controller
 {
@@ -156,11 +158,14 @@ class ProfileController extends Controller
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
             : 0;
 
-        $locationCounts = Photo::where('user_id', $id)
-            ->where('is_public', true)
-            ->whereNotNull('country_id')
-            ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
-            ->first();
+        $photoCount = $uploads ?: (int) Photo::where('user_id', $id)->count();
+        $locationCounts = Cache::remember("profile:{$id}:public_locations:{$photoCount}", 300, fn () =>
+            Photo::where('user_id', $id)
+                ->where('is_public', true)
+                ->whereNotNull('country_id')
+                ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
+                ->first()
+        );
 
         $unlockedCount = DB::table('user_achievements')->where('user_id', $id)->count();
         $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
@@ -233,24 +238,21 @@ class ProfileController extends Controller
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
             : 0;
 
-        // Global stats from metrics table, with cached photo count fallback
-        $globalRow = DB::table('metrics')
-            ->where('timescale', 0)
-            ->where('location_type', LocationType::Global->value)
-            ->where('location_id', 0)
-            ->where('user_id', 0)
-            ->first(['uploads', 'tags']);
-        $globalPhotos = (int) ($globalRow->uploads ?? 0)
-            ?: (int) Cache::remember('photos:public:count', 300, fn () => Photo::where('is_public', true)->count());
-        $globalTags = (int) ($globalRow->tags ?? 0)
-            ?: (int) DB::table('metrics')
-                ->where('user_id', '>', 0)
+        // Global stats — cached 5 minutes (updated by MetricsService on every tag/upload)
+        [$globalPhotos, $globalTags] = Cache::remember('profile:global_stats', 300, function () {
+            $globalRow = DB::table('metrics')
                 ->where('timescale', 0)
                 ->where('location_type', LocationType::Global->value)
                 ->where('location_id', 0)
-                ->where('year', 0)
-                ->where('month', 0)
-                ->sum('tags');
+                ->where('user_id', 0)
+                ->first(['uploads', 'tags']);
+
+            $photos = (int) ($globalRow->uploads ?? 0)
+                ?: (int) Photo::where('is_public', true)->count();
+            $tags = (int) ($globalRow->tags ?? 0);
+
+            return [$photos, $tags];
+        });
 
         // Achievements
         $unlockedCount = DB::table('user_achievements')
@@ -258,11 +260,14 @@ class ProfileController extends Controller
             ->count();
         $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
 
-        // Location counts from user's photos (all photos, including private-by-choice)
-        $locationCounts = Photo::where('user_id', $userId)
-            ->whereNotNull('country_id')
-            ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
-            ->first();
+        // Location counts — cached 5 minutes, keyed by upload count so new uploads bust the cache
+        $photoCount = $uploads ?: (int) Photo::where('user_id', $userId)->count();
+        $locationCounts = Cache::remember("profile:{$userId}:locations:{$photoCount}", 300, fn () =>
+            Photo::where('user_id', $userId)
+                ->whereNotNull('country_id')
+                ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
+                ->first()
+        );
 
         // Percentage of global contribution
         $photoPercent = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
@@ -368,30 +373,16 @@ class ProfileController extends Controller
     }
 
     /**
-     * Get the user's global rank position from the all-time metrics table.
-     * Falls back to users.xp count if no metrics row exists yet.
+     * Get the user's global rank position from Redis ZREVRANK.
+     * Falls back to users.xp count if user is not in the Redis ZSET.
      */
     private function getGlobalRank(int $userId, int $fallbackXp): int
     {
-        $metricsRow = DB::table('metrics')
-            ->where('timescale', 0)
-            ->where('location_type', LocationType::Global->value)
-            ->where('location_id', 0)
-            ->where('year', 0)
-            ->where('month', 0)
-            ->where('user_id', $userId)
-            ->first();
+        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
+        $rank = Redis::zRevRank($globalXpKey, (string) $userId);
 
-        if ($metricsRow && $metricsRow->xp > 0) {
-            return DB::table('metrics')
-                ->where('timescale', 0)
-                ->where('location_type', LocationType::Global->value)
-                ->where('location_id', 0)
-                ->where('year', 0)
-                ->where('month', 0)
-                ->where('user_id', '>', 0)
-                ->where('xp', '>', $metricsRow->xp)
-                ->count() + 1;
+        if ($rank !== false) {
+            return $rank + 1; // 0-indexed → 1-indexed
         }
 
         return User::where('xp', '>', $fallbackXp)->count() + 1;

@@ -76,19 +76,27 @@ class LeaderboardController extends Controller
             if ($userRow && $userRow->xp > 0) {
                 $currentUserRank = (clone $baseQuery)
                     ->where('user_id', '>', 0)
-                    ->where('xp', '>', $userRow->xp)
+                    ->where(function ($q) use ($userRow) {
+                        $q->where('xp', '>', $userRow->xp)
+                          ->orWhere(function ($q2) use ($userRow) {
+                              $q2->where('xp', $userRow->xp)
+                                 ->where('user_id', '<', auth()->id());
+                          });
+                    })
                     ->count() + 1;
             }
         }
 
         // Global counts (independent of filters)
-        $activeUsers = DB::table('metrics')
-            ->where('timescale', 0)
-            ->where('location_type', 0)
-            ->where('location_id', 0)
-            ->where('user_id', '>', 0)
-            ->where('xp', '>', 0)
-            ->count();
+        $activeUsers = Cache::remember('leaderboard:global:active_users', 300, fn () =>
+            DB::table('metrics')
+                ->where('timescale', 0)
+                ->where('location_type', 0)
+                ->where('location_id', 0)
+                ->where('user_id', '>', 0)
+                ->where('xp', '>', 0)
+                ->count()
+        );
 
         $totalUsers = Cache::remember('users:count', 3600, fn () => User::count());
 

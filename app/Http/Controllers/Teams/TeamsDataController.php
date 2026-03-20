@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TeamsDataController extends Controller
 {
@@ -66,29 +67,20 @@ class TeamsDataController extends Controller
      */
     protected function verificationBreakdown(array $teamIds, string $period): array
     {
-        $base = Photo::query()
+        $counts = Photo::query()
             ->whereIn('team_id', $teamIds)
-            ->where('created_at', '>=', $period);
+            ->where('created_at', '>=', $period)
+            ->select('verified', DB::raw('COUNT(*) as count'))
+            ->groupBy('verified')
+            ->pluck('count', 'verified');
 
         return [
-            'unverified' => (clone $base)
-                ->where('verified', VerificationStatus::UNVERIFIED->value)
-                ->count(),
-            'verified' => (clone $base)
-                ->where('verified', VerificationStatus::VERIFIED->value)
-                ->count(),
-            'admin_approved' => (clone $base)
-                ->where('verified', VerificationStatus::ADMIN_APPROVED->value)
-                ->count(),
-            'bbox_applied' => (clone $base)
-                ->where('verified', VerificationStatus::BBOX_APPLIED->value)
-                ->count(),
-            'bbox_verified' => (clone $base)
-                ->where('verified', VerificationStatus::BBOX_VERIFIED->value)
-                ->count(),
-            'ai_ready' => (clone $base)
-                ->where('verified', VerificationStatus::AI_READY->value)
-                ->count(),
+            'unverified' => (int) ($counts[VerificationStatus::UNVERIFIED->value] ?? 0),
+            'verified' => (int) ($counts[VerificationStatus::VERIFIED->value] ?? 0),
+            'admin_approved' => (int) ($counts[VerificationStatus::ADMIN_APPROVED->value] ?? 0),
+            'bbox_applied' => (int) ($counts[VerificationStatus::BBOX_APPLIED->value] ?? 0),
+            'bbox_verified' => (int) ($counts[VerificationStatus::BBOX_VERIFIED->value] ?? 0),
+            'ai_ready' => (int) ($counts[VerificationStatus::AI_READY->value] ?? 0),
         ];
     }
 

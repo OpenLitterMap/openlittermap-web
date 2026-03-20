@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Location;
 use App\Enums\LocationType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -47,14 +48,18 @@ class LocationController extends Controller
         $time = $this->resolveTimeFilter();
 
         $stats = $this->getStats(LocationType::Global, 0, $time);
-        $stats['contributors'] = (int) DB::table('metrics')
-            ->where('timescale', 0)
-            ->where('location_type', LocationType::Global->value)
-            ->where('location_id', 0)
-            ->where('user_id', '>', 0)
-            ->where('xp', '>', 0)
-            ->count();
-        $stats['total_users'] = (int) DB::table('users')->count();
+        $stats['contributors'] = Cache::remember('locations:global:contributors', 300, function () {
+            return (int) DB::table('metrics')
+                ->where('timescale', 0)
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('user_id', '>', 0)
+                ->where('xp', '>', 0)
+                ->count();
+        });
+        $stats['total_users'] = Cache::remember('locations:global:users_count', 300, function () {
+            return (int) DB::table('users')->count();
+        });
 
         $countries = $this->getChildrenWithStats(
             'countries', 'c', 'country', LocationType::Country, $time

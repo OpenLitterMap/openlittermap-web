@@ -60,6 +60,21 @@ class ProfileIndexTest extends TestCase
             'xp' => 200,
         ]);
 
+        // Seed aggregate global row (user_id=0) — written by MetricsService in production
+        DB::table('metrics')->insert([
+            'timescale' => 0, 'location_type' => 0, 'location_id' => 0,
+            'user_id' => 0, 'year' => 0, 'month' => 0, 'week' => 0,
+            'bucket_date' => '1970-01-01',
+            'uploads' => 15, 'tags' => 100, 'litter' => 80,
+            'brands' => 8, 'materials' => 7, 'custom_tags' => 5,
+            'xp' => 700,
+        ]);
+
+        // Seed Redis leaderboard ZSET for rank lookup
+        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
+        Redis::zAdd($globalXpKey, 500, (string) $userId);
+        Redis::zAdd($globalXpKey, 200, (string) $otherUser->id);
+
         // Seed public photos for global photo count
         Photo::factory()->count(10)->create(['is_public' => true]);
 
@@ -86,8 +101,8 @@ class ProfileIndexTest extends TestCase
         $this->assertEquals(42, $data['stats']['tags']);
         $this->assertEquals(3, $data['level']['level']); // 500 XP → level 3 "Post-Noob" (thresholds: 0, 100, 500)
         $this->assertEquals(1, $data['rank']['global_position']);
-        $this->assertEquals(10, $data['global_stats']['total_photos']);
-        $this->assertEquals(100, $data['global_stats']['total_tags']); // 42 + 58
+        $this->assertEquals(15, $data['global_stats']['total_photos']); // from aggregate global row
+        $this->assertEquals(100, $data['global_stats']['total_tags']); // from aggregate global row
     }
 
     /** @test */
@@ -150,6 +165,10 @@ class ProfileIndexTest extends TestCase
             'brands' => 0, 'materials' => 0, 'custom_tags' => 0,
             'xp' => 100,
         ]);
+
+        // Seed Redis leaderboard — only the active user has XP
+        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
+        Redis::zAdd($globalXpKey, 100, (string) $activeUser->id);
 
         $response = $this->actingAs($zeroXpUser)
             ->getJson('/api/user/profile/index');
