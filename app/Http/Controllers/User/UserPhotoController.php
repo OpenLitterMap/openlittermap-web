@@ -83,12 +83,10 @@ class UserPhotoController extends Controller
     public function filter (): JsonResponse
     {
         $query = $this->filterPhotos(request()->filters);
-
-        $count = $query->count();
-        $paginate = $query->simplePaginate($this->paginate);
+        $paginate = $query->paginate($this->paginate);
 
         return response()->json([
-            'count' => $count,
+            'count' => $paginate->total(),
             'paginate' => $paginate
         ]);
     }
@@ -100,13 +98,14 @@ class UserPhotoController extends Controller
      */
     public function index ()
     {
-        $query = Photo::select('id', 'filename', 'verified', 'datetime', 'created_at')
+        $paginate = Photo::select('id', 'filename', 'verified', 'datetime', 'created_at')
             ->where('user_id', auth()->user()->id)
-            ->whereNull('summary');
+            ->whereNull('summary')
+            ->paginate($this->paginate);
 
         return [
-            'paginate' => $query->simplePaginate($this->paginate),
-            'count' => $query->count()
+            'paginate' => $paginate,
+            'count' => $paginate->total()
         ];
     }
 

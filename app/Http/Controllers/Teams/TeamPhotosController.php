@@ -18,6 +18,7 @@ use App\Models\Teams\Team;
 use App\Services\Metrics\MetricsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -654,21 +655,23 @@ class TeamPhotosController extends Controller
      */
     protected function teamPhotoStats(int $teamId): array
     {
-        $stats = DB::table('photos')
-            ->where('team_id', $teamId)
-            ->whereNull('deleted_at')
-            ->selectRaw('
-                COUNT(*) as total,
-                SUM(CASE WHEN is_public = 0 AND team_approved_at IS NULL THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN team_approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved
-            ')
-            ->first();
+        return Cache::remember("team:{$teamId}:photo_stats", 120, function () use ($teamId) {
+            $stats = DB::table('photos')
+                ->where('team_id', $teamId)
+                ->whereNull('deleted_at')
+                ->selectRaw('
+                    COUNT(*) as total,
+                    SUM(CASE WHEN is_public = 0 AND team_approved_at IS NULL THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN team_approved_at IS NOT NULL THEN 1 ELSE 0 END) as approved
+                ')
+                ->first();
 
-        return [
-            'total' => (int) $stats->total,
-            'pending' => (int) $stats->pending,
-            'approved' => (int) $stats->approved,
-        ];
+            return [
+                'total' => (int) $stats->total,
+                'pending' => (int) $stats->pending,
+                'approved' => (int) $stats->approved,
+            ];
+        });
     }
 
     /**

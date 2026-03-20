@@ -308,7 +308,6 @@ class PointsControllerStatsTest extends TestCase
                 'bbox',
                 'zoom',
                 'generated_at',
-                'cached'
             ]
         ]);
 
@@ -319,7 +318,7 @@ class PointsControllerStatsTest extends TestCase
         $this->assertCount(4, $data['meta']['bbox']);
         $this->assertEquals(16, $data['meta']['zoom']);
         $this->assertIsString($data['meta']['generated_at']);
-        $this->assertIsBool($data['meta']['cached']);
+        $this->assertArrayNotHasKey('cached', $data['meta']);
     }
 
     /**

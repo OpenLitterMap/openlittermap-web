@@ -376,13 +376,15 @@ class LocationController extends Controller
 
     private function countContributors(LocationType $type, int $id): int
     {
-        return (int) DB::table('metrics')
-            ->where('timescale', 0)
-            ->where('location_type', $type->value)
-            ->where('location_id', $id)
-            ->where('user_id', '>', 0)
-            ->where('xp', '>', 0)
-            ->count();
+        return Cache::remember("location:{$type->value}:{$id}:contributors", 300, fn () =>
+            (int) DB::table('metrics')
+                ->where('timescale', 0)
+                ->where('location_type', $type->value)
+                ->where('location_id', $id)
+                ->where('user_id', '>', 0)
+                ->where('xp', '>', 0)
+                ->count()
+        );
     }
 
     /**
@@ -396,12 +398,14 @@ class LocationController extends Controller
         }
 
         // Global totals for percentage (all-time)
-        $global = DB::table('metrics')
-            ->where('timescale', 0)
-            ->where('location_type', LocationType::Global->value)
-            ->where('location_id', 0)
-            ->where('user_id', 0)
-            ->first(['uploads', 'tags']);
+        $global = Cache::remember('location:global:totals', 300, fn () =>
+            DB::table('metrics')
+                ->where('timescale', 0)
+                ->where('location_type', LocationType::Global->value)
+                ->where('location_id', 0)
+                ->where('user_id', 0)
+                ->first(['uploads', 'tags'])
+        );
 
         $globalPhotos = (int) ($global->uploads ?? 0);
         $globalTags = (int) ($global->tags ?? 0);

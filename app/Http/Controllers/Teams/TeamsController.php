@@ -200,7 +200,7 @@ class TeamsController extends Controller
             return ['success' => false, 'message' => 'not-a-member'];
         }
 
-        $totalMembers = $team->users->count();
+        $totalMembers = $team->users()->count();
 
         $result = $action->run($team);
         $result = $this->applySafeguarding($result, $team, $user);

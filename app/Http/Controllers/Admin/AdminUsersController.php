@@ -40,7 +40,10 @@ class AdminUsersController extends Controller
         $perPage = min((int) ($request->per_page ?? 25), 100);
 
         $query = User::query()
-            ->withCount('photos')
+            ->withCount(['photos', 'photos as pending_photos_count' => function ($q) {
+                $q->where('is_public', true)
+                    ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value);
+            }])
             ->with('roles:id,name');
 
         // Search by name, username, or email
@@ -75,11 +78,6 @@ class AdminUsersController extends Controller
         $paginated = $query->paginate($perPage);
 
         $paginated->through(function (User $user) {
-            $pendingPhotos = $user->photos()
-                ->where('is_public', true)
-                ->where('verified', '<', VerificationStatus::ADMIN_APPROVED->value)
-                ->count();
-
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -89,7 +87,7 @@ class AdminUsersController extends Controller
                 'photos_count' => $user->photos_count,
                 'xp' => $user->xp,
                 'verification_required' => $user->verification_required,
-                'pending_photos' => $pendingPhotos,
+                'pending_photos' => $user->pending_photos_count,
                 'roles' => $user->roles->pluck('name')->toArray(),
                 'is_trusted' => ! $user->verification_required,
                 'username_flagged' => $user->username_flagged,

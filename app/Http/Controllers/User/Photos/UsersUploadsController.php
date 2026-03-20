@@ -8,6 +8,7 @@ use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class UsersUploadsController extends Controller
 {
@@ -201,41 +202,43 @@ class UsersUploadsController extends Controller
     public function stats(Request $request): JsonResponse
     {
         $user = $request->user();
+        $userId = $user->id;
 
-        // Total photos for user (exclude verified.jpg placeholder to match index query)
-        $baseQuery = Photo::where('user_id', $user->id)
+        // Use photo count in cache key for auto-invalidation on upload
+        $baseQuery = Photo::where('user_id', $userId)
             ->where('filename', '!=', '/assets/verified.jpg');
+        $totalPhotos = $baseQuery->count();
 
-        $totalPhotos = (clone $baseQuery)->count();
+        $data = Cache::remember("uploads:{$userId}:stats:{$totalPhotos}", 120, function () use ($userId, $totalPhotos) {
+            $baseQuery = Photo::where('user_id', $userId)
+                ->where('filename', '!=', '/assets/verified.jpg');
 
-        // Untagged photos count — summary is null until tags are added
-        $leftToTag = (clone $baseQuery)
-            ->whereNull('summary')
-            ->count();
+            $leftToTag = (clone $baseQuery)->whereNull('summary')->count();
 
-        // Get tag counts from Redis, with DB fallback
-        $userMetrics = RedisMetricsCollector::getUserMetrics($user->id);
-        $totalTags = array_sum($userMetrics['objects'] ?? [])
-            + array_sum($userMetrics['materials'] ?? [])
-            + array_sum($userMetrics['brands'] ?? [])
-            + array_sum($userMetrics['custom_tags'] ?? []);
+            $userMetrics = RedisMetricsCollector::getUserMetrics($userId);
+            $totalTags = array_sum($userMetrics['objects'] ?? [])
+                + array_sum($userMetrics['materials'] ?? [])
+                + array_sum($userMetrics['brands'] ?? [])
+                + array_sum($userMetrics['custom_tags'] ?? []);
 
-        if ($totalTags === 0) {
-            $totalTags = (int) (clone $baseQuery)->sum('total_tags');
-        }
+            if ($totalTags === 0) {
+                $totalTags = (int) (clone $baseQuery)->sum('total_tags');
+            }
 
-        // Calculate percentage
-        $taggedPhotos = max(0, $totalPhotos - $leftToTag);
-        $taggedPercentage = $totalPhotos > 0
-            ? (int)round(($taggedPhotos / $totalPhotos) * 100)
-            : 0;
+            $taggedPhotos = max(0, $totalPhotos - $leftToTag);
+            $taggedPercentage = $totalPhotos > 0
+                ? (int)round(($taggedPhotos / $totalPhotos) * 100)
+                : 0;
 
-        return response()->json([
-            'totalPhotos' => $totalPhotos,
-            'totalTags' => $totalTags,
-            'leftToTag' => $leftToTag,
-            'taggedPercentage' => $taggedPercentage
-        ]);
+            return [
+                'totalPhotos' => $totalPhotos,
+                'totalTags' => $totalTags,
+                'leftToTag' => $leftToTag,
+                'taggedPercentage' => $taggedPercentage,
+            ];
+        });
+
+        return response()->json($data);
     }
 
     /**
@@ -243,51 +246,66 @@ class UsersUploadsController extends Controller
      */
     public function locations(): JsonResponse
     {
-        $user = Auth::user();
+        $userId = Auth::id();
 
-        $photos = Photo::where('user_id', $user->id)
-            ->whereNotNull('country_id')
-            ->with(['countryRelation', 'stateRelation', 'cityRelation'])
-            ->get();
+        $locations = Cache::remember("uploads:{$userId}:locations", 300, function () use ($userId) {
+            // Get distinct location combinations directly from DB
+            $rows = Photo::where('user_id', $userId)
+                ->whereNotNull('country_id')
+                ->select('country_id', 'state_id', 'city_id')
+                ->distinct()
+                ->get();
 
-        $tree = [];
+            // Load location names in bulk (not per-photo)
+            $countryIds = $rows->pluck('country_id')->unique()->filter();
+            $stateIds = $rows->pluck('state_id')->unique()->filter();
+            $cityIds = $rows->pluck('city_id')->unique()->filter();
 
-        foreach ($photos as $photo) {
-            $country = $photo->countryRelation?->country;
-            $state = $photo->stateRelation?->state;
-            $city = $photo->cityRelation?->city;
+            $countries = \App\Models\Location\Country::whereIn('id', $countryIds)->pluck('country', 'id');
+            $states = \App\Models\Location\State::whereIn('id', $stateIds)->pluck('state', 'id');
+            $cities = \App\Models\Location\City::whereIn('id', $cityIds)->pluck('city', 'id');
 
-            if (! $country) {
-                continue;
+            // Build tree from distinct combinations
+            $tree = [];
+            foreach ($rows as $row) {
+                $country = $countries[$row->country_id] ?? null;
+                $state = $states[$row->state_id] ?? null;
+                $city = $cities[$row->city_id] ?? null;
+
+                if (! $country) {
+                    continue;
+                }
+
+                if (! isset($tree[$country])) {
+                    $tree[$country] = [];
+                }
+
+                if ($state && ! isset($tree[$country][$state])) {
+                    $tree[$country][$state] = [];
+                }
+
+                if ($state && $city && ! in_array($city, $tree[$country][$state], true)) {
+                    $tree[$country][$state][] = $city;
+                }
             }
 
-            if (! isset($tree[$country])) {
-                $tree[$country] = [];
-            }
-
-            if ($state && ! isset($tree[$country][$state])) {
-                $tree[$country][$state] = [];
-            }
-
-            if ($state && $city && ! in_array($city, $tree[$country][$state], true)) {
-                $tree[$country][$state][] = $city;
-            }
-        }
-
-        $locations = [];
-        foreach ($tree as $country => $states) {
-            $stateList = [];
-            foreach ($states as $state => $cities) {
-                $stateList[] = [
-                    'state' => $state,
-                    'cities' => $cities,
+            $locations = [];
+            foreach ($tree as $country => $stateData) {
+                $stateList = [];
+                foreach ($stateData as $state => $cityList) {
+                    $stateList[] = [
+                        'state' => $state,
+                        'cities' => $cityList,
+                    ];
+                }
+                $locations[] = [
+                    'country' => $country,
+                    'states' => $stateList,
                 ];
             }
-            $locations[] = [
-                'country' => $country,
-                'states' => $stateList,
-            ];
-        }
+
+            return $locations;
+        });
 
         return response()->json(['locations' => $locations]);
     }

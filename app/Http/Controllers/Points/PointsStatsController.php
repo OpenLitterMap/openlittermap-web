@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Points;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Points\PointsStatsRequest;
 use App\Services\Points\PointsStatsService;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 
 class PointsStatsController extends Controller
 {
@@ -24,8 +26,9 @@ class PointsStatsController extends Controller
     {
         $validated = $request->validated();
 
-        // Get stats using the same parameters as points
-        $stats = $this->statsService->getStats($validated);
+        $stats = empty($validated['username'])
+            ? Cache::remember($this->buildCacheKey($validated), 120, fn () => $this->statsService->getStats($validated))
+            : $this->statsService->getStats($validated);
 
         return [
             'data' => $stats,
@@ -47,8 +50,15 @@ class PointsStatsController extends Controller
                 'username' => $validated['username'] ?? null,
                 'year' => $validated['year'] ?? null,
                 'generated_at' => now()->toIso8601String(),
-                'cached' => !isset($stats['meta']['generated_fresh']) ?? false
             ]
         ];
+    }
+
+    private function buildCacheKey(array $params): string
+    {
+        $key = 'pts:stats:v1:z' . $params['zoom'];
+        $key .= ':' . md5(json_encode(Arr::sortRecursive($params)));
+
+        return $key;
     }
 }
