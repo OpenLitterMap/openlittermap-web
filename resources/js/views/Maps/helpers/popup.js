@@ -167,14 +167,16 @@ export const popupHelper = {
             : `${tagsHtml}${hasMetaContent ? `<div class="popup-meta">${pickedUpHtml}${dateFormatted ? `<span class="popup-date">${dateFormatted}</span>` : ''}</div>` : ''}`;
 
         return `
-            <div class="popup-image-wrap">
+            <div class="popup-image-wrap popup-image-wrap--loading">
+                <div class="popup-image-spinner">
+                    <div class="popup-spinner"></div>
+                </div>
                 <img
-                    src="${safeProps.filename}"
-                    class="leaflet-litter-img leaflet-litter-img--waiting"
+                    src=""
+                    class="leaflet-litter-img leaflet-litter-img--hidden"
                     ${imageClickAttr}
                     alt="${translate('Photo')}"
-                    loading="lazy"
-                    onerror="this.src='/assets/images/error.png'"
+                    onerror="this.src='/assets/images/error.png'; this.classList.remove('leaflet-litter-img--hidden'); this.closest('.popup-image-wrap').classList.remove('popup-image-wrap--loading');"
                 />
             </div>
             <div class="popup-body">
@@ -589,7 +591,11 @@ export const popupHelper = {
             if (!img.isConnected) return;
 
             img.src = data.url;
-            img.classList.remove('leaflet-litter-img--waiting');
+            img.onload = () => {
+                img.classList.remove('leaflet-litter-img--hidden');
+                const wrap = img.closest('.popup-image-wrap');
+                if (wrap) wrap.classList.remove('popup-image-wrap--loading');
+            };
 
             // Add click-to-open behavior for the loaded image
             img.style.cursor = 'pointer';

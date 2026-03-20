@@ -48,11 +48,45 @@
     padding: 0;
 }
 
-/* Waiting/unverified image — centered with padding */
-.leaflet-litter-img--waiting {
-    padding: 16px;
-    cursor: default;
-    object-fit: contain;
+/* Hidden image — while loading from signed URL */
+.leaflet-litter-img--hidden {
+    display: none;
+}
+
+/* Loading state — shows spinner */
+.popup-image-wrap--loading {
+    min-height: 200px;
+    background: #f0f0f0;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.popup-image-spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.popup-image-wrap:not(.popup-image-wrap--loading) .popup-image-spinner {
+    display: none;
+}
+
+.popup-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #d1d5db;
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: popup-spin 0.8s linear infinite;
+}
+
+@keyframes popup-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Gradient overlay at bottom of image for smooth transition */
