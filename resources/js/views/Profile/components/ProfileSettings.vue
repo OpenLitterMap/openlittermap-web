@@ -48,8 +48,8 @@
                 <SettingsToggle
                     :label="$t('Public Profile')"
                     :description="$t('Allow others to see your profile')"
-                    :value="profileStore.user.public_profile"
-                    @toggle="saveSetting('public_profile', !profileStore.user.public_profile)"
+                    :value="userStore.user.public_profile"
+                    @toggle="saveSetting('public_profile', !userStore.user.public_profile)"
                 />
                 <SettingsToggle
                     :label="$t('Show Previous Tags')"
@@ -94,14 +94,14 @@
                 <SettingsToggle
                     :label="$t('Prevent others tagging my photos')"
                     :description="$t('Only you can add or edit tags on your photos')"
-                    :value="profileStore.user.prevent_others_tagging_my_photos"
-                    @toggle="saveSetting('prevent_others_tagging_my_photos', !profileStore.user.prevent_others_tagging_my_photos)"
+                    :value="userStore.user.prevent_others_tagging_my_photos"
+                    @toggle="saveSetting('prevent_others_tagging_my_photos', !userStore.user.prevent_others_tagging_my_photos)"
                 />
                 <SettingsToggle
                     :label="$t('Photos public by default')"
                     :description="$t('New photos will appear on the public map')"
-                    :value="profileStore.user.public_photos"
-                    @toggle="saveSetting('public_photos', !profileStore.user.public_photos)"
+                    :value="userStore.user.public_photos"
+                    @toggle="saveSetting('public_photos', !userStore.user.public_photos)"
                 />
             </div>
         </div>
@@ -153,14 +153,12 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useProfileStore } from '@stores/profile.js';
 import { useSettingsStore } from '@stores/settings.js';
 import { useUserStore } from '@stores/user/index.js';
 import SettingsField from './SettingsField.vue';
 import SettingsToggle from './SettingsToggle.vue';
 
 const { t: $t } = useI18n();
-const profileStore = useProfileStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 
@@ -175,7 +173,7 @@ const pickedUpOptions = computed(() => [
 ]);
 
 const pickedUpValue = computed(() => {
-    const val = profileStore.user.picked_up;
+    const val = userStore.user.picked_up;
     if (val === true || val === 1) return true;
     if (val === false || val === 0) return false;
     return null;
@@ -185,20 +183,19 @@ const savePickedUp = async (value) => {
     settingsStore.clearMessages();
     const success = await settingsStore.UPDATE_SETTING('picked_up', value);
     if (success) {
-        profileStore.user.picked_up = value;
         userStore.user.picked_up = value;
     }
 };
 
-const name = computed(() => profileStore.user.name || userStore.user.name || '');
-const username = computed(() => profileStore.user.username || userStore.user.username || '');
-const email = computed(() => profileStore.user.email || userStore.user.email || '');
+const name = computed(() => userStore.user.name || '');
+const username = computed(() => userStore.user.username || '');
+const email = computed(() => userStore.user.email || '');
 
 const saveSetting = async (key, value) => {
     settingsStore.clearMessages();
     const success = await settingsStore.UPDATE_SETTING(key, value);
-    if (success && key in profileStore.user) {
-        profileStore.user[key] = value;
+    if (success && userStore.user) {
+        userStore.user[key] = value;
     }
 };
 

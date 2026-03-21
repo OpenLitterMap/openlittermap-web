@@ -22,10 +22,10 @@ The profile and settings system provides user dashboard stats, photo management,
 
 | Component | Purpose |
 |-----------|---------|
-| `views/Profile/Profile.vue` | Tab container, fetches profile data on mount |
+| `views/Profile/Profile.vue` | Tab container, lazy-loads `FETCH_PROFILE()` only for dashboard/photos tabs. Settings tab renders immediately from `userStore.user` (populated by lightweight `/refresh` on app load) |
 | `views/Profile/components/ProfileDashboard.vue` | Level card, stats grid, rank, achievements, locations, global stats |
 | `views/Profile/components/ProfilePhotos.vue` | Upload count, links to /uploads, /upload, /tag |
-| `views/Profile/components/ProfileSettings.vue` | Account fields, preference toggles, privacy toggles, account deletion |
+| `views/Profile/components/ProfileSettings.vue` | Account fields, preference toggles, privacy toggles, account deletion. Reads entirely from `userStore.user` (no `profileStore` dependency) |
 | `views/Profile/components/SettingsField.vue` | Reusable inline-editable text field |
 | `views/Profile/components/SettingsToggle.vue` | Reusable toggle switch |
 | `views/Profile/PublicProfile.vue` | Public profile page (level, stats, rank, achievements, locations) |

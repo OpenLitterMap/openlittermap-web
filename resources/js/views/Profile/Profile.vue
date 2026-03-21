@@ -22,8 +22,11 @@
                 </button>
             </div>
 
-            <!-- Loading -->
-            <div v-if="profileStore.loading" class="flex justify-center items-center py-32">
+            <!-- Settings tab renders immediately (no profile fetch needed) -->
+            <ProfileSettings v-if="activeTab === 'settings'" />
+
+            <!-- Loading (dashboard/photos tabs only) -->
+            <div v-else-if="profileStore.loading" class="flex justify-center items-center py-32">
                 <div class="animate-spin rounded-full h-10 w-10 border-2 border-white/20 border-t-emerald-400"></div>
             </div>
 
@@ -42,7 +45,6 @@
             <template v-else>
                 <ProfileDashboard v-if="activeTab === 'dashboard'" />
                 <ProfilePhotos v-else-if="activeTab === 'photos'" />
-                <ProfileSettings v-else-if="activeTab === 'settings'" />
             </template>
         </div>
     </div>
@@ -71,6 +73,11 @@ const activeTab = ref(route.query.tab || 'dashboard');
 const switchTab = (key) => {
     activeTab.value = key;
     router.replace({ query: { ...route.query, tab: key } });
+
+    // Lazy-load full profile when switching away from settings
+    if (key !== 'settings' && !profileStore.stats.xp && !profileStore.loading) {
+        profileStore.FETCH_PROFILE();
+    }
 };
 
 watch(() => route.query.tab, (val) => {
@@ -80,6 +87,8 @@ watch(() => route.query.tab, (val) => {
 });
 
 onMounted(() => {
-    profileStore.FETCH_PROFILE();
+    if (activeTab.value !== 'settings') {
+        profileStore.FETCH_PROFILE();
+    }
 });
 </script>

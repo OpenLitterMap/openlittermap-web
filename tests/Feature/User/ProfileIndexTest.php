@@ -163,7 +163,13 @@ class ProfileIndexTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonStructure([
-            'user' => ['id', 'name', 'username', 'email', 'avatar', 'global_flag', 'picked_up', 'previous_tags'],
+            'user' => [
+                'id', 'name', 'username', 'email', 'avatar', 'global_flag',
+                'public_profile', 'show_name', 'show_username',
+                'show_name_maps', 'show_username_maps',
+                'picked_up', 'previous_tags', 'emailsub',
+                'prevent_others_tagging_my_photos', 'public_photos',
+            ],
             'stats' => ['xp'],
             'level' => ['level', 'title', 'xp_for_next', 'progress_percent'],
         ]);
