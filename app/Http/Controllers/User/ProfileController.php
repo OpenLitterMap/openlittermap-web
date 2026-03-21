@@ -204,6 +204,36 @@ class ProfileController extends Controller
     }
 
     /**
+     * Lightweight refresh — returns only user fields, XP, and level.
+     * Used by REFRESH_USER() on app load and after uploads/tagging.
+     */
+    public function refresh(): array
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $user->refresh();
+
+        $xp = (int) $user->xp;
+        $levelInfo = LevelService::getUserLevel($xp);
+
+        return [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'global_flag' => $user->global_flag,
+                'picked_up' => $user->picked_up === null ? null : (bool) $user->picked_up,
+                'previous_tags' => (bool) $user->previous_tags,
+                'public_photos' => (bool) $user->public_photos,
+            ],
+            'stats' => ['xp' => $xp],
+            'level' => $levelInfo,
+        ];
+    }
+
+    /**
      * Get comprehensive profile data for the authenticated user.
      */
     public function index(): array

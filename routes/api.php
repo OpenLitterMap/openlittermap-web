@@ -174,6 +174,7 @@ Route::get('/user/profile/{id}', [ProfileController::class, 'show'])->where('id'
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile/index', [ProfileController::class, 'index']);
+    Route::get('/user/profile/refresh', [ProfileController::class, 'refresh']);
     Route::get('/user/profile/map', [ProfileController::class, 'geojson']);
     Route::get('/user/profile/download', [ProfileController::class, 'download']);
     Route::get('/user/profile/photos/index', [UserPhotoController::class, 'index']);

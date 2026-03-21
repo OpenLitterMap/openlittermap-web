@@ -257,22 +257,33 @@ final class RedisMetricsCollector
     }
 
     /**
-     * Calculate user streak from bitmap
+     * Calculate user streak from bitmap using a single pipelined request.
      */
     private static function calculateStreak(int $userId): int
     {
         $bitmapKey = RedisKeys::userBitmap($userId);
         $today = self::getDayIndex(now());
+        $daysToCheck = min($today + 1, 365);
+
+        if ($daysToCheck <= 0) {
+            return 0;
+        }
+
+        // Pipeline all getBit calls into a single Redis round-trip
+        $bits = Redis::pipeline(function ($pipe) use ($bitmapKey, $today, $daysToCheck) {
+            for ($i = 0; $i < $daysToCheck; $i++) {
+                $pipe->getBit($bitmapKey, $today - $i);
+            }
+        });
+
         $streak = 0;
 
-        // Check backwards from today
-        for ($i = 0; $i < 365; $i++) {
-            $dayIndex = $today - $i;
-            if ($dayIndex < 0) break;
-
-            if (!Redis::getBit($bitmapKey, $dayIndex)) {
-                // Allow 1 day gap for today
-                if ($i === 0) continue;
+        foreach ($bits as $i => $bit) {
+            if (!$bit) {
+                // Allow 1 day gap for today (no upload yet today)
+                if ($i === 0) {
+                    continue;
+                }
                 break;
             }
             $streak++;

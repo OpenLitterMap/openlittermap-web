@@ -150,6 +150,44 @@ class ProfileIndexTest extends TestCase
     }
 
     /** @test */
+    public function profile_refresh_returns_lightweight_structure(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Refresh User',
+            'username' => 'refreshuser',
+            'xp' => 500,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/user/profile/refresh');
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'user' => ['id', 'name', 'username', 'email', 'avatar', 'global_flag', 'picked_up', 'previous_tags'],
+            'stats' => ['xp'],
+            'level' => ['level', 'title', 'xp_for_next', 'progress_percent'],
+        ]);
+
+        // Should NOT contain heavy profile data
+        $response->assertJsonMissing(['rank']);
+        $data = $response->json();
+        $this->assertArrayNotHasKey('achievements', $data);
+        $this->assertArrayNotHasKey('locations', $data);
+        $this->assertArrayNotHasKey('global_stats', $data);
+
+        $this->assertEquals($user->id, $data['user']['id']);
+        $this->assertEquals(500, $data['stats']['xp']);
+    }
+
+    /** @test */
+    public function profile_refresh_requires_authentication(): void
+    {
+        $response = $this->getJson('/api/user/profile/refresh');
+
+        $response->assertUnauthorized();
+    }
+
+    /** @test */
     public function rank_total_is_full_user_count(): void
     {
         // Create some users with XP and one without

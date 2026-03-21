@@ -579,6 +579,41 @@ Stats from Redis with MySQL fallback (`resolveUserStats()` batches DB fallback i
 
 ---
 
+### GET /api/user/profile/refresh — Lightweight User Refresh
+
+**Auth:** Required (Sanctum)
+
+**Response (200):**
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "John",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "avatar": "https://...",
+    "global_flag": "us",
+    "picked_up": true,
+    "previous_tags": true,
+    "public_photos": true
+  },
+  "stats": { "xp": 5000 },
+  "level": {
+    "level": 3,
+    "title": "Litter Wizard",
+    "xp": 5000,
+    "xp_into_level": 0,
+    "xp_for_next": 5000,
+    "xp_remaining": 0,
+    "progress_percent": 100
+  }
+}
+```
+
+Lightweight endpoint for `REFRESH_USER()` — called on app load and after uploads/tagging. Returns only user fields, XP, and level. No streak calculation, no Redis stats, no rank/achievements/locations/global stats.
+
+---
+
 ### GET /api/user/profile/{id} — Public Profile
 
 **Auth:** None (public)

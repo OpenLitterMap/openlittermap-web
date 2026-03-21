@@ -88,7 +88,7 @@ export const requests = {
      */
     async REFRESH_USER() {
         try {
-            const { data } = await axios.get('/api/user/profile/index');
+            const { data } = await axios.get('/api/user/profile/refresh');
             this.user = {
                 ...this.user,
                 ...data.user,

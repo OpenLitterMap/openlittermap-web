@@ -58,7 +58,8 @@ Returns `{ public: true, user, stats, level, rank, achievements, locations }` if
 ### Profile Endpoints (`auth:sanctum` group)
 
 ```
-GET  /api/user/profile/index          ProfileController@index
+GET  /api/user/profile/index          ProfileController@index    (full profile — dashboard, stats, rank, achievements, locations)
+GET  /api/user/profile/refresh        ProfileController@refresh  (lightweight — user fields, XP, level only; used by REFRESH_USER on app load)
 GET  /api/user/profile/map            ProfileController@geojson
 GET  /api/user/profile/download       ProfileController@download
 GET  /api/user/profile/photos/index   UserPhotoController@index
