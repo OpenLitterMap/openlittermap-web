@@ -211,7 +211,7 @@ const state = reactive({
         { icon: 'reddit.png', url: 'https://reddit.com/r/openlittermap' },
         { icon: 'tumblr.png', url: 'https://tumblr.com/openlittermap' },
     ],
-    version: 'v5.0.2',
+    version: `v${__APP_VERSION__}`,
 });
 
 // Computed properties

@@ -40,6 +40,64 @@ class Twitter
         }
     }
 
+    /**
+     * Post a thread of tweets (reply chain).
+     *
+     * @param  string[]  $messages
+     * @return array{first_id: string|null, sent: int, total: int}
+     */
+    public static function sendThread(array $messages): array
+    {
+        $result = ['first_id' => null, 'sent' => 0, 'total' => count($messages)];
+
+        if (empty($messages)) {
+            return $result;
+        }
+
+        $consumer_key = config('services.twitter.consumer_key', env('TWITTER_API_CONSUMER_KEY'));
+        $consumer_secret = config('services.twitter.consumer_secret', env('TWITTER_API_CONSUMER_SECRET'));
+        $access_token = config('services.twitter.access_token', env('TWITTER_API_ACCESS_TOKEN'));
+        $access_token_secret = config('services.twitter.access_secret', env('TWITTER_API_ACCESS_SECRET'));
+
+        if (! app()->environment('production') || $consumer_key === null) {
+            Log::info('Twitter thread skipped (not production or missing keys)', ['count' => count($messages)]);
+            return $result;
+        }
+
+        $connection = new TwitterOAuth($consumer_key, $consumer_secret, $access_token, $access_token_secret);
+        $connection->setApiVersion('2');
+
+        $previousTweetId = null;
+
+        foreach ($messages as $text) {
+            $payload = ['text' => $text];
+
+            if ($previousTweetId) {
+                $payload['reply'] = ['in_reply_to_tweet_id' => $previousTweetId];
+            }
+
+            try {
+                $response = $connection->post('tweets', $payload, true);
+
+                $tweetId = $response->data->id ?? null;
+
+                if ($tweetId) {
+                    $previousTweetId = $tweetId;
+                    $result['first_id'] ??= $tweetId;
+                    $result['sent']++;
+                } else {
+                    Log::error('Twitter thread: no tweet ID in response', ['response' => $response]);
+                    break;
+                }
+            } catch (\Exception $e) {
+                Log::error('Twitter thread: failed to post tweet', ['error' => $e->getMessage()]);
+                break;
+            }
+        }
+
+        return $result;
+    }
+
     public static function sendTweetWithImage (string $message, string $imagePath): void
     {
         $consumer_key = env('TWITTER_API_CONSUMER_KEY');

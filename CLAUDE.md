@@ -212,6 +212,22 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/Terms.md` — Terms & Conditions source content (Vue component renders this)
 - `readme/Privacy.md` — Privacy Policy source content with GDPR legal basis (Vue component renders this)
 
+## Daily Changelog
+After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries by session. This is the running record of all work done each day.
+
+## Versioning
+- The single source of truth for the app version is `package.json` `"version"` field
+- Vite exposes it as `__APP_VERSION__` (defined in `vite.config.js`) — Footer.vue reads it from there
+- **Bump the patch version in `package.json` with every change** (e.g. `5.0.3` → `5.0.4`)
+- Include the version number in each `readme/changelog/YYYY-MM-DD.md` entry
+
+## BOOP
+When the user says "BOOP", perform all of the following:
+1. Bump the patch version in `package.json`
+2. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date)
+3. Update any readme docs (`readme/*.md`) affected by the changes
+4. Update any skills files affected by the changes
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
