@@ -211,6 +211,7 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/TaggingAuditReport.md` — v5.1 smoke test audit report
 - `readme/Terms.md` — Terms & Conditions source content (Vue component renders this)
 - `readme/Privacy.md` — Privacy Policy source content with GDPR legal basis (Vue component renders this)
+- `readme/Twitter.md` — Automated Twitter/X commands (schedule, data sources, tweet format, Browsershot config)
 
 ## Daily Changelog
 After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries by session. This is the running record of all work done each day.

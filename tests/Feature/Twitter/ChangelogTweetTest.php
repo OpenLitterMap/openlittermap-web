@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Twitter;
 
+use App\Console\Commands\Twitter\ChangelogTweet;
 use App\Helpers\Twitter;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -10,80 +11,205 @@ use Tests\TestCase;
 class ChangelogTweetTest extends TestCase
 {
     private string $summaryDir;
+    private ChangelogTweet $command;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->summaryDir = base_path('readme/changelog');
+        $this->command = new ChangelogTweet();
     }
 
-    // ─── Thread building ───────────────────────────────────────────
+    // ─── Overview tweet counts ───────────────────────────────────────
 
-    public function test_single_tweet_when_changes_fit_in_280_chars(): void
+    public function test_overview_counts_web_and_mobile_correctly(): void
     {
         $date = '2099-01-01';
         $path = "{$this->summaryDir}/{$date}.md";
 
-        File::put($path, "# Changes\n\n- `v1.0.0` — Small fix\n");
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- [Web] Fix admin permissions',
+            '- [Web] Restore scheduler',
+            '- [Web] Add clustering config',
+            '- [Mobile] Camera orientation fix',
+            '- [Mobile] Upload retry',
+        ]));
 
         try {
-            $this->artisan("twitter:changelog {$date}")
-                ->expectsOutputToContain('[1/1]')
-                ->assertSuccessful();
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            $overview = $tweets[0];
+            $this->assertStringContainsString('3 web improvements', $overview);
+            $this->assertStringContainsString('2 mobile improvements', $overview);
+            $this->assertStringContainsString('🧵 Thread ↓', $overview);
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_multi_tweet_thread_when_changes_exceed_280_chars(): void
+    // ─── Prefix parsing ─────────────────────────────────────────────
+
+    public function test_entries_without_prefix_default_to_web(): void
     {
         $date = '2099-01-02';
         $path = "{$this->summaryDir}/{$date}.md";
 
-        $lines = "# Changes\n\n";
-        for ($i = 1; $i <= 10; $i++) {
-            $lines .= "- `v1.0.{$i}` — This is change number {$i} which adds a feature that does something important\n";
-        }
-
-        File::put($path, $lines);
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- `v5.0.1` — Fix something',
+            '- `v5.0.2` — Another fix',
+        ]));
 
         try {
-            $this->artisan("twitter:changelog {$date}")
-                ->expectsOutputToContain('🧵')
-                ->assertSuccessful();
+            $parsed = $this->command->parseEntries($path);
+
+            $this->assertCount(2, $parsed['web']);
+            $this->assertCount(0, $parsed['mobile']);
+            $this->assertEquals('Fix something', $parsed['web'][0]);
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_no_tweet_exceeds_280_characters(): void
+    public function test_web_prefix_stripped_correctly(): void
     {
         $date = '2099-01-03';
         $path = "{$this->summaryDir}/{$date}.md";
 
+        File::put($path, "# Changes\n\n- [Web] Fix admin permissions\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+
+            $this->assertCount(1, $parsed['web']);
+            $this->assertEquals('Fix admin permissions', $parsed['web'][0]);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_prefix_stripped_correctly(): void
+    {
+        $date = '2099-01-04';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Mobile] Camera orientation fix\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+
+            $this->assertCount(0, $parsed['web']);
+            $this->assertCount(1, $parsed['mobile']);
+            $this->assertEquals('Camera orientation fix', $parsed['mobile'][0]);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    // ─── No GitHub API calls ─────────────────────────────────────────
+
+    public function test_no_github_http_calls_made(): void
+    {
+        Http::fake();
+
+        $date = '2099-01-05';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Web] Fix something\n");
+
+        try {
+            $this->artisan("twitter:changelog {$date}")
+                ->assertSuccessful();
+
+            Http::assertNothingSent();
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    // ─── Web only ────────────────────────────────────────────────────
+
+    public function test_web_only_overview_shows_web_count_no_mobile(): void
+    {
+        $date = '2099-01-06';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- [Web] Fix admin permissions',
+            '- [Web] Restore scheduler',
+        ]));
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            $overview = $tweets[0];
+            $this->assertStringContainsString('2 web improvements', $overview);
+            $this->assertStringNotContainsString('mobile', $overview);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    // ─── Mobile only ─────────────────────────────────────────────────
+
+    public function test_mobile_only_overview_shows_mobile_count_no_web(): void
+    {
+        $date = '2099-01-07';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- [Mobile] Camera fix',
+            '- [Mobile] Upload retry',
+            '- [Mobile] Haptic feedback',
+        ]));
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            $overview = $tweets[0];
+            $this->assertStringContainsString('3 mobile improvements', $overview);
+            $this->assertStringNotContainsString('web', $overview);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    // ─── Long changelog splits ───────────────────────────────────────
+
+    public function test_long_changelog_splits_across_tweets(): void
+    {
+        $date = '2099-01-08';
+        $path = "{$this->summaryDir}/{$date}.md";
+
         $lines = "# Changes\n\n";
         for ($i = 1; $i <= 15; $i++) {
-            $lines .= "- `v2.0.{$i}` — Implemented a fairly verbose description of change number {$i} that pushes length limits\n";
+            $lines .= "- [Web] Implemented a fairly verbose description of change number {$i} that pushes tweet length limits\n";
         }
 
         File::put($path, $lines);
 
         try {
-            $command = new \App\Console\Commands\Twitter\ChangelogTweet();
-            $parseMethod = new \ReflectionMethod($command, 'parseChanges');
-            $versionMethod = new \ReflectionMethod($command, 'extractLatestVersion');
-            $buildMethod = new \ReflectionMethod($command, 'buildThread');
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
 
-            $changes = $parseMethod->invoke($command, $path);
-            $version = $versionMethod->invoke($command, $changes);
-            $tweets = $buildMethod->invoke($command, $date, $version, $changes);
+            $this->assertGreaterThan(2, count($tweets), 'Should split into 3+ tweets');
 
+            // Every tweet must be within 280 chars
             foreach ($tweets as $i => $tweet) {
-                $length = mb_strlen($tweet);
                 $this->assertLessThanOrEqual(
                     280,
-                    $length,
-                    "Tweet " . ($i + 1) . " exceeds 280 chars ({$length}): " . mb_substr($tweet, 0, 100) . '...'
+                    mb_strlen($tweet),
+                    "Tweet " . ($i + 1) . " exceeds 280 chars (" . mb_strlen($tweet) . ")"
                 );
             }
         } finally {
@@ -91,147 +217,156 @@ class ChangelogTweetTest extends TestCase
         }
     }
 
-    public function test_last_tweet_includes_footer_and_thread_label_within_limit(): void
+    public function test_oversized_single_line_truncated_within_280(): void
     {
-        $date = '2099-01-04';
+        $date = '2099-01-20';
         $path = "{$this->summaryDir}/{$date}.md";
 
-        $lines = "# Changes\n\n";
-        for ($i = 1; $i <= 8; $i++) {
-            $lines .= "- `v3.0.{$i}` — Change {$i}: updating the system with an important modification to behavior\n";
-        }
+        // A single line that is 300+ chars
+        $longLine = '- [Web] ' . str_repeat('A very long description that keeps going ', 8);
 
-        File::put($path, $lines);
+        File::put($path, "# Changes\n\n{$longLine}\n");
 
         try {
-            $command = new \App\Console\Commands\Twitter\ChangelogTweet();
-            $parseMethod = new \ReflectionMethod($command, 'parseChanges');
-            $versionMethod = new \ReflectionMethod($command, 'extractLatestVersion');
-            $buildMethod = new \ReflectionMethod($command, 'buildThread');
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
 
-            $changes = $parseMethod->invoke($command, $path);
-            $version = $versionMethod->invoke($command, $changes);
-            $tweets = $buildMethod->invoke($command, $date, $version, $changes);
-
-            if (count($tweets) > 1) {
-                $lastTweet = end($tweets);
-                $this->assertStringContainsString('#openlittermap', $lastTweet);
-                $this->assertStringContainsString('🧵', $lastTweet);
-                $this->assertLessThanOrEqual(280, mb_strlen($lastTweet),
-                    "Last tweet with footer+label exceeds 280 chars: " . mb_strlen($lastTweet));
+            foreach ($tweets as $i => $tweet) {
+                $this->assertLessThanOrEqual(
+                    280,
+                    mb_strlen($tweet),
+                    "Tweet " . ($i + 1) . " exceeds 280 chars (" . mb_strlen($tweet) . ")"
+                );
             }
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_thread_numbering_is_sequential(): void
+    // ─── No file: skip silently ──────────────────────────────────────
+
+    public function test_no_file_skips_silently(): void
     {
-        $date = '2099-01-05';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        $lines = "# Changes\n\n";
-        for ($i = 1; $i <= 12; $i++) {
-            $lines .= "- `v4.0.{$i}` — A moderately long description of change {$i} to force multiple tweets in the thread\n";
-        }
-
-        File::put($path, $lines);
-
-        try {
-            $command = new \App\Console\Commands\Twitter\ChangelogTweet();
-            $parseMethod = new \ReflectionMethod($command, 'parseChanges');
-            $versionMethod = new \ReflectionMethod($command, 'extractLatestVersion');
-            $buildMethod = new \ReflectionMethod($command, 'buildThread');
-
-            $changes = $parseMethod->invoke($command, $path);
-            $version = $versionMethod->invoke($command, $changes);
-            $tweets = $buildMethod->invoke($command, $date, $version, $changes);
-
-            $total = count($tweets);
-
-            if ($total > 1) {
-                foreach ($tweets as $i => $tweet) {
-                    $num = $i + 1;
-                    $this->assertStringContainsString("🧵 {$num}/{$total}", $tweet,
-                        "Tweet {$num} missing correct thread label");
-                }
-            }
-        } finally {
-            File::delete($path);
-        }
-    }
-
-    // ─── Parsing ───────────────────────────────────────────────────
-
-    public function test_parses_bullet_points_from_summary_file(): void
-    {
-        $date = '2099-01-06';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        File::put($path, "# Changes\n\n## Session 1\n\n- `v1.0.0` — First change\n- `v1.0.1` — Second change\n\n## Session 2\n\n- `v1.0.2` — Third change\n");
-
-        try {
-            $command = new \App\Console\Commands\Twitter\ChangelogTweet();
-            $method = new \ReflectionMethod($command, 'parseChanges');
-            $changes = $method->invoke($command, $path);
-
-            $this->assertCount(3, $changes);
-        } finally {
-            File::delete($path);
-        }
-    }
-
-    public function test_extracts_latest_version_from_changes(): void
-    {
-        $command = new \App\Console\Commands\Twitter\ChangelogTweet();
-        $method = new \ReflectionMethod($command, 'extractLatestVersion');
-
-        $changes = [
-            '`v5.0.3` — First',
-            '`v5.0.4` — Second',
-            '`v5.0.5` — Third',
-        ];
-
-        $this->assertEquals('v5.0.5', $method->invoke($command, $changes));
-    }
-
-    public function test_strips_backticks_and_version_prefix_from_tweets(): void
-    {
-        $command = new \App\Console\Commands\Twitter\ChangelogTweet();
-        $method = new \ReflectionMethod($command, 'cleanChange');
-
-        $this->assertEquals(
-            'Added __APP_VERSION__ define in vite.config.js',
-            $method->invoke($command, '`v5.0.3` — Added `__APP_VERSION__` define in `vite.config.js`')
-        );
-    }
-
-    // ─── Command behavior ──────────────────────────────────────────
-
-    public function test_missing_changelog_file_returns_success_with_no_changes(): void
-    {
-        Http::fake(['api.github.com/*' => Http::response([], 200)]);
-
         $this->artisan('twitter:changelog 2099-12-31')
-            ->expectsOutputToContain('No changes found')
+            ->expectsOutputToContain('No changelog found')
             ->assertSuccessful();
     }
 
-    public function test_empty_summary_file_returns_success(): void
+    public function test_empty_file_skips_silently(): void
     {
-        $date = '2099-01-07';
+        $date = '2099-01-09';
         $path = "{$this->summaryDir}/{$date}.md";
 
         File::put($path, "# Changes\n\nNo bullet points here.\n");
 
         try {
             $this->artisan("twitter:changelog {$date}")
-                ->expectsOutputToContain('No changes found')
+                ->expectsOutputToContain('No changelog found')
                 ->assertSuccessful();
         } finally {
             File::delete($path);
         }
     }
+
+    // ─── Thread structure ────────────────────────────────────────────
+
+    public function test_first_tweet_is_always_overview(): void
+    {
+        $date = '2099-01-10';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- [Web] Fix something',
+            '- [Mobile] Camera fix',
+        ]));
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            $this->assertStringContainsString('🔧 OpenLitterMap — Changes for', $tweets[0]);
+            $this->assertStringContainsString('🧵 Thread ↓', $tweets[0]);
+
+            // Second tweet has actual changes
+            $this->assertStringContainsString('🌐 Web', $tweets[1]);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_last_tweet_has_hashtags(): void
+    {
+        $date = '2099-01-11';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- [Web] Fix something',
+            '- [Mobile] Camera fix',
+        ]));
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            $lastTweet = end($tweets);
+            $this->assertStringContainsString('#openlittermap #changelog', $lastTweet);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_grouped_sections_in_correct_order(): void
+    {
+        $date = '2099-01-12';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '- [Mobile] Camera fix',
+            '- [Web] Fix something',
+        ]));
+
+        try {
+            $parsed = $this->command->parseEntries($path);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            // Changes tweet should have Web before Mobile
+            $changesTweet = $tweets[1];
+            $webPos = mb_strpos($changesTweet, '🌐 Web');
+            $mobilePos = mb_strpos($changesTweet, '📱 Mobile');
+
+            $this->assertNotFalse($webPos);
+            $this->assertNotFalse($mobilePos);
+            $this->assertLessThan($mobilePos, $webPos, 'Web section should come before Mobile');
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    // ─── cleanChange ─────────────────────────────────────────────────
+
+    public function test_strips_backticks_and_version_prefix(): void
+    {
+        $this->assertEquals(
+            'Added __APP_VERSION__ define in vite.config.js',
+            $this->command->cleanChange('`v5.0.3` — Added `__APP_VERSION__` define in `vite.config.js`')
+        );
+    }
+
+    public function test_strips_bold_version_prefix(): void
+    {
+        $this->assertEquals(
+            'Fix admin permissions',
+            $this->command->cleanChange('**v5.0.13** — Fix admin permissions')
+        );
+    }
+
+    // ─── Defaults to yesterday ───────────────────────────────────────
 
     public function test_defaults_to_yesterday_when_no_date_provided(): void
     {
@@ -253,65 +388,7 @@ class ChangelogTweetTest extends TestCase
         }
     }
 
-    // ─── Mobile changes integration ─────────────────────────────────
-
-    public function test_includes_mobile_commits_in_thread(): void
-    {
-        $date = '2099-01-08';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        File::put($path, "# Changes\n\n- `v1.0.0` — Web fix\n");
-
-        Http::fake([
-            'api.github.com/*' => Http::response([
-                ['commit' => ['message' => "Mobile feature added\n\nSome details"]],
-                ['commit' => ['message' => 'Merge pull request #123']],
-                ['commit' => ['message' => 'Another mobile fix']],
-            ], 200),
-        ]);
-
-        try {
-            // Call via Artisan facade so Http::fake persists
-            \Illuminate\Support\Facades\Artisan::call('twitter:changelog', ['date' => $date]);
-            $output = \Illuminate\Support\Facades\Artisan::output();
-
-            $this->assertStringContainsString('[Web]', $output);
-            $this->assertStringContainsString('[Mobile]', $output);
-            // Merge commits should be filtered out
-            $this->assertStringNotContainsString('Merge pull request', $output);
-        } finally {
-            File::delete($path);
-        }
-    }
-
-    public function test_mobile_only_changes_when_no_changelog_file(): void
-    {
-        Http::fake([
-            'api.github.com/*' => Http::response([
-                ['commit' => ['message' => 'Fix navigation bug']],
-            ], 200),
-        ]);
-
-        $this->artisan('twitter:changelog 2099-02-01')
-            ->expectsOutputToContain('[Mobile]')
-            ->assertSuccessful();
-    }
-
-    public function test_skips_merge_commits_from_mobile(): void
-    {
-        Http::fake([
-            'api.github.com/*' => Http::response([
-                ['commit' => ['message' => 'Merge pull request #50 from feature']],
-                ['commit' => ['message' => 'Merge branch main into dev']],
-            ], 200),
-        ]);
-
-        $this->artisan('twitter:changelog 2099-02-02')
-            ->expectsOutputToContain('No changes found')
-            ->assertSuccessful();
-    }
-
-    // ─── sendThread return shape ───────────────────────────────────
+    // ─── sendThread return shape ─────────────────────────────────────
 
     public function test_send_thread_returns_correct_shape_in_non_production(): void
     {
@@ -332,5 +409,15 @@ class ChangelogTweetTest extends TestCase
         $this->assertNull($result['first_id']);
         $this->assertEquals(0, $result['sent']);
         $this->assertEquals(0, $result['total']);
+    }
+
+    // ─── Singular/plural ─────────────────────────────────────────────
+
+    public function test_singular_improvement_for_single_entry(): void
+    {
+        $tweets = $this->command->buildThread('2099-01-13', ['Fix something'], []);
+
+        $this->assertStringContainsString('1 web improvement', $tweets[0]);
+        $this->assertStringNotContainsString('improvements', $tweets[0]);
     }
 }
