@@ -5,32 +5,22 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class EmailUpdate extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $user;
-    /**
-     * Create a new message instance.
-     *
-     * @return void
-     */
-    public function __construct ($user)
+
+    public function __construct($user)
     {
         $this->user = $user;
     }
 
-    /**
-     * Build the message.
-     *
-     * @return $this
-     */
-    public function build()
+    public function build(): static
     {
-        return $this->from('info@openlittermap.com', 'OpenLitterMap')
-            ->subject('Update #25 - Big Improvements since $50,000 funding from cryptocurrency Cardano')
-            ->view('emails.update25');
+        return $this->from('hello@openlittermap.com', 'Seán @ OpenLitterMap')
+            ->subject("OpenLitterMap v5 is now online \xF0\x9F\x9A\x80")
+            ->view('emails.update26');
     }
 }
