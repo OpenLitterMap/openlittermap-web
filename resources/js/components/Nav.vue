@@ -52,6 +52,7 @@
                             <router-link to="/admin/queue" class="nav-item" @click="closeMenu">{{ t('Admin - Queue') }}</router-link>
                             <router-link to="/admin/users" class="nav-item" @click="closeMenu">{{ t('Admin - Users') }}</router-link>
                             <router-link to="/admin/redis" class="nav-item" @click="closeMenu">{{ t('Admin - Redis') }}</router-link>
+                            <a href="/horizon" target="_blank" class="nav-item" @click="closeMenu">{{ t('Admin - Horizon') }}</a>
                         </template>
 
                         <div class="border-t border-white/10 my-2 md:hidden"></div>
@@ -123,6 +124,12 @@
                                     class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
                                     @click="webDropdownOpen = false"
                                 >{{ t('Redis') }}</router-link>
+                                <a
+                                    href="/horizon"
+                                    target="_blank"
+                                    class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
+                                    @click="webDropdownOpen = false"
+                                >{{ t('Horizon') }}</a>
                                 <div class="border-t border-white/10 my-1"></div>
                             </template>
 
