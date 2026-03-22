@@ -19,7 +19,7 @@ class EmailUpdate extends Mailable
 
     public function build(): static
     {
-        return $this->from('hello@openlittermap.com', 'Seán @ OpenLitterMap')
+        return $this->from('info@openlittermap.com', 'Seán @ OpenLitterMap')
             ->subject("OpenLitterMap v5 is now online \xF0\x9F\x9A\x80")
             ->view('emails.update26');
     }
