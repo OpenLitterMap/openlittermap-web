@@ -219,14 +219,20 @@ After every change in a session, append a one-line entry to `readme/changelog/YY
 ## Versioning
 - The single source of truth for the app version is `package.json` `"version"` field
 - Vite exposes it as `__APP_VERSION__` (defined in `vite.config.js`) — Footer.vue reads it from there
-- **Bump the patch version in `package.json` with every change** (e.g. `5.0.3` → `5.0.4`)
+- Format: `MAJOR.MINOR.PATCH` (e.g. `5.1.0`)
+- **Patch bump** (`5.0.3` → `5.0.4`): bug fixes, config changes, docs, refactors, template updates, test additions
+- **Minor bump** (`5.0.25` → `5.1.0`): new user-facing features (new page, new command, new API endpoint, new UI component, new email campaign, new integration). Resets patch to 0
+- **Major bump**: reserved for full platform rewrites (v5 → v6). Only bump on explicit user request
+- If unsure whether a change is patch or minor, **ask the user**
 - Include the version number in each `readme/changelog/YYYY-MM-DD.md` entry
 
 ## BOOP
 When the user says "BOOP", perform all of the following:
-1. Bump the patch version in `package.json`
-2. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date)
-3. Update any readme docs (`readme/*.md`) affected by the changes
+1. Determine if the change is a new feature (minor bump) or a fix/improvement (patch bump). Ask if unsure
+2. Bump the appropriate version in `package.json`
+3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date)
+4. Update any readme docs (`readme/*.md`) affected by the changes
+5. Update any skills files affected by the changes
 4. Update any skills files affected by the changes
 
 <laravel-boost-guidelines>

@@ -3,7 +3,7 @@
         <div class="container mx-auto px-4 flex flex-wrap justify-between items-center py-3">
             <div class="flex items-center space-x-4">
                 <router-link to="/" class="nav-logo flex items-center text-2xl md:text-3xl font-bold text-white">
-                    #OpenLitterMap<sup aria-label="version five" style="font-size: 0.45em; line-height: 1" class="text-amber-400">v5.0</sup>
+                    #OpenLitterMap<sup :aria-label="'version ' + appVersion" style="font-size: 0.45em; line-height: 1" class="text-amber-400">v{{ appVersion }}</sup>
                 </router-link>
             </div>
 
@@ -180,6 +180,7 @@ const { t } = useI18n();
 
 const modalStore = useModalStore();
 const userStore = useUserStore();
+const appVersion = __APP_VERSION__;
 
 const mobileNavOpen = ref(false);
 const webDropdownOpen = ref(false);

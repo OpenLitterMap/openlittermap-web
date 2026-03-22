@@ -62,28 +62,34 @@ class SendEmailToSubscribed extends Command
         $chunkSize = (int) $this->option('chunk');
         $dispatched = 0;
 
+        $bar = $this->output->createProgressBar($totalCount);
+        $bar->setFormat(" %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%");
+        $bar->start();
+
         // ─── Users ───────────────────────────────────────────────────
         User::where('emailsub', 1)
             ->orderBy('id')
-            ->chunk($chunkSize, function ($users) use (&$dispatched) {
+            ->chunk($chunkSize, function ($users) use (&$dispatched, $bar) {
                 foreach ($users as $user) {
                     dispatch(new DispatchEmail($user));
                     $dispatched++;
+                    $bar->advance();
                 }
-                $this->info("Dispatched {$dispatched} so far...");
             });
 
         // ─── Subscribers (deduplicated) ──────────────────────────────
         Subscriber::whereNotIn('email', $userEmails)
             ->orderBy('id')
-            ->chunk($chunkSize, function ($subscribers) use (&$dispatched) {
+            ->chunk($chunkSize, function ($subscribers) use (&$dispatched, $bar) {
                 foreach ($subscribers as $subscriber) {
                     dispatch(new DispatchEmail($subscriber));
                     $dispatched++;
+                    $bar->advance();
                 }
-                $this->info("Dispatched {$dispatched} so far...");
             });
 
+        $bar->finish();
+        $this->newLine(2);
         $this->info("Done. {$dispatched} emails dispatched to queue.");
 
         return self::SUCCESS;
