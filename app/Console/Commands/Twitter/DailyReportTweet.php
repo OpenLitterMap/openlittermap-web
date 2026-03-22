@@ -18,15 +18,20 @@ class DailyReportTweet extends Command
 
     protected $description = 'Tweet yesterday\'s OLM daily summary via OLM_bot';
 
-    public function handle(): void
+    public function handle(): int
     {
+        if (! app()->environment('production') && ! app()->runningUnitTests()) {
+            $this->info('Skipping — not production environment.');
+            return self::SUCCESS;
+        }
+
         $yesterday = Carbon::yesterday();
 
         $daily = $this->getDailyMetrics($yesterday);
 
         if ((int) ($daily->uploads ?? 0) === 0) {
             $this->info('No uploads yesterday — skipping tweet.');
-            return;
+            return self::SUCCESS;
         }
 
         $newUsers  = User::whereDate('created_at', $yesterday)->count();
@@ -65,6 +70,8 @@ class DailyReportTweet extends Command
         Twitter::sendTweet($message);
 
         $this->info('Tweet sent: ' . $message);
+
+        return self::SUCCESS;
     }
 
     /**

@@ -9,10 +9,10 @@ class Twitter
 {
     public static function sendTweet (string $message): void
     {
-        $consumer_key = env('TWITTER_API_CONSUMER_KEY');
-        $consumer_secret = env('TWITTER_API_CONSUMER_SECRET');
-        $access_token = env('TWITTER_API_ACCESS_TOKEN');
-        $access_token_secret = env('TWITTER_API_ACCESS_SECRET');
+        $consumer_key = config('services.twitter.consumer_key');
+        $consumer_secret = config('services.twitter.consumer_secret');
+        $access_token = config('services.twitter.access_token');
+        $access_token_secret = config('services.twitter.access_secret');
 
         if (app()->environment() === 'production' && $consumer_key !== null)
         {
@@ -54,10 +54,10 @@ class Twitter
             return $result;
         }
 
-        $consumer_key = config('services.twitter.consumer_key', env('TWITTER_API_CONSUMER_KEY'));
-        $consumer_secret = config('services.twitter.consumer_secret', env('TWITTER_API_CONSUMER_SECRET'));
-        $access_token = config('services.twitter.access_token', env('TWITTER_API_ACCESS_TOKEN'));
-        $access_token_secret = config('services.twitter.access_secret', env('TWITTER_API_ACCESS_SECRET'));
+        $consumer_key = config('services.twitter.consumer_key');
+        $consumer_secret = config('services.twitter.consumer_secret');
+        $access_token = config('services.twitter.access_token');
+        $access_token_secret = config('services.twitter.access_secret');
 
         if (! app()->environment('production') || $consumer_key === null) {
             Log::info('Twitter thread skipped (not production or missing keys)', ['count' => count($messages)]);
@@ -100,10 +100,10 @@ class Twitter
 
     public static function sendTweetWithImage (string $message, string $imagePath): void
     {
-        $consumer_key = env('TWITTER_API_CONSUMER_KEY');
-        $consumer_secret = env('TWITTER_API_CONSUMER_SECRET');
-        $access_token = env('TWITTER_API_ACCESS_TOKEN');
-        $access_token_secret = env('TWITTER_API_ACCESS_SECRET');
+        $consumer_key = config('services.twitter.consumer_key');
+        $consumer_secret = config('services.twitter.consumer_secret');
+        $access_token = config('services.twitter.access_token');
+        $access_token_secret = config('services.twitter.access_secret');
 
         if (app()->environment() === 'production' && $consumer_key !== null) {
             $connection = new TwitterOAuth(

@@ -49,6 +49,13 @@ return [
 
     'openai' => [
         'key' => env('OPEN_AI_KEY')
-    ]
+    ],
+
+    'twitter' => [
+        'consumer_key' => env('TWITTER_API_CONSUMER_KEY'),
+        'consumer_secret' => env('TWITTER_API_CONSUMER_SECRET'),
+        'access_token' => env('TWITTER_API_ACCESS_TOKEN'),
+        'access_secret' => env('TWITTER_API_ACCESS_SECRET'),
+    ],
 
 ];

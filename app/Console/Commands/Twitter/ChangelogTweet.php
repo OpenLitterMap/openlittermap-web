@@ -20,6 +20,11 @@ class ChangelogTweet extends Command
 
     public function handle(): int
     {
+        if (! app()->environment('production') && ! app()->runningUnitTests()) {
+            $this->info('Skipping — not production environment.');
+            return self::SUCCESS;
+        }
+
         $date = $this->argument('date') ?? now()->subDay()->toDateString();
         $path = base_path("readme/changelog/{$date}.md");
 
@@ -235,7 +240,7 @@ class ChangelogTweet extends Command
      */
     private function cleanChange(string $change): string
     {
-        $clean = preg_replace('/^`?v?\d+\.\d+\.\d+`?\s*[—–-]\s*/', '', $change);
+        $clean = preg_replace('/^`?v?\d+\.\d+\.\d+`?\s*[—–-]\s*/u', '', $change);
 
         // Strip markdown backticks — tweets don't render them
         return str_replace('`', '', $clean);

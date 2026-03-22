@@ -11,7 +11,7 @@ class Kernel extends ConsoleKernel
     {
 //        $schedule->command('sitemap:generate')->daily();
         $schedule->command('twitter:daily-report')->dailyAt('00:00');
-        $schedule->command('clustering:process-dirty')->everyFiveMinutes();
+        $schedule->command('clustering:process-dirty')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('clustering:update --all --all-teams')->dailyAt('00:10');
 
         $schedule->command('twitter:changelog')->dailyAt('07:00');

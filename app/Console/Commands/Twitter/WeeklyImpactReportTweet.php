@@ -17,6 +17,11 @@ class WeeklyImpactReportTweet extends Command
 
     public function handle(): int
     {
+        if (! app()->environment('production') && ! app()->runningUnitTests()) {
+            $this->info('Skipping — not production environment.');
+            return self::SUCCESS;
+        }
+
         $lastWeek = now()->subWeek();
         $isoYear  = (int) $lastWeek->format('o');
         $isoWeek  = (int) $lastWeek->format('W');

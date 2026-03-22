@@ -16,6 +16,11 @@ class MonthlyImpactReportTweet extends Command
 
     public function handle(): int
     {
+        if (! app()->environment('production') && ! app()->runningUnitTests()) {
+            $this->info('Skipping — not production environment.');
+            return self::SUCCESS;
+        }
+
         $lastMonth = now()->subMonth();
         $year  = $lastMonth->year;
         $month = $lastMonth->month;
