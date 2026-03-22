@@ -232,7 +232,7 @@ Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
 | File | Purpose |
 |---|---|
 | `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page — dark glass UI, 55/45 split layout, search index with per-(object,category) entries, progress bar, auto-advance, success flash, keyboard shortcuts (/, Escape, J/K/←/→, Enter, Ctrl+Enter, ?), empty state |
-| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced (100ms) search combobox, grouped results (object/type/material/brand/customTag), formatKey display, category breadcrumbs, emerald accent |
+| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced (100ms) search combobox, grouped results (object/type/material/brand/customTag), i18n translated labels, category breadcrumbs, emerald accent |
 | `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with "Object · Category" display, type pills, picked-up pills, dark glass styling, red border on unresolved CLO |
 | `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | XP bar (emerald), level titles, unresolved tags warning, submit disabled when unresolved, edit mode badge |
 | `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags, keyboard hint in empty state |
@@ -242,9 +242,14 @@ Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
 
 ### Frontend category disambiguation
 
-The search index generates **one entry per (object, category) pair** with pre-resolved `cloId`, `categoryId`, `categoryKey`. This prevents the bug where searching "bottle" picked `categories[0]` alphabetically (always the first category). Each entry has a precomputed `lowerKey` for fast filtering. Type entries use composite id `type-{cloId}-{typeId}`.
+The search index generates **one entry per (object, category) pair** with pre-resolved `cloId`, `categoryId`, `categoryKey`. Each entry has:
+- `label` — i18n translated display name via `translateTag(key, prefix)` (e.g. `coke` → "Coca-Cola" from `litter.brands.coke`). Falls back to `formatKey()` if no translation exists.
+- `categoryLabel` — translated category name (e.g. `litter.categories.alcohol` → "Alcohol")
+- `lowerKey` — includes both raw key AND translated label for search matching (e.g. `"coke coca-cola"`)
 
-`formatKey(key)` converts `snake_case` → `Title Case` (e.g., `six_pack_rings` → "Six Pack Rings"). Used everywhere in the tagging UI.
+Translation prefixes: objects use `litter.{categoryKey}.{objectKey}`, brands use `litter.brands.{key}`, materials use `litter.material.{key}`, categories use `litter.categories.{key}`.
+
+`formatKey(key)` converts `snake_case` → `Title Case` (e.g., `six_pack_rings` → "Six Pack Rings"). Used as fallback when no i18n translation exists.
 
 `hasUnresolvedTags` computed blocks submit when any object tag lacks a `cloId`. Keyboard shortcuts guard against firing inside form inputs (INPUT/SELECT/TEXTAREA).
 

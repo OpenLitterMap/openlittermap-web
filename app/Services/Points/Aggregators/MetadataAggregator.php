@@ -24,9 +24,6 @@ class MetadataAggregator
             ];
         }
 
-        // Debug: Let's see what photo IDs we're getting
-        \Log::info('MetadataAggregator photoIds:', $photoIds->toArray());
-
         // Get photo-level stats
         $photoStats = DB::table('photos')
             ->whereIn('id', $photoIds)
@@ -43,15 +40,11 @@ class MetadataAggregator
         $photoTagCount = DB::table('photo_tags')
             ->whereIn('photo_id', $photoIds)
             ->count();
-        \Log::info('Found photo_tags:', ['count' => $photoTagCount]);
 
         // Calculate total_objects from photo_tags quantity sum
         $totalObjects = DB::table('photo_tags')
             ->whereIn('photo_id', $photoIds)
             ->sum('quantity');
-
-        // Debug log
-        \Log::info('Total objects sum:', ['total' => $totalObjects]);
 
         // If null, convert to 0
         $totalObjects = $totalObjects ?? 0;

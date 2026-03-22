@@ -7,12 +7,14 @@ namespace App\Console\Commands\Twitter;
 use App\Helpers\Twitter;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ChangelogTweet extends Command
 {
     protected $signature = 'twitter:changelog {date? : Date in YYYY-MM-DD format, defaults to yesterday}';
 
-    protected $description = 'Tweet a threaded changelog summary from the daily summary file';
+    protected $description = 'Tweet a threaded changelog from the daily changelog file and React Native repo commits';
 
     private const MAX_TWEET_LENGTH = 280;
 
@@ -21,15 +23,25 @@ class ChangelogTweet extends Command
         $date = $this->argument('date') ?? now()->subDay()->toDateString();
         $path = base_path("readme/changelog/{$date}.md");
 
-        if (! File::exists($path)) {
-            $this->warn("No summary file found at {$path}");
-            return self::FAILURE;
+        // Web changelog
+        $webChanges = [];
+        if (File::exists($path)) {
+            $webChanges = $this->parseChanges($path);
         }
 
-        $changes = $this->parseChanges($path);
+        // React Native repo commits
+        $mobileChanges = $this->fetchMobileChanges($date);
+
+        $changes = [];
+        if (! empty($webChanges)) {
+            $changes = array_merge($changes, array_map(fn ($c) => "[Web] {$c}", $webChanges));
+        }
+        if (! empty($mobileChanges)) {
+            $changes = array_merge($changes, array_map(fn ($c) => "[Mobile] {$c}", $mobileChanges));
+        }
 
         if (empty($changes)) {
-            $this->info('No changes found in summary file — skipping.');
+            $this->info("No changes found for {$date} — skipping.");
             return self::SUCCESS;
         }
 
@@ -170,6 +182,52 @@ class ChangelogTweet extends Command
         }
 
         return $tweets;
+    }
+
+    /**
+     * Fetch commit messages from the React Native repo for the given date.
+     *
+     * @return string[]
+     */
+    private function fetchMobileChanges(string $date): array
+    {
+        try {
+            $since = "{$date}T00:00:00Z";
+            $until = "{$date}T23:59:59Z";
+
+            $response = Http::get('https://api.github.com/repos/OpenLitterMap/react-native/commits', [
+                'sha' => 'openlittermap/v7',
+                'since' => $since,
+                'until' => $until,
+                'per_page' => 50,
+            ]);
+
+            if (! $response->successful()) {
+                Log::warning('Failed to fetch React Native commits', [
+                    'status' => $response->status(),
+                ]);
+                return [];
+            }
+
+            $commits = $response->json();
+            $changes = [];
+
+            foreach ($commits as $commit) {
+                $message = $commit['commit']['message'] ?? '';
+                // Use first line of commit message only
+                $firstLine = trim(strtok($message, "\n"));
+                if ($firstLine !== '' && ! str_starts_with($firstLine, 'Merge ')) {
+                    $changes[] = $firstLine;
+                }
+            }
+
+            return $changes;
+        } catch (\Exception $e) {
+            Log::warning('Error fetching React Native commits', [
+                'error' => $e->getMessage(),
+            ]);
+            return [];
+        }
     }
 
     /**

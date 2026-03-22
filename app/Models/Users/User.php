@@ -2,7 +2,6 @@
 
 namespace App\Models\Users;
 
-use App\Level;
 use App\Models\Achievements\Achievement;
 use App\Services\LevelService;
 use App\Models\Badges\Badge;

@@ -4,6 +4,7 @@ namespace Tests\Feature\Twitter;
 
 use App\Helpers\Twitter;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ChangelogTweetTest extends TestCase
@@ -207,11 +208,13 @@ class ChangelogTweetTest extends TestCase
 
     // ─── Command behavior ──────────────────────────────────────────
 
-    public function test_missing_summary_file_returns_failure(): void
+    public function test_missing_changelog_file_returns_success_with_no_changes(): void
     {
+        Http::fake(['api.github.com/*' => Http::response([], 200)]);
+
         $this->artisan('twitter:changelog 2099-12-31')
-            ->expectsOutputToContain('No summary file found')
-            ->assertFailed();
+            ->expectsOutputToContain('No changes found')
+            ->assertSuccessful();
     }
 
     public function test_empty_summary_file_returns_success(): void
@@ -248,6 +251,64 @@ class ChangelogTweetTest extends TestCase
                 File::delete($path);
             }
         }
+    }
+
+    // ─── Mobile changes integration ─────────────────────────────────
+
+    public function test_includes_mobile_commits_in_thread(): void
+    {
+        $date = '2099-01-08';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- `v1.0.0` — Web fix\n");
+
+        Http::fake([
+            'api.github.com/*' => Http::response([
+                ['commit' => ['message' => "Mobile feature added\n\nSome details"]],
+                ['commit' => ['message' => 'Merge pull request #123']],
+                ['commit' => ['message' => 'Another mobile fix']],
+            ], 200),
+        ]);
+
+        try {
+            // Call via Artisan facade so Http::fake persists
+            \Illuminate\Support\Facades\Artisan::call('twitter:changelog', ['date' => $date]);
+            $output = \Illuminate\Support\Facades\Artisan::output();
+
+            $this->assertStringContainsString('[Web]', $output);
+            $this->assertStringContainsString('[Mobile]', $output);
+            // Merge commits should be filtered out
+            $this->assertStringNotContainsString('Merge pull request', $output);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_only_changes_when_no_changelog_file(): void
+    {
+        Http::fake([
+            'api.github.com/*' => Http::response([
+                ['commit' => ['message' => 'Fix navigation bug']],
+            ], 200),
+        ]);
+
+        $this->artisan('twitter:changelog 2099-02-01')
+            ->expectsOutputToContain('[Mobile]')
+            ->assertSuccessful();
+    }
+
+    public function test_skips_merge_commits_from_mobile(): void
+    {
+        Http::fake([
+            'api.github.com/*' => Http::response([
+                ['commit' => ['message' => 'Merge pull request #50 from feature']],
+                ['commit' => ['message' => 'Merge branch main into dev']],
+            ], 200),
+        ]);
+
+        $this->artisan('twitter:changelog 2099-02-02')
+            ->expectsOutputToContain('No changes found')
+            ->assertSuccessful();
     }
 
     // ─── sendThread return shape ───────────────────────────────────

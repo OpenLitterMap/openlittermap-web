@@ -47,21 +47,21 @@
                                 <span class="flex items-center gap-2">
                                     <span
                                         :class="['truncate', selected ? 'font-semibold' : 'font-normal']"
-                                        v-html="highlightMatch(formatKey(tag.key))"
+                                        v-html="highlightMatch(tag.label || formatKey(tag.key))"
                                     />
 
                                     <!-- Parent object context for type results -->
                                     <span
                                         v-if="tag.type === 'type' && tag.objectKey"
                                         :class="['text-xs shrink-0', active ? 'text-emerald-200' : 'text-white/40']"
-                                        v-html="'(' + highlightMatch(formatKey(tag.objectKey)) + ')'"
+                                        v-html="'(' + highlightMatch(tag.objectLabel || formatKey(tag.objectKey)) + ')'"
                                     />
 
                                     <!-- Category breadcrumb -->
                                     <span
                                         v-if="tag.categoryKey"
                                         :class="['text-xs shrink-0', active ? 'text-emerald-200' : 'text-white/30']"
-                                        v-html="'&middot; ' + highlightMatch(formatKey(tag.categoryKey))"
+                                        v-html="'&middot; ' + highlightMatch(tag.categoryLabel || formatKey(tag.categoryKey))"
                                     />
 
                                     <!-- Type badge -->

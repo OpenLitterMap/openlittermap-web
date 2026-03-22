@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('clustering:process-dirty')->everyFiveMinutes();
         $schedule->command('clustering:update --all --all-teams')->dailyAt('00:10');
 
-        $schedule->command('twitter:changelog')->dailyAt('00:00');
+        $schedule->command('twitter:changelog')->dailyAt('07:00');
         $schedule->command('twitter:weekly-impact-report-tweet')->weeklyOn(1, '06:30');
         $schedule->command('twitter:monthly-impact-report-tweet')->monthlyOn(1, '06:30');
     }

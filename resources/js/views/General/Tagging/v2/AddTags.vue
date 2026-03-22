@@ -114,8 +114,8 @@
                                     @click="quickAddTag(tag)"
                                     class="text-xs px-2 py-1 bg-white/5 text-white/60 border border-white/10 rounded hover:bg-white/10 transition-colors"
                                 >
-                                    {{ formatKey(tag.key) }}
-                                    <span v-if="tag.categoryKey" class="text-white/30">· {{ formatKey(tag.categoryKey) }}</span>
+                                    {{ tag.label || formatKey(tag.key) }}
+                                    <span v-if="tag.categoryKey" class="text-white/30">· {{ tag.categoryLabel || formatKey(tag.categoryKey) }}</span>
                                 </button>
                             </div>
                         </div>
@@ -190,6 +190,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useToast } from 'vue-toastification';
 import { usePhotosStore } from '@stores/photos/index.js';
 import { useTagsStore } from '@stores/tags/index.js';
@@ -201,6 +202,7 @@ import PhotoViewer from './components/PhotoViewer.vue';
 import ActiveTagsList from './components/ActiveTagsList.vue';
 import { calculateTotalXp, getToastSummary } from './useXpCalculator.js';
 
+const { t } = useI18n();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
@@ -251,6 +253,17 @@ const activeTags = computed(() => {
     return tagsByPhoto.value[photoId] || [];
 });
 
+/**
+ * Translate a tag key using i18n. Returns the translated label if different from the key path,
+ * otherwise falls back to formatKey (title-casing the raw key).
+ */
+const translateTag = (key, i18nPrefix) => {
+    const path = `litter.${i18nPrefix}.${key}`;
+    const translated = t(path);
+    // vue-i18n returns the key path if no translation exists
+    return translated !== path ? translated : formatKey(key);
+};
+
 // Create searchable tags index combining all tag types
 // One entry per (object, category) pair to disambiguate objects that appear in multiple categories
 const searchableTags = computed(() => {
@@ -265,12 +278,16 @@ const searchableTags = computed(() => {
         if (obj.categories?.length) {
             obj.categories.forEach((cat) => {
                 const cloId = tagsStore.getCloId(cat.id, obj.id);
+                const label = translateTag(obj.key, cat.key);
+                const catLabel = translateTag(cat.key, 'categories');
 
                 // Base object entry (always present)
                 tags.push({
                     id: `obj-${obj.id}-cat-${cat.id}`,
                     key: obj.key,
-                    lowerKey: obj.key.toLowerCase(),
+                    label,
+                    categoryLabel: catLabel,
+                    lowerKey: `${obj.key} ${label}`.toLowerCase(),
                     text: obj.key,
                     type: 'object',
                     categoryId: cat.id,
@@ -289,10 +306,13 @@ const searchableTags = computed(() => {
                         if (seenCompound.has(compoundKey)) return;
                         if (baseObjectKeys.has(compoundKey)) return; // skip if old object with same key exists
                         seenCompound.add(compoundKey);
+                        const compoundLabel = `${formatKey(typeObj.key)} ${label}`;
                         tags.push({
                             id: `obj-${obj.id}-cat-${cat.id}-type-${typeObj.key}`,
                             key: `${typeObj.key}_${obj.key}`,
-                            lowerKey: `${typeObj.key} ${obj.key} ${typeObj.key}_${obj.key} ${cat.key}`.toLowerCase(),
+                            label: compoundLabel,
+                            categoryLabel: catLabel,
+                            lowerKey: `${typeObj.key} ${obj.key} ${typeObj.key}_${obj.key} ${cat.key} ${compoundLabel} ${label}`.toLowerCase(),
                             text: `${typeObj.key}_${obj.key}`,
                             type: 'object',
                             objectId: obj.id,
@@ -307,10 +327,12 @@ const searchableTags = computed(() => {
                 }
             });
         } else {
+            const label = formatKey(obj.key);
             tags.push({
                 id: `obj-${obj.id}`,
                 key: obj.key,
-                lowerKey: obj.key.toLowerCase(),
+                label,
+                lowerKey: `${obj.key} ${label}`.toLowerCase(),
                 text: obj.key,
                 type: 'object',
                 categoryId: null,
@@ -322,10 +344,12 @@ const searchableTags = computed(() => {
     });
 
     tagsStore.brands.forEach((brand) => {
+        const label = translateTag(brand.key, 'brands');
         tags.push({
             id: `brand-${brand.id}`,
             key: brand.key,
-            lowerKey: brand.key.toLowerCase(),
+            label,
+            lowerKey: `${brand.key} ${label}`.toLowerCase(),
             text: brand.key,
             type: 'brand',
             raw: brand,
@@ -333,10 +357,12 @@ const searchableTags = computed(() => {
     });
 
     tagsStore.materials.forEach((material) => {
+        const label = translateTag(material.key, 'material');
         tags.push({
             id: `mat-${material.id}`,
             key: material.key,
-            lowerKey: material.key.toLowerCase(),
+            label,
+            lowerKey: `${material.key} ${label}`.toLowerCase(),
             text: material.key,
             type: 'material',
             raw: material,
