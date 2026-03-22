@@ -240,9 +240,16 @@ const updatesList = [
         date: '6th May 2022',
         component: 'update25',
     },
+    {
+        id: 26,
+        number: 'Update #26',
+        title: 'OpenLitterMap v5 is released!',
+        date: '22nd March 2026',
+        component: 'update26',
+    },
 ];
-const changelogs = ref(updatesList);
-const selectedId = ref(updatesList[0]?.id || null);
+const changelogs = ref([...updatesList].reverse());
+const selectedId = ref(updatesList[updatesList.length - 1]?.id || null);
 const currentUpdateComponent = ref(null);
 
 // Load the selected update component dynamically

@@ -1,80 +1,108 @@
 <template>
     <div class="update-content">
-        <h2>Update #25 - Big Improvements since $50,000 funding from cryptocurrency Cardano</h2>
+        <h2>Update 26: OpenLitterMap v5 is released!</h2>
 
-        <p>There are plenty of updates to share since our last email on the 4th of August 2021.</p>
+        <p>OpenLitterMap has just gone through the biggest transformation in its 17+ year history.</p>
 
-        <p>You can find most of them on our weekly blog but we will share the best bits here.</p>
+        <p>With more than 2,300 files changed, this represents our biggest upgrade, and the biggest software improvement I have ever seen in my 10+ year career history working as a software engineer.</p>
 
-        <ul>
+        <p class="meta">This email (Update 26) is our 1st update to all ~10,000 subscribers since May 2022. You can now view all previous email updates here: <router-link to="/changelog">openlittermap.com/changelog</router-link></p>
+
+        <h3>✨ What's New</h3>
+
+        <ul class="features">
             <li>
-                <strong>Global leaderboard for all users.</strong> Yes, finally! We now have a global leaderboard of all
-                6,100+ and growing members. Check it out and find your position at openlittermap.com/leaderboard. By
-                default, new users are anonymous, so if you haven't already done so- visit settings and check your
-                privacy options to see if your name or username are set to appear on the leaderboards. In the web-app
-                settings, there are more options. You can choose to show a country flag and you can now include links to
-                your social media accounts to promote them.
+                <strong>🏷️ New tagging system</strong> — Previously there was no relationship between tags. Now you can pick an object like "Can", then add a type like "Beer", attach a brand, set the material(s) — which are all related to each other. 15 old category tables replaced with one fast, searchable system. There is still a lot of improvements to make, but the new architecture is a huge improvement over the original system that I scrambled together during a dissertation in 2015. The new system also makes it much easier to add new tags. If a tag does not exist you can create new suggestions with Custom Tags by adding text like "brand:newbrand" or "object:newobject" which will get reviewed and integrated into the tagging in a future update.
             </li>
             <li>
-                <strong>Promote links to your social media accounts on OpenLitterMap.</strong> The more data you upload,
-                the more points you score, and the more visibility your accounts get. Social media accounts will now
-                appear in every popup on the global map and for every user in the global leaderboard. See this twitter
-                post for examples.
+                <strong>🗺️ Improved map & new clustering algorithm</strong> — When you zoom in and load the points data you will load a new Stats panel that summarises the point data. The points data no longer crashes when loading big data as we now paginate by loading 1,000 points at a time. Clustering has also been completely rewritten from scratch. Previously we had to delete all clusters and re-run the algorithm every 24 hours. The new system updates clusters automatically and it's way faster. In fact it's so good I'm planning to release it as a standalone open source package — <strong>Clusterize</strong>.
             </li>
             <li>
-                <strong>Weekly community calls.</strong> Every Thursday, 6pm GMT, we host a weekly live zoom call where
-                we code live, launch updates, and test new features with the community while planning for the future and
-                having fun. Want to help shape the future direction of OpenLitterMap? Join us.
+                <strong>🏫 <a href="https://litterweek.org" target="_blank">LitterWeek.org</a></strong> — We've launched LitterWeek as a Digital Skills Training Programme for schools. Want to learn about the data collection purpose of technology and why citizen science is better use of technology than social media? We just signed up our first 4 schools and we're looking for teachers who want to take the challenge. Can you help us by sharing LitterWeek with any teachers you know?
             </li>
             <li>
-                <strong>Huge mobile app improvements.</strong> It took a long time but the app is finally starting to
-                work incredibly well! The photo gallery is now just totally smooth. You can now create a team and join a
-                team on the app. You can see the leaderboard for all teams listed so far. There are a lot more new
-                features and improvements left to add in, but the most recent update (v3.2.3) is really stable. Now that
-                the app has reached stability, we will begin to work on new gamification features soon! Read more about
-                recent app improvements here.
+                <strong>📱 New mobile apps</strong> — The original apps are currently broken. Our new mobile app — v7 — will be available for iOS and Android in the coming days. It took more than 6 years to build 6 mobile app versions. Version 7 was built almost entirely <strong>in a single day</strong> — our entire workflow has been transformed by AI. Critical GPS bugs on Android should be fixed.
             </li>
             <li>
-                <strong>Huge global map improvements.</strong> Seriously, just look at how all of this global data just
-                loads instantly. Open the Global Map. All of the clusters are re-created every night at midnight. You
-                can also change the data by year, or all time. Keep the global map open to see live notifications. Click
-                a photo uploaded notification to zoom to that location and open the data! It's now possible to filter
-                the global map point data by user, minDate and maxDate in the URL. Clusters of just 1 photos now appear
-                on the global map. You can see how far North and South the openlittermap community has reached-
-                incredible! Also added new options to sort locations click here to open tweet.
+                <strong>✏️ Edit & Delete your data</strong> — Every user can now review all of their uploads and edit/delete whatever tags/images they want.
             </li>
             <li>
-                <strong>Growing global community.</strong> It took a long time, but openlittermap is after getting
-                really stable lately, and now we are attracting a much more engaged community. Every day, new people are
-                joining our Slack channel and weekly community zoom calls. All data is going up. We are approaching
-                500,000 tags and recently passed 250,000 images. I have given dozens of presentations across
-                universities + institutions, met with people from UNEP and even gave a presentation to my local Cork
-                City Council.
+                <strong>👤 Make your profile public</strong> — New experimental system that you can use to make your profile clickable in the Leaderboards to share your impact with the world.
             </li>
             <li>
-                <strong>Sent a 12 page report about my work to various Irish government oireachtas committees.</strong>
-                You can read the report here. Worryingly, both the committees on Education, Research, Science, and
-                Innovation and "climate action and environment" had nothing to say. The committee on EU affairs did not
-                even reply about using citizen science as a means of building Peace Through Science in zones of conflict
-                (like Northern Ireland). In the last 15 years of this research there has been a total of €0 in funding
-                to support the development of OpenLitterMap in Ireland.
+                <strong>🔒 New Public toggle for each image</strong> — If you want to upload data but keep it private, you can now use openlittermap independently and control access to each of your data points.
             </li>
             <li>
-                <strong>Expect more updates soon!</strong> OpenLitterMap is staring to work well and its growing, but
-                there is a lot more that needs to be done. We hope you will join us by mapping and sharing data on
-                litter and plastic pollution in your community.
+                <strong>📜 New Terms & Privacy</strong> — <router-link to="/terms">openlittermap.com/terms</router-link> and <router-link to="/privacy">openlittermap.com/privacy</router-link>
+            </li>
+            <li>
+                <strong>🤖 Twitter Bot Updates</strong> — <a href="https://x.com/OLM_bot" target="_blank">x.com/OLM_bot</a> automatically produces daily, weekly, monthly & annual impact reports. We now include a new daily thread about all software improvements. The automated impact reporting has also been improved.
             </li>
         </ul>
 
+        <h3>📦 All Tags Migrated</h3>
+
+        <p>All original tags have been updated to use the new Tagging system. This took <strong>months</strong> of work. 89% of brands were included in the migration. A new time-series metrics database powers every stat on the platform.</p>
+
+        <h3>🏫 LitterWeek</h3>
+
+        <p><a href="https://litterweek.org" target="_blank"><strong>LitterWeek.org</strong></a> is a 5-day digital skills programme for schools. One hour a day. Any week. Students learn about data, privacy, and citizen science — then go outside, document litter in their community, and put their findings on the global map.</p>
+
+        <p><strong>4 schools have signed up.</strong> First pilots are running this spring in Cork, Ireland.</p>
+
+        <p><strong>We're looking for more.</strong> If you know a teacher, a TY coordinator, or a Green Schools contact — send them to <a href="https://litterweek.org" target="_blank"><strong>litterweek.org</strong></a> or <a href="mailto:sean@litterweek.org"><strong>sean@litterweek.org</strong></a>.</p>
+
+        <h3>🇪🇺 Ireland's EU Presidency</h3>
+
+        <p>Ireland holds the EU Council Presidency from July to December 2026. This happens roughly once every 14 years. It's a window where Ireland is expected to demonstrate leadership — and it matters for citizen science.</p>
+
+        <p>During the Presidency Ireland will try to bring in Digital IDs for social media. The internet has problems, and children are at risk. This is a conversation worth having, but it is not clear if Ireland will do anything to support the development of citizen science as a better use of technology than social media and help people develop skills to overcome the harms of the internet with digital skills training instead of using this as an excuse to introduce orwellian surveillance programmes. Some of the architects of this policy have never built anything.</p>
+
+        <p>When Germany held the Presidency in 2020, they put €2 million behind <strong>Plastic Pirates Go Europe</strong> — a citizen science project for schools. Plastic Pirates collected 93,718 items of litter. That's €21.34 per item.</p>
+
+        <p>OpenLitterMap has collected 850,000+ items with €100K of my personal investment. That's <strong>€0.12 per item. 178× more cost-efficient.</strong> but has not qualified for any research or innovation pathway.</p>
+
+        <p>Ireland has no pathway for citizen science, open source, or independent founders like me. Your contributions are the evidence that this works. The question is whether Irish institutions will recognise what one of their own citizens has built - which is more than the rest of our institutions combined.</p>
+
+        <p>To celebrate Ireland's EU Presidency, I have prepared the following documents:</p>
+
+        <ul>
+            <li>
+                <strong>📄 <a href="https://litterweek.org/tdg" target="_blank">The Democracy Gap</a></strong> — On January 1st 2026, to mark the beginning of the year that Ireland will host the EU Presidency, I personally submitted this policy dossier to OECD & UNESCO headquarters in Paris to document the structural gap between institutional practice and public participation.
+            </li>
+            <li>
+                <strong>🔍 <a href="https://drive.google.com/file/d/1RZ3gowZrt4cNLWozY0iNMBwlZq037zh1/view?usp=sharing" target="_blank">MAPS: Mapping Audit of Public Science</a></strong> — MAPS is a Freedom of Information request I have submitted to Irish government departments to audit what they have achieved for public scientific inclusion since the launch of the iPhone.
+            </li>
+        </ul>
+
+        <h3>🐛 Help Us Find Bugs</h3>
+
+        <p>We need your help to find bugs on OpenLitterMap and suggest improvements to the platform!</p>
+
+        <ul>
+            <li><strong>📸 Upload a photo</strong> — Does it work? Where do you get stuck?</li>
+            <li><strong>🏷️ Try the new tagging</strong> — Available on desktop at openlittermap.com for now - new mobile apps soon!</li>
+            <li><strong>🗺️ Check the map</strong> — Zoom around. Click clusters. What new features would you like to see?</li>
+            <li><strong>🖱️ Click around</strong> — What pages are slow to load? What is not working?</li>
+            <li><strong>📈 Check your stats</strong> — Profile, XP. Do the numbers look right?</li>
+            <li><strong>🐛 Found something?</strong> → <a href="mailto:info@openlittermap.com">info@openlittermap.com</a>, <a href="https://github.com/OpenLitterMap/openlittermap-web" target="_blank">GitHub</a>, <a href="https://discord.gg/NAEUBwtAhT" target="_blank">Discord</a>, or <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-29p12603a-MlzeSdMK~0mc1tCLV_bxUA" target="_blank">Slack</a></li>
+        </ul>
+
+        <h3>🔮 Coming Soon</h3>
+
+        <ul>
+            <li><strong>📱 This week</strong> — Mobile apps back online</li>
+            <li><strong>🏫 This spring</strong> — First LitterWeek pilots</li>
+            <li><strong>🤖 This summer?</strong> — AI-assisted tagging</li>
+        </ul>
+
         <div class="milestone">
-            <strong>Platform Maturity Achieved!</strong> Global leaderboard, social media integration, smooth mobile app
-            (v3.2.3), 250,000+ images, 500,000 tags approaching, and presentations to UNEP and Cork City Council.
-            Community growing daily!
+            <strong>Thank you for taking an interest in OpenLitterMap!</strong><br />
+            🌍 500,000+ geotagged observations · 110+ countries · 101+ citations · UN Digital Public Good
         </div>
 
         <p class="signature">
-            Looking forward to sharing more updates with you again soon.<br /><br />Thanks for taking an interest in
-            OpenLitterMap.<br /><br />Seán.
+            — Seán
         </p>
     </div>
 </template>
@@ -105,10 +133,32 @@
     line-height: 1.8;
 }
 
+.update-content p.meta {
+    font-size: 0.95rem;
+    color: #888888;
+}
+
+.update-content a {
+    color: #2ecc71;
+    text-decoration: underline;
+}
+
+.update-content a:hover {
+    color: #27ae60;
+}
+
 .update-content ul {
     margin: 1.5rem 0;
     padding-left: 0;
     list-style: none;
+}
+
+.update-content ul.features li {
+    border-bottom: 1px solid #eeeeee;
+}
+
+.update-content ul.features li:last-child {
+    border-bottom: none;
 }
 
 .update-content li {
@@ -121,7 +171,7 @@
     content: '→';
     position: absolute;
     left: 0;
-    color: #4299e1;
+    color: #2ecc71;
     font-weight: bold;
     font-size: 1.2rem;
 }
@@ -132,15 +182,17 @@
 }
 
 .milestone {
-    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-    border-left: 4px solid #667eea;
+    background: linear-gradient(135deg, #2ecc7115 0%, #27ae6015 100%);
+    border-left: 4px solid #2ecc71;
     padding: 1.5rem 2rem;
     margin: 2rem 0;
     border-radius: 0 8px 8px 0;
+    font-size: 1.05rem;
+    line-height: 1.8;
 }
 
 .milestone strong {
-    color: #5a67d8;
+    color: #27ae60;
     font-size: 1.1rem;
 }
 
