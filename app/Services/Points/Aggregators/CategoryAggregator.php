@@ -4,7 +4,6 @@ namespace App\Services\Points\Aggregators;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class CategoryAggregator
 {
@@ -33,7 +32,6 @@ class CategoryAggregator
             ->keyBy('id');
 
         if ($baseQuantities->isEmpty()) {
-            Log::debug("CategoryAggregator: No categories found for " . $photoIds->count() . " photos");
             return [];
         }
 

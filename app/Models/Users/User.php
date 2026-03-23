@@ -124,16 +124,7 @@ class User extends Authenticatable
         'settings' => 'array',
     ];
 
-    protected $appends = [
-        'total_categories',
-        'total_tags',
-        'total_brands_redis',
-        'user_verification_count',
-        'littercoin_progress',
-        'total_littercoin',
-        'next_level',
-        'social_links',
-    ];
+    protected $appends = [];
 
     /**
      * @deprecated

@@ -4,7 +4,6 @@ namespace App\Services\Points\Aggregators;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class BrandAggregator
 {
@@ -32,16 +31,6 @@ class BrandAggregator
             ->orderByDesc('qty')
             ->limit(30)
             ->get();
-
-        if ($results->isEmpty()) {
-            $extraTagsCount = DB::table('photo_tags')
-                ->join('photo_tag_extra_tags', 'photo_tags.id', '=', 'photo_tag_extra_tags.photo_tag_id')
-                ->whereIn('photo_tags.photo_id', $photoIds)
-                ->where('photo_tag_extra_tags.tag_type', 'brand')
-                ->count();
-
-            Log::debug("BrandAggregator: {$extraTagsCount} brand extra tags found but none matched brandslist table");
-        }
 
         return $results->map(function($row) {
             return (object)[

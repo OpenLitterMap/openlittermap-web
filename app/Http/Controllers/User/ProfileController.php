@@ -345,7 +345,7 @@ class ProfileController extends Controller
                 'tags' => $tags,
                 'xp' => $xp,
                 'streak' => $stats['streak'],
-                'littercoin' => (int) ($user->total_littercoin ?? 0),
+                'littercoin' => (int) ($user->littercoin_allowance + $user->littercoin_owed),
                 'photo_percent' => $photoPercent,
                 'tag_percent' => $tagPercent,
             ],

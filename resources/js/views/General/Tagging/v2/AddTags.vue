@@ -51,7 +51,9 @@
                     <PhotoViewer
                         :photo-src="currentPhotoSrc"
                         :loading="imageLoading"
+                        :deleting="isDeleting"
                         @image-loaded="imageLoading = false"
+                        @delete="deletePhoto"
                     />
                 </div>
 
@@ -238,6 +240,7 @@ const isEditMode = ref(false);
 const editPhotoId = ref(null);
 const showShortcuts = ref(false);
 const showSuccessFlash = ref(false);
+const isDeleting = ref(false);
 const searchRef = ref(null);
 
 // Computed
@@ -668,6 +671,37 @@ const handleNavigation = async (direction) => {
 
 const skipPhoto = () => {
     handleNavigation('next');
+};
+
+const deletePhoto = async () => {
+    const photoId = currentPhoto.value?.id;
+    if (!photoId || isDeleting.value) return;
+
+    isDeleting.value = true;
+    try {
+        // Clear any pending tags for this photo
+        delete tagsByPhoto.value[photoId];
+
+        // DELETE_PHOTO handles metrics reversal, S3 cleanup, soft delete, toast, and refreshes photos
+        await photosStore.DELETE_PHOTO(photoId);
+
+        // Refresh user XP/level (non-blocking)
+        userStore.REFRESH_USER();
+
+        // Clamp index after the photo list is refreshed
+        const newLength = paginatedPhotos.value?.data?.length || 0;
+        if (newLength === 0) {
+            currentPhotoIndex.value = 0;
+        } else if (currentPhotoIndex.value >= newLength) {
+            currentPhotoIndex.value = newLength - 1;
+        }
+        imageLoading.value = true;
+    } catch (error) {
+        // DELETE_PHOTO already shows error toast
+        console.error('Failed to delete photo:', error);
+    } finally {
+        isDeleting.value = false;
+    }
 };
 
 const hideTaggingHelp = () => {
