@@ -27,11 +27,13 @@ trait ResolvesUserProfile
     {
         $userId = $user->id;
 
+        $s0 = microtime(true);
         // Core stats: 1 MySQL query + 1 Redis pipeline (stats hash only, no streak)
         $stats = $this->resolveUserStatsLight($userId, $user);
         $uploads = $stats['uploads'];
         $tags = $stats['tags'];
         $xp = $stats['xp'];
+        $s1 = microtime(true);
 
         // Level — pure PHP, zero queries
         $levelInfo = LevelService::getUserLevel($xp);
@@ -39,6 +41,7 @@ trait ResolvesUserProfile
         // Rank — 1 Redis ZREVRANK (fast O(log N)), cached fallback
         $totalRanked = Cache::remember('users:count', 3600, fn () => User::count());
         $globalPosition = $this->getGlobalRank($userId, (int) $user->xp);
+        $s2 = microtime(true);
 
         $percentile = $totalRanked > 0
             ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
@@ -52,6 +55,15 @@ trait ResolvesUserProfile
                 $team = ['id' => $teamModel->id, 'name' => $teamModel->name];
             }
         }
+        $s3 = microtime(true);
+
+        // Temporary: log sub-timings for production diagnosis
+        \Log::info('profile:buildFullProfileData', [
+            'user_id' => $userId,
+            'stats_ms' => round(($s1 - $s0) * 1000),
+            'rank_ms' => round(($s2 - $s1) * 1000),
+            'team_ms' => round(($s3 - $s2) * 1000),
+        ]);
 
         return [
             'user' => [
