@@ -175,7 +175,7 @@
             >?</button>
             <div
                 v-if="showShortcuts"
-                class="absolute bottom-9 left-0 bg-slate-800/95 backdrop-blur border border-white/10 rounded-xl p-4 text-xs space-y-1.5 w-56 shadow-xl"
+                class="absolute bottom-9 left-0 bg-slate-800/95 backdrop-blur border border-white/10 rounded-xl p-4 text-xs space-y-1.5 w-56 max-w-[calc(100vw-2rem)] shadow-xl"
             >
                 <p class="text-white/50 text-[10px] font-semibold uppercase tracking-widest mb-2">{{ $t('Keyboard shortcuts') }}</p>
                 <div class="flex justify-between"><span class="text-white/60">{{ $t('Confirm tags') }}</span><kbd class="text-white/40 bg-white/5 px-1.5 py-0.5 rounded font-mono">Enter</kbd></div>

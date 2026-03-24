@@ -250,14 +250,11 @@ class ProfileController extends Controller
         $user = Auth::user();
         $userId = $user->id;
 
-        $t0 = microtime(true);
         $data = $this->buildFullProfileData($user);
-        $t1 = microtime(true);
 
         // Streak only — don't re-run resolveUserStatsLight (already called by buildFullProfileData)
         $userScope = \App\Services\Redis\RedisKeys::user($userId);
         $data['stats']['streak'] = $this->calculateStreak($userScope, $userId);
-        $t2 = microtime(true);
 
         // Global stats + percentages — cached 5min, only for SPA dashboard
         [$globalPhotos, $globalTags] = Cache::remember('profile:global_stats', 300, function () {
@@ -279,7 +276,6 @@ class ProfileController extends Controller
         $tags = $data['stats']['tags'];
         $data['stats']['photo_percent'] = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
         $data['stats']['tag_percent'] = ($tags && $globalTags) ? round($tags / $globalTags * 100, 2) : 0;
-        $t3 = microtime(true);
 
         // Location counts — cached 1hr, keyed by upload count (auto-busts when new photo uploaded)
         $photoCount = $uploads ?: (int) Photo::where('user_id', $userId)->count();
@@ -294,16 +290,6 @@ class ProfileController extends Controller
             'countries' => (int) ($locationCounts->countries ?? 0),
             'states' => (int) ($locationCounts->states ?? 0),
             'cities' => (int) ($locationCounts->cities ?? 0),
-        ];
-        $t4 = microtime(true);
-
-        // Temporary timing — remove after diagnosis
-        $data['_timing'] = [
-            'core_profile_ms' => round(($t1 - $t0) * 1000),
-            'streak_ms' => round(($t2 - $t1) * 1000),
-            'global_stats_ms' => round(($t3 - $t2) * 1000),
-            'locations_ms' => round(($t4 - $t3) * 1000),
-            'total_ms' => round(($t4 - $t0) * 1000),
         ];
 
         return $data;

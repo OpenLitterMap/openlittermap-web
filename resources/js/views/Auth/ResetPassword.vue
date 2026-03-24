@@ -1,16 +1,16 @@
 <template>
-    <div class="flex items-center justify-center px-4 bg-blue-600" style="min-height: calc(100vh - 73px)">
-        <div class="w-full max-w-md bg-white rounded-lg shadow p-8">
+    <div class="flex items-center justify-center px-4 bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900" style="min-height: calc(100vh - 73px)">
+        <div class="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-xl shadow-xl p-8">
             <!-- Loading state while validating token -->
-            <div v-if="validating" class="text-center text-gray-600">{{ $t('Validating your reset link...') }}</div>
+            <div v-if="validating" class="text-center text-white/60">{{ $t('Validating your reset link...') }}</div>
 
             <!-- Invalid or expired token -->
             <div v-else-if="tokenInvalid">
-                <h1 class="text-2xl font-bold text-center mb-2">{{ $t('Link expired') }}</h1>
-                <p class="text-gray-600 text-center mb-6">{{ $t('This password reset link is invalid or has expired.') }}</p>
+                <h1 class="text-2xl font-bold text-center mb-2 text-white">{{ $t('Link expired') }}</h1>
+                <p class="text-white/60 text-center mb-6">{{ $t('This password reset link is invalid or has expired.') }}</p>
                 <router-link
                     to="/password/reset"
-                    class="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded"
+                    class="block w-full text-center bg-emerald-500 hover:bg-emerald-400 text-white font-medium py-2.5 px-4 rounded-lg transition-colors"
                 >
                     {{ $t('Request a new link') }}
                 </router-link>
@@ -18,45 +18,45 @@
 
             <!-- Valid token — show form or success -->
             <template v-else>
-                <h1 class="text-2xl font-bold text-center mb-2">{{ $t('Set a new password') }}</h1>
-                <p class="text-gray-600 text-center mb-6">{{ $t('Enter your new password below.') }}</p>
+                <h1 class="text-2xl font-bold text-center mb-2 text-white">{{ $t('Set a new password') }}</h1>
+                <p class="text-white/60 text-center mb-6">{{ $t('Enter your new password below.') }}</p>
 
-                <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 rounded p-3 mb-4">
+                <div v-if="successMessage" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg p-3 mb-4">
                     {{ successMessage }} {{ $t('Redirecting...') }}
                 </div>
 
-                <div v-if="errorMessage" class="bg-red-50 border border-red-200 text-red-700 rounded p-3 mb-4">
+                <div v-if="errorMessage" class="bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg p-3 mb-4">
                     {{ errorMessage }}
                 </div>
 
                 <form v-if="!successMessage" @submit.prevent="submit">
                     <div class="mb-4">
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('Email address') }}</label>
+                        <label for="email" class="block text-sm font-medium text-white/70 mb-1">{{ $t('Email address') }}</label>
                         <input
                             id="email"
                             v-model="email"
                             type="email"
                             required
                             readonly
-                            class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 text-gray-500"
+                            class="w-full bg-white/5 border border-white/10 text-white/50 rounded-lg px-3 py-2.5"
                         />
                     </div>
 
                     <div class="mb-4">
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">{{ $t('New password') }}</label>
+                        <label for="password" class="block text-sm font-medium text-white/70 mb-1">{{ $t('New password') }}</label>
                         <input
                             id="password"
                             v-model="password"
                             type="password"
                             required
-                            minlength="5"
+                            minlength="8"
                             autofocus
-                            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            class="w-full bg-white/5 border border-white/20 text-white placeholder-white/30 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:border-emerald-500/50 focus:ring-emerald-500/30"
                         />
                     </div>
 
                     <div class="mb-4">
-                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1"
+                        <label for="password_confirmation" class="block text-sm font-medium text-white/70 mb-1"
                             >{{ $t('Confirm password') }}</label
                         >
                         <input
@@ -64,15 +64,15 @@
                             v-model="passwordConfirmation"
                             type="password"
                             required
-                            minlength="5"
-                            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            minlength="8"
+                            class="w-full bg-white/5 border border-white/20 text-white placeholder-white/30 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:border-emerald-500/50 focus:ring-emerald-500/30"
                         />
                     </div>
 
                     <button
                         type="submit"
                         :disabled="loading"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded disabled:opacity-50"
+                        class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-medium py-2.5 px-4 rounded-lg disabled:opacity-50 transition-colors"
                     >
                         {{ loading ? $t('Resetting...') : $t('Reset Password') }}
                     </button>

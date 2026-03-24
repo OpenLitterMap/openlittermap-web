@@ -55,7 +55,7 @@
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
             <router-link
                 to="/tag"
-                class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 px-8 py-3 rounded-xl text-white font-semibold transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-400/30"
+                class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 px-8 py-3.5 rounded-xl text-white font-semibold transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-400/30"
             >
                 {{ $t('Tag your photos to earn more XP') }}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

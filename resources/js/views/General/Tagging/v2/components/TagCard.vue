@@ -39,7 +39,7 @@
                     @click="decreaseQuantity"
                     :disabled="tag.quantity <= 1"
                     aria-label="Decrease quantity"
-                    class="w-7 h-7 rounded-md hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-9 h-9 rounded-md hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                     <span class="text-white/70 text-sm font-bold">-</span>
                 </button>
@@ -53,14 +53,14 @@
                     min="1"
                     max="100"
                     aria-label="Quantity"
-                    class="w-9 h-7 text-center bg-transparent text-white text-sm font-bold tabular-nums focus:outline-none"
+                    class="w-10 h-9 text-center bg-transparent text-white text-sm font-bold tabular-nums focus:outline-none"
                 />
 
                 <button
                     @click="increaseQuantity"
                     :disabled="tag.quantity >= 100"
                     aria-label="Increase quantity"
-                    class="w-7 h-7 rounded-md hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    class="w-9 h-9 rounded-md hover:bg-white/10 disabled:opacity-20 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                     <span class="text-white/70 text-sm font-bold">+</span>
                 </button>
@@ -71,7 +71,7 @@
                 @click="cyclePickedUp"
                 aria-label="Picked up status"
                 :class="[
-                    'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 flex-shrink-0 flex items-center gap-1',
+                    'px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex-shrink-0 flex items-center gap-1',
                     tag.pickedUp === true
                         ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/40'
                         : tag.pickedUp === false
@@ -87,7 +87,7 @@
             <!-- Add details button -->
             <button
                 @click="showDetails ? (showDetails = false) : openDetails()"
-                class="px-2 py-1 text-[11px] font-medium text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors flex-shrink-0 border border-transparent hover:border-emerald-500/20"
+                class="px-3 py-2 text-xs font-medium text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors flex-shrink-0 border border-transparent hover:border-emerald-500/20"
             >
                 {{ showDetails ? 'Hide tagging menu' : '+ Add more tags' }}
             </button>
@@ -97,7 +97,7 @@
                 @click="$emit('remove')"
                 aria-label="Remove tag"
                 title="Remove tag"
-                class="w-7 h-7 flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
+                class="w-9 h-9 flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex-shrink-0"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -106,7 +106,7 @@
         </div>
 
         <!-- XP + Type pills (single row) -->
-        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-white/5 text-[11px] min-w-0">
+        <div class="flex items-center gap-2 mt-2 pt-2 border-t border-white/5 text-xs min-w-0">
             <span class="text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded flex-shrink-0">+{{ tagXp }} XP</span>
             <span v-if="!props.availableTypes.length" class="text-white/30 truncate">{{ tagBreakdown }}</span>
             <div class="flex-1 min-w-0"></div>
@@ -116,7 +116,7 @@
                     :key="t.id"
                     @click="setType(tag.typeId === t.id ? null : t.id)"
                     :class="[
-                        'px-2 py-0.5 rounded-lg text-[11px] font-medium transition-colors border whitespace-nowrap flex-shrink-0',
+                        'px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border whitespace-nowrap flex-shrink-0',
                         tag.typeId === t.id
                             ? 'bg-emerald-500/30 text-white border-emerald-400/50 ring-1 ring-emerald-400/30'
                             : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10',

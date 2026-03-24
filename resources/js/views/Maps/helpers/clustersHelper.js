@@ -51,12 +51,20 @@ export const clustersHelper = {
         const count = feature.properties.point_count;
         const size = count < MEDIUM_CLUSTER_SIZE ? 'small' : count < LARGE_CLUSTER_SIZE ? 'medium' : 'large';
 
+        const colors = {
+            small: { outer: 'rgba(181,226,140,0.6)', inner: 'rgba(110,204,57,0.6)' },
+            medium: { outer: 'rgba(241,211,87,0.6)', inner: 'rgba(240,194,12,0.6)' },
+            large: { outer: 'rgba(253,156,115,0.6)', inner: 'rgba(241,128,23,0.6)' },
+        };
+        const c = colors[size];
+
         const icon = L.divIcon({
-            html: `<div class="mi"><span class="mx-auto my-auto" style="color: #4a4a4a !important;">${
+            html: `<div style="width:40px;height:40px;border-radius:50%;background:${c.outer};display:flex;align-items:center;justify-content:center;"><div style="width:30px;height:30px;border-radius:50%;background:${c.inner};display:flex;align-items:center;justify-content:center;"><span style="color:#4a4a4a;font-weight:500;font-size:11px;line-height:1;">${
                 feature.properties.point_count_abbreviated
-            }</span></div>`,
-            className: 'marker-cluster-' + size,
+            }</span></div></div>`,
+            className: 'marker-cluster',
             iconSize: L.point(40, 40),
+            iconAnchor: L.point(20, 20),
         });
 
         return L.marker(latLng, { icon });

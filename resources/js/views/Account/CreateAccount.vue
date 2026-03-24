@@ -1,37 +1,23 @@
 <template>
-    <div class="relative min-h-[calc(100vh-72px)]">
-        <!-- Background images with lower z-index -->
-        <div class="absolute inset-0 z-0">
-            <img
-                :src="mountainsBg"
-                alt=""
-                class="h-full w-full object-cover pointer-events-none select-none md:hidden"
-            />
-            <img
-                :src="mountainsWideBg"
-                alt=""
-                class="h-full w-full object-cover pointer-events-none select-none hidden md:block"
-            />
-        </div>
-
-        <!-- Content layer with higher z-index -->
-        <div class="relative z-10 flex min-h-[calc(100vh-72px)] flex-col">
+    <div class="relative min-h-[calc(100vh-72px)] bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900">
+        <!-- Content layer -->
+        <div class="flex min-h-[calc(100vh-72px)] flex-col">
             <section class="flex-1 flex items-center justify-center flex-col p-4">
                 <div class="w-full max-w-md">
-                    <div class="rounded-xl bg-white border border-gray-200 p-4 shadow-xl md:p-6">
-                        <h2 class="mb-4 text-xl font-bold text-gray-800">
+                    <div class="rounded-xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 shadow-xl md:p-6">
+                        <h2 class="mb-4 text-xl font-bold text-white">
                             {{ $t('Sign up to tell your story about litter & plastic pollution.') }}
                         </h2>
 
                         <!-- General server error -->
-                        <p v-if="serverErrors.general" class="mb-3 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+                        <p v-if="serverErrors.general" class="mb-3 rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-300">
                             {{ serverErrors.general[0] }}
                         </p>
 
                         <form @submit.prevent="submit" novalidate>
                             <!-- Username -->
                             <div class="mb-3">
-                                <label for="username" class="mb-1 block text-sm font-medium text-gray-700">
+                                <label for="username" class="mb-1 block text-sm font-medium text-white/70">
                                     {{ $t('Username') }}
                                 </label>
                                 <div class="relative">
@@ -58,7 +44,7 @@
                                         <button
                                             type="button"
                                             @click="refreshUsername"
-                                            class="p-1 text-gray-400 hover:text-emerald-500 focus:outline-none transition-colors"
+                                            class="p-1 text-white/40 hover:text-emerald-400 focus:outline-none transition-colors"
                                             aria-label="Generate new username"
                                             :title="$t('Generate new username')"
                                         >
@@ -73,14 +59,14 @@
                                         </button>
                                     </span>
                                 </div>
-                                <p v-if="errorFor('username')" class="mt-1 text-xs text-red-600">
+                                <p v-if="errorFor('username')" class="mt-1 text-xs text-red-400">
                                     {{ errorFor('username') }}
                                 </p>
                             </div>
 
                             <!-- Email -->
                             <div class="mb-3">
-                                <label for="email" class="mb-1 block text-sm font-medium text-gray-700">
+                                <label for="email" class="mb-1 block text-sm font-medium text-white/70">
                                     {{ $t('E-Mail Address') }}
                                 </label>
                                 <div class="relative">
@@ -113,14 +99,14 @@
                                         required
                                     />
                                 </div>
-                                <p v-if="errorFor('email')" class="mt-1 text-xs text-red-600">
+                                <p v-if="errorFor('email')" class="mt-1 text-xs text-red-400">
                                     {{ errorFor('email') }}
                                 </p>
                             </div>
 
                             <!-- Password -->
                             <div class="mb-3">
-                                <label for="password" class="mb-1 block text-sm font-medium text-gray-700">
+                                <label for="password" class="mb-1 block text-sm font-medium text-white/70">
                                     {{ $t('Create a password') }}
                                 </label>
                                 <div class="relative">
@@ -159,7 +145,7 @@
                                         <button
                                             type="button"
                                             @click="showPassword = !showPassword"
-                                            class="text-gray-400 hover:text-gray-600 focus:outline-none"
+                                            class="text-white/40 hover:text-white/70 focus:outline-none"
                                             :aria-label="showPassword ? 'Hide password' : 'Show password'"
                                         >
                                             <svg
@@ -200,7 +186,7 @@
                                     </span>
                                 </div>
 
-                                <p v-if="errorFor('password')" class="mt-1 text-xs text-red-600">
+                                <p v-if="errorFor('password')" class="mt-1 text-xs text-red-400">
                                     {{ errorFor('password') }}
                                 </p>
                             </div>
@@ -211,15 +197,15 @@
                                     <input
                                         v-model="acceptedTerms"
                                         type="checkbox"
-                                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
+                                        class="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500"
                                     />
-                                    <span class="text-sm text-gray-600">
+                                    <span class="text-sm text-white/60">
                                         {{ $t('I agree to the') }}
-                                        <router-link to="/terms" class="text-emerald-600 hover:underline"
+                                        <router-link to="/terms" class="text-emerald-400 hover:underline"
                                             >{{ $t('Terms') }}</router-link
                                         >
                                         {{ $t('and') }}
-                                        <router-link to="/privacy" class="text-emerald-600 hover:underline"
+                                        <router-link to="/privacy" class="text-emerald-400 hover:underline"
                                             >{{ $t('Privacy Policy') }}</router-link
                                         >
                                     </span>
@@ -238,7 +224,7 @@
                             </div>
                             <p
                                 v-if="serverErrors['g-recaptcha-response']"
-                                class="mb-2 text-center text-xs text-red-600"
+                                class="mb-2 text-center text-xs text-red-400"
                             >
                                 {{ $t('Please complete the reCAPTCHA') }}
                             </p>
@@ -247,7 +233,7 @@
                             <button
                                 type="submit"
                                 :disabled="!canSubmit"
-                                class="w-full rounded-lg py-2.5 font-medium text-white transition-all disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 bg-emerald-500 hover:bg-emerald-400"
+                                class="w-full rounded-lg py-2.5 font-medium text-white transition-all disabled:cursor-not-allowed disabled:bg-white/5 disabled:text-white/20 bg-emerald-500 hover:bg-emerald-400"
                             >
                                 <span v-if="!isSubmitting">{{ $t('Create Account') }}</span>
                                 <span v-else class="flex items-center justify-center gap-2">
@@ -270,18 +256,18 @@
                                 </span>
                             </button>
 
-                            <p class="mt-2 text-center text-xs text-gray-400">
+                            <p class="mt-2 text-center text-xs text-white/30">
                                 {{ $t("Check spam folder if verification email doesn't arrive") }}
                             </p>
 
                             <!-- Sign in link -->
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <p class="text-center text-sm text-gray-500">
+                            <div class="mt-4 pt-4 border-t border-white/10">
+                                <p class="text-center text-sm text-white/50">
                                     {{ $t('Have an account?') }}
                                     <button
                                         type="button"
                                         @click="navigateToLogin"
-                                        class="text-emerald-600 hover:underline"
+                                        class="text-emerald-400 hover:underline"
                                     >
                                         {{ $t('Sign in') }}
                                     </button>
@@ -302,8 +288,6 @@ import { useToast } from 'vue-toastification';
 import { useUserStore } from '@/stores/user';
 import { useModalStore } from '@/stores/modal';
 import { RecaptchaV2 } from 'vue3-recaptcha-v2';
-import mountainsBg from '@/assets/pixel_art/mountains.JPG';
-import mountainsWideBg from '@/assets/pixel_art/boy1.jpg';
 
 const router = useRouter();
 const toast = useToast();
@@ -453,9 +437,9 @@ function onPasswordInput() {
 
 function inputClass(field) {
     if (errorFor(field)) {
-        return 'bg-white border-red-300 text-gray-800 placeholder-gray-400 focus:border-red-400 focus:ring-red-400/30';
+        return 'bg-white/5 border-red-500/40 text-white placeholder-white/30 focus:border-red-400 focus:ring-red-400/30';
     }
-    return 'bg-white border-gray-300 text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:ring-emerald-500/30';
+    return 'bg-white/5 border-white/20 text-white placeholder-white/30 focus:border-emerald-500/50 focus:ring-emerald-500/30';
 }
 
 async function submit() {

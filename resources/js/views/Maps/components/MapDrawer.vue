@@ -1,21 +1,40 @@
 <template>
-    <div :class="['map-drawer', { open: isOpen }]" v-show="shouldShowDrawer">
-        <!-- Drawer Toggle Button -->
-        <button class="drawer-toggle" @click="$emit('toggle')">
+    <div
+        :class="['map-drawer', { open: isOpen, mobile: isMobile }]"
+        :style="isMobile ? mobileStyle : {}"
+        v-show="shouldShowDrawer"
+    >
+        <!-- Desktop: Drawer Toggle Button -->
+        <button v-if="!isMobile" class="drawer-toggle" @click="$emit('toggle')">
             <i :class="['fas', isOpen ? 'fa-chevron-left' : 'fa-chart-bar']"></i>
         </button>
 
+        <!-- Mobile: Drag Handle -->
+        <div
+            v-if="isMobile"
+            class="mobile-drag-handle"
+            @touchstart.passive="onTouchStart"
+            @touchmove.passive="onTouchMove"
+            @touchend="onTouchEnd"
+            @click="onHandleTap"
+        >
+            <div class="drag-pill"></div>
+            <span class="drag-label">{{ $t('Data Analysis') }}</span>
+        </div>
+
         <!-- Drawer Content -->
-        <div class="drawer-content">
+        <div
+            class="drawer-content"
+            :class="{ 'mobile-content': isMobile }"
+        >
             <!-- Header -->
             <div class="drawer-header">
-                <h2>{{ $t('Data Analysis') }}</h2>
+                <h2 v-if="!isMobile">{{ $t('Data Analysis') }}</h2>
                 <div class="tabs">
                     <button :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">
                         {{ $t('Overview') }}
                     </button>
                     <button :class="{ active: activeTab === 'details' }" @click="activeTab = 'details'">{{ $t('Details') }}</button>
-                    <!--                    <button :class="{ active: activeTab === 'export' }" @click="activeTab = 'export'">Export</button>-->
                 </div>
             </div>
 
@@ -92,7 +111,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import MapDrawerHelper from '../helpers/mapDrawerHelper.js';
 import MapDrawerOverviewTab from './tabs/MapDrawerOverviewTab.vue';
 import MapDrawerDetailsTab from './tabs/MapDrawerDetailsTab.vue';
@@ -139,10 +158,141 @@ const emit = defineEmits(['toggle', 'highlight-category', 'highlight-object', 'f
 // State
 const activeTab = ref('overview');
 
+// ─── Mobile Detection ────────────────────────────────────────────────
+const isMobile = ref(false);
+let mediaQuery = null;
+
+const updateMobile = (e) => {
+    isMobile.value = e.matches;
+};
+
+onMounted(() => {
+    mediaQuery = window.matchMedia('(max-width: 768px)');
+    isMobile.value = mediaQuery.matches;
+    mediaQuery.addEventListener('change', updateMobile);
+    window.addEventListener('resize', updateSnapPoints);
+});
+
+onBeforeUnmount(() => {
+    if (mediaQuery) {
+        mediaQuery.removeEventListener('change', updateMobile);
+    }
+    window.removeEventListener('resize', updateSnapPoints);
+});
+
+// ─── Mobile Bottom Drawer ────────────────────────────────────────────
+const SNAP_COLLAPSED = 60;
+const snapHalf = ref(Math.round(window.innerHeight * 0.5));
+const snapFull = ref(Math.round(window.innerHeight * 0.9));
+
+const drawerState = ref('half');
+const drawerHeight = ref(snapHalf.value);
+
+const updateSnapPoints = () => {
+    snapHalf.value = Math.round(window.innerHeight * 0.5);
+    snapFull.value = Math.round(window.innerHeight * 0.9);
+    // Re-snap to current state with new values
+    if (drawerState.value === 'half') drawerHeight.value = snapHalf.value;
+    else if (drawerState.value === 'full') drawerHeight.value = snapFull.value;
+};
+const isDragging = ref(false);
+
+let touchStartY = 0;
+let touchStartHeight = 0;
+let touchStartTime = 0;
+
+const mobileStyle = computed(() => {
+    if (!isMobile.value) return {};
+    return {
+        height: `${drawerHeight.value}px`,
+        transition: isDragging.value ? 'none' : 'height 0.3s ease',
+    };
+});
+
+const snapToState = (state) => {
+    drawerState.value = state;
+    if (state === 'collapsed') {
+        drawerHeight.value = SNAP_COLLAPSED;
+        emit('toggle');
+    } else if (state === 'half') {
+        drawerHeight.value = snapHalf.value;
+    } else {
+        drawerHeight.value = snapFull.value;
+    }
+};
+
+const onTouchStart = (e) => {
+    const touch = e.touches[0];
+    touchStartY = touch.clientY;
+    touchStartHeight = drawerHeight.value;
+    touchStartTime = Date.now();
+    isDragging.value = true;
+};
+
+const onTouchMove = (e) => {
+    if (!isDragging.value) return;
+    const touch = e.touches[0];
+    const deltaY = touchStartY - touch.clientY; // positive = dragging up
+    const newHeight = Math.min(snapFull.value, Math.max(SNAP_COLLAPSED, touchStartHeight + deltaY));
+    drawerHeight.value = newHeight;
+};
+
+const onTouchEnd = (e) => {
+    if (!isDragging.value) return;
+    isDragging.value = false;
+
+    const elapsed = Date.now() - touchStartTime;
+    const velocity = (touchStartHeight - drawerHeight.value) / elapsed; // negative = dragging up
+
+    // Fast swipe detection
+    if (Math.abs(velocity) > 0.5) {
+        if (velocity < 0) {
+            // Swiped up
+            snapToState(drawerState.value === 'collapsed' ? 'half' : 'full');
+        } else {
+            // Swiped down
+            snapToState(drawerState.value === 'full' ? 'half' : 'collapsed');
+        }
+        return;
+    }
+
+    // Position-based snap
+    const midCollapsedHalf = (SNAP_COLLAPSED + snapHalf.value) / 2;
+    const midHalfFull = (snapHalf.value + snapFull.value) / 2;
+
+    if (drawerHeight.value < midCollapsedHalf) {
+        snapToState('collapsed');
+    } else if (drawerHeight.value < midHalfFull) {
+        snapToState('half');
+    } else {
+        snapToState('full');
+    }
+};
+
+const onHandleTap = () => {
+    if (isDragging.value) return;
+    // Cycle: collapsed → half → full → collapsed
+    if (drawerState.value === 'collapsed') {
+        snapToState('half');
+    } else if (drawerState.value === 'half') {
+        snapToState('full');
+    } else {
+        snapToState('collapsed');
+    }
+};
+
+// When drawer becomes visible on mobile, default to half
+watch(
+    () => props.currentZoom >= props.clusterZoomThreshold,
+    (visible) => {
+        if (visible && isMobile.value && drawerState.value === 'collapsed') {
+            snapToState('half');
+        }
+    }
+);
+
 // Computed properties
 const shouldShowDrawer = computed(() => {
-    // Always show drawer when we're at points zoom level (>= threshold)
-    // This ensures the drawer button is always visible in points view
     return props.currentZoom >= props.clusterZoomThreshold;
 });
 
@@ -164,7 +314,6 @@ const handleFilterApply = (filter) => {
 };
 
 const formatFilterLabel = (id) => {
-    // Format snake_case to Title Case
     if (typeof id === 'string' && id.includes('_')) {
         return id.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
     }

@@ -856,8 +856,8 @@
     }
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
+/* Responsive design — Desktop narrow */
+@media (max-width: 768px) and (hover: hover) {
     .drawer-content {
         width: 100%;
         max-width: 350px;
@@ -865,6 +865,79 @@
 
     .map-drawer.open .drawer-toggle {
         left: min(350px, 100vw);
+    }
+}
+
+/* ─── Mobile Bottom Drawer ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .map-drawer.mobile {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        height: 60px;
+        width: 100%;
+        flex-direction: column;
+        pointer-events: auto;
+        z-index: 1000;
+    }
+
+    .map-drawer.mobile .drawer-toggle {
+        display: none;
+    }
+
+    .map-drawer.mobile .drawer-content,
+    .map-drawer.mobile .mobile-content {
+        width: 100%;
+        max-width: 100%;
+        transform: none;
+        height: 100%;
+        border-radius: 16px 16px 0 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-drag-handle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 16px 6px;
+        cursor: grab;
+        background: rgba(31, 41, 55, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 16px 16px 0 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        touch-action: none;
+    }
+
+    .mobile-drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .drag-pill {
+        width: 40px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 2px;
+        margin-bottom: 6px;
+    }
+
+    .drag-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Hide title in header since drag handle shows it */
+    .map-drawer.mobile .drawer-header h2 {
+        display: none;
+    }
+
+    .map-drawer.mobile .drawer-header {
+        padding-top: 8px;
     }
 
     .brands-grid {
