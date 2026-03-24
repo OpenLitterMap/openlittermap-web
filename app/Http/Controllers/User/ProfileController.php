@@ -7,21 +7,19 @@ use App\Enums\VerificationStatus;
 use App\Exports\CreateCSVExport;
 use App\Http\Controllers\Controller;
 use App\Jobs\EmailUserExportCompleted;
-use App\Models\CustomTag;
 use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\LevelService;
-use App\Services\Redis\RedisKeys;
-use App\Services\Redis\RedisMetricsCollector;
+use App\Traits\ResolvesUserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 
 class ProfileController extends Controller
 {
+    use ResolvesUserProfile;
     /**
      * Dispatch a request to download the users data
      *
@@ -242,40 +240,22 @@ class ProfileController extends Controller
 
     /**
      * Get comprehensive profile data for the authenticated user.
+     *
+     * Builds on the fast core profile (buildFullProfileData) and layers on
+     * heavier SPA-only data: streak, percentages, locations.
      */
     public function index(): array
     {
         /** @var User $user */
         $user = Auth::user();
         $userId = $user->id;
+        $data = $this->buildFullProfileData($user);
 
-        // Refresh user to pick up any query-builder updates (e.g. MetricsService
-        // syncs users.xp via User::where()->increment(), which doesn't update
-        // the cached model attributes)
-        $user->refresh();
+        // Streak — expensive (up to 365 GETBIT), only for SPA dashboard
+        $fullStats = $this->resolveUserStats($userId, $user);
+        $data['stats']['streak'] = $fullStats['streak'];
 
-        $stats = $this->resolveUserStats($userId, $user);
-        $uploads = $stats['uploads'];
-        $tags = $stats['tags'];
-        $xp = $stats['xp'];
-
-        // Level
-        $levelInfo = LevelService::getUserLevel($xp);
-
-        if ($user->level != $levelInfo['level']) {
-            $user->level = $levelInfo['level'];
-            $user->save();
-        }
-
-        // Rank from metrics table (all-time), consistent with LeaderboardController
-        $totalRanked = Cache::remember('users:count', 3600, fn () => User::count());
-        $globalPosition = $this->getGlobalRank($userId, (int) $user->xp);
-
-        $percentile = $totalRanked > 0
-            ? round((1 - ($globalPosition - 1) / $totalRanked) * 100, 1)
-            : 0;
-
-        // Global stats — cached 5 minutes (updated by MetricsService on every tag/upload)
+        // Global stats + percentages — cached 5min, only for SPA dashboard
         [$globalPhotos, $globalTags] = Cache::remember('profile:global_stats', 300, function () {
             $globalRow = DB::table('metrics')
                 ->where('timescale', 0)
@@ -291,13 +271,12 @@ class ProfileController extends Controller
             return [$photos, $tags];
         });
 
-        // Achievements
-        $unlockedCount = DB::table('user_achievements')
-            ->where('user_id', $userId)
-            ->count();
-        $totalAchievements = Cache::remember('achievements:count', 3600, fn () => DB::table('achievements')->count());
+        $uploads = $data['stats']['uploads'];
+        $tags = $data['stats']['tags'];
+        $data['stats']['photo_percent'] = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
+        $data['stats']['tag_percent'] = ($tags && $globalTags) ? round($tags / $globalTags * 100, 2) : 0;
 
-        // Location counts — cached 5 minutes, keyed by upload count so new uploads bust the cache
+        // Location counts — cached 5min, keyed by upload count
         $photoCount = $uploads ?: (int) Photo::where('user_id', $userId)->count();
         $locationCounts = Cache::remember("profile:{$userId}:locations:{$photoCount}", 300, fn () =>
             Photo::where('user_id', $userId)
@@ -306,123 +285,13 @@ class ProfileController extends Controller
                 ->first()
         );
 
-        // Percentage of global contribution
-        $photoPercent = ($uploads && $globalPhotos) ? round($uploads / $globalPhotos * 100, 2) : 0;
-        $tagPercent = ($tags && $globalTags) ? round($tags / $globalTags * 100, 2) : 0;
-
-        // Active team
-        $team = null;
-        if ($user->active_team) {
-            $teamModel = $user->team;
-            if ($teamModel) {
-                $team = ['id' => $teamModel->id, 'name' => $teamModel->name];
-            }
-        }
-
-        return [
-            'user' => [
-                'id' => $userId,
-                'name' => $user->name,
-                'username' => $user->username,
-                'email' => $user->email,
-                'avatar' => $user->avatar,
-                'created_at' => $user->created_at->toIso8601String(),
-                'member_since' => $user->created_at->format('F Y'),
-                'global_flag' => $user->global_flag,
-                'public_profile' => (bool) $user->public_profile,
-                'show_name' => (bool) $user->show_name,
-                'show_username' => (bool) $user->show_username,
-                'show_name_maps' => (bool) $user->show_name_maps,
-                'show_username_maps' => (bool) $user->show_username_maps,
-                'picked_up' => $user->picked_up === null ? null : (bool) $user->picked_up,
-                'previous_tags' => (bool) $user->previous_tags,
-                'emailsub' => (bool) $user->emailsub,
-                'prevent_others_tagging_my_photos' => (bool) $user->prevent_others_tagging_my_photos,
-                'public_photos' => (bool) $user->public_photos,
-            ],
-            'stats' => [
-                'uploads' => $uploads,
-                'tags' => $tags,
-                'xp' => $xp,
-                'streak' => $stats['streak'],
-                'littercoin' => (int) ($user->littercoin_allowance + $user->littercoin_owed),
-                'photo_percent' => $photoPercent,
-                'tag_percent' => $tagPercent,
-            ],
-            'level' => $levelInfo,
-            'rank' => [
-                'global_position' => $globalPosition,
-                'global_total' => $totalRanked,
-                'percentile' => $percentile,
-            ],
-            'global_stats' => [
-                'total_photos' => $globalPhotos,
-                'total_tags' => $globalTags,
-            ],
-            'achievements' => [
-                'unlocked' => $unlockedCount,
-                'total' => $totalAchievements,
-            ],
-            'locations' => [
-                'countries' => (int) ($locationCounts->countries ?? 0),
-                'states' => (int) ($locationCounts->states ?? 0),
-                'cities' => (int) ($locationCounts->cities ?? 0),
-            ],
-            'team' => $team,
+        $data['locations'] = [
+            'countries' => (int) ($locationCounts->countries ?? 0),
+            'states' => (int) ($locationCounts->states ?? 0),
+            'cities' => (int) ($locationCounts->cities ?? 0),
         ];
-    }
 
-    /**
-     * Resolve user stats from Redis with MySQL fallbacks.
-     */
-    private function resolveUserStats(int $userId, User $user): array
-    {
-        $redisMetrics = RedisMetricsCollector::getUserMetrics($userId);
-
-        // Total tags from metrics table (single indexed row lookup)
-        $metricsRow = DB::table('metrics')
-            ->where('user_id', $userId)
-            ->where('timescale', 0)
-            ->where('location_type', LocationType::Global->value)
-            ->where('location_id', 0)
-            ->where('year', 0)
-            ->where('month', 0)
-            ->first(['uploads', 'tags', 'xp']);
-
-        $uploads = (int) ($metricsRow->uploads ?? 0);
-        $tags = (int) ($metricsRow->tags ?? 0);
-        $xp = (int) ($metricsRow->xp ?? 0);
-
-        // Fallback to Redis/DB when no metrics row exists yet
-        if (! $uploads) {
-            $uploads = $redisMetrics['uploads'] ?: (int) Photo::where('user_id', $userId)->count();
-        }
-        if (! $xp) {
-            $xp = $redisMetrics['xp'] ?: (int) $user->xp;
-        }
-
-        return [
-            'uploads' => $uploads,
-            'tags' => $tags,
-            'xp' => $xp,
-            'streak' => $redisMetrics['streak'],
-        ];
-    }
-
-    /**
-     * Get the user's global rank position from Redis ZREVRANK.
-     * Falls back to users.xp count if user is not in the Redis ZSET.
-     */
-    private function getGlobalRank(int $userId, int $fallbackXp): int
-    {
-        $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
-        $rank = Redis::zRevRank($globalXpKey, (string) $userId);
-
-        if ($rank !== false) {
-            return $rank + 1; // 0-indexed → 1-indexed
-        }
-
-        return User::where('xp', '>', $fallbackXp)->count() + 1;
+        return $data;
     }
 
     /**

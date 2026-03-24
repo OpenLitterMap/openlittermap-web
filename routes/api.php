@@ -155,7 +155,7 @@ Route::post('/auth/login', [LoginController::class, 'login'])
     ->middleware(app()->isLocal() ? ['web'] : ['web', 'throttle:5,1']);
 
 Route::post('/auth/token', [AuthTokenController::class, 'login'])
-    ->middleware('throttle:5,1');
+    ->middleware('throttle:10,1');
 
 Route::post('/auth/logout', [LoginController::class, 'logout'])
     ->middleware(['web', 'auth:web']);

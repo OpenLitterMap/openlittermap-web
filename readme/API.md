@@ -20,7 +20,7 @@ All `auth:sanctum` routes accept both session cookies and Bearer tokens.
 ### POST /api/auth/token — Mobile Token Login
 
 **Auth:** None (guest)
-**Rate limit:** 5 attempts per minute
+**Rate limit:** 10 attempts per minute
 
 **Request:**
 ```json
@@ -34,33 +34,30 @@ Backward compat: accepts `email` or `username` field if `identifier` is absent.
 Priority: `identifier` > `email` > `username`.
 Auto-detects email vs username via `filter_var()`.
 
-**Response (200):**
+**Response (200):** Returns enriched profile data so mobile can skip the separate `GET /api/user/profile/index` call. Same shape as register.
 ```json
 {
   "token": "1|abcdef1234567890...",
   "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "username": "johndoe",
-    "name": null,
-    "verified": true,
-    "total_images": 42,
-    "xp": 5000,
-    "level": 3,
-    "xp_redis": 5000,
-    "position": 12,
-    "next_level": {
-      "level": 4,
-      "title": "Litter Wizard",
-      "xp": 5000,
-      "xp_into_level": 500,
-      "xp_for_next": 1000,
-      "xp_remaining": 500,
-      "progress_percent": 50
-    }
-  }
+    "id": 1, "name": null, "username": "johndoe", "email": "user@example.com",
+    "avatar": "default.jpg", "created_at": "2020-01-15T10:30:00+00:00",
+    "member_since": "January 2020", "global_flag": "us",
+    "public_profile": true, "show_name": true, "show_username": true,
+    "show_name_maps": true, "show_username_maps": true,
+    "picked_up": false, "previous_tags": false, "emailsub": true,
+    "prevent_others_tagging_my_photos": false, "public_photos": true
+  },
+  "stats": { "uploads": 42, "tags": 150, "xp": 5000, "littercoin": 250 },
+  "level": {
+    "level": 4, "title": "Litter Wizard", "xp": 5000,
+    "xp_into_level": 0, "xp_for_next": 5000, "xp_remaining": 5000, "progress_percent": 0
+  },
+  "rank": { "global_position": 12, "global_total": 500, "percentile": 97.6 },
+  "team": { "id": 5, "name": "Team A" }
 }
 ```
+
+**Note:** Mobile response is lean — does NOT include `achievements`, `locations`, `global_stats`, `stats.streak`, `stats.photo_percent`, or `stats.tag_percent`. These are only returned by `GET /api/user/profile/index` for the SPA dashboard.
 
 **Error (422):**
 ```json
@@ -133,15 +130,19 @@ Session is regenerated after login. `remember` sets 2-week persistent cookie.
 | `password` | required, min 8 chars |
 | `username` | optional (auto-generated if omitted), 3-255 chars, regex `/^[a-zA-Z0-9_-]+$/`, unique |
 
-**Response (200):**
+**Response (200):** Same enriched shape as `POST /api/auth/token` (token + user + stats + level + rank + team). Stats will be zeroed for new users.
 ```json
 {
   "token": "1|abcdef...",
-  "user": { /* full user object, xp=0, level=0 */ }
+  "user": { "id": 2, "username": "newuser", "email": "new@example.com", ... },
+  "stats": { "uploads": 0, "tags": 0, "xp": 0, "littercoin": 0 },
+  "level": { "level": 1, "title": "Noob", "progress_percent": 0, ... },
+  "rank": { "global_position": 501, "global_total": 500, "percentile": 0 },
+  "team": null
 }
 ```
 
-Side effects: welcome email (`NewUserRegMail`) sent, `Registered` and `UserSignedUp` events fired, quotas initialized (images_remaining=1000, verify_remaining=5000). `name` is always set to NULL regardless of input. Auto-generated usernames use pattern `{adjective}-{noun}-{number}` (e.g. `violently-enthusiastic-bin-overlord-5432`). Token created with name `mobile`.
+Side effects: welcome email (`WelcomeToOpenLitterMap`) sent, `Registered` and `UserSignedUp` events fired. `name` is always set to NULL regardless of input. Auto-generated usernames use pattern `{adjective}-{noun}-{number}` (e.g. `violently-enthusiastic-bin-overlord-5432`). Token created with name `mobile`.
 
 ---
 
@@ -548,7 +549,7 @@ For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object
   },
   "stats": {
     "uploads": 100,
-    "litter": 450,
+    "tags": 450,
     "xp": 5000,
     "streak": 7,
     "littercoin": 250,
@@ -569,13 +570,12 @@ For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object
     "global_total": 500,
     "percentile": 91.6
   },
-  "achievements": { "unlocked": 15, "total": 30 },
   "locations": { "countries": 5, "states": 12, "cities": 45 },
   "team": { "id": 5, "name": "Team A" }
 }
 ```
 
-Stats from Redis with MySQL fallback (`resolveUserStats()` batches DB fallback into single `selectRaw` query; litter falls back to `Photo::sum('total_tags')`, not deprecated `users.total_litter`). `global_stats` section removed. `team` is null if no active team.
+Stats from `ResolvesUserProfile` trait — metrics table + Redis with MySQL fallback. SPA response adds `streak`, `photo_percent`, `tag_percent`, and `locations` on top of the lean core profile. `achievements` and `global_stats` removed (unused by frontend). `team` is null if no active team.
 
 ---
 

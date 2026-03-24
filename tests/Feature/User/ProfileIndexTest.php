@@ -84,11 +84,9 @@ class ProfileIndexTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure([
             'user' => ['id', 'name', 'username', 'avatar', 'created_at', 'global_flag', 'public_profile'],
-            'stats' => ['uploads', 'tags', 'xp', 'streak'],
+            'stats' => ['uploads', 'tags', 'xp', 'streak', 'littercoin', 'photo_percent', 'tag_percent'],
             'level' => ['level', 'title', 'xp', 'xp_into_level', 'xp_for_next', 'xp_remaining', 'progress_percent'],
             'rank' => ['global_position', 'global_total', 'percentile'],
-            'global_stats' => ['total_photos', 'total_tags'],
-            'achievements' => ['unlocked', 'total'],
             'locations' => ['countries', 'states', 'cities'],
         ]);
 
@@ -101,8 +99,10 @@ class ProfileIndexTest extends TestCase
         $this->assertEquals(42, $data['stats']['tags']);
         $this->assertEquals(3, $data['level']['level']); // 500 XP → level 3 "Post-Noob" (thresholds: 0, 100, 500)
         $this->assertEquals(1, $data['rank']['global_position']);
-        $this->assertEquals(15, $data['global_stats']['total_photos']); // from aggregate global row
-        $this->assertEquals(100, $data['global_stats']['total_tags']); // from aggregate global row
+
+        // achievements and global_stats removed from response (unused by frontend)
+        $this->assertArrayNotHasKey('global_stats', $data);
+        $this->assertArrayNotHasKey('achievements', $data);
     }
 
     /** @test */

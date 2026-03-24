@@ -7,11 +7,9 @@ export const useProfileStore = defineStore('profile', {
         error: null,
 
         user: {},
-        stats: { uploads: 0, litter: 0, xp: 0, streak: 0 },
+        stats: { uploads: 0, tags: 0, xp: 0, streak: 0, littercoin: 0 },
         level: {},
         rank: { global_position: 0, global_total: 0, percentile: 0 },
-        global_stats: { total_photos: 0, total_litter: 0 },
-        achievements: { unlocked: 0, total: 0 },
         locations: { countries: 0, states: 0, cities: 0 },
         team: null,
     }),
@@ -33,9 +31,7 @@ export const useProfileStore = defineStore('profile', {
                 this.stats = data.stats;
                 this.level = data.level;
                 this.rank = data.rank;
-                this.global_stats = data.global_stats;
-                this.achievements = data.achievements;
-                this.locations = data.locations;
+                this.locations = data.locations ?? this.locations;
                 this.team = data.team;
 
                 // Sync settings-related fields to user store

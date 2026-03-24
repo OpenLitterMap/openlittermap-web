@@ -58,7 +58,7 @@ Returns `{ public: true, user, stats, level, rank, achievements, locations }` if
 ### Profile Endpoints (`auth:sanctum` group)
 
 ```
-GET  /api/user/profile/index          ProfileController@index    (full profile — dashboard, stats, rank, achievements, locations)
+GET  /api/user/profile/index          ProfileController@index    (full profile — stats, rank, streak, locations, percentages; no achievements/global_stats)
 GET  /api/user/profile/refresh        ProfileController@refresh  (lightweight — user fields, XP, level only; used by REFRESH_USER on app load)
 GET  /api/user/profile/map            ProfileController@geojson
 GET  /api/user/profile/download       ProfileController@download
@@ -135,12 +135,14 @@ Password-confirmed. Cleans up: AdminVerificationLog, cleanups, location ownershi
 
 | Field | Source |
 |-------|--------|
-| `stats` | `resolveUserStats()` — Redis `getUserMetrics()` with uploads fallback to `Photo::where('user_id', $id)->count()` instead of stale `users.total_images` column. Shared by `index()` and `show()`. |
-| `level` | `LevelService::getUserLevel($xp)` |
+| `stats` | `ResolvesUserProfile` trait — `resolveUserStatsLight()` (metrics table + Redis HGETALL, no streak). SPA `index()` adds streak via `resolveUserStats()`. |
+| `level` | `LevelService::getUserLevel($xp)` — pure PHP, zero queries |
 | `rank` | `getGlobalRank()` — Redis `ZREVRANK` on `{g}:lb:xp`, fallback to `users.xp` count |
-| `global_stats` | Cached 5 min — metrics aggregate row (user_id=0), fallback to photo count |
-| `achievements` | DB counts on `user_achievements` + cached `achievements` count |
-| `locations` | Cached 5 min — `Photo::where(user_id)` distinct country/state/city counts (keyed by photo count for auto-invalidation) |
+| `locations` | SPA only — cached 5 min, `Photo::where(user_id)` distinct country/state/city counts (keyed by photo count for auto-invalidation) |
+| `achievements` | **Removed** — uncached DB query, frontend shows "Coming Soon" placeholder |
+| `global_stats` | **Removed** — unused by frontend |
+
+**Performance:** Mobile auth response ~100ms (lean). SPA profile/index ~100ms warm, ~690ms cold cache (location COUNT DISTINCT is the cold-cache bottleneck at ~550ms).
 
 ---
 

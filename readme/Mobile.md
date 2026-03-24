@@ -12,7 +12,7 @@ The mobile app must use v3/v5 API endpoints exclusively. All legacy v1/v2/v4 end
 
 | Action | Method | Endpoint | Format |
 |--------|--------|----------|--------|
-| Auth (token) | `POST` | `/api/auth/token` | `{ identifier, password }` → `{ token, user }` |
+| Auth (token) | `POST` | `/api/auth/token` | `{ identifier, password }` → `{ token, user, stats, level, rank, team }` |
 | Validate token | `POST` | `/api/validate-token` | Bearer token → `{ message: "valid" }` |
 | Upload photo | `POST` | `/api/v3/upload` | multipart; EXIF or explicit lat/lon/date |
 | Add tags | `POST` | `/api/v3/tags` | CLO format (v5) |
@@ -21,21 +21,25 @@ The mobile app must use v3/v5 API endpoints exclusively. All legacy v1/v2/v4 end
 | Photo stats | `GET` | `/api/v3/user/photos/stats` | Aggregate counts |
 | Delete photo | `POST` | `/api/profile/photos/delete` | `{ "photoid": 123 }` |
 | Tag catalog | `GET` | `/api/tags/all` | Returns full taxonomy for search index |
-| Profile | `GET` | `/api/user/profile/index` | User stats, level, rank, achievements |
+| Profile | `GET` | `/api/user/profile/index` | User stats, level, rank (also returned by auth/token, so not needed after login) |
 | Global stats | `GET` | `/api/global/stats-data` | No auth; total tags/images/users |
 | Levels | `GET` | `/api/levels` | No auth; XP thresholds and titles |
 
 ### Auth
 
-Mobile uses Sanctum token auth:
+Mobile uses Sanctum token auth. Login returns enriched profile data — no separate `GET /api/user/profile/index` call needed:
 
 ```
-POST /api/auth/token  →  { token, user }
+POST /api/auth/token  →  { token, user, stats, level, rank, team }
 Authorization: Bearer <token>    // All subsequent requests
-POST /api/validate-token  →  { message: "valid" }
+POST /api/validate-token  →  { message: "valid" }  // Only on app resume, NOT after fresh login
 ```
+
+**Rate limit:** 10 attempts per minute.
 
 `AuthTokenController` accepts `identifier`, `email`, or `username` field for backward compatibility.
+
+**Lean response:** The auth/token response does NOT include `achievements`, `locations`, `global_stats`, or `stats.streak` — these are only returned by `GET /api/user/profile/index` for the SPA. See `readme/API.md` for exact response shape.
 
 ---
 

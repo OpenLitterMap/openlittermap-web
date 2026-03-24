@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ResolvesUserProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,8 +11,13 @@ use Illuminate\Validation\ValidationException;
 
 class AuthTokenController extends Controller
 {
+    use ResolvesUserProfile;
+
     /**
      * Issue a Sanctum token for mobile app authentication.
+     *
+     * Returns an enriched response with full profile data so the mobile app
+     * can skip the separate GET /api/user/profile/index call after login.
      *
      * Accepts email or username as identifier (same as SPA login).
      *
@@ -49,9 +55,12 @@ class AuthTokenController extends Controller
 
         $token = $user->createToken('mobile');
 
+        // Build full profile data (same shape as GET /api/user/profile/index)
+        $profileData = $this->buildFullProfileData($user);
+
         return response()->json([
             'token' => $token->plainTextToken,
-            'user' => $user,
+            ...$profileData,
         ]);
     }
 }

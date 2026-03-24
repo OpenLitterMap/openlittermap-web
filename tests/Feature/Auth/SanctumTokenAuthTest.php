@@ -13,7 +13,7 @@ class SanctumTokenAuthTest extends TestCase
      *  POST /api/auth/token — Mobile Login
      * ------------------------------------------------------------------ */
 
-    public function test_mobile_login_with_valid_email_returns_token_and_user(): void
+    public function test_mobile_login_with_valid_email_returns_token_and_full_profile(): void
     {
         $user = User::factory()->create([
             'email' => 'mobile@example.com',
@@ -26,10 +26,24 @@ class SanctumTokenAuthTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonStructure(['token', 'user'])
+            ->assertJsonStructure([
+                'token',
+                'user' => ['id', 'email', 'username', 'avatar', 'global_flag', 'public_profile'],
+                'stats' => ['uploads', 'tags', 'xp', 'littercoin'],
+                'level' => ['level', 'title', 'xp_for_next', 'xp_into_level', 'progress_percent'],
+                'rank' => ['global_position', 'global_total', 'percentile'],
+            ])
             ->assertJsonPath('user.email', 'mobile@example.com');
 
         $this->assertNotEmpty($response->json('token'));
+        $this->assertIsInt($response->json('stats.xp'));
+        $this->assertIsInt($response->json('rank.global_position'));
+
+        // Verify heavy data NOT included in mobile login (fetched separately if needed)
+        $this->assertArrayNotHasKey('global_stats', $response->json());
+        $this->assertArrayNotHasKey('achievements', $response->json());
+        $this->assertArrayNotHasKey('locations', $response->json());
+        $this->assertArrayNotHasKey('streak', $response->json('stats'));
     }
 
     public function test_mobile_login_with_valid_username_returns_token(): void
@@ -106,15 +120,15 @@ class SanctumTokenAuthTest extends TestCase
             'password' => 'password123',
         ]);
 
-        // Exhaust 5 attempts
-        for ($i = 0; $i < 5; $i++) {
+        // Exhaust 10 attempts
+        for ($i = 0; $i < 10; $i++) {
             $this->postJson('/api/auth/token', [
                 'identifier' => 'rate@example.com',
                 'password' => 'wrong_password',
             ]);
         }
 
-        // 6th attempt should be throttled
+        // 11th attempt should be throttled
         $response = $this->postJson('/api/auth/token', [
             'identifier' => 'rate@example.com',
             'password' => 'wrong_password',
@@ -154,7 +168,7 @@ class SanctumTokenAuthTest extends TestCase
      *  POST /api/register — Registration Returns Token
      * ------------------------------------------------------------------ */
 
-    public function test_register_returns_sanctum_token(): void
+    public function test_register_returns_enriched_response(): void
     {
         Mail::fake();
         Event::fake();
@@ -166,8 +180,16 @@ class SanctumTokenAuthTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonStructure(['token', 'user'])
-            ->assertJsonPath('user.email', 'newmobile@example.com');
+            ->assertJsonStructure([
+                'token',
+                'user' => ['id', 'email', 'username'],
+                'stats' => ['uploads', 'tags', 'xp', 'littercoin'],
+                'level' => ['level', 'title', 'progress_percent'],
+                'rank' => ['global_position', 'global_total', 'percentile'],
+            ])
+            ->assertJsonPath('user.email', 'newmobile@example.com')
+            ->assertJsonPath('stats.uploads', 0)
+            ->assertJsonPath('stats.xp', 0);
 
         // Token works on a protected route
         $token = $response->json('token');

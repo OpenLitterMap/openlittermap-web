@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Traits\ResolvesUserProfile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rules\Password;
@@ -17,6 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
+    use ResolvesUserProfile;
     protected string $redirectTo = '/upload';
 
     public function __construct()
@@ -66,9 +68,12 @@ class RegisterController extends Controller
 
         $token = $user->createToken('mobile');
 
+        // Build full profile data (same shape as POST /api/auth/token)
+        $profileData = $this->buildFullProfileData($user);
+
         return response()->json([
             'token' => $token->plainTextToken,
-            'user' => $user,
+            ...$profileData,
         ]);
     }
 
