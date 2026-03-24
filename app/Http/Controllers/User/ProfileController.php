@@ -281,9 +281,9 @@ class ProfileController extends Controller
         $data['stats']['tag_percent'] = ($tags && $globalTags) ? round($tags / $globalTags * 100, 2) : 0;
         $t3 = microtime(true);
 
-        // Location counts — cached 5min, keyed by upload count
+        // Location counts — cached 1hr, keyed by upload count (auto-busts when new photo uploaded)
         $photoCount = $uploads ?: (int) Photo::where('user_id', $userId)->count();
-        $locationCounts = Cache::remember("profile:{$userId}:locations:{$photoCount}", 300, fn () =>
+        $locationCounts = Cache::remember("profile:{$userId}:locations:{$photoCount}", 3600, fn () =>
             Photo::where('user_id', $userId)
                 ->whereNotNull('country_id')
                 ->selectRaw('COUNT(DISTINCT country_id) as countries, COUNT(DISTINCT state_id) as states, COUNT(DISTINCT city_id) as cities')
