@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\User;
 
+use App\Models\Teams\Team;
+use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use Tests\TestCase;
 
@@ -195,6 +197,68 @@ class SettingsProfileTest extends TestCase
 
         $response->assertOk();
         $this->assertEquals(0, $user->fresh()->show_username);
+    }
+
+    /** @test */
+    public function leaderboard_username_toggle_syncs_team_pivot(): void
+    {
+        $teamType = TeamType::factory()->create();
+        $team = Team::factory()->create(['type_id' => $teamType->id]);
+        $user = User::factory()->create([
+            'show_username' => false,
+            'active_team' => $team->id,
+        ]);
+        $team->users()->attach($user->id, [
+            'show_username_leaderboards' => false,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/privacy/leaderboard/username');
+
+        $response->assertOk();
+        $this->assertTrue($response->json('show_username'));
+        $this->assertEquals(1, $user->fresh()->show_username);
+        $pivot = $user->fresh()->teams()->where('teams.id', $team->id)->first()->pivot;
+        $this->assertEquals(1, $pivot->show_username_leaderboards);
+    }
+
+    /** @test */
+    public function leaderboard_name_toggle_syncs_team_pivot(): void
+    {
+        $teamType = TeamType::factory()->create();
+        $team = Team::factory()->create(['type_id' => $teamType->id]);
+        $user = User::factory()->create([
+            'show_name' => false,
+            'active_team' => $team->id,
+        ]);
+        $team->users()->attach($user->id, [
+            'show_name_leaderboards' => false,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/privacy/leaderboard/name');
+
+        $response->assertOk();
+        $this->assertTrue($response->json('show_name'));
+        $this->assertEquals(1, $user->fresh()->show_name);
+        $pivot = $user->fresh()->teams()->where('teams.id', $team->id)->first()->pivot;
+        $this->assertEquals(1, $pivot->show_name_leaderboards);
+    }
+
+    /** @test */
+    public function leaderboard_toggle_without_team_only_updates_global(): void
+    {
+        $user = User::factory()->create([
+            'show_username' => false,
+            'active_team' => null,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/api/settings/privacy/leaderboard/username');
+
+        $response->assertOk();
+        $this->assertTrue($response->json('show_username'));
+        $this->assertEquals(1, $user->fresh()->show_username);
     }
 
     /** @test */

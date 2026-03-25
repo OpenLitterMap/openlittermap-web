@@ -50,7 +50,8 @@ class ApiSettingsController extends Controller
     }
 
     /**
-     * Toggle privacy of users name on the leaderboards
+     * Toggle privacy of users name on the leaderboards.
+     * Updates team pivot when user has an active team (pivot takes precedence in LeaderboardController).
      */
     public function leaderboardName(Request $request): array
     {
@@ -58,17 +59,30 @@ class ApiSettingsController extends Controller
         $user->show_name = ! $user->show_name;
         $user->save();
 
+        if ($user->active_team) {
+            $user->teams()->updateExistingPivot($user->active_team, [
+                'show_name_leaderboards' => $user->show_name,
+            ]);
+        }
+
         return ['show_name' => $user->show_name];
     }
 
     /**
-     * Toggle privacy of users username on the leaderboards
+     * Toggle privacy of users username on the leaderboards.
+     * Updates team pivot when user has an active team (pivot takes precedence in LeaderboardController).
      */
     public function leaderboardUsername(Request $request): array
     {
         $user = Auth::user();
         $user->show_username = ! $user->show_username;
         $user->save();
+
+        if ($user->active_team) {
+            $user->teams()->updateExistingPivot($user->active_team, [
+                'show_username_leaderboards' => $user->show_username,
+            ]);
+        }
 
         return ['show_username' => $user->show_username];
     }

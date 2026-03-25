@@ -92,8 +92,8 @@ PATCH /api/settings                               SettingsController@update (soc
 ```
 POST /api/settings/privacy/maps/name              ApiSettingsController@mapsName
 POST /api/settings/privacy/maps/username          ApiSettingsController@mapsUsername
-POST /api/settings/privacy/leaderboard/name       ApiSettingsController@leaderboardName
-POST /api/settings/privacy/leaderboard/username   ApiSettingsController@leaderboardUsername
+POST /api/settings/privacy/leaderboard/name       ApiSettingsController@leaderboardName      (also syncs team_user pivot)
+POST /api/settings/privacy/leaderboard/username   ApiSettingsController@leaderboardUsername   (also syncs team_user pivot)
 POST /api/settings/privacy/createdby/name         ApiSettingsController@createdByName
 POST /api/settings/privacy/createdby/username     ApiSettingsController@createdByUsername
 POST /api/settings/privacy/toggle-previous-tags   ApiSettingsController@togglePreviousTags

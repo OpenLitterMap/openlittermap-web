@@ -79,7 +79,7 @@ GET /api/leaderboard
 ```
 
 Privacy is respected via two levels:
-- **Team-level pivot (takes precedence):** If the user has an active team, `show_name_leaderboards` and `show_username_leaderboards` on the `team_user` pivot **override** the user's global `show_name` / `show_username` settings. This allows users to have different privacy preferences per team.
+- **Team-level pivot (takes precedence):** If the user has an active team, `show_name_leaderboards` and `show_username_leaderboards` on the `team_user` pivot **override** the user's global `show_name` / `show_username` settings. The settings toggle endpoints (`ApiSettingsController@leaderboardName/leaderboardUsername`) sync both the global column and the active team's pivot column, keeping them in lock-step.
 - **Global fallback:** If no active team (or the pivot value is null), the user's global `show_name` / `show_username` settings apply.
 - **Safeguarding override:** School teams with safeguarding enabled always null out name/username/social/flag regardless of pivot settings.
 - Team name shows only if the user has leaderboard visibility enabled on their team pivot.
