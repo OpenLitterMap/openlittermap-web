@@ -151,8 +151,9 @@ class PhotoSignedUrlTest extends TestCase
     /** @test */
     public function it_returns_503_when_signed_url_generation_fails()
     {
-        // Use a photo with a filename but force temporaryUrl to fail
-        // by using a non-existent disk path pattern
+        // Force production environment so signed URL path is used
+        app()->detectEnvironment(fn () => 'production');
+
         $photo = Photo::factory()->create([
             'is_public' => true,
             'verified' => 2,
@@ -171,5 +172,26 @@ class PhotoSignedUrlTest extends TestCase
 
         $response->assertStatus(503);
         $this->assertEquals('Image unavailable', $response->json('error'));
+    }
+
+    /** @test */
+    public function it_returns_production_url_directly_in_local_dev()
+    {
+        $photo = Photo::factory()->create([
+            'is_public' => true,
+            'verified' => 2,
+            'filename' => 'https://olm-public.s3.amazonaws.com/2024/06/15/photo.jpg',
+        ]);
+
+        $response = $this->getJson(
+            "{$this->endpoint}/{$photo->id}/signed-url",
+            ['Origin' => 'https://olm.test']
+        );
+
+        $response->assertOk();
+        $this->assertEquals(
+            'https://olm-public.s3.amazonaws.com/2024/06/15/photo.jpg',
+            $response->json('url')
+        );
     }
 }

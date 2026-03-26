@@ -250,7 +250,8 @@ export const urlHelper = {
 
         if (location.load) {
             urlHelper.setViewInstantly({ latitude, longitude, zoom, photoId: location.photo }, mapInstance);
-        } else {
+        } else if (location.photo) {
+            // Only fly if there's a photo to open — map position is already set by initializeMap
             urlHelper.flyToLocation({ latitude, longitude, zoom, photoId: location.photo }, mapInstance);
         }
     },

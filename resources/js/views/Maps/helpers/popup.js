@@ -172,11 +172,11 @@ export const popupHelper = {
                     <div class="popup-spinner"></div>
                 </div>
                 <img
-                    src=""
+                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                     class="leaflet-litter-img leaflet-litter-img--hidden"
                     ${imageClickAttr}
                     alt="${translate('Photo')}"
-                    onerror="this.src='/assets/images/error.png'; this.classList.remove('leaflet-litter-img--hidden'); this.closest('.popup-image-wrap').classList.remove('popup-image-wrap--loading');"
+                    onerror="if(!this.dataset.errored){this.dataset.errored='1';this.classList.remove('leaflet-litter-img--hidden');this.closest('.popup-image-wrap').classList.remove('popup-image-wrap--loading');}"
                 />
             </div>
             <div class="popup-body">

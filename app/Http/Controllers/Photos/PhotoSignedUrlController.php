@@ -52,10 +52,20 @@ class PhotoSignedUrlController extends Controller
 
     private function generateSignedUrl(string $filename): ?string
     {
+        // Local dev with production dataset: return the full URL directly
+        if (! app()->isProduction() && filter_var($filename, FILTER_VALIDATE_URL)) {
+            return $filename;
+        }
+
         $disk = Storage::disk('s3');
         $baseUrl = str_replace('__placeholder__', '', $disk->url('__placeholder__'));
         $path = str_replace($baseUrl, '', $filename);
         $path = ltrim($path, '/');
+
+        // Local dev with MinIO-relative paths: serve directly
+        if (! app()->isProduction()) {
+            return $disk->url($path);
+        }
 
         try {
             return $disk->temporaryUrl($path, now()->addMinutes(self::URL_TTL_MINUTES));

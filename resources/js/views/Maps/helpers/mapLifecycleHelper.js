@@ -107,9 +107,9 @@ export const mapLifecycleHelper = {
             markerZoomAnimation: true,
         });
 
-        // Set initial view based on URL parameters
+        // Set initial view based on URL parameters (position is always restored, load gates data fetching)
         let currentZoom = MIN_ZOOM;
-        if (locationParams.load && locationParams.lat && locationParams.lon) {
+        if (locationParams.lat || locationParams.lon) {
             const lat = Math.max(-85, Math.min(85, locationParams.lat));
             const lon = Math.max(-180, Math.min(180, locationParams.lon));
             const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, locationParams.zoom));
