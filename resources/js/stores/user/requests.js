@@ -47,6 +47,10 @@ export const requests = {
                 password: payload.password,
             });
 
+            // Login regenerates the session, invalidating the old CSRF token.
+            // Refresh the XSRF-TOKEN cookie so subsequent requests use the new token.
+            await axios.get('/sanctum/csrf-cookie');
+
             const modalStore = useModalStore();
             modalStore.hideModal();
 

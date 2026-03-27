@@ -135,25 +135,54 @@ const pondLabel = computed(
         `</div>`,
 );
 
+function getXsrfToken() {
+    const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
 const server = {
     url: '.',
-    process: {
-        url: '/api/v3/upload',
-        method: 'POST',
-        withCredentials: true,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-        },
-        timeout: 120000,
-        onload: (response) => response,
-        onerror: (response) => {
-            try {
-                const parsed = JSON.parse(response);
-                return parsed.message || parsed.error || 'Upload failed';
-            } catch {
-                return 'Upload failed';
+    process: (fieldName, file, metadata, load, error, progress, abort) => {
+        const formData = new FormData();
+        formData.append(fieldName, file, file.name);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/v3/upload');
+        xhr.withCredentials = true;
+        xhr.timeout = 120000;
+
+        // Read XSRF-TOKEN cookie at request time so it's always fresh
+        xhr.setRequestHeader('X-XSRF-TOKEN', getXsrfToken());
+        xhr.setRequestHeader('Accept', 'application/json');
+
+        xhr.upload.onprogress = (e) => {
+            progress(e.lengthComputable, e.loaded, e.total);
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                load(xhr.responseText);
+            } else {
+                try {
+                    const parsed = JSON.parse(xhr.responseText);
+                    error(parsed.message || parsed.error || 'Upload failed');
+                } catch {
+                    error('Upload failed');
+                }
             }
-        },
+        };
+
+        xhr.onerror = () => error('Upload failed');
+        xhr.ontimeout = () => error('Upload timed out');
+
+        xhr.send(formData);
+
+        return {
+            abort: () => {
+                xhr.abort();
+                abort();
+            },
+        };
     },
 };
 
