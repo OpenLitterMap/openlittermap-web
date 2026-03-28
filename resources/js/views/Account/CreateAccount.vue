@@ -468,9 +468,15 @@ async function submit() {
             toast.success('Welcome Aboard! Your Litter Mapping Adventure Awaits!', { timeout: 6000 });
 
             password.value = '';
-            const intended = sessionStorage.getItem('intended_route');
-            sessionStorage.removeItem('intended_route');
-            await router.push(intended || '/upload');
+
+            // New users go to onboarding; returning users go to intended route
+            if (!userStore.onboardingCompleted) {
+                await router.push('/onboarding');
+            } else {
+                const intended = sessionStorage.getItem('intended_route');
+                sessionStorage.removeItem('intended_route');
+                await router.push(intended || '/upload');
+            }
         }
     } finally {
         isSubmitting.value = false;

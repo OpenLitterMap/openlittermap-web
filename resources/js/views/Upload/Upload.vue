@@ -7,6 +7,11 @@
         <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-teal-500/[0.07] blur-3xl pointer-events-none"></div>
         <div class="absolute top-1/3 -right-32 w-[400px] h-[400px] rounded-full bg-blue-500/[0.08] blur-3xl pointer-events-none"></div>
 
+        <!-- Onboarding step indicator -->
+        <div v-if="onboarding" class="relative z-10 max-w-3xl mx-auto px-4 md:px-8 pt-4">
+            <StepIndicator :current-step="2" />
+        </div>
+
         <!-- Header -->
         <div class="relative z-10 flex items-center justify-between px-4 md:px-8 py-3">
             <div>
@@ -49,7 +54,8 @@
                 <FilePond
                     ref="pond"
                     name="photo"
-                    allowMultiple
+                    :allowMultiple="!onboarding"
+                    :maxFiles="onboarding ? 1 : null"
                     max-file-size="20MB"
                     :maxParallelUploads="3"
                     :labelIdle="pondLabel"
@@ -74,7 +80,7 @@
             <!-- Tag CTA (appears after uploads complete) -->
             <div v-if="successCount > 0 && allDone" class="mt-6 text-center">
                 <router-link
-                    to="/tag"
+                    :to="onboarding ? '/onboarding/tag' : '/tag'"
                     class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 px-8 py-3.5 rounded-xl text-white font-semibold transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-400/30"
                 >
                     {{ $t('Tag your photos') }}
@@ -99,10 +105,20 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useUploadingStore } from '../../stores/uploading/index.js';
 import { useUserStore } from '../../stores/user/index.js';
+import StepIndicator from '@/components/onboarding/StepIndicator.vue';
+
+const props = defineProps({
+    onboarding: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const { t } = useI18n();
+const router = useRouter();
 const uploadingStore = useUploadingStore();
 const userStore = useUserStore();
 
@@ -208,6 +224,11 @@ const handleFileProcessed = (error, file) => {
             allDone.value = true;
             uploadingStore.setIsUploading(false);
             userStore.REFRESH_USER();
+
+            // Auto-redirect in onboarding mode
+            if (props.onboarding && successCount.value > 0) {
+                router.push('/onboarding/tag');
+            }
         }
     }
 };

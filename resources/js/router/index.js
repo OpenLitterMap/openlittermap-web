@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 // Middleware
 import middlewarePipeline from './middleware/middlewarePipeline';
 import auth from './middleware/auth';
+import onboarding from './middleware/onboarding';
 
 // Components
 import About from '../views/General/About.vue';
@@ -30,6 +31,8 @@ import Profile from '../views/Profile/Profile.vue';
 import PublicProfile from '../views/Profile/PublicProfile.vue';
 import ParticipantEntry from '../views/Teams/ParticipantEntry.vue';
 import ParticipantWorkspace from '../views/Teams/ParticipantWorkspace.vue';
+import OnboardingWelcome from '../views/Onboarding/OnboardingWelcome.vue';
+import Celebration from '../views/Onboarding/Celebration.vue';
 
 const routes = [
     // Public routes
@@ -111,13 +114,48 @@ const routes = [
         name: 'ResetPassword',
         component: ResetPassword,
     },
+    // Onboarding routes (auth only, no onboarding guard — these ARE the onboarding flow)
+    {
+        path: '/onboarding',
+        name: 'Onboarding',
+        component: OnboardingWelcome,
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/onboarding/upload',
+        name: 'OnboardingUpload',
+        component: Upload,
+        props: { onboarding: true },
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/onboarding/tag',
+        name: 'OnboardingTag',
+        component: AddTags,
+        props: { onboarding: true },
+        meta: {
+            middleware: [auth],
+        },
+    },
+    {
+        path: '/onboarding/complete',
+        name: 'OnboardingComplete',
+        component: Celebration,
+        meta: {
+            middleware: [auth],
+        },
+    },
     // Auth Routes
     {
         path: '/tag',
         name: 'AddTags',
         component: AddTags,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -125,7 +163,7 @@ const routes = [
         name: 'Upload',
         component: Upload,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -133,7 +171,7 @@ const routes = [
         name: 'Uploads',
         component: Uploads,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -141,7 +179,7 @@ const routes = [
         name: 'Teams',
         component: TeamsHub,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -149,7 +187,7 @@ const routes = [
         name: 'CreateTeam',
         component: CreateTeam,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -157,7 +195,7 @@ const routes = [
         name: 'Profile',
         component: Profile,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -184,7 +222,7 @@ const routes = [
         name: 'AdminRedis',
         component: Redis,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -192,7 +230,7 @@ const routes = [
         name: 'AdminQueue',
         component: AdminQueue,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
     {
@@ -200,7 +238,7 @@ const routes = [
         name: 'AdminUsers',
         component: AdminUsers,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboarding],
         },
     },
 ];

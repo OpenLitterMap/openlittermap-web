@@ -5,6 +5,11 @@
             <div v-if="showSuccessFlash" class="absolute inset-0 z-40 pointer-events-none border-2 border-emerald-400/60 rounded-xl" />
         </transition>
 
+        <!-- Onboarding step indicator -->
+        <div v-if="onboarding" class="px-4">
+            <StepIndicator :current-step="3" />
+        </div>
+
         <!-- Enhanced Header with integrated actions and XP display -->
         <TaggingHeader
             :current-photo="currentPhoto"
@@ -92,6 +97,17 @@
                                 </svg>
                             </button>
                         </div>
+
+                        <!-- Onboarding quick-select chips -->
+                        <OnboardingChips
+                            v-if="onboarding && hasPhotos"
+                            @add-tag="handleTagSelection"
+                        />
+
+                        <!-- Reassurance copy during onboarding -->
+                        <p v-if="onboarding && activeTags.length > 0" class="mb-2 text-xs text-emerald-400/70">
+                            One tag is enough to get started. You can always edit later.
+                        </p>
 
                         <!-- Main Search Bar -->
                         <UnifiedTagSearch
@@ -202,7 +218,16 @@ import TaggingHeader from './components/TaggingHeader.vue';
 import UnifiedTagSearch from './components/UnifiedTagSearch.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import ActiveTagsList from './components/ActiveTagsList.vue';
+import StepIndicator from '@/components/onboarding/StepIndicator.vue';
+import OnboardingChips from '@/components/onboarding/OnboardingChips.vue';
 import { calculateTotalXp, getToastSummary } from './useXpCalculator.js';
+
+const props = defineProps({
+    onboarding: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const { t } = useI18n();
 const toast = useToast();
@@ -1003,6 +1028,16 @@ const submitTags = async () => {
 
             // Clear only this photo's tags after successful submit
             delete tagsByPhoto.value[photoId];
+
+            // Onboarding: set completion optimistically (avoids redirect loop
+            // if REFRESH_USER hasn't returned before Celebration CTAs are clicked)
+            if (props.onboarding) {
+                if (userStore.user) {
+                    userStore.user.onboarding_completed_at = new Date().toISOString();
+                }
+                router.push('/onboarding/complete');
+                return;
+            }
 
             // If we came from a specific photo link, go back to uploads
             if (editPhotoId.value) {

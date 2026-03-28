@@ -33,6 +33,12 @@ class PhotoTagsController extends Controller
             $validatedData['tags']
         );
 
+        // Mark onboarding complete on first tag submission
+        $user = Auth::user();
+        if ($user->onboarding_completed_at === null) {
+            $user->update(['onboarding_completed_at' => now()]);
+        }
+
         return response()->json([
             'success' => true,
             'photoTags' => $photoTags,

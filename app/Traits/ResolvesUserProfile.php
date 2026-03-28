@@ -73,6 +73,7 @@ trait ResolvesUserProfile
                 'emailsub' => (bool) $user->emailsub,
                 'prevent_others_tagging_my_photos' => (bool) $user->prevent_others_tagging_my_photos,
                 'public_photos' => (bool) $user->public_photos,
+                'onboarding_completed_at' => $user->onboarding_completed_at?->toIso8601String(),
             ],
             'stats' => [
                 'uploads' => $uploads,

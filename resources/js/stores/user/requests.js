@@ -57,10 +57,14 @@ export const requests = {
             this.auth = true;
             this.user = response.data.user;
 
-            // Redirect to intended route (if auth middleware stored one) or /upload
-            const intended = sessionStorage.getItem('intended_route');
-            sessionStorage.removeItem('intended_route');
-            router.push(intended || '/upload');
+            // New users go to onboarding; returning users go to intended route
+            if (!this.onboardingCompleted) {
+                router.push('/onboarding');
+            } else {
+                const intended = sessionStorage.getItem('intended_route');
+                sessionStorage.removeItem('intended_route');
+                router.push(intended || '/upload');
+            }
         } catch (error) {
             if (error?.response?.status === 422) {
                 this.errorLogin =
