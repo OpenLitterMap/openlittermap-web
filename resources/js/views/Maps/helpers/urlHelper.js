@@ -248,11 +248,10 @@ export const urlHelper = {
 
         if (latitude === 0 && longitude === 0 && zoom === MIN_ZOOM) return;
 
-        if (location.load) {
+        if (location.load || location.photo) {
+            // Always set view instantly — initializeMap already positioned the map,
+            // this just applies the Y-offset for photo viewing
             urlHelper.setViewInstantly({ latitude, longitude, zoom, photoId: location.photo }, mapInstance);
-        } else if (location.photo) {
-            // Only fly if there's a photo to open — map position is already set by initializeMap
-            urlHelper.flyToLocation({ latitude, longitude, zoom, photoId: location.photo }, mapInstance);
         }
     },
 

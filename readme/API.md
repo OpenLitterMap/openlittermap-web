@@ -1341,7 +1341,7 @@ Supports ETag-based caching (`If-None-Match` header returns 304 if unchanged). R
 
 **Auth:** None (public)
 
-World totals from the metrics table (all-time, timescale=0, location_type=Global). User growth stats from `users.created_at`.
+World totals from the metrics table (all-time, timescale=0, location_type=Global). User growth stats from `users.created_at`. Tag and photo growth stats from daily metric buckets (timescale=1).
 
 **Response (200):**
 ```json
@@ -1351,7 +1351,13 @@ World totals from the metrics table (all-time, timescale=0, location_type=Global
   "total_users": 10000,
   "new_users_today": 12,
   "new_users_last_7_days": 85,
-  "new_users_last_30_days": 320
+  "new_users_last_30_days": 320,
+  "new_tags_today": 156,
+  "new_tags_last_7_days": 1230,
+  "new_tags_last_30_days": 4870,
+  "new_photos_today": 45,
+  "new_photos_last_7_days": 310,
+  "new_photos_last_30_days": 1250
 }
 ```
 
@@ -1488,10 +1494,53 @@ Returns team types ordered by `id` descending.
 
 **Auth:** Required (Sanctum)
 
-**Request:**
+Creates a new team. The user must have `remaining_teams > 0`. School teams require the `school_manager` role.
+
+**Request (community team):**
 ```json
-{ "name": "Team Name", "description": "...", "type_id": 1 }
+{
+  "name": "Cork Litter Pickers",
+  "identifier": "CorkLP2026",
+  "teamType": 1
+}
 ```
+
+**Request (school team — requires `school_manager` role):**
+```json
+{
+  "name": "St Mary's 5th Class",
+  "identifier": "StMarys2026",
+  "teamType": 2,
+  "contact_email": "teacher@school.ie",
+  "county": "Cork",
+  "academic_year": "2025/2026",
+  "class_group": "5th Class",
+  "participant_sessions_enabled": true,
+  "max_participants": 30,
+  "logo": "(file upload, image, max 2MB)"
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `name` | string | Yes | 3-100 chars, unique |
+| `identifier` | string | Yes | 3-100 chars, unique (join code) |
+| `teamType` | int | Yes | Must match `team_types.id` (get from `GET /api/teams/types`) |
+| `contact_email` | email | School only | Required for school teams |
+| `county` | string | School only | Required for school teams |
+| `academic_year` | string | School only | Optional, max 20 chars |
+| `class_group` | string | School only | Optional, max 100 chars |
+| `participant_sessions_enabled` | boolean | School only | Optional, default false |
+| `max_participants` | int | School only | Optional, 1-500 |
+| `logo` | file | School only | Optional, image, max 2MB |
+
+**Response (200):** `{ "success": true, "team": { ... } }`
+**Error (200):** `{ "success": false, "msg": "max-created" }` — user has no remaining team slots
+**Error (403):** Regular user tried to create school team
+**Error (422):** Validation errors (missing/invalid fields, duplicate name/identifier)
+
+**Controller:** `App\Http\Controllers\API\TeamsController@create`
+**Test:** `tests/Feature/Teams/CreateTeamTest.php`
 
 ---
 
