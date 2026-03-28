@@ -376,8 +376,8 @@ class LocationController extends Controller
 
     private function countContributors(LocationType $type, int $id): int
     {
-        return Cache::remember("location:{$type->value}:{$id}:contributors", 300, fn () =>
-            (int) DB::table('metrics')
+        return (int) Cache::remember("location:{$type->value}:{$id}:contributors", 300, fn () =>
+            DB::table('metrics')
                 ->where('timescale', 0)
                 ->where('location_type', $type->value)
                 ->where('location_id', $id)

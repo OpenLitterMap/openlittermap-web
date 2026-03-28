@@ -163,7 +163,7 @@ Built by a single developer over 17 years.
 - Admin roles: `superadmin` (all access), `admin` (photo review), `helper` (tag editing only) — Spatie Permission on `web` guard
 - Photo deletion must reverse metrics first: call `MetricsService::deletePhoto()` BEFORE `$photo->delete()`
 - Consistent API field naming: all list/leaderboard endpoints use `total_tags`, `total_images`, `total_members`, `created_at`, `updated_at` — never `total_litter`, `tags`, `photos`, `contributors`
-- `GET /api/global/stats-data` is public (no auth) — returns `total_tags`, `total_images`, `total_users`, `new_users_today`, `new_users_last_7_days`, `new_users_last_30_days` from metrics table + users table
+- `GET /api/global/stats-data` is public (no auth) — returns `total_tags`, `total_images`, `total_users`, `new_users_today`, `new_users_last_7_days`, `new_users_last_30_days`, `new_tags_today`, `new_tags_last_7_days`, `new_tags_last_30_days`, `new_photos_today`, `new_photos_last_7_days`, `new_photos_last_30_days` from metrics table + users table
 
 ## Level System
 XP-threshold based levels defined in `config/levels.php`. `LevelService::getUserLevel($xp)` returns level info.

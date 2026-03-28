@@ -152,7 +152,6 @@ export const popupHelper = {
 
         // Build share URL from photo ID
         const shareUrl = url || popupHelper.buildShareUrl(safeProps.id);
-        const safeShareUrl = htmlSanitizer.escapeHtml(shareUrl);
 
         const hasMetaContent = pickedUpHtml || dateFormatted;
         const hasFooterContent = hasSocialLinks || shareUrl;
@@ -184,7 +183,7 @@ export const popupHelper = {
                 ${userHtml ? `<div class="popup-attribution">${userHtml}</div>` : ''}
                 ${adminInfo ? `<div class="popup-admin">${adminInfo}</div>` : ''}
                 ${removedTags ? `<div class="popup-admin">${removedTags}</div>` : ''}
-                ${hasFooterContent ? popupHelper.buildFooter(safeProps.social, safeShareUrl, translate) : ''}
+                ${hasFooterContent ? popupHelper.buildFooter(safeProps.social, shareUrl, translate) : ''}
             </div>`;
     },
 
