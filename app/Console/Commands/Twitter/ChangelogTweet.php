@@ -7,6 +7,8 @@ namespace App\Console\Commands\Twitter;
 use App\Helpers\Twitter;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ChangelogTweet extends Command
 {
@@ -15,6 +17,8 @@ class ChangelogTweet extends Command
     protected $description = 'Tweet a threaded changelog from the daily changelog file';
 
     private const MAX_TWEET_LENGTH = 280;
+
+    private const MOBILE_CHANGELOG_URL = 'https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/';
 
     public function handle(): int
     {
@@ -31,7 +35,7 @@ class ChangelogTweet extends Command
             return self::SUCCESS;
         }
 
-        $parsed = $this->parseEntries($path);
+        $parsed = $this->parseEntries($path, $date);
 
         if (empty($parsed['web']) && empty($parsed['mobile'])) {
             $this->info("No changelog found for {$date} — skipping.");
@@ -67,11 +71,14 @@ class ChangelogTweet extends Command
      * - Lines starting with `- [Mobile] ` → mobile (prefix stripped)
      * - Lines starting with `- ` with no prefix → default to web
      *
+     * Also fetches mobile changelog from the react-native repo on GitHub.
+     * All entries from the mobile repo are treated as mobile entries.
+     *
      * Version prefixes and backticks are cleaned from all entries.
      *
      * @return array{web: string[], mobile: string[]}
      */
-    public function parseEntries(string $path): array
+    public function parseEntries(string $path, ?string $date = null): array
     {
         $web = [];
         $mobile = [];
@@ -95,7 +102,48 @@ class ChangelogTweet extends Command
             }
         }
 
+        // Fetch mobile changelog from react-native repo
+        if ($date) {
+            $mobileEntries = $this->fetchMobileChangelog($date);
+            $mobile = array_merge($mobile, $mobileEntries);
+        }
+
         return ['web' => $web, 'mobile' => $mobile];
+    }
+
+    /**
+     * Fetch mobile changelog entries from the react-native GitHub repo.
+     *
+     * @return string[]
+     */
+    public function fetchMobileChangelog(string $date): array
+    {
+        try {
+            $url = self::MOBILE_CHANGELOG_URL . "{$date}.md";
+            $response = Http::timeout(10)->get($url);
+
+            if (! $response->successful()) {
+                return [];
+            }
+
+            $entries = [];
+
+            foreach (explode("\n", $response->body()) as $line) {
+                $line = trim($line);
+
+                if (! str_starts_with($line, '- ')) {
+                    continue;
+                }
+
+                $entries[] = $this->cleanChange(substr($line, 2));
+            }
+
+            return $entries;
+        } catch (\Exception $e) {
+            Log::warning("Failed to fetch mobile changelog for {$date}: {$e->getMessage()}");
+
+            return [];
+        }
     }
 
     /**
