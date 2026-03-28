@@ -103,13 +103,16 @@ The `Twitter` helper has a production guard — all three methods (`sendTweet`, 
 **Send method:** `Twitter::sendThread()` (overview tweet + grouped change tweets)
 **Image:** No
 
-**Data source:** `readme/changelog/{date}.md` only. No GitHub API calls.
+**Data sources:**
+- **Web:** `readme/changelog/{date}.md` (local file). Entries default to web unless prefixed with `[Mobile]`
+- **Mobile:** Fetched from `https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{date}.md` via HTTP. All entries from this file are treated as mobile. Falls back to web-only if fetch fails (404, network error, timeout)
 
-**Entry prefixes:**
+**Entry prefixes (local file only):**
 - `- [Web] description` → web entry (prefix stripped)
 - `- [Mobile] description` → mobile entry (prefix stripped)
 - `- description` (no prefix) → defaults to web
 - Version prefixes (`v5.0.3 —`) and backticks are cleaned from all entries
+- Mobile entries from both local `[Mobile]` prefixes and the GitHub fetch are merged
 
 **Thread structure:**
 - **Tweet 1 (overview):** Date, entry counts by platform, thread indicator
@@ -141,7 +144,7 @@ The `Twitter` helper has a production guard — all three methods (`sendTweet`, 
 
 **No data:** If no changelog file or empty file, logs "No changelog found" and skips.
 
-**External dependencies:** None (GitHub API removed in v5.0.18)
+**External dependencies:** GitHub raw content (for mobile changelog fetch, graceful fallback on failure)
 
 ---
 
@@ -216,7 +219,7 @@ All three methods guard on `app()->environment('production')` and `$consumer_key
 ## Tests
 
 - `tests/Feature/Twitter/DailyReportTweetTest.php` — 28 tests: streak (0/1/5/gap), milestone boundaries (100K/1M), season labels (all 6 tiers), lead line (same/new/no-data), mission frames (3), conditional skipping (littercoin/streak/cities), thread output, no-data skip, formatMilestone (k/M), tweet length enforcement
-- `tests/Feature/Twitter/ChangelogTweetTest.php` — 20 tests: overview counts, prefix parsing ([Web]/[Mobile]/default), no GitHub calls, web-only/mobile-only, long changelog splits, oversized single line truncation, no-file skip, thread structure, cleanChange, singular/plural, sendThread return shape
+- `tests/Feature/Twitter/ChangelogTweetTest.php` — 26 tests: overview counts, prefix parsing ([Web]/[Mobile]/default), GitHub raw content call verification, web-only/mobile-only, long changelog splits, oversized single line truncation, no-file skip, thread structure, cleanChange, singular/plural, sendThread return shape, mobile fetch from GitHub (success/404/500/merge/URL/thread integration)
 
 No tests exist for `WeeklyImpactReportTweet` or `MonthlyImpactReportTweet` (Browsershot dependency).
 
@@ -225,6 +228,6 @@ No tests exist for `WeeklyImpactReportTweet` or `MonthlyImpactReportTweet` (Brow
 | Command | Tables | Send Method | Image | No-Data | External Deps |
 |---|---|---|---|---|---|
 | `daily-report` | `metrics`, `users`, `countries`, `cities`, `littercoin` | `sendThread()` (2 tweets) | No | Skips | None |
-| `changelog` | None (reads changelog file only) | `sendThread()` (overview + grouped) | No | Skips | None |
+| `changelog` | None (reads local + GitHub changelog files) | `sendThread()` (overview + grouped) | No | Skips | GitHub raw content |
 | `weekly-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 | Always tweets | Browsershot, Chromium, network |
 | `monthly-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 fullPage | Always tweets | Browsershot, Chromium, network |

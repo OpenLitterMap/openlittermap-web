@@ -110,11 +110,14 @@ class ChangelogTweetTest extends TestCase
         }
     }
 
-    // ─── No GitHub API calls ─────────────────────────────────────────
+    // ─── GitHub calls only to raw.githubusercontent.com ────────────────
 
-    public function test_no_github_http_calls_made(): void
+    public function test_only_github_raw_content_calls_made(): void
     {
-        Http::fake();
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response('', 404),
+            '*' => Http::response('', 200),
+        ]);
 
         $date = '2099-01-05';
         $path = "{$this->summaryDir}/{$date}.md";
@@ -125,7 +128,8 @@ class ChangelogTweetTest extends TestCase
             $this->artisan("twitter:changelog {$date}")
                 ->assertSuccessful();
 
-            Http::assertNothingSent();
+            Http::assertSentCount(1);
+            Http::assertSent(fn ($request) => str_contains($request->url(), 'raw.githubusercontent.com'));
         } finally {
             File::delete($path);
         }
@@ -370,6 +374,8 @@ class ChangelogTweetTest extends TestCase
 
     public function test_defaults_to_yesterday_when_no_date_provided(): void
     {
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
+
         $yesterday = now()->subDay()->toDateString();
         $path = "{$this->summaryDir}/{$yesterday}.md";
         $existed = File::exists($path);
@@ -419,5 +425,141 @@ class ChangelogTweetTest extends TestCase
 
         $this->assertStringContainsString('1 web improvement', $tweets[0]);
         $this->assertStringNotContainsString('improvements', $tweets[0]);
+    }
+
+    // ─── Mobile changelog from GitHub ────────────────────────────────
+
+    public function test_fetches_mobile_entries_from_github(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response(implode("\n", [
+                '# Mobile Changes',
+                '',
+                '- Camera orientation saved correctly',
+                '- Upload retry on weak connections',
+            ]), 200),
+        ]);
+
+        $date = '2099-01-14';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Web] Fix admin permissions\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path, $date);
+
+            $this->assertCount(1, $parsed['web']);
+            $this->assertCount(2, $parsed['mobile']);
+            $this->assertEquals('Camera orientation saved correctly', $parsed['mobile'][0]);
+            $this->assertEquals('Upload retry on weak connections', $parsed['mobile'][1]);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_fetch_failure_falls_back_to_web_only(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response('', 500),
+        ]);
+
+        $date = '2099-01-15';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Web] Fix something\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path, $date);
+
+            $this->assertCount(1, $parsed['web']);
+            $this->assertCount(0, $parsed['mobile']);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_fetch_404_returns_no_mobile_entries(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response('', 404),
+        ]);
+
+        $date = '2099-01-16';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Web] Fix something\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path, $date);
+
+            $this->assertCount(1, $parsed['web']);
+            $this->assertCount(0, $parsed['mobile']);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_entries_merge_with_local_mobile_entries(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response("- Camera fix from GitHub\n", 200),
+        ]);
+
+        $date = '2099-01-17';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Web] Web fix\n- [Mobile] Local mobile fix\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path, $date);
+
+            $this->assertCount(1, $parsed['web']);
+            $this->assertCount(2, $parsed['mobile']);
+            $this->assertEquals('Local mobile fix', $parsed['mobile'][0]);
+            $this->assertEquals('Camera fix from GitHub', $parsed['mobile'][1]);
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_fetch_hits_correct_github_url(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response('', 404),
+        ]);
+
+        $date = '2099-01-18';
+        $this->command->fetchMobileChangelog($date);
+
+        Http::assertSent(function ($request) use ($date) {
+            return $request->url() === "https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{$date}.md";
+        });
+    }
+
+    public function test_mobile_entries_appear_in_tweet_thread(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response("- Haptic feedback added\n", 200),
+        ]);
+
+        $date = '2099-01-19';
+        $path = "{$this->summaryDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n- [Web] Fix admin permissions\n");
+
+        try {
+            $parsed = $this->command->parseEntries($path, $date);
+            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+
+            $overview = $tweets[0];
+            $this->assertStringContainsString('1 web improvement', $overview);
+            $this->assertStringContainsString('1 mobile improvement', $overview);
+
+            $changesTweet = $tweets[1];
+            $this->assertStringContainsString('📱 Mobile', $changesTweet);
+            $this->assertStringContainsString('Haptic feedback added', $changesTweet);
+        } finally {
+            File::delete($path);
+        }
     }
 }
