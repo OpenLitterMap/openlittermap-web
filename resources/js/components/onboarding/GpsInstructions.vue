@@ -26,23 +26,23 @@
         <ol v-if="activeTab === 'iphone'" class="space-y-1.5 text-xs text-white/60">
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">1.</span>
-                <span>{{ $t('Open Settings') }}</span>
+                <span>Open <strong class="text-white/80">Settings</strong></span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">2.</span>
-                <span>{{ $t('Tap Privacy & Security, then Location Services') }}</span>
+                <span>Tap <strong class="text-white/80">Privacy &amp; Security</strong> &rarr; <strong class="text-white/80">Location Services</strong></span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">3.</span>
-                <span>{{ $t('Make sure Location Services is turned ON') }}</span>
+                <span>Make sure <strong class="text-white/80">Location Services</strong> is turned <strong class="text-emerald-400">ON</strong></span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">4.</span>
-                <span>{{ $t('Scroll down to Camera and select While Using the App') }}</span>
+                <span>Scroll down to <strong class="text-white/80">Camera</strong> &rarr; select <strong class="text-emerald-400">While Using the App</strong></span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">5.</span>
-                <span>{{ $t('Recommended: Settings, Camera, Formats, select Most Compatible (uses JPG instead of HEIC)') }}</span>
+                <span>Recommended: <strong class="text-white/80">Settings</strong> &rarr; <strong class="text-white/80">Camera</strong> &rarr; <strong class="text-white/80">Formats</strong> &rarr; select <strong class="text-emerald-400">Most Compatible</strong> (uses JPG instead of HEIC)</span>
             </li>
         </ol>
 
@@ -50,19 +50,19 @@
         <ol v-if="activeTab === 'android'" class="space-y-1.5 text-xs text-white/60">
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">1.</span>
-                <span>{{ $t('Turn on Location — pull down from the top of your screen and tap the Location icon to turn it on') }}</span>
+                <span>Turn on <strong class="text-white/80">Location</strong> — pull down from the top of your screen and tap the <strong class="text-white/80">Location</strong> icon to turn it <strong class="text-emerald-400">ON</strong></span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">2.</span>
-                <span>{{ $t('Open your Camera app') }}</span>
+                <span>Open your <strong class="text-white/80">Camera</strong> app</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">3.</span>
-                <span>{{ $t('Tap Settings (gear icon)') }}</span>
+                <span>Tap <strong class="text-white/80">Settings</strong> (gear icon)</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">4.</span>
-                <span>{{ $t('Find Location tags, GPS tags, or Save location and turn it ON') }}</span>
+                <span>Find <strong class="text-white/80">Location tags</strong>, <strong class="text-white/80">GPS tags</strong>, or <strong class="text-white/80">Save location</strong> and turn it <strong class="text-emerald-400">ON</strong></span>
             </li>
         </ol>
 
