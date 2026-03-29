@@ -342,7 +342,7 @@ const isSubmitting = ref(false);
 const showPassword = ref(false);
 const fieldErrors = ref({});
 const activeField = ref(null);
-const showRecaptcha = ref(false);
+const showRecaptcha = ref(!!import.meta.env.VITE_RECAPTCHA_SITE_KEY);
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh';
 
@@ -409,6 +409,15 @@ function validateField(field) {
             }
             break;
 
+        case 'username': {
+            const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+            if (username.value && !usernameRegex.test(username.value)) {
+                newErrors.username = 'Username can only contain letters, numbers, hyphens and underscores';
+            } else {
+                delete newErrors.username;
+            }
+            break;
+        }
     }
 
     fieldErrors.value = newErrors;
@@ -424,6 +433,7 @@ function clearError(field) {
 
 function onUsernameInput() {
     clearError('username');
+    validateField('username');
 }
 
 function refreshUsername() {
@@ -468,9 +478,15 @@ async function submit() {
             toast.success('Welcome Aboard! Your Litter Mapping Adventure Awaits!', { timeout: 6000 });
 
             password.value = '';
-            const intended = sessionStorage.getItem('intended_route');
-            sessionStorage.removeItem('intended_route');
-            await router.push(intended || '/upload');
+
+            // New users go to onboarding; returning users go to intended route
+            if (!userStore.onboardingCompleted) {
+                await router.push('/onboarding');
+            } else {
+                const intended = sessionStorage.getItem('intended_route');
+                sessionStorage.removeItem('intended_route');
+                await router.push(intended || '/upload');
+            }
         }
     } finally {
         isSubmitting.value = false;

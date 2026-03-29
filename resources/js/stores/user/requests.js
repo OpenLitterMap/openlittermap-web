@@ -18,6 +18,7 @@ export const requests = {
             })
             .catch((error) => {
                 console.log('error.check_auth', error);
+                this.$reset();
             });
     },
 
@@ -55,12 +56,20 @@ export const requests = {
             modalStore.hideModal();
 
             this.auth = true;
-            this.user = response.data.user;
+            this.user = {
+                ...response.data.user,
+                xp: response.data.stats?.xp,
+                next_level: response.data.level,
+            };
 
-            // Redirect to intended route (if auth middleware stored one) or /upload
-            const intended = sessionStorage.getItem('intended_route');
-            sessionStorage.removeItem('intended_route');
-            router.push(intended || '/upload');
+            // New users go to onboarding; returning users go to intended route
+            if (!this.onboardingCompleted) {
+                router.push('/onboarding');
+            } else {
+                const intended = sessionStorage.getItem('intended_route');
+                sessionStorage.removeItem('intended_route');
+                router.push(intended || '/upload');
+            }
         } catch (error) {
             if (error?.response?.status === 422) {
                 this.errorLogin =

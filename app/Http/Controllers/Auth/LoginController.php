@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Traits\ResolvesUserProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
+    use ResolvesUserProfile;
     /**
      * Login via email or username.
      *
@@ -42,9 +44,11 @@ class LoginController extends Controller
 
         $user = Auth::user();
 
+        $profileData = $this->buildFullProfileData($user);
+
         return response()->json([
             'success' => true,
-            'user' => $user,
+            ...$profileData,
         ]);
     }
 

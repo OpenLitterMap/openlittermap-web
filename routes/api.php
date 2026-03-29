@@ -183,6 +183,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/profile/photos/delete', [UserPhotoController::class, 'destroy']);
     Route::post('/profile/upload-profile-photo', [UsersController::class, 'uploadProfilePhoto']);
     Route::post('/profile/photos/delete', [PhotosController::class, 'deleteImage']);
+
+    Route::post('/user/onboarding/skip', function () {
+        $user = auth()->user();
+        if ($user->onboarding_completed_at === null) {
+            $user->update(['onboarding_completed_at' => now()]);
+        }
+        return response()->json(['success' => true]);
+    });
 });
 
 /*

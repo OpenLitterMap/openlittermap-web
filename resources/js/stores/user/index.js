@@ -26,6 +26,10 @@ export const useUserStore = defineStore('user', {
 
     persist: true,
 
+    getters: {
+        onboardingCompleted: (state) => !!state.user?.onboarding_completed_at,
+    },
+
     actions: {
         clearErrorLogin() {
             this.errorLogin = '';

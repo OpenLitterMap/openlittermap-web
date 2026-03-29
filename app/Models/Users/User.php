@@ -93,6 +93,7 @@ class User extends Authenticatable
         'previous_tags',
         'remaining_teams',
         'bbox_verification_count',
+        'onboarding_completed_at',
     ];
 
     /**
@@ -122,6 +123,7 @@ class User extends Authenticatable
         'username_flagged' => 'boolean',
         'prevent_others_tagging_my_photos' => 'boolean',
         'settings' => 'array',
+        'onboarding_completed_at' => 'datetime',
     ];
 
     protected $appends = [];

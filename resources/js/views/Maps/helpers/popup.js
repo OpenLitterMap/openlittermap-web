@@ -568,6 +568,19 @@ export const popupHelper = {
     },
 
     /**
+     * Replace image spinner with "Awaiting verification" message
+     */
+    showAwaitingVerification: (img) => {
+        const wrap = img?.closest('.popup-image-wrap');
+        if (!wrap) return;
+        wrap.classList.remove('popup-image-wrap--loading');
+        wrap.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:center;min-height:120px;background:rgba(255,255,255,0.05);border-radius:8px;">
+                <span style="color:rgba(255,255,255,0.4);font-size:13px;">Awaiting verification</span>
+            </div>`;
+    },
+
+    /**
      * Fetch a signed S3 URL for a photo and update the popup image
      */
     fetchAndSetSignedUrl: async (photoId, popupElement) => {
@@ -581,10 +594,16 @@ export const popupHelper = {
                 headers: { Accept: 'application/json' },
             });
 
-            if (!response.ok) return;
+            if (!response.ok) {
+                popupHelper.showAwaitingVerification(img);
+                return;
+            }
 
             const data = await response.json();
-            if (!data.url || data.url === '/assets/images/waiting.png') return;
+            if (!data.url || data.url === '/assets/images/waiting.png') {
+                popupHelper.showAwaitingVerification(img);
+                return;
+            }
 
             // Guard: popup may have been closed or replaced while we were fetching
             if (!img.isConnected) return;
@@ -609,7 +628,7 @@ export const popupHelper = {
                 wrap.appendChild(gradient);
             }
         } catch (error) {
-            // Silently fail — the waiting image remains
+            popupHelper.showAwaitingVerification(img);
         }
     },
 
