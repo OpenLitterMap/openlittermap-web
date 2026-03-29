@@ -224,7 +224,7 @@ const routes = [
         name: 'AdminRedis',
         component: Redis,
         meta: {
-            middleware: [auth, onboarding],
+            middleware: [auth],
         },
     },
     {
@@ -232,7 +232,7 @@ const routes = [
         name: 'AdminQueue',
         component: AdminQueue,
         meta: {
-            middleware: [auth, onboarding],
+            middleware: [auth],
         },
     },
     {
@@ -240,7 +240,7 @@ const routes = [
         name: 'AdminUsers',
         component: AdminUsers,
         meta: {
-            middleware: [auth, onboarding],
+            middleware: [auth],
         },
     },
 ];
