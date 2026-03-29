@@ -206,6 +206,7 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/Profile.md` — User profile, settings, privacy, public profiles, account deletion
 - `readme/Setup.md` — Local dev setup, HTTPS with Valet, Reverb TLS configuration
 - `readme/Translations.md` — Frontend i18n setup (vue-i18n v9)
+- `readme/Onboarding.md` — New user onboarding flow (Welcome → Upload → Tag → Celebration), GPS instructions, route guards, geolink
 - `readme/XP.md` — XP scoring, quantity rules, special objects, levels, admin XP
 - `readme/Taggingarchitecturespec.md` — v5.1 tagging architecture spec (types dimension, CLO IDs)
 - `readme/TaggingAuditReport.md` — v5.1 smoke test audit report
