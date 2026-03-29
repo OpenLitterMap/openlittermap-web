@@ -54,8 +54,8 @@
                 <FilePond
                     ref="pond"
                     name="photo"
-                    :allowMultiple="!onboarding"
-                    :maxFiles="onboarding ? 1 : null"
+                    allowMultiple
+                    :maxFiles="null"
                     max-file-size="20MB"
                     :maxParallelUploads="3"
                     :labelIdle="pondLabel"
