@@ -68,17 +68,19 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 | Path | Component | Props | Middleware | Purpose |
 |------|-----------|-------|------------|---------|
 | `/onboarding` | OnboardingWelcome | — | auth, onboardingNotCompleted | Welcome + GPS instructions |
-| `/onboarding/upload` | Upload | `onboarding: true` | auth, onboardingNotCompleted | Single-file upload |
+| `/onboarding/upload` | Upload | `onboarding: true` | auth, onboardingNotCompleted | Multi-file upload |
 | `/onboarding/tag` | AddTags | `onboarding: true` | auth, onboardingNotCompleted | Tag with chips + reassurance |
 | `/onboarding/complete` | Celebration | — | auth | Geolink + XP + CTAs |
 
 ### Route Middleware
 
-**`onboarding.js`** — Applied to main app routes (upload, tag, uploads, teams, profile, admin). Redirects to `/onboarding` if `auth && !onboardingCompleted`.
+**`onboarding.js`** — Applied to main app routes (upload, tag, uploads, teams, profile). Redirects to `/onboarding` if `auth && !onboardingCompleted`. **Not applied to admin routes** — admins should never be locked out of admin tools.
 
 **`onboardingNotCompleted.js`** — Applied to onboarding routes (except `/onboarding/complete`). Redirects completed users to `/upload` so they can't re-enter the flow.
 
-**Guarded routes:** `/tag`, `/upload`, `/uploads`, `/teams`, `/teams/create`, `/profile`, `/admin/redis`, `/admin/queue`, `/admin/users`
+**Guarded routes:** `/tag`, `/upload`, `/uploads`, `/teams`, `/teams/create`, `/profile`
+
+**Not guarded:** `/admin/redis`, `/admin/queue`, `/admin/users` (auth only)
 
 ### Pinia Store
 
@@ -102,8 +104,10 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 - `StepIndicator` at step 4 (all complete)
 - Success icon + "You did it!" heading
 - XP badge (from `userStore.user.xp`)
-- **Photo geolink** — reads `route.query.lat` and `route.query.lon`, shows URL in `<code>` block with copy-to-clipboard button
-- "View on the map" → `/global?lat={lat}&lon={lon}&zoom=17.89&load=true&open=true` (or generic `/global` if no coords)
+- **Photo geolink** — reads `route.query.photo`, `route.query.lat`, and `route.query.lon`. Shows URL in `<code>` block with copy-to-clipboard button
+- Sharing message: "Copy this link and share it with anyone. OpenLitterMap is a real-time, open-source global reporting tool."
+- Tip: "Take a photo of bags of litter picked up and share the link with your local council!"
+- "See your upload on the global map" → `/global?lat={lat}&lon={lon}&zoom=17.89&load=true&open=true&photo={id}` (or generic `/global` if no coords)
 - "Upload more photos" → `/upload`
 - "Go to your profile" → `/profile`
 - Calls `REFRESH_USER()` on mount to get fresh XP
@@ -134,7 +138,7 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 
 **`Upload.vue`** when `props.onboarding === true`:
 - Shows `StepIndicator` at step 2
-- FilePond restricted to single file (`allowMultiple=false`, `maxFiles=1`)
+- Multiple uploads allowed (user only needs to tag the first one to complete onboarding)
 - Auto-redirects to `/onboarding/tag` after successful upload
 - "Tag your photos" link points to `/onboarding/tag`
 - Preloads tags store (fire-and-forget) so tag page loads faster
@@ -149,30 +153,33 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 - Shows `StepIndicator` at step 3
 - Shows `OnboardingChips` (6 quick-select tag buttons)
 - Shows reassurance text: "One tag is enough to get started. You can always edit later."
-- On submit: optimistically sets `onboarding_completed_at` on local user object, captures `lat`/`lon` from photo, redirects to `/onboarding/complete?lat={lat}&lon={lon}`
+- On submit: optimistically sets `onboarding_completed_at` on local user object, captures `photo`, `lat`, `lon` from photo, redirects to `/onboarding/complete?photo={id}&lat={lat}&lon={lon}`
 
 **`Nav.vue`** — Hides nav links during onboarding:
 - Upload, Add Tags hidden unless `onboardingCompleted`
 - Profile, Teams, Settings hidden unless `onboardingCompleted`
-- Admin links hidden unless `isAdmin && onboardingCompleted`
+- Admin links always visible (not gated by onboarding)
 - Public links (Map, About, Leaderboard, Locations) + Logout always visible
 
 ## Photo Geolink
 
-The geolink uses the photo's GPS coordinates to centre the map on the exact location:
+The geolink uses the photo's GPS coordinates and ID to centre the map and load the specific photo:
 
 ```
-/global?lat={lat}&lon={lon}&zoom=17.89&load=true&open=true
+/global?lat={lat}&lon={lon}&zoom=17.89&load=true&open=true&photo={id}
 ```
 
 - `lat`/`lon` — the photo's GPS coordinates (passed from AddTags via query params)
 - `zoom=17.89` — centres tightly on the location
 - `load=true` — tells the map to load data for this area
-- `open=true` — opens the photo popup automatically
+- `open=true` — opens the stats drawer automatically
+- `photo={id}` — loads and positions the specific photo on the map
 
-Example: `https://openlittermap.com/global?lat=51.886865&lon=-8.487191&zoom=17.89&load=true&open=true`
+Example: `https://openlittermap.com/global?lat=51.886865&lon=-8.487191&zoom=17.89&load=true&open=true&photo=12345`
 
-The celebration page constructs this URL for both the "View on the map" CTA and the copy-to-clipboard button. The display URL omits `load` and `open` params for brevity.
+The celebration page constructs this URL for both the "See your upload on the global map" CTA and the copy-to-clipboard button.
+
+**Note:** Unverified photos (new non-trusted users) will show "Awaiting verification" in the map popup instead of the photo image. The photo appears on the map once admin-verified (`verified >= 2`).
 
 ## Design
 
