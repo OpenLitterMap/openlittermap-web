@@ -926,6 +926,8 @@ const submitTags = async () => {
 
     isSubmitting.value = true;
     const photoId = currentPhoto.value.id;
+    const photoLat = currentPhoto.value.lat;
+    const photoLon = currentPhoto.value.lon;
 
     // Snapshot XP before tags are cleared
     const submittedXp = calculateXP.value;
@@ -1046,7 +1048,7 @@ const submitTags = async () => {
                 if (userStore.user) {
                     userStore.user.onboarding_completed_at = new Date().toISOString();
                 }
-                router.push({ path: '/onboarding/complete', query: { photo: photoId } });
+                router.push({ path: '/onboarding/complete', query: { lat: photoLat, lon: photoLon } });
                 return;
             }
 

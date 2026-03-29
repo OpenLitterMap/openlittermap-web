@@ -33,7 +33,7 @@
                     </div>
 
                     <!-- Geolink -->
-                    <div v-if="photoId" class="mt-6 rounded-lg border border-white/10 bg-white/5 p-3">
+                    <div v-if="hasCoords" class="mt-6 rounded-lg border border-white/10 bg-white/5 p-3">
                         <p class="mb-2 text-xs text-white/40">Your photo's unique link:</p>
                         <div class="flex items-center gap-2">
                             <code class="flex-1 truncate rounded bg-white/5 px-3 py-1.5 text-xs text-white/70">
@@ -52,13 +52,13 @@
                     <!-- CTAs -->
                     <div class="mt-8 space-y-3">
                         <router-link
-                            :to="photoId ? `/global?photo=${photoId}&load=true` : '/global'"
+                            :to="mapLink"
                             class="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-3 font-semibold text-white transition-colors hover:bg-emerald-400"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
-                            {{ photoId ? 'View on the map' : 'See the global map' }}
+                            {{ hasCoords ? 'View on the map' : 'See the global map' }}
                         </router-link>
                         <router-link
                             to="/upload"
@@ -90,18 +90,27 @@ const userStore = useUserStore();
 const loading = ref(true);
 const copied = ref(false);
 
-const photoId = computed(() => route.query.photo || null);
+const lat = computed(() => route.query.lat || null);
+const lon = computed(() => route.query.lon || null);
+const hasCoords = computed(() => lat.value && lon.value);
+
+const geolinkPath = computed(() => {
+    if (!hasCoords.value) return '/global';
+    return `/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89&load=true&open=true`;
+});
+
+const mapLink = computed(() => geolinkPath.value);
 
 const geolinkDisplay = computed(() => {
-    if (!photoId.value) return '';
-    return `${window.location.host}/global?photo=${photoId.value}`;
+    if (!hasCoords.value) return '';
+    return `${window.location.host}/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89`;
 });
 
 const userXp = computed(() => userStore.user?.xp || 0);
 
 function copyGeolink() {
-    if (!photoId.value) return;
-    const url = `${window.location.origin}/global?photo=${photoId.value}&load=true`;
+    if (!hasCoords.value) return;
+    const url = `${window.location.origin}/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89&load=true&open=true`;
     navigator.clipboard.writeText(url);
     copied.value = true;
     setTimeout(() => { copied.value = false; }, 2000);
