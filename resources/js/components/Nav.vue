@@ -29,8 +29,8 @@
                 <router-link to="/leaderboard" class="nav-item" @click="closeMenu">{{ t('Leaderboard') }}</router-link>
                 <router-link to="/locations" class="nav-item" @click="closeMenu">{{ t('Locations') }}</router-link>
 
-                <!-- Auth-only nav links (hidden during onboarding) -->
-                <template v-if="auth && onboardingCompleted">
+                <!-- Auth-only nav links -->
+                <template v-if="auth">
                     <router-link to="/upload" class="nav-item" @click="closeMenu">{{ t('Upload') }}</router-link>
                     <router-link to="/tag" class="nav-item" @click="closeMenu">{{ t('Add Tags') }}</router-link>
                 </template>
@@ -46,7 +46,7 @@
 
                     <template v-else>
                         <!-- Admin Links -->
-                        <template v-if="isAdmin && onboardingCompleted">
+                        <template v-if="isAdmin">
                             <div class="border-t border-white/10 my-2 md:hidden"></div>
                             <span class="block px-3 py-1 text-[10px] uppercase tracking-wider text-white/30 md:hidden">{{ t('Admin') }}</span>
                             <router-link to="/admin/queue" class="nav-item" @click="closeMenu">{{ t('Admin - Queue') }}</router-link>
@@ -57,17 +57,16 @@
 
                         <div class="border-t border-white/10 my-2 md:hidden"></div>
 
-                        <template v-if="onboardingCompleted">
-                            <router-link to="/profile" class="nav-item" @click="closeMenu">{{ t('Profile') }}</router-link>
-                            <router-link to="/teams" class="nav-item relative" @click="closeMenu">
-                                {{ t('Teams') }}
-                                <span
-                                    v-if="showTeamSetupDot"
-                                    class="inline-block w-2 h-2 rounded-full bg-amber-400 ml-1 align-middle"
-                                ></span>
-                            </router-link>
-                            <router-link to="/settings" class="nav-item" @click="closeMenu">{{ t('Settings') }}</router-link>
-                        </template>
+                        <router-link v-if="auth && !onboardingCompleted" to="/onboarding" class="nav-item text-amber-400 hover:text-amber-300" @click="closeMenu">{{ t('Onboarding') }}</router-link>
+                        <router-link to="/profile" class="nav-item" @click="closeMenu">{{ t('Profile') }}</router-link>
+                        <router-link to="/teams" class="nav-item relative" @click="closeMenu">
+                            {{ t('Teams') }}
+                            <span
+                                v-if="showTeamSetupDot"
+                                class="inline-block w-2 h-2 rounded-full bg-amber-400 ml-1 align-middle"
+                            ></span>
+                        </router-link>
+                        <router-link to="/settings" class="nav-item" @click="closeMenu">{{ t('Settings') }}</router-link>
 
                         <div class="border-t border-white/10 my-2 md:hidden"></div>
                         <button @click="logout(); closeMenu()" class="nav-item w-full text-left text-red-400 hover:text-red-300">{{ t('Logout') }}</button>
@@ -109,7 +108,7 @@
                             v-if="webDropdownOpen"
                             class="absolute right-0 mt-2 w-48 bg-black border border-white/10 rounded-xl shadow-xl z-20 py-1 overflow-hidden"
                         >
-                            <template v-if="isAdmin && onboardingCompleted">
+                            <template v-if="isAdmin">
                                 <span class="block px-4 py-1.5 text-[10px] uppercase tracking-wider text-white/30">{{ t('Admin') }}</span>
                                 <router-link
                                     to="/admin/queue"
@@ -135,33 +134,38 @@
                                 <div class="border-t border-white/10 my-1"></div>
                             </template>
 
-                            <template v-if="onboardingCompleted">
-                                <router-link
-                                    to="/profile"
-                                    class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
-                                    @click="webDropdownOpen = false"
-                                >{{ t('Profile') }}</router-link>
+                            <router-link
+                                v-if="!onboardingCompleted"
+                                to="/onboarding"
+                                class="block px-4 py-2 text-amber-400 hover:bg-white/5 hover:text-amber-300 transition-colors"
+                                @click="webDropdownOpen = false"
+                            >{{ t('Onboarding') }}</router-link>
 
-                                <router-link
-                                    to="/teams"
-                                    class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors relative"
-                                    @click="webDropdownOpen = false"
-                                >
-                                    {{ t('Teams') }}
-                                    <span
-                                        v-if="showTeamSetupDot"
-                                        class="inline-block w-2 h-2 rounded-full bg-amber-400 ml-1 align-middle"
-                                    ></span>
-                                </router-link>
+                            <router-link
+                                to="/profile"
+                                class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
+                                @click="webDropdownOpen = false"
+                            >{{ t('Profile') }}</router-link>
 
-                                <router-link
-                                    to="/settings"
-                                    class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
-                                    @click="webDropdownOpen = false"
-                                >{{ t('Settings') }}</router-link>
+                            <router-link
+                                to="/teams"
+                                class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors relative"
+                                @click="webDropdownOpen = false"
+                            >
+                                {{ t('Teams') }}
+                                <span
+                                    v-if="showTeamSetupDot"
+                                    class="inline-block w-2 h-2 rounded-full bg-amber-400 ml-1 align-middle"
+                                ></span>
+                            </router-link>
 
-                                <div class="border-t border-white/10 my-1"></div>
-                            </template>
+                            <router-link
+                                to="/settings"
+                                class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
+                                @click="webDropdownOpen = false"
+                            >{{ t('Settings') }}</router-link>
+
+                            <div class="border-t border-white/10 my-1"></div>
 
                             <button
                                 @click="logout(); webDropdownOpen = false"
