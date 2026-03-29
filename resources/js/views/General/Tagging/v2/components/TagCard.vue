@@ -153,7 +153,7 @@
                     :key="'b-' + brand.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs border border-purple-500/20"
                 >
-                    {{ formatKey(brand.key) }}
+                    {{ translateTag(brand.key, 'brands') }}
                     <button @click="removeBrand(brand)" aria-label="Remove brand" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
@@ -164,7 +164,7 @@
                     :key="'m-' + material.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-xs border border-cyan-500/20"
                 >
-                    {{ formatKey(material.key) }}
+                    {{ translateTag(material.key, 'material') }}
                     <button @click="removeMaterial(material)" aria-label="Remove material" class="hover:text-red-300 transition-colors">×</button>
                 </span>
             </div>
@@ -206,7 +206,7 @@
                     :key="'b-' + brand.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs border border-purple-500/20"
                 >
-                    {{ formatKey(brand.key) }}
+                    {{ translateTag(brand.key, 'brands') }}
                     <button @click="removeBrand(brand)" aria-label="Remove brand" class="hover:text-red-300 transition-colors">×</button>
                 </span>
                 <span
@@ -214,7 +214,7 @@
                     :key="'m-' + material.id"
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-xs border border-cyan-500/20"
                 >
-                    {{ formatKey(material.key) }}
+                    {{ translateTag(material.key, 'material') }}
                     <button @click="removeMaterial(material)" aria-label="Remove material" class="hover:text-red-300 transition-colors">×</button>
                 </span>
                 <span
@@ -291,8 +291,11 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import UnifiedTagSearch from './UnifiedTagSearch.vue';
 import { calculateTagXp, getTagBreakdownParts } from '../useXpCalculator.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
     tag: {
@@ -416,13 +419,19 @@ const formatKey = (key) => {
     return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
+const translateTag = (key, i18nPrefix) => {
+    const path = `litter.${i18nPrefix}.${key}`;
+    const translated = t(path);
+    return translated !== path ? translated : formatKey(key);
+};
+
 const tagDisplay = computed(() => {
     if (props.tag.custom) {
         return props.tag.key;
     } else if (props.tag.type === 'brand-only') {
-        return `Brand: ${formatKey(props.tag.brand.key)}`;
+        return `Brand: ${translateTag(props.tag.brand.key, 'brands')}`;
     } else if (props.tag.type === 'material-only') {
-        return `Material: ${formatKey(props.tag.material.key)}`;
+        return `Material: ${translateTag(props.tag.material.key, 'material')}`;
     } else if (props.tag.object) {
         const objName = formatKey(props.tag.object.key);
         const catName = props.tag.categoryKey ? formatKey(props.tag.categoryKey) : null;
