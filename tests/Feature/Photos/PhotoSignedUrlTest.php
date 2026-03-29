@@ -75,12 +75,12 @@ class PhotoSignedUrlTest extends TestCase
     }
 
     /** @test */
-    public function it_returns_waiting_image_for_unverified_photo()
+    public function it_returns_signed_url_for_unverified_photo()
     {
         $photo = Photo::factory()->create([
             'is_public' => true,
             'verified' => 0,
-            'filename' => 'should-not-appear.jpg',
+            'filename' => 'unverified-photo.jpg',
         ]);
 
         $response = $this->getJson(
@@ -89,7 +89,8 @@ class PhotoSignedUrlTest extends TestCase
         );
 
         $response->assertOk();
-        $this->assertEquals('/assets/images/waiting.png', $response->json('url'));
+        $this->assertNotEquals('/assets/images/waiting.png', $response->json('url'));
+        $this->assertStringContainsString('unverified-photo.jpg', $response->json('url'));
     }
 
     /** @test */

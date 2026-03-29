@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Photos;
 
-use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
@@ -33,15 +32,14 @@ class PhotoSignedUrlController extends Controller
             return response()->json(['error' => 'Not found'], 404);
         }
 
-        // Only serve actual photo URL for verified (approved) photos
-        if ($photo->verified->value >= VerificationStatus::ADMIN_APPROVED->value && $photo->filename) {
-            $url = $this->generateSignedUrl($photo->filename);
+        if (! $photo->filename) {
+            return response()->json(['url' => self::WAITING_IMAGE, 'expires_in' => 0]);
+        }
 
-            if (! $url) {
-                return response()->json(['error' => 'Image unavailable'], 503);
-            }
-        } else {
-            $url = self::WAITING_IMAGE;
+        $url = $this->generateSignedUrl($photo->filename);
+
+        if (! $url) {
+            return response()->json(['error' => 'Image unavailable'], 503);
         }
 
         return response()->json([
