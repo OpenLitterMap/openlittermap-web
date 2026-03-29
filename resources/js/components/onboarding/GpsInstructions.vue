@@ -75,6 +75,9 @@
         <p class="mt-3 text-xs text-white/30">
             {{ $t('onboarding_gps_footer') }}
         </p>
+        <p class="mt-1 text-xs text-white/30">
+            {{ $t('onboarding_gps_privacy_note') }}
+        </p>
     </div>
 </template>
 

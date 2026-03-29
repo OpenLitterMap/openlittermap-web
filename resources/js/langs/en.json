@@ -306,6 +306,7 @@
     "onboarding_gps_heading": "Before you start: enable location on your camera",
     "onboarding_gps_intro": "Your photos need GPS coordinates so we can put them on the map. Here's how to make sure your camera saves location data:",
     "onboarding_gps_footer": "Once enabled, every photo you take will include GPS automatically. You only need to do this once.",
+    "onboarding_gps_privacy_note": "If you don't want your other photos to be geotagged, remember to turn Location Services off again afterwards.",
     "onboarding_gps_on": "ON",
     "onboarding_gps_iphone_1_prefix": "Open",
     "onboarding_gps_iphone_1_bold": "Settings",
