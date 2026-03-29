@@ -32,9 +32,9 @@
                         </div>
                     </div>
 
-                    <!-- Geolink -->
-                    <div v-if="hasCoords" class="mt-6 rounded-lg border border-white/10 bg-white/5 p-3">
-                        <p class="mb-2 text-xs text-white/40">Your photo's unique link:</p>
+                    <!-- Geolink + sharing -->
+                    <div v-if="hasCoords" class="mt-6 rounded-lg border border-white/10 bg-white/5 p-4">
+                        <p class="mb-2 text-sm font-medium text-white/70">Your upload on the global map:</p>
                         <div class="flex items-center gap-2">
                             <code class="flex-1 truncate rounded bg-white/5 px-3 py-1.5 text-xs text-white/70">
                                 {{ geolinkDisplay }}
@@ -44,9 +44,15 @@
                                 class="shrink-0 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium transition-all hover:bg-white/10"
                                 :class="copied ? 'text-emerald-400' : 'text-white/60'"
                             >
-                                {{ copied ? 'Copied!' : 'Copy' }}
+                                {{ copied ? 'Copied!' : 'Copy link' }}
                             </button>
                         </div>
+                        <p class="mt-2 text-xs text-white/40">
+                            Copy this link and share it with anyone. OpenLitterMap is a real-time, open-source global reporting tool.
+                        </p>
+                        <p class="mt-1 text-xs text-white/30">
+                            Tip: Take a photo of bags of litter picked up and share the link with your local council!
+                        </p>
                     </div>
 
                     <!-- CTAs -->
@@ -58,7 +64,7 @@
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
-                            {{ hasCoords ? 'View on the map' : 'See the global map' }}
+                            See your upload on the global map
                         </router-link>
                         <router-link
                             to="/upload"
