@@ -13,6 +13,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Cashier\Cashier;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Photo::observe(PhotoObserver::class);
+
+        Cashier::useCustomerModel(User::class);
 
         Gate::define('viewPulse', function (User $user) {
             return $user->hasRole('superadmin');
