@@ -1,10 +1,10 @@
 <template>
     <div class="rounded-lg border border-white/10 bg-white/5 p-4">
         <h3 v-if="!compact" class="mb-2 text-sm font-semibold text-white">
-            {{ $t('onboarding_gps_heading') }}
+            {{ $t('Before you start: enable location on your camera') }}
         </h3>
         <p class="mb-3 text-xs text-white/50">
-            {{ $t('onboarding_gps_intro') }}
+            {{ $t('Your photos need GPS coordinates so we can put them on the map. Here\'s how to make sure your camera saves location data:') }}
         </p>
 
         <!-- Tab buttons -->
@@ -26,23 +26,23 @@
         <ol v-if="activeTab === 'iphone'" class="space-y-1.5 text-xs text-white/60">
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">1.</span>
-                <span>{{ $t('onboarding_gps_iphone_1_prefix') }} <strong class="text-white/80">{{ $t('onboarding_gps_iphone_1_bold') }}</strong></span>
+                <span>{{ $t('Open Settings') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">2.</span>
-                <span>{{ $t('onboarding_gps_iphone_2_prefix') }} <strong class="text-white/80">{{ $t('onboarding_gps_iphone_2_bold1') }}</strong> &rarr; <strong class="text-white/80">{{ $t('onboarding_gps_iphone_2_bold2') }}</strong></span>
+                <span>{{ $t('Tap Privacy & Security, then Location Services') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">3.</span>
-                <span>{{ $t('onboarding_gps_iphone_3_prefix') }} <strong class="text-white/80">{{ $t('onboarding_gps_iphone_3_bold') }}</strong> {{ $t('onboarding_gps_iphone_3_suffix') }} <strong class="text-emerald-400">{{ $t('onboarding_gps_on') }}</strong></span>
+                <span>{{ $t('Make sure Location Services is turned ON') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">4.</span>
-                <span>{{ $t('onboarding_gps_iphone_4_prefix') }} <strong class="text-white/80">{{ $t('onboarding_gps_iphone_4_bold') }}</strong> {{ $t('onboarding_gps_iphone_4_mid') }} <strong class="text-emerald-400">{{ $t('onboarding_gps_iphone_4_value') }}</strong></span>
+                <span>{{ $t('Scroll down to Camera and select While Using the App') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">5.</span>
-                <span>{{ $t('onboarding_gps_iphone_5') }}</span>
+                <span>{{ $t('Recommended: Settings, Camera, Formats, select Most Compatible (uses JPG instead of HEIC)') }}</span>
             </li>
         </ol>
 
@@ -50,40 +50,39 @@
         <ol v-if="activeTab === 'android'" class="space-y-1.5 text-xs text-white/60">
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">1.</span>
-                <span>{{ $t('onboarding_gps_android_1') }}</span>
+                <span>{{ $t('Turn on Location — pull down from the top of your screen and tap the Location icon to turn it on') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">2.</span>
-                <span>{{ $t('onboarding_gps_android_2_prefix') }} <strong class="text-white/80">{{ $t('onboarding_gps_android_2_bold') }}</strong></span>
+                <span>{{ $t('Open your Camera app') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">3.</span>
-                <span>{{ $t('onboarding_gps_android_3_prefix') }} <strong class="text-white/80">{{ $t('onboarding_gps_android_3_bold') }}</strong></span>
+                <span>{{ $t('Tap Settings (gear icon)') }}</span>
             </li>
             <li class="flex gap-2">
                 <span class="shrink-0 text-white/30">4.</span>
-                <span>{{ $t('onboarding_gps_android_4') }}</span>
+                <span>{{ $t('Find Location tags, GPS tags, or Save location and turn it ON') }}</span>
             </li>
         </ol>
 
         <!-- Android upload tip (web only) -->
         <p v-if="activeTab === 'android'" class="mt-2 rounded bg-white/5 px-3 py-2 text-xs text-white/40">
-            <strong class="text-white/60">{{ $t('onboarding_gps_android_upload_tip_label') }}</strong>
-            {{ $t('onboarding_gps_android_upload_tip') }}
+            <strong class="text-white/60">{{ $t('Upload tip:') }} </strong>
+            {{ $t('When selecting photos to upload, tap the three dots in the top-right of the file picker and choose Browse instead of selecting from Photos or Albums. The default Android picker can strip GPS data from your photos.') }}
         </p>
 
         <p class="mt-3 text-xs text-white/30">
-            {{ $t('onboarding_gps_footer') }}
+            {{ $t('Once enabled, every photo you take will include GPS automatically. You only need to do this once.') }}
         </p>
         <p class="mt-1 text-xs text-white/30">
-            {{ $t('onboarding_gps_privacy_note') }}
+            {{ $t('If you don\'t want your other photos to be geotagged, remember to turn Location Services off again afterwards.') }}
         </p>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 defineProps({
     compact: {
@@ -91,8 +90,6 @@ defineProps({
         default: false,
     },
 });
-
-const { t } = useI18n();
 
 const tabs = [
     { key: 'iphone', label: 'iPhone' },
