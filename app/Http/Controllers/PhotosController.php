@@ -17,7 +17,8 @@ class PhotosController extends Controller
     }
 
     /**
-     * Delete a photo — reverses metrics, removes S3 files, soft-deletes the row.
+     * Delete a photo — reverses metrics, removes S3 files, hard-deletes the row.
+     * Cascading FKs on photo_tags (→ photo_tag_extras) handle relationship cleanup.
      */
     public function deleteImage(Request $request)
     {
@@ -28,7 +29,7 @@ class PhotosController extends Controller
             abort(403);
         }
 
-        // Reverse metrics before soft delete (if photo was processed)
+        // Reverse metrics before delete (if photo was processed)
         // MetricsService::deletePhoto() reverses both upload XP and tag XP
         // from MySQL metrics, Redis, and users.xp
         if ($photo->processed_at !== null) {
@@ -38,8 +39,8 @@ class PhotosController extends Controller
         // Delete S3 files
         $this->deletePhotoAction->run($photo);
 
-        // Soft delete
-        $photo->delete();
+        // Hard delete — cascading FKs clean up photo_tags and extras
+        $photo->forceDelete();
 
         return response()->json(['message' => 'Photo deleted successfully!']);
     }

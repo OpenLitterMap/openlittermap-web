@@ -142,7 +142,7 @@ Built by a single developer over 17 years.
 - Replace tags (`PUT /api/v3/tags`) accepts empty `tags: []` to clear all tags from a photo
 - `TagsConfig` provides helper methods: `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()` — use these instead of hardcoding lists
 - Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only
-- `Photo` model uses `SoftDeletes` — `$photo->delete()` soft-deletes, `Photo::public()` auto-excludes
+- `Photo` model has `SoftDeletes` trait but all delete endpoints use `forceDelete()` for hard deletion. Cascading FKs on `photo_tags` (→ `photo_tag_extras`) handle relationship cleanup
 - Locations API uses `locations`/`location_type` keys (not `children`/`children_type`)
 - `UsersUploadsController` returns tags under key `'new_tags'` (frontend reads `photo.new_tags`)
 - Untagged photo filter uses `whereNull('summary')` — summary is set by `GeneratePhotoSummaryService` when tags are added, regardless of verification status
