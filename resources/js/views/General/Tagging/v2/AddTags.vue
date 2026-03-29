@@ -377,7 +377,7 @@ const searchableTags = computed(() => {
             id: `brand-${brand.id}`,
             key: brand.key,
             label,
-            lowerKey: `${brand.key} ${label}`.toLowerCase(),
+            lowerKey: `${brand.key} ${label} ${formatKey(brand.key)}`.toLowerCase(),
             text: brand.key,
             type: 'brand',
             raw: brand,
