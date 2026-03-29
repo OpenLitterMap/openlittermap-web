@@ -155,10 +155,9 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 - Shows reassurance text: "One tag is enough to get started. You can always edit later."
 - On submit: optimistically sets `onboarding_completed_at` on local user object, captures `photo`, `lat`, `lon` from photo, redirects to `/onboarding/complete?photo={id}&lat={lat}&lon={lon}`
 
-**`Nav.vue`** — Hides nav links during onboarding:
-- Upload, Add Tags hidden unless `onboardingCompleted`
-- Profile, Teams, Settings hidden unless `onboardingCompleted`
-- Admin links always visible (not gated by onboarding)
+**`Nav.vue`** — All nav links always visible for authenticated users:
+- Upload, Add Tags, Profile, Teams, Settings, Admin links — no onboarding gate
+- "Onboarding" link (amber) shown in dropdown + mobile menu when `!onboardingCompleted`
 - Public links (Map, About, Leaderboard, Locations) + Logout always visible
 
 ## Photo Geolink
@@ -232,5 +231,5 @@ All onboarding pages use the established dark glass theme:
 - `resources/js/views/Account/CreateAccount.vue` — signup redirect logic
 - `resources/js/views/General/Tagging/v2/AddTags.vue` — onboarding mode
 - `resources/js/views/Upload/Upload.vue` — onboarding mode + GPS error handling
-- `resources/js/components/Nav.vue` — hide links during onboarding
+- `resources/js/components/Nav.vue` — onboarding link + nav visibility
 - `package.json` — version bump 5.3.0 → 5.4.0
