@@ -14,14 +14,14 @@
                     <!-- Step Indicator -->
                     <StepIndicator :current-step="1" />
 
-                    <!-- Value prop -->
-                    <div class="mt-6 space-y-3 text-sm text-white/50">
+                    <!-- What you'll do -->
+                    <div class="mt-6 space-y-2 text-sm text-white/50">
                         <div class="flex items-start gap-3">
                             <svg class="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
-                            <span>Take a photo of litter with your phone — the GPS location is captured automatically.</span>
+                            <span>Take a photo of litter with your phone. Make sure GPS is enabled (see below).</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <svg class="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,6 +35,11 @@
                             </svg>
                             <span>Your data appears on the global litter map — open data for everyone.</span>
                         </div>
+                    </div>
+
+                    <!-- GPS instructions -->
+                    <div class="mt-4">
+                        <GpsInstructions />
                     </div>
 
                     <!-- CTA -->
@@ -62,10 +67,13 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { useUserStore } from '@/stores/user';
 import StepIndicator from '@/components/onboarding/StepIndicator.vue';
+import GpsInstructions from '@/components/onboarding/GpsInstructions.vue';
 
 const router = useRouter();
+const toast = useToast();
 const userStore = useUserStore();
 const isSkipping = ref(false);
 
@@ -74,10 +82,17 @@ async function skipOnboarding() {
 
     try {
         await axios.post('/api/user/onboarding/skip');
+
+        // Set optimistically so middleware allows /upload even if REFRESH_USER fails
+        if (userStore.user) {
+            userStore.user.onboarding_completed_at = new Date().toISOString();
+        }
+
         await userStore.REFRESH_USER();
         router.push('/upload');
     } catch {
         isSkipping.value = false;
+        toast.error('Something went wrong. Please try again.');
     }
 }
 </script>

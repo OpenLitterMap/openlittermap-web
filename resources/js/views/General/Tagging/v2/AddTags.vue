@@ -547,14 +547,16 @@ const convertExistingTags = (photo) => {
 
 // Initialize
 onMounted(async () => {
-    // Load tags data first (needed for edit mode CLO lookups)
-    if (tagsStore.objects.length === 0) {
-        await tagsStore.GET_ALL_TAGS();
-    }
+    const tagsPromise = tagsStore.objects.length === 0
+        ? tagsStore.GET_ALL_TAGS()
+        : Promise.resolve();
 
     // Check for specific photo (photo query param)
     const photoIdParam = route.query.photo;
     if (photoIdParam) {
+        // Edit mode needs tags for CLO lookups — await tags first
+        await tagsPromise;
+
         editPhotoId.value = parseInt(photoIdParam);
 
         const photo = await photosStore.GET_SINGLE_PHOTO(editPhotoId.value);
@@ -576,7 +578,11 @@ onMounted(async () => {
             }
         }
     } else {
-        await photosStore.fetchUntaggedData(1, { tagged: false });
+        // Normal mode: load tags and photos in parallel
+        await Promise.all([
+            tagsPromise,
+            photosStore.fetchUntaggedData(1, { tagged: false }),
+        ]);
     }
 
     // If no photos available after fetch, stop showing loading state
@@ -915,6 +921,7 @@ const clearAllTags = () => {
 
 // Submit tags
 const submitTags = async () => {
+    if (isSubmitting.value) return;
     if (!canSubmit.value) return;
 
     isSubmitting.value = true;
@@ -1015,10 +1022,14 @@ const submitTags = async () => {
             userStore.REFRESH_USER();
             router.push('/uploads');
         } else {
-            await photosStore.UPLOAD_TAGS({
+            const result = await photosStore.UPLOAD_TAGS({
                 photoId: photoId,
                 tags: tagsForUpload,
             });
+
+            if (result && !result.success) {
+                throw new Error(result.message || 'Failed to save tags');
+            }
 
             // Refresh user XP/level (non-blocking)
             userStore.REFRESH_USER();
@@ -1035,7 +1046,7 @@ const submitTags = async () => {
                 if (userStore.user) {
                     userStore.user.onboarding_completed_at = new Date().toISOString();
                 }
-                router.push('/onboarding/complete');
+                router.push({ path: '/onboarding/complete', query: { photo: photoId } });
                 return;
             }
 

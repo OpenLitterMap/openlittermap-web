@@ -155,4 +155,41 @@ class OnboardingTest extends TestCase
         $this->assertArrayHasKey('onboarding_completed_at', $response->json('user'));
         $this->assertNull($response->json('user.onboarding_completed_at'));
     }
+
+    public function test_login_returns_onboarding_completed_at(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password123',
+            'onboarding_completed_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'identifier' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $response->assertOk();
+        $this->assertArrayHasKey('onboarding_completed_at', $response->json('user'));
+        $this->assertNotNull($response->json('user.onboarding_completed_at'));
+    }
+
+    public function test_login_does_not_leak_sensitive_fields(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password123',
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'identifier' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $response->assertOk();
+        $userData = $response->json('user');
+        $this->assertArrayNotHasKey('stripe_id', $userData);
+        $this->assertArrayNotHasKey('token', $userData);
+        $this->assertArrayNotHasKey('sub_token', $userData);
+        $this->assertArrayNotHasKey('eth_wallet', $userData);
+        $this->assertArrayNotHasKey('password', $userData);
+    }
 }

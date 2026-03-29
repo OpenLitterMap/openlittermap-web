@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import middlewarePipeline from './middleware/middlewarePipeline';
 import auth from './middleware/auth';
 import onboarding from './middleware/onboarding';
+import onboardingNotCompleted from './middleware/onboardingNotCompleted';
 
 // Components
 import About from '../views/General/About.vue';
@@ -114,13 +115,14 @@ const routes = [
         name: 'ResetPassword',
         component: ResetPassword,
     },
-    // Onboarding routes (auth only, no onboarding guard — these ARE the onboarding flow)
+    // Onboarding routes (no onboarding guard — these ARE the onboarding flow)
+    // onboardingNotCompleted redirects completed users back to /upload
     {
         path: '/onboarding',
         name: 'Onboarding',
         component: OnboardingWelcome,
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboardingNotCompleted],
         },
     },
     {
@@ -129,7 +131,7 @@ const routes = [
         component: Upload,
         props: { onboarding: true },
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboardingNotCompleted],
         },
     },
     {
@@ -138,7 +140,7 @@ const routes = [
         component: AddTags,
         props: { onboarding: true },
         meta: {
-            middleware: [auth],
+            middleware: [auth, onboardingNotCompleted],
         },
     },
     {

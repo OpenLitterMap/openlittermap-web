@@ -342,7 +342,7 @@ const isSubmitting = ref(false);
 const showPassword = ref(false);
 const fieldErrors = ref({});
 const activeField = ref(null);
-const showRecaptcha = ref(false);
+const showRecaptcha = ref(!!import.meta.env.VITE_RECAPTCHA_SITE_KEY);
 
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6Le9FtwcAAAAAMOImuwEoOYssOVdNf7dfI2x8XZh';
 
@@ -409,6 +409,15 @@ function validateField(field) {
             }
             break;
 
+        case 'username': {
+            const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+            if (username.value && !usernameRegex.test(username.value)) {
+                newErrors.username = 'Username can only contain letters, numbers, hyphens and underscores';
+            } else {
+                delete newErrors.username;
+            }
+            break;
+        }
     }
 
     fieldErrors.value = newErrors;
@@ -424,6 +433,7 @@ function clearError(field) {
 
 function onUsernameInput() {
     clearError('username');
+    validateField('username');
 }
 
 function refreshUsername() {

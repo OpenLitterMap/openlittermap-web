@@ -89,6 +89,25 @@
                     </svg>
                 </router-link>
             </div>
+
+            <!-- Failure recovery (all files failed) -->
+            <div v-if="allDone && successCount === 0" class="mt-6 text-center">
+                <p class="text-red-400/80 text-sm mb-3">{{ $t('Upload failed. Please try again.') }}</p>
+                <button
+                    @click="resetUpload"
+                    class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl text-white font-medium transition-all"
+                >
+                    {{ $t('Try again') }}
+                </button>
+            </div>
+
+            <!-- GPS error help -->
+            <div v-if="hasGpsError" class="mt-4 max-w-lg mx-auto">
+                <p class="mb-3 text-sm text-red-400/80">
+                    This photo doesn't have location data. Make sure GPS is enabled on your camera:
+                </p>
+                <GpsInstructions compact />
+            </div>
         </div>
     </div>
 </template>
@@ -109,6 +128,9 @@ import { useRouter } from 'vue-router';
 import { useUploadingStore } from '../../stores/uploading/index.js';
 import { useUserStore } from '../../stores/user/index.js';
 import StepIndicator from '@/components/onboarding/StepIndicator.vue';
+import GpsInstructions from '@/components/onboarding/GpsInstructions.vue';
+import { useTagsStore } from '@stores/tags/index.js';
+import { usePhotosStore } from '@stores/photos/index.js';
 
 const props = defineProps({
     onboarding: {
@@ -116,6 +138,14 @@ const props = defineProps({
         default: false,
     },
 });
+
+// Preload tags when in onboarding (user will need them on the next page)
+if (props.onboarding) {
+    const tagsStore = useTagsStore();
+    if (tagsStore.objects.length === 0) {
+        tagsStore.GET_ALL_TAGS();
+    }
+}
 
 const { t } = useI18n();
 const router = useRouter();
@@ -135,6 +165,7 @@ const pond = ref(null);
 const sessionXp = ref(0);
 const successCount = ref(0);
 const allDone = ref(false);
+const hasGpsError = ref(false);
 
 const activeTeam = computed(() => userStore.user?.team || null);
 const userLevel = computed(() => userStore.user?.next_level || null);
@@ -181,6 +212,9 @@ const server = {
             } else {
                 try {
                     const parsed = JSON.parse(xhr.responseText);
+                    if (parsed.error === 'no_gps' || parsed.error === 'invalid_coordinates') {
+                        hasGpsError.value = true;
+                    }
                     error(parsed.message || parsed.error || 'Upload failed');
                 } catch {
                     error('Upload failed');
@@ -203,6 +237,16 @@ const server = {
 };
 
 const errorLabelFn = (error) => error.body;
+
+function resetUpload() {
+    allDone.value = false;
+    successCount.value = 0;
+    sessionXp.value = 0;
+    hasGpsError.value = false;
+    if (pond.value) {
+        pond.value.removeFiles();
+    }
+}
 
 // ── Single event handler: file finished processing ──────────────
 const handleFileProcessed = (error, file) => {
@@ -227,6 +271,10 @@ const handleFileProcessed = (error, file) => {
 
             // Auto-redirect in onboarding mode
             if (props.onboarding && successCount.value > 0) {
+                // Prime the photos cache so the tag page loads instantly
+                const photosStore = usePhotosStore();
+                photosStore.fetchUntaggedData(1, { tagged: false });
+
                 router.push('/onboarding/tag');
             }
         }

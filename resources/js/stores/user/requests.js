@@ -18,6 +18,7 @@ export const requests = {
             })
             .catch((error) => {
                 console.log('error.check_auth', error);
+                this.$reset();
             });
     },
 
@@ -55,7 +56,11 @@ export const requests = {
             modalStore.hideModal();
 
             this.auth = true;
-            this.user = response.data.user;
+            this.user = {
+                ...response.data.user,
+                xp: response.data.stats?.xp,
+                next_level: response.data.level,
+            };
 
             // New users go to onboarding; returning users go to intended route
             if (!this.onboardingCompleted) {

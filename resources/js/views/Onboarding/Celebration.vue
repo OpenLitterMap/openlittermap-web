@@ -25,23 +25,40 @@
                     </p>
 
                     <!-- XP badge -->
-                    <div v-if="userXp > 0" class="mt-4 flex justify-center">
+                    <div v-if="!loading && userXp > 0" class="mt-4 flex justify-center">
                         <div class="flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-500/20 px-4 py-2">
                             <span class="text-emerald-400 font-bold">{{ userXp }} XP</span>
                             <span class="text-white/40 text-sm">earned so far</span>
                         </div>
                     </div>
 
+                    <!-- Geolink -->
+                    <div v-if="photoId" class="mt-6 rounded-lg border border-white/10 bg-white/5 p-3">
+                        <p class="mb-2 text-xs text-white/40">Your photo's unique link:</p>
+                        <div class="flex items-center gap-2">
+                            <code class="flex-1 truncate rounded bg-white/5 px-3 py-1.5 text-xs text-white/70">
+                                {{ geolinkDisplay }}
+                            </code>
+                            <button
+                                @click="copyGeolink"
+                                class="shrink-0 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium transition-all hover:bg-white/10"
+                                :class="copied ? 'text-emerald-400' : 'text-white/60'"
+                            >
+                                {{ copied ? 'Copied!' : 'Copy' }}
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- CTAs -->
                     <div class="mt-8 space-y-3">
                         <router-link
-                            to="/global"
+                            :to="photoId ? `/global?photo=${photoId}&load=true` : '/global'"
                             class="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-3 font-semibold text-white transition-colors hover:bg-emerald-400"
                         >
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
-                            See the global map
+                            {{ photoId ? 'View on the map' : 'See the global map' }}
                         </router-link>
                         <router-link
                             to="/upload"
@@ -63,15 +80,35 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import StepIndicator from '@/components/onboarding/StepIndicator.vue';
 
+const route = useRoute();
 const userStore = useUserStore();
+const loading = ref(true);
+const copied = ref(false);
+
+const photoId = computed(() => route.query.photo || null);
+
+const geolinkDisplay = computed(() => {
+    if (!photoId.value) return '';
+    return `${window.location.host}/global?photo=${photoId.value}`;
+});
 
 const userXp = computed(() => userStore.user?.xp || 0);
 
-onMounted(() => {
-    userStore.REFRESH_USER();
+function copyGeolink() {
+    if (!photoId.value) return;
+    const url = `${window.location.origin}/global?photo=${photoId.value}&load=true`;
+    navigator.clipboard.writeText(url);
+    copied.value = true;
+    setTimeout(() => { copied.value = false; }, 2000);
+}
+
+onMounted(async () => {
+    await userStore.REFRESH_USER();
+    loading.value = false;
 });
 </script>
