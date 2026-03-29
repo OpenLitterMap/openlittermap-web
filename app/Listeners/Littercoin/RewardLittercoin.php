@@ -8,6 +8,7 @@ use App\Models\Littercoin;
 use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\DB;
 use App\Services\Redis\RedisKeys;
 use Illuminate\Support\Facades\Redis;
 
@@ -29,10 +30,12 @@ class RewardLittercoin implements ShouldQueue
 
             if ($count === 100)
             {
-                Littercoin::firstOrCreate([
-                    'user_id' => $event->user_id,
-                    'photo_id' => $event->photo_id
-                ]);
+                DB::transaction(function () use ($event) {
+                    Littercoin::firstOrCreate([
+                        'user_id' => $event->user_id,
+                        'photo_id' => $event->photo_id
+                    ]);
+                }, 3);
 
                 // Broadcast an event to anyone viewing the global map
                 event(new LittercoinMined($event->user_id, '100-images-verified'));
