@@ -96,27 +96,35 @@ const userStore = useUserStore();
 const loading = ref(true);
 const copied = ref(false);
 
+const photoId = computed(() => route.query.photo || null);
 const lat = computed(() => route.query.lat || null);
 const lon = computed(() => route.query.lon || null);
 const hasCoords = computed(() => lat.value && lon.value);
 
-const geolinkPath = computed(() => {
-    if (!hasCoords.value) return '/global';
-    return `/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89&load=true&open=true`;
+const geolinkParams = computed(() => {
+    if (!hasCoords.value) return '';
+    let params = `lat=${lat.value}&lon=${lon.value}&zoom=17.89&load=true&open=true`;
+    if (photoId.value) params += `&photo=${photoId.value}`;
+    return params;
 });
 
-const mapLink = computed(() => geolinkPath.value);
+const mapLink = computed(() => {
+    if (!hasCoords.value) return '/global';
+    return `/global?${geolinkParams.value}`;
+});
 
 const geolinkDisplay = computed(() => {
     if (!hasCoords.value) return '';
-    return `${window.location.host}/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89`;
+    let display = `${window.location.host}/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89`;
+    if (photoId.value) display += `&photo=${photoId.value}`;
+    return display;
 });
 
 const userXp = computed(() => userStore.user?.xp || 0);
 
 function copyGeolink() {
     if (!hasCoords.value) return;
-    const url = `${window.location.origin}/global?lat=${lat.value}&lon=${lon.value}&zoom=17.89&load=true&open=true`;
+    const url = `${window.location.origin}/global?${geolinkParams.value}`;
     navigator.clipboard.writeText(url);
     copied.value = true;
     setTimeout(() => { copied.value = false; }, 2000);

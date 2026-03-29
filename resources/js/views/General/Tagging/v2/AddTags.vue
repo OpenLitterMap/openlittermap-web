@@ -1048,7 +1048,7 @@ const submitTags = async () => {
                 if (userStore.user) {
                     userStore.user.onboarding_completed_at = new Date().toISOString();
                 }
-                router.push({ path: '/onboarding/complete', query: { lat: photoLat, lon: photoLon } });
+                router.push({ path: '/onboarding/complete', query: { photo: photoId, lat: photoLat, lon: photoLon } });
                 return;
             }
 
