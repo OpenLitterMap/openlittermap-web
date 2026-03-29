@@ -115,11 +115,13 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 - Responsive — hides labels on mobile, shows on `sm:`
 
 #### `components/onboarding/GpsInstructions.vue`
-- Tabbed card with iPhone and Android GPS setup instructions
+- Tabbed card with iPhone and Android GPS setup instructions, fully i18n'd
 - Props: `compact` (Boolean, default false) — hides heading when true (used in Upload error state)
-- iPhone: Settings → Privacy & Security → Location Services → Camera → While Using the App
-- Android: Camera app → Settings → Location tags/GPS tags/Store location → ON
+- **iPhone:** Settings → Privacy & Security → Location Services → Camera → While Using the App. Plus recommended: Settings → Camera → Formats → Most Compatible (JPG instead of HEIC)
+- **Android:** 1) Turn on system Location (quick settings or Settings → Location), 2) Camera app → Settings → Location tags/GPS tags/Save location → ON
+- **Android upload tip (web only):** Use file picker's Browse view (⋮ → Browse) instead of Photos/Albums — the default Android picker strips GPS metadata
 - Reassurance: "Once enabled, every photo you take will include GPS automatically. You only need to do this once."
+- All strings use `$t()` with `onboarding_gps_*` keys in `resources/js/langs/en.json`
 - Used on: OnboardingWelcome (full), Upload.vue GPS error state (compact)
 
 #### `components/onboarding/OnboardingChips.vue`
