@@ -196,15 +196,26 @@ trait ResolvesUserProfile
 
     /**
      * Get the user's global rank position from Redis ZREVRANK.
-     * Falls back to users.xp count if user is not in the Redis ZSET.
+     * Falls back to users.xp count if Redis ZSET is empty or incomplete.
      */
     protected function getGlobalRank(int $userId, int $fallbackXp): int
     {
         $globalXpKey = RedisKeys::xpRanking(RedisKeys::global());
-        $rank = Redis::zRevRank($globalXpKey, (string) $userId);
 
-        if ($rank !== false) {
-            return $rank + 1;
+        try {
+            $rank = Redis::zRevRank($globalXpKey, (string) $userId);
+
+            if ($rank !== false && $rank !== null) {
+                // Verify ZSET is reasonably complete before trusting the rank
+                $zsetSize = (int) Redis::zCard($globalXpKey);
+                $totalUsers = (int) Cache::remember('users:count', 3600, fn () => User::count());
+
+                if ($zsetSize >= max(1, $totalUsers * 0.5)) {
+                    return $rank + 1;
+                }
+            }
+        } catch (\Exception $e) {
+            // Redis unavailable — fall through to MySQL
         }
 
         return User::where('xp', '>', $fallbackXp)->count() + 1;

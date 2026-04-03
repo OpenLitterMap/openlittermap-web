@@ -66,6 +66,9 @@
             </div>
         </div>
 
+        <!-- Quick Tags -->
+        <QuickTagsSection />
+
         <!-- Privacy -->
         <div class="bg-white/5 border border-white/10 rounded-xl p-6">
             <h3 class="text-white font-semibold mb-4">{{ $t('Privacy') }}</h3>
@@ -157,6 +160,7 @@ import { useSettingsStore } from '@stores/settings.js';
 import { useUserStore } from '@stores/user/index.js';
 import SettingsField from './SettingsField.vue';
 import SettingsToggle from './SettingsToggle.vue';
+import QuickTagsSection from './QuickTagsSection.vue';
 
 const { t: $t } = useI18n();
 const settingsStore = useSettingsStore();
