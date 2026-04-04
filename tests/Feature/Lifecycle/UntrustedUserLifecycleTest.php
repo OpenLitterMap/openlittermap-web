@@ -156,7 +156,7 @@ class UntrustedUserLifecycleTest extends TestCase
             ->postJson('/api/profile/photos/delete', ['photoid' => $photoId]);
         $deleteResponse->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // Everything reversed to zero
         $user->refresh();

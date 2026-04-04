@@ -85,6 +85,7 @@ Route::group(['prefix' => 'v3', 'middleware' => ['auth:sanctum']], function () {
     Route::patch('/photos/{photo}/visibility', [UsersUploadsController::class, 'toggleVisibility']);
     Route::get('/user/quick-tags', [QuickTagsController::class, 'index']);
     Route::put('/user/quick-tags', [QuickTagsController::class, 'update']);
+    Route::get('/user/top-tags', [QuickTagsController::class, 'topTags']);
 });
 
 /*

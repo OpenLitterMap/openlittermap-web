@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Enums\LocationType;
 use App\Models\Users\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -177,5 +178,83 @@ class GlobalStatsTest extends TestCase
         $response = $this->getJson('/api/global/stats-data');
 
         $response->assertOk();
+    }
+
+    public function test_24h_includes_yesterday_bucket_just_after_midnight(): void
+    {
+        // At 00:05 UTC, "last 24 hours" should include yesterday's bucket
+        Carbon::setTestNow(Carbon::parse('2026-04-04 00:05:00', 'UTC'));
+
+        $yesterday = now('UTC')->copy()->subDay()->toDateString(); // 2026-04-03
+
+        DB::table('metrics')->insert([
+            'timescale' => 1,
+            'location_type' => LocationType::Global,
+            'location_id' => 0,
+            'user_id' => 0,
+            'bucket_date' => $yesterday,
+            'year' => 2026,
+            'month' => 4,
+            'week' => 0,
+            'uploads' => 15,
+            'tags' => 60,
+            'litter' => 30,
+            'xp' => 100,
+        ]);
+
+        $response = $this->getJson('/api/global/stats-data');
+
+        $response->assertOk();
+        // Yesterday's bucket is included in last_24_hours (bucket_date >= yesterday)
+        $response->assertJsonPath('new_photos_last_24_hours', 15);
+        $response->assertJsonPath('new_tags_last_24_hours', 60);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_24h_users_uses_exact_timestamp(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-04 12:00:00', 'UTC'));
+
+        // User created 23 hours ago (within 24h)
+        User::factory()->create(['created_at' => now()->subHours(23)]);
+        // User created 25 hours ago (outside 24h)
+        User::factory()->create(['created_at' => now()->subHours(25)]);
+
+        $response = $this->getJson('/api/global/stats-data');
+
+        $response->assertOk();
+        $response->assertJsonPath('new_users_last_24_hours', 1);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_legacy_today_keys_match_last_24_hours(): void
+    {
+        $now = now('UTC');
+
+        DB::table('metrics')->insert([
+            'timescale' => 1,
+            'location_type' => LocationType::Global,
+            'location_id' => 0,
+            'user_id' => 0,
+            'bucket_date' => $now->toDateString(),
+            'year' => $now->year,
+            'month' => $now->month,
+            'week' => 0,
+            'uploads' => 7,
+            'tags' => 25,
+            'litter' => 10,
+            'xp' => 50,
+        ]);
+
+        User::factory()->create();
+
+        $response = $this->getJson('/api/global/stats-data');
+        $data = $response->json();
+
+        $this->assertEquals($data['new_users_last_24_hours'], $data['new_users_today']);
+        $this->assertEquals($data['new_tags_last_24_hours'], $data['new_tags_today']);
+        $this->assertEquals($data['new_photos_last_24_hours'], $data['new_photos_today']);
     }
 }

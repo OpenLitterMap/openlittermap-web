@@ -91,7 +91,7 @@ class EdgeCaseLifecycleTest extends TestCase
             ->postJson('/api/profile/photos/delete', ['photoid' => $photoId]);
         $deleteResponse->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // XP fully reversed to 0
         $user->refresh();

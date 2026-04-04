@@ -356,7 +356,7 @@ class ParticipantSessionTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true);
 
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
     }
 
     public function test_participant_cannot_delete_approved_photo(): void

@@ -337,7 +337,7 @@ class SchoolLifecycleTest extends TestCase
             ]);
 
         $response->assertOk();
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // Student XP unchanged (was already 0)
         $this->student->refresh();
@@ -391,7 +391,7 @@ class SchoolLifecycleTest extends TestCase
             ])
             ->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // All XP reversed
         $this->student->refresh();

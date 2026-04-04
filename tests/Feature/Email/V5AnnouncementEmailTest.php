@@ -22,7 +22,7 @@ class V5AnnouncementEmailTest extends TestCase
         $user = User::factory()->create();
         $mailable = new EmailUpdate($user);
 
-        $mailable->assertHasSubject("OpenLitterMap v5 is now online \xF0\x9F\x9A\x80");
+        $mailable->assertHasSubject('Update 27 - Mobile app updates & more!');
     }
 
     public function test_email_update_renders_with_user(): void
@@ -32,7 +32,7 @@ class V5AnnouncementEmailTest extends TestCase
 
         $html = $mailable->render();
 
-        $this->assertStringContainsString('OpenLitterMap v5 is released', $html); // Title in HTML body
+        $this->assertStringContainsString('New Mobile Apps', $html); // Title in HTML body
         $this->assertStringContainsString($user->sub_token, $html);
         $this->assertStringContainsString('unsubscribe', $html);
     }
@@ -44,7 +44,7 @@ class V5AnnouncementEmailTest extends TestCase
 
         $html = $mailable->render();
 
-        $this->assertStringContainsString('OpenLitterMap v5 is released', $html); // Title in HTML body
+        $this->assertStringContainsString('New Mobile Apps', $html); // Title in HTML body
         $this->assertStringContainsString($subscriber->sub_token, $html);
     }
 

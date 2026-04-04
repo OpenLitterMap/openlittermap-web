@@ -55,6 +55,19 @@ if (app()->isLocal()) {
         return new \App\Mail\WelcomeToOpenLitterMap($user);
     });
 
+    Route::get('dev/mail/update27', function () {
+        $user = \App\Models\Users\User::first()
+            ?? \App\Models\Users\User::factory()->make([
+                'sub_token' => 'preview-sub-token',
+            ]);
+
+        if (! $user->sub_token) {
+            $user->sub_token = 'preview-sub-token';
+        }
+
+        return new \App\Mail\EmailUpdate($user);
+    });
+
 }
 
 /*
