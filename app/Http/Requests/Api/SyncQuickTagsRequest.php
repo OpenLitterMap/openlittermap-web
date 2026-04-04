@@ -13,17 +13,20 @@ class SyncQuickTagsRequest extends FormRequest
 
     public function rules(): array
     {
+        $maxQty = $this->user()->is_trusted ? 100 : 10;
+
         return [
             'tags' => 'present|array|max:30',
             'tags.*.clo_id' => 'required|integer|exists:category_litter_object,id',
             'tags.*.type_id' => 'nullable|integer|exists:litter_object_types,id',
-            'tags.*.quantity' => 'required|integer|min:1|max:10',
+            'tags.*.custom_name' => 'nullable|string|max:60',
+            'tags.*.quantity' => "required|integer|min:1|max:{$maxQty}",
             'tags.*.picked_up' => 'nullable|boolean',
             'tags.*.materials' => 'present|array',
             'tags.*.materials.*' => 'integer|exists:materials,id',
             'tags.*.brands' => 'present|array',
             'tags.*.brands.*.id' => 'required|integer|exists:brandslist,id',
-            'tags.*.brands.*.quantity' => 'required|integer|min:1|max:10',
+            'tags.*.brands.*.quantity' => "required|integer|min:1|max:{$maxQty}",
         ];
     }
 

@@ -9,7 +9,9 @@ class FixOrphanedTags extends Command
 {
     protected $signature = 'olm:fix-orphaned-tags
         {--apply : Actually execute the updates (dry-run by default)}
-        {--batch=5000 : Batch size for chunked updates}';
+        {--verify-only : Run post-apply verification queries only}
+        {--batch=5000 : Batch size for chunked updates}
+        {--log= : Write output to log file (e.g. storage/logs/orphan-fix.log)}';
 
     protected $description = 'Fix 189k+ orphaned photo_tags from v5 migration (missing category_litter_object_id)';
 
@@ -19,14 +21,26 @@ class FixOrphanedTags extends Command
     private bool $apply = false;
     private int $batchSize = 5000;
 
+    /** @var resource|null */
+    private $logFile = null;
+
+    /** @var array<int> */
+    private array $affectedPhotoIds = [];
+
     public function handle(): int
     {
         $this->apply = $this->option('apply');
         $this->batchSize = (int) $this->option('batch');
 
+        $this->openLog();
+
+        if ($this->option('verify-only')) {
+            return $this->runVerification();
+        }
+
         $mode = $this->apply ? '🔴 LIVE MODE' : '🟢 DRY-RUN MODE';
-        $this->info("=== Fix Orphaned Photo Tags ({$mode}) ===");
-        $this->newLine();
+        $this->log("=== Fix Orphaned Photo Tags ({$mode}) ===");
+        $this->log('');
 
         // Pre-flight: check for existing non-NULL type_ids on orphaned rows
         $existingTypes = DB::table('photo_tags')
@@ -35,11 +49,11 @@ class FixOrphanedTags extends Command
             ->whereNotNull('litter_object_type_id')
             ->count();
 
-        $this->info("Pre-flight: orphaned rows with existing litter_object_type_id = {$existingTypes}");
+        $this->log("Pre-flight: orphaned rows with existing litter_object_type_id = {$existingTypes}");
         if ($existingTypes > 0) {
-            $this->warn("WARNING: {$existingTypes} orphaned rows already have a type_id set. These will NOT be overwritten.");
+            $this->log("WARNING: {$existingTypes} orphaned rows already have a type_id set. These will NOT be overwritten.", 'warn');
         }
-        $this->newLine();
+        $this->log('');
 
         $mappings = $this->buildMappings();
 
@@ -47,8 +61,8 @@ class FixOrphanedTags extends Command
             $this->processMapping($mapping);
         }
 
-        $this->newLine();
-        $this->info('=== SUMMARY ===');
+        $this->log('');
+        $this->log('=== SUMMARY ===');
         $this->table(
             ['Orphan Key', 'Category Filter', 'Expected', 'Actual', 'Match?'],
             collect($this->results)->map(fn ($r) => [
@@ -62,22 +76,60 @@ class FixOrphanedTags extends Command
 
         $mismatches = collect($this->results)->filter(fn ($r) => $r['expected'] !== $r['actual']);
         if ($mismatches->isNotEmpty()) {
-            $this->warn("⚠ {$mismatches->count()} mapping(s) had count mismatches — review above.");
+            $this->log("⚠ {$mismatches->count()} mapping(s) had count mismatches — review above.", 'warn');
         }
 
-        $this->newLine();
-        $this->info("Total expected: {$this->totalExpected}");
-        $this->info("Total " . ($this->apply ? 'updated' : 'would update') . ": {$this->totalUpdated}");
+        $this->log('');
+        $this->log("Total expected: {$this->totalExpected}");
+        $this->log("Total " . ($this->apply ? 'updated' : 'would update') . ": {$this->totalUpdated}");
+
+        $uniquePhotos = count(array_unique($this->affectedPhotoIds));
+        $this->log("Distinct affected photos: {$uniquePhotos}");
 
         // Post-flight verification
         if ($this->apply) {
-            $this->newLine();
-            $remaining = DB::table('photo_tags')
-                ->whereNull('category_litter_object_id')
-                ->whereNotNull('litter_object_id')
-                ->count();
-            $this->info("Remaining orphaned photo_tags (NULL CLO + non-NULL LO): {$remaining}");
+            $this->log('');
+            $this->runVerification();
         }
+
+        $this->closeLog();
+
+        return 0;
+    }
+
+    private function runVerification(): int
+    {
+        $this->log('=== VERIFICATION ===');
+
+        $orphanedWithLo = DB::table('photo_tags')
+            ->whereNull('category_litter_object_id')
+            ->whereNotNull('litter_object_id')
+            ->count();
+        $this->log("Orphaned photo_tags (NULL CLO + non-NULL LO): {$orphanedWithLo}" . ($orphanedWithLo === 0 ? ' ✓' : ' ✗'));
+
+        $extraTagOnly = DB::table('photo_tags')
+            ->whereNull('category_litter_object_id')
+            ->whereNull('litter_object_id')
+            ->count();
+        $this->log("Extra-tag-only (NULL CLO + NULL LO, expected ~24,628): {$extraTagOnly}");
+
+        $spotCheck = DB::table('photo_tags')
+            ->join('litter_objects', 'photo_tags.litter_object_id', '=', 'litter_objects.id')
+            ->whereNull('photo_tags.category_litter_object_id')
+            ->whereIn('litter_objects.key', ['energy_can', 'beer_can', 'water_bottle', 'soda_can'])
+            ->selectRaw('litter_objects.`key`, COUNT(*) as remaining')
+            ->groupBy('litter_objects.key')
+            ->get();
+
+        if ($spotCheck->isEmpty()) {
+            $this->log('Spot check (energy_can, beer_can, water_bottle, soda_can): 0 remaining ✓');
+        } else {
+            foreach ($spotCheck as $row) {
+                $this->log("Spot check: {$row->key} still has {$row->remaining} orphaned rows ✗", 'warn');
+            }
+        }
+
+        $this->closeLog();
 
         return 0;
     }
@@ -102,17 +154,21 @@ class FixOrphanedTags extends Command
 
         $count = $query->count();
 
+        // Sample up to 5 affected photo_ids for spot-checking
+        $samplePhotoIds = (clone $query)->limit(5)->pluck('photo_id');
+        if ($samplePhotoIds->isNotEmpty()) {
+            $this->log("    Sample photo_ids: " . $samplePhotoIds->join(', '));
+        }
+
+        // Collect all affected photo_ids for the summary count
+        $allPhotoIds = (clone $query)->pluck('photo_id')->unique()->values()->toArray();
+        $this->affectedPhotoIds = array_merge($this->affectedPhotoIds, $allPhotoIds);
+
         $updateData = [
             'category_litter_object_id' => $targetCloId,
             'litter_object_id' => $targetLoId,
             'category_id' => $targetCategoryId,
         ];
-
-        // Only set type_id if mapping specifies one; never null it out
-        if ($typeId !== null) {
-            // Only update type_id on rows that don't already have one
-            // (safety: don't overwrite existing values)
-        }
 
         $categoryLabel = $categoryFilter !== null ? " (cat={$categoryFilter})" : '';
         $typeLabel = $typeId !== null ? " +type={$typeId}" : '';
@@ -134,7 +190,7 @@ class FixOrphanedTags extends Command
         $this->totalUpdated += $updated;
 
         $action = $this->apply ? 'Updated' : 'Would update';
-        $this->line("  {$action} {$updated}/{$count} — {$label}{$categoryLabel}{$typeLabel} → CLO {$targetCloId}, LO {$targetLoId}");
+        $this->log("  {$action} {$updated}/{$count} — {$label}{$categoryLabel}{$typeLabel} → CLO {$targetCloId}, LO {$targetLoId}");
     }
 
     private function executeBatched(int $orphanLoId, ?int $categoryFilter, array $updateData, ?int $typeId): int
@@ -171,6 +227,7 @@ class FixOrphanedTags extends Command
                 }
 
                 $totalUpdated += $ids->count();
+                $this->log("    Batch: {$ids->count()} rows (running total: {$totalUpdated})");
             }
         });
 
@@ -288,5 +345,47 @@ class FixOrphanedTags extends Command
             // ── Art ──
             ['label' => 'item (art)', 'orphan_lo_id' => 185, 'target_clo_id' => 16, 'target_lo_id' => 1, 'target_category_id' => 3],
         ];
+    }
+
+    private function log(string $message, string $level = 'info'): void
+    {
+        match ($level) {
+            'warn' => $this->warn($message),
+            'error' => $this->error($message),
+            default => $message === '' ? $this->newLine() : $this->info($message),
+        };
+
+        if ($this->logFile) {
+            fwrite($this->logFile, '[' . now()->toDateTimeString() . "] {$message}\n");
+        }
+    }
+
+    private function openLog(): void
+    {
+        $path = $this->option('log');
+
+        if (! $path) {
+            return;
+        }
+
+        $dir = dirname($path);
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $this->logFile = fopen($path, 'a');
+
+        if ($this->logFile) {
+            $this->info("Logging to: {$path}");
+            fwrite($this->logFile, "\n=== " . now()->toDateTimeString() . " ===\n");
+        }
+    }
+
+    private function closeLog(): void
+    {
+        if ($this->logFile) {
+            fclose($this->logFile);
+            $this->logFile = null;
+        }
     }
 }

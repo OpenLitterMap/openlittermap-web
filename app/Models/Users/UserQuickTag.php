@@ -11,6 +11,7 @@ class UserQuickTag extends Model
         'user_id',
         'clo_id',
         'type_id',
+        'custom_name',
         'quantity',
         'picked_up',
         'materials',

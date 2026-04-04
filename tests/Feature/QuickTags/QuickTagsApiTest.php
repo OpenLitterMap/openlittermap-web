@@ -233,7 +233,7 @@ class QuickTagsApiTest extends TestCase
 
     public function test_put_validates_quantity_range(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['verification_required' => true]);
         $clo = $this->createClo();
 
         // quantity 0
@@ -244,10 +244,36 @@ class QuickTagsApiTest extends TestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors('tags.0.quantity');
 
-        // quantity 11
+        // quantity 11 (untrusted user max is 10)
         $this->actingAs($user)
             ->putJson('/api/v3/user/quick-tags', [
                 'tags' => [$this->makeTagPayload($clo, ['quantity' => 11])],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('tags.0.quantity');
+    }
+
+    public function test_trusted_user_can_set_quantity_up_to_100(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $clo = $this->createClo();
+
+        // quantity 100 — allowed for trusted users
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo, ['quantity' => 100])],
+            ])->assertOk();
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/v3/user/quick-tags')
+            ->assertOk();
+
+        $this->assertEquals(100, $response->json('tags.0.quantity'));
+
+        // quantity 101 — rejected even for trusted users
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo, ['quantity' => 101])],
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('tags.0.quantity');
@@ -461,7 +487,7 @@ class QuickTagsApiTest extends TestCase
 
     public function test_put_validates_brand_quantity_range(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['verification_required' => true]);
         $clo = $this->createClo();
         $brand = $this->createBrand();
 
@@ -518,6 +544,71 @@ class QuickTagsApiTest extends TestCase
         DB::table('category_litter_object')->where('id', $clo)->delete();
 
         $this->assertDatabaseCount('user_quick_tags', 0);
+    }
+
+    public function test_custom_name_is_stored_and_returned(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo, ['custom_name' => 'Coke bottle'])],
+            ])->assertOk();
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/v3/user/quick-tags')
+            ->assertOk();
+
+        $this->assertEquals('Coke bottle', $response->json('tags.0.custom_name'));
+    }
+
+    public function test_custom_name_null_is_stored_as_null(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo, ['custom_name' => null])],
+            ])->assertOk();
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/v3/user/quick-tags')
+            ->assertOk();
+
+        $this->assertNull($response->json('tags.0.custom_name'));
+    }
+
+    public function test_custom_name_defaults_to_null_when_absent(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+
+        // Send without custom_name key at all
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo)],
+            ])->assertOk();
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/v3/user/quick-tags')
+            ->assertOk();
+
+        $this->assertNull($response->json('tags.0.custom_name'));
+    }
+
+    public function test_custom_name_exceeding_60_chars_returns_422(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo, ['custom_name' => str_repeat('a', 61)])],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('tags.0.custom_name');
     }
 
     public function test_put_without_tags_key_returns_422(): void

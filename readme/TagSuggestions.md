@@ -16,7 +16,8 @@ Users can save up to 30 "quick tag" presets — pre-configured litter objects wi
 | user_id | int unsigned | FK → users.id (cascade delete) |
 | clo_id | bigint unsigned | FK → category_litter_object.id (cascade delete) |
 | type_id | int unsigned, nullable | References litter_object_types.id (no FK constraint) |
-| quantity | tinyint unsigned | Default 1, validated 1-10 |
+| custom_name | varchar(60), nullable | User-defined display name. NULL = use catalog name |
+| quantity | tinyint unsigned | Default 1, validated 1-10 (trusted users: 1-100) |
 | picked_up | boolean, nullable | null = inherit user default, true/false = explicit |
 | materials | json | Array of material IDs, e.g. `[1, 3]` |
 | brands | json | Array of `{"id": int, "quantity": int}` objects |
@@ -35,7 +36,7 @@ Users can save up to 30 "quick tag" presets — pre-configured litter objects wi
 - `app/Http/Controllers/API/QuickTagsController.php` — GET + PUT endpoints
 - `app/Http/Requests/Api/SyncQuickTagsRequest.php` — Validation rules
 - `app/Models/Users/User.php` — `quickTags()` HasMany relation
-- `tests/Feature/QuickTags/QuickTagsApiTest.php` — 27 tests
+- `tests/Feature/QuickTags/QuickTagsApiTest.php` — 32 tests
 
 ## API Endpoints
 
@@ -54,6 +55,7 @@ Returns the authenticated user's quick tags, ordered by `sort_order`.
             "id": 1,
             "clo_id": 42,
             "type_id": null,
+            "custom_name": "Coke bottle",
             "quantity": 2,
             "picked_up": true,
             "materials": [1, 3],
@@ -77,6 +79,7 @@ Bulk-replaces all quick tags. Deletes existing rows and inserts new ones in a DB
         {
             "clo_id": 42,
             "type_id": null,
+            "custom_name": "Coke bottle",
             "quantity": 2,
             "picked_up": true,
             "materials": [1, 3],
@@ -99,13 +102,14 @@ Bulk-replaces all quick tags. Deletes existing rows and inserts new ones in a DB
 | tags | present, array, max 30 |
 | tags.*.clo_id | required, integer, exists in category_litter_object |
 | tags.*.type_id | nullable, integer, exists in litter_object_types |
-| tags.*.quantity | required, integer, 1-10 |
+| tags.*.custom_name | nullable, string, max 60 |
+| tags.*.quantity | required, integer, 1-10 (trusted users: 1-100) |
 | tags.*.picked_up | nullable, boolean |
 | tags.*.materials | present, array (can be empty) |
 | tags.*.materials.* | integer, exists in materials |
 | tags.*.brands | present, array (can be empty) |
 | tags.*.brands.*.id | required, integer, exists in brandslist |
-| tags.*.brands.*.quantity | required, integer, 1-10 |
+| tags.*.brands.*.quantity | required, integer, 1-10 (trusted users: 1-100) |
 
 ## Sync Strategy (Mobile)
 

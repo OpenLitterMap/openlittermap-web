@@ -29,6 +29,7 @@ class SyncQuickTagsAction
                     'user_id' => $user->id,
                     'clo_id' => $tag['clo_id'],
                     'type_id' => $tag['type_id'] ?? null,
+                    'custom_name' => $tag['custom_name'] ?? null,
                     'quantity' => $tag['quantity'] ?? 1,
                     'picked_up' => $tag['picked_up'] ?? null,
                     'materials' => json_encode($tag['materials'] ?? []),

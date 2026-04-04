@@ -118,6 +118,22 @@ public function handle(): int
 }
 ```
 
+## Post-Migration Fix: Orphaned Tags (2026-04-04)
+
+The v5 migration left 189,518 `photo_tags` rows with `category_litter_object_id = NULL` because `DEPRECATED_TAG_MAP` mapped v4 keys to composite names (e.g. `beerCan` → `beer_can`) instead of decomposing into object + type (e.g. `alcohol.can` + type `beer`). The fallback created runtime `litter_objects` (crowdsourced=1) without CLO relationships.
+
+**Fix commands:**
+- `php artisan olm:fix-orphaned-tags` — Remaps 71 orphan LOs to canonical CLO/LO/type targets. 74 mapping entries (3 multi-category splits). Batched, transacted, idempotent. Supports `--apply`, `--verify-only`, `--log`.
+- `php artisan olm:regenerate-summaries --orphan-fix` — Regenerates stale summaries for affected photos. Chunked via `chunkById`, resumable (skips photos with non-null `clo_id` in summary), `Photo::withoutEvents()`.
+- `php artisan olm:reprocess-metrics --from-file=<ids>` — Delta-based MetricsService reprocess for ~1,041 photos with XP changes (special object bonus corrections).
+
+**Key files:**
+- `app/Console/Commands/tmp/v5/Migration/FixOrphanedTags.php`
+- `app/Console/Commands/tmp/v5/Migration/RegenerateSummaries.php`
+- `app/Console/Commands/tmp/v5/Migration/ReprocessPhotoMetrics.php`
+- `readme/TagsCleanupPostMigration.md` — Full mapping tables and judgment calls
+- `readme/changelog/production-orphan-fix-runbook.md` — Production execution steps
+
 ## Common Mistakes
 
 - **Removing `migrated_at` check.** This is the idempotency guard. Without it, photos get double-migrated.

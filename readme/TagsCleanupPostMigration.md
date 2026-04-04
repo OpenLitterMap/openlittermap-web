@@ -276,7 +276,7 @@ All multi-category splits confirmed against diagnostic counts:
 
 ## Execution
 
-**Status:** Dry-run verified. Awaiting `--apply`.
+**Status:** Applied locally (2026-04-04). Production runbook at `readme/changelog/production-orphan-fix-runbook.md`.
 
 ```bash
 # Dry-run (default)
@@ -284,6 +284,15 @@ php artisan olm:fix-orphaned-tags
 
 # Live execution
 php artisan olm:fix-orphaned-tags --apply
+
+# Verify post-apply
+php artisan olm:fix-orphaned-tags --verify-only
+
+# Regenerate stale summaries (resumable, chunked, no side effects)
+php artisan olm:regenerate-summaries --orphan-fix
+
+# Reprocess XP for ~1,041 photos with special object bonus corrections
+php artisan olm:reprocess-metrics --from-file=storage/logs/xp-changed-photo-ids.txt
 ```
 
 ## Verification Queries (post-apply)
