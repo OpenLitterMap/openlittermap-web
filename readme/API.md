@@ -1341,7 +1341,7 @@ Supports ETag-based caching (`If-None-Match` header returns 304 if unchanged). R
 
 **Auth:** None (public)
 
-World totals from the metrics table (all-time, timescale=0, location_type=Global). User growth stats from `users.created_at`. Tag and photo growth stats from daily metric buckets (timescale=1).
+World totals from the metrics table (all-time, timescale=0, location_type=Global). User growth from `users.created_at` (exact 24h window). Tag and photo growth from daily metric buckets (timescale=1) — "last 24 hours" uses `bucket_date >= yesterday` (daily-granularity approximation).
 
 **Response (200):**
 ```json
@@ -1349,16 +1349,22 @@ World totals from the metrics table (all-time, timescale=0, location_type=Global
   "total_tags": 150000,
   "total_images": 50000,
   "total_users": 10000,
-  "new_users_today": 12,
+  "new_users_last_24_hours": 12,
   "new_users_last_7_days": 85,
   "new_users_last_30_days": 320,
-  "new_tags_today": 156,
+  "new_tags_last_24_hours": 156,
   "new_tags_last_7_days": 1230,
   "new_tags_last_30_days": 4870,
-  "new_photos_today": 45,
+  "new_photos_last_24_hours": 45,
   "new_photos_last_7_days": 310,
-  "new_photos_last_30_days": 1250
+  "new_photos_last_30_days": 1250,
+  "new_users_today": 12,
+  "new_tags_today": 156,
+  "new_photos_today": 45
 }
+```
+
+**Legacy compat:** `*_today` keys are aliases for `*_last_24_hours` (same values). New clients should use the `*_last_24_hours` keys.
 ```
 
 **Controller:** `App\Http\Controllers\API\GlobalStatsController@index`

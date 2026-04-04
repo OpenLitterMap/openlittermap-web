@@ -58,4 +58,8 @@ return [
         'access_secret' => env('TWITTER_API_ACCESS_SECRET'),
     ],
 
+    'browsershot' => [
+        'chrome_path' => env('BROWSERSHOT_CHROME_PATH', '/snap/bin/chromium'),
+    ],
+
 ];

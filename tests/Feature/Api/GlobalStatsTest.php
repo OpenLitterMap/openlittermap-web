@@ -88,28 +88,38 @@ class GlobalStatsTest extends TestCase
             'total_tags',
             'total_images',
             'total_users',
-            'new_users_today',
+            // New keys
+            'new_users_last_24_hours',
             'new_users_last_7_days',
             'new_users_last_30_days',
-            'new_tags_today',
+            'new_tags_last_24_hours',
             'new_tags_last_7_days',
             'new_tags_last_30_days',
-            'new_photos_today',
+            'new_photos_last_24_hours',
             'new_photos_last_7_days',
             'new_photos_last_30_days',
+            // Legacy keys (pre-v5.7 mobile compat)
+            'new_users_today',
+            'new_tags_today',
+            'new_photos_today',
         ]);
         $response->assertJsonPath('total_tags', 150);
         $response->assertJsonPath('total_images', 42);
         $response->assertJsonPath('total_users', 3);
-        $response->assertJsonPath('new_users_today', 2);
+        $response->assertJsonPath('new_users_last_24_hours', 2);
         $response->assertJsonPath('new_users_last_7_days', 2);
         $response->assertJsonPath('new_users_last_30_days', 3);
-        $response->assertJsonPath('new_tags_today', 20);
+        $response->assertJsonPath('new_tags_last_24_hours', 20);
         $response->assertJsonPath('new_tags_last_7_days', 60);       // 20 + 40
         $response->assertJsonPath('new_tags_last_30_days', 90);      // 20 + 40 + 30
-        $response->assertJsonPath('new_photos_today', 5);
+        $response->assertJsonPath('new_photos_last_24_hours', 5);
         $response->assertJsonPath('new_photos_last_7_days', 15);     // 5 + 10
         $response->assertJsonPath('new_photos_last_30_days', 23);    // 5 + 10 + 8
+
+        // Legacy keys match new keys
+        $response->assertJsonPath('new_users_today', 2);
+        $response->assertJsonPath('new_tags_today', 20);
+        $response->assertJsonPath('new_photos_today', 5);
     }
 
     public function test_global_stats_returns_zeros_when_no_data(): void
@@ -120,13 +130,13 @@ class GlobalStatsTest extends TestCase
         $response->assertJsonPath('total_tags', 0);
         $response->assertJsonPath('total_images', 0);
         $response->assertJsonPath('total_users', 0);
-        $response->assertJsonPath('new_users_today', 0);
+        $response->assertJsonPath('new_users_last_24_hours', 0);
         $response->assertJsonPath('new_users_last_7_days', 0);
         $response->assertJsonPath('new_users_last_30_days', 0);
-        $response->assertJsonPath('new_tags_today', 0);
+        $response->assertJsonPath('new_tags_last_24_hours', 0);
         $response->assertJsonPath('new_tags_last_7_days', 0);
         $response->assertJsonPath('new_tags_last_30_days', 0);
-        $response->assertJsonPath('new_photos_today', 0);
+        $response->assertJsonPath('new_photos_last_24_hours', 0);
         $response->assertJsonPath('new_photos_last_7_days', 0);
         $response->assertJsonPath('new_photos_last_30_days', 0);
     }
@@ -154,10 +164,10 @@ class GlobalStatsTest extends TestCase
         $response = $this->getJson('/api/global/stats-data');
 
         $response->assertOk();
-        $response->assertJsonPath('new_tags_today', 0);
+        $response->assertJsonPath('new_tags_last_24_hours', 0);
         $response->assertJsonPath('new_tags_last_7_days', 0);
         $response->assertJsonPath('new_tags_last_30_days', 0);
-        $response->assertJsonPath('new_photos_today', 0);
+        $response->assertJsonPath('new_photos_last_24_hours', 0);
         $response->assertJsonPath('new_photos_last_7_days', 0);
         $response->assertJsonPath('new_photos_last_30_days', 0);
     }

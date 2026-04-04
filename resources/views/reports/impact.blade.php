@@ -223,6 +223,8 @@
                     <p>{{ $startDate }} <br> to {{ $endDate }}</p>
                 @elseif ($period === 'monthly')
                     <p>{{ $startDate }}</p>
+                @elseif ($period === 'annual')
+                    <p>{{ $startDate }} Annual Report</p>
                 @endif
             </div>
 

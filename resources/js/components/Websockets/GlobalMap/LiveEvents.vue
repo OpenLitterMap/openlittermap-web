@@ -92,6 +92,7 @@ const processQueue = () => {
         animating.value = true;
         const nextEvent = pendingEvents.value.shift();
         events.value.unshift(nextEvent);
+        updateDocumentTitle();
     }
 };
 
@@ -180,7 +181,8 @@ const listenForEvents = () => {
 };
 
 const updateDocumentTitle = () => {
-    document.title = events.value.length === 0 ? 'OpenLitterMap' : `(${events.value.length}) OpenLitterMap`;
+    document.title =
+        events.value.length === 0 ? 'OpenLitterMap' : `OpenLitterMap - (${events.value.length})`;
 };
 </script>
 

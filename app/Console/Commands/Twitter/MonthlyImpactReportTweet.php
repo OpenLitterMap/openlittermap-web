@@ -28,9 +28,7 @@ class MonthlyImpactReportTweet extends Command
         $url = "https://openlittermap.com/impact/monthly/{$year}/{$month}";
         $dir = public_path("images/reports/monthly/{$year}/{$month}");
 
-        if (! file_exists($dir)) {
-            mkdir($dir, 0755, true);
-        }
+        @mkdir($dir, 0755, true);
 
         $path = "{$dir}/impact-report.png";
 
@@ -39,7 +37,7 @@ class MonthlyImpactReportTweet extends Command
                 ->windowSize(1200, 800)
                 ->fullPage()
                 ->waitUntilNetworkIdle()
-                ->setChromePath('/snap/bin/chromium')
+                ->setChromePath(config('services.browsershot.chrome_path'))
                 ->save($path);
         } catch (\Throwable $e) {
             $this->error("Browsershot failed: {$e->getMessage()}");

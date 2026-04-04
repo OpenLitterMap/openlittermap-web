@@ -6,14 +6,13 @@ namespace App\Console\Commands\Twitter;
 
 use App\Helpers\Twitter;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
 use Spatie\Browsershot\Browsershot;
 
-class WeeklyImpactReportTweet extends Command
+class AnnualImpactReportTweet extends Command
 {
-    protected $signature = 'twitter:weekly-impact-report-tweet';
+    protected $signature = 'twitter:annual-impact-report-tweet';
 
-    protected $description = 'Generates an image of the weekly impact report and tweets it via OLM_bot';
+    protected $description = 'Generates an image of the annual impact report and tweets it via OLM_bot';
 
     public function handle(): int
     {
@@ -22,12 +21,10 @@ class WeeklyImpactReportTweet extends Command
             return self::SUCCESS;
         }
 
-        $lastWeek = now()->subWeek();
-        $isoYear  = (int) $lastWeek->format('o');
-        $isoWeek  = (int) $lastWeek->format('W');
+        $lastYear = now()->subYear()->year;
 
-        $url = "https://openlittermap.com/impact/weekly/{$isoYear}/{$isoWeek}";
-        $dir = public_path("images/reports/weekly/{$isoYear}/{$isoWeek}");
+        $url = "https://openlittermap.com/impact/annual/{$lastYear}";
+        $dir = public_path("images/reports/annual/{$lastYear}");
 
         @mkdir($dir, 0755, true);
 
@@ -36,6 +33,7 @@ class WeeklyImpactReportTweet extends Command
         try {
             Browsershot::url($url)
                 ->windowSize(1200, 800)
+                ->fullPage()
                 ->waitUntilNetworkIdle()
                 ->setChromePath(config('services.browsershot.chrome_path'))
                 ->save($path);
@@ -46,7 +44,7 @@ class WeeklyImpactReportTweet extends Command
 
         $this->info("Image saved to {$path}");
 
-        $msg = "Weekly Impact Report for week {$isoWeek} of {$isoYear}."
+        $msg = "Annual Impact Report for {$lastYear}."
             . " Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
         Twitter::sendTweetWithImage($msg, $path);

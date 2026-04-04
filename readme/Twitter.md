@@ -13,6 +13,12 @@ TWITTER_API_ACCESS_TOKEN=
 TWITTER_API_ACCESS_SECRET=
 ```
 
+Browsershot Chromium path is configurable via `config/services.php`:
+
+```
+BROWSERSHOT_CHROME_PATH=       # defaults to /snap/bin/chromium
+```
+
 The `Twitter` helper has a production guard — all three methods (`sendTweet`, `sendThread`, `sendTweetWithImage`) silently no-op outside `production`. Each command also has its own production guard at the top of `handle()`.
 
 ## Schedule (Kernel.php)
@@ -23,6 +29,7 @@ The `Twitter` helper has a production guard — all three methods (`sendTweet`, 
 | `twitter:changelog` | `dailyAt('07:00')` | None |
 | `twitter:weekly-impact-report-tweet` | `weeklyOn(1, '06:30')` (Monday) | None |
 | `twitter:monthly-impact-report-tweet` | `monthlyOn(1, '06:30')` | None |
+| `twitter:annual-impact-report-tweet` | `yearlyOn(1, 1, '06:30')` (Jan 1) | None |
 
 ## Commands
 
@@ -172,7 +179,7 @@ Weekly Impact Report for week 12 of 2026. Join us at openlittermap.com #litter #
 
 **External dependencies:**
 - Browsershot (`spatie/browsershot`)
-- Chromium at `/snap/bin/chromium` (Ubuntu snap — won't work on macOS/Docker without Snap)
+- Chromium at path from `config('services.browsershot.chrome_path')` (defaults to `/snap/bin/chromium`)
 - Network access to `https://openlittermap.com` (screenshots the live production site)
 
 ---
@@ -201,7 +208,36 @@ Monthly Impact Report for February 2026. Join us at openlittermap.com #litter #c
 
 **External dependencies:**
 - Browsershot (`spatie/browsershot`)
-- Chromium at `/snap/bin/chromium`
+- Chromium at path from `config('services.browsershot.chrome_path')`
+- Network access to `https://openlittermap.com`
+
+---
+
+### twitter:annual-impact-report-tweet
+
+**Class:** `App\Console\Commands\Twitter\AnnualImpactReportTweet`
+**Send method:** `Twitter::sendTweetWithImage()`
+**Image:** Yes — Browsershot screenshot
+
+**Data queried:** None. Screenshots a live URL.
+
+**Process:**
+1. Calculates last year
+2. Browsershot screenshots `https://openlittermap.com/impact/annual/{year}` at 1200x800 with `fullPage()` and `waitUntilNetworkIdle()`
+3. Saves to `public/images/reports/annual/{year}/impact-report.png`
+4. Tweets with image
+5. Deletes PNG after sending
+
+**Example tweet:**
+```
+Annual Impact Report for 2025. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap
+```
+
+**No data:** Same as weekly/monthly — no data check, always screenshots and tweets.
+
+**External dependencies:**
+- Browsershot (`spatie/browsershot`)
+- Chromium at path from `config('services.browsershot.chrome_path')`
 - Network access to `https://openlittermap.com`
 
 ## Twitter Helper
@@ -221,7 +257,7 @@ All three methods guard on `app()->environment('production')` and `$consumer_key
 - `tests/Feature/Twitter/DailyReportTweetTest.php` — 28 tests: streak (0/1/5/gap), milestone boundaries (100K/1M), season labels (all 6 tiers), lead line (same/new/no-data), mission frames (3), conditional skipping (littercoin/streak/cities), thread output, no-data skip, formatMilestone (k/M), tweet length enforcement
 - `tests/Feature/Twitter/ChangelogTweetTest.php` — 26 tests: overview counts, prefix parsing ([Web]/[Mobile]/default), GitHub raw content call verification, web-only/mobile-only, long changelog splits, oversized single line truncation, no-file skip, thread structure, cleanChange, singular/plural, sendThread return shape, mobile fetch from GitHub (success/404/500/merge/URL/thread integration)
 
-No tests exist for `WeeklyImpactReportTweet` or `MonthlyImpactReportTweet` (Browsershot dependency).
+No tests exist for `WeeklyImpactReportTweet`, `MonthlyImpactReportTweet`, or `AnnualImpactReportTweet` (Browsershot dependency). The `GenerateImpactReportController` is tested in `tests/Feature/Reports/GenerateImpactReportTest.php` (8 tests: weekly/monthly/annual rendering, future date, invalid period, v5 brands query, zero data).
 
 ## Summary
 
@@ -231,3 +267,4 @@ No tests exist for `WeeklyImpactReportTweet` or `MonthlyImpactReportTweet` (Brow
 | `changelog` | None (reads local + GitHub changelog files) | `sendThread()` (overview + grouped) | No | Skips | GitHub raw content |
 | `weekly-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 | Always tweets | Browsershot, Chromium, network |
 | `monthly-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 fullPage | Always tweets | Browsershot, Chromium, network |
+| `annual-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 fullPage | Always tweets | Browsershot, Chromium, network |

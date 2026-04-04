@@ -455,7 +455,7 @@ Auth required.
 |--------|-------|-------------|--------|
 | GET | `/api/global/stats-data` | `stats_reducer.js` → `getStats` | Active |
 
-Public, no auth. Returns: `total_tags`, `total_images`, `total_users`, `new_users_today`, `new_users_last_7_days`, `new_users_last_30_days`.
+Public, no auth. Returns: `total_tags`, `total_images`, `total_users`, `new_users_last_24_hours`, `new_users_last_7_days`, `new_users_last_30_days`, `new_tags_last_24_hours`, `new_tags_last_7_days`, `new_tags_last_30_days`, `new_photos_last_24_hours`, `new_photos_last_7_days`, `new_photos_last_30_days`.
 
 ---
 
