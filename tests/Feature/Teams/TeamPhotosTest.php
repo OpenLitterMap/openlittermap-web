@@ -724,8 +724,8 @@ class TeamPhotosTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true);
 
-        // Soft-deleted
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+        // Hard-deleted
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
 
         // Student XP unchanged (no processed_xp → no XP change)
         $this->student->refresh();
@@ -757,7 +757,7 @@ class TeamPhotosTest extends TestCase
 
         $response->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
 
         // XP reversed on student
         $this->student->refresh();

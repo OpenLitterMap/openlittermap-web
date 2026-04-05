@@ -17,6 +17,7 @@ use App\Http\Controllers\API\GlobalStatsController;
 use App\Http\Controllers\API\MobileAppVersionController;
 use App\Http\Controllers\API\Tags\GetTagsController;
 use App\Http\Controllers\API\Tags\PhotoTagsController;
+use App\Http\Controllers\API\QuickTagsController;
 use App\Http\Controllers\API\TeamsController as APITeamsController;
 use App\Http\Controllers\ApiSettingsController;
 use App\Http\Controllers\Auth\AuthTokenController;
@@ -82,6 +83,9 @@ Route::group(['prefix' => 'v3', 'middleware' => ['auth:sanctum']], function () {
     Route::get('/user/photos/stats', [UsersUploadsController::class, 'stats']);
     Route::get('/user/photos/locations', [UsersUploadsController::class, 'locations']);
     Route::patch('/photos/{photo}/visibility', [UsersUploadsController::class, 'toggleVisibility']);
+    Route::get('/user/quick-tags', [QuickTagsController::class, 'index']);
+    Route::put('/user/quick-tags', [QuickTagsController::class, 'update']);
+    Route::get('/user/top-tags', [QuickTagsController::class, 'topTags']);
 });
 
 /*

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Reports;
 
 use Carbon\Carbon;
 use App\Enums\LocationType;
+use App\Enums\Timescale;
 use App\Models\Users\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Number;
@@ -21,7 +22,7 @@ class GenerateImpactReportController extends Controller
      */
     public function __invoke(string $period = 'weekly', $year = null, $monthOrWeek = null): View
     {
-        $period = in_array($period, ['weekly', 'monthly'], true) ? $period : 'weekly';
+        $period = in_array($period, ['weekly', 'monthly', 'annual'], true) ? $period : 'weekly';
 
         [$start, $endExclusive, $label] = $this->resolveDateRange($period, $year, $monthOrWeek);
 
@@ -30,7 +31,9 @@ class GenerateImpactReportController extends Controller
         }
 
         $cacheKey = "impact_report:{$period}:{$label}";
-        $cacheTtl = $endExclusive->copy()->endOfDay();
+        $cacheTtl = $endExclusive->isPast()
+            ? now()->addDays(30)
+            : $endExclusive->copy()->endOfDay();
 
         $report = Cache::remember(
             $cacheKey,
@@ -47,7 +50,11 @@ class GenerateImpactReportController extends Controller
 
     private function buildReport(string $period, Carbon $start, Carbon $endExclusive): array
     {
-        $dateFormat = $period === 'monthly' ? 'F Y' : 'D jS M Y';
+        $dateFormat = match ($period) {
+            'annual'  => 'Y',
+            'monthly' => 'F Y',
+            default   => 'D jS M Y',
+        };
         $endInclusive = $endExclusive->copy()->subSecond();
 
         $periodRow  = $this->getMetricsRow($period, $start);
@@ -93,15 +100,18 @@ class GenerateImpactReportController extends Controller
             ->where('user_id', 0);
 
         if ($period === 'all_time') {
-            $query->where('timescale', 0);
+            $query->where('timescale', Timescale::AllTime->value);
         } elseif ($period === 'weekly') {
-            $query->where('timescale', 2)
+            $query->where('timescale', Timescale::Weekly->value)
                 ->where('year', (int) $start->format('o'))
                 ->where('week', (int) $start->format('W'));
-        } else {
-            $query->where('timescale', 3)
+        } elseif ($period === 'monthly') {
+            $query->where('timescale', Timescale::Monthly->value)
                 ->where('year', $start->year)
                 ->where('month', $start->month);
+        } elseif ($period === 'annual') {
+            $query->where('timescale', Timescale::Yearly->value)
+                ->where('year', $start->year);
         }
 
         return $query->first(['uploads', 'tags', 'brands', 'litter', 'xp']);
@@ -178,71 +188,26 @@ class GenerateImpactReportController extends Controller
     }
 
     /* ------------------------------------------------------------------
-     *  Top 10 brands
-     *
-     *  OLD SCHEMA (v4): The `brands` table has one column per brand
-     *  (marlboro, coke, heineken, etc.) with quantity values.
-     *  Photos link via photos.brands_id → brands.id
-     *
-     *  TODO: Once v5 migration is complete, switch to:
-     *    photo_tag_extra_tags WHERE tag_type='brand'
-     *    JOIN brandslist ON brandslist.id = tag_type_id
+     *  Top 10 brands (via photo_tag_extra_tags)
      * ------------------------------------------------------------------ */
 
     private function getTopBrands(Carbon $start, Carbon $endExclusive): array
     {
-        $brandRows = DB::table('brands')
-            ->join('photos', 'photos.brands_id', '=', 'brands.id')
-            ->where('photos.created_at', '>=', $start)
-            ->where('photos.created_at', '<', $endExclusive)
-            ->whereNotNull('photos.brands_id')
-            ->select('brands.*')
-            ->get();
-
-        if ($brandRows->isEmpty()) {
-            return [];
-        }
-
-        $brandColumns = \App\Models\Litter\Categories\Brand::types();
-        $totals = [];
-
-        foreach ($brandRows as $row) {
-            foreach ($brandColumns as $col) {
-                if (!empty($row->$col)) {
-                    $totals[$col] = ($totals[$col] ?? 0) + (int) $row->$col;
-                }
-            }
-        }
-
-        arsort($totals);
-
-        return collect(array_slice($totals, 0, 10, true))
-            ->mapWithKeys(fn ($total, $key) => [self::formatKey($key) => $total])
+        return DB::table('photo_tag_extra_tags as ptet')
+            ->join('photo_tags as pt', 'pt.id', '=', 'ptet.photo_tag_id')
+            ->join('photos as p', 'p.id', '=', 'pt.photo_id')
+            ->join('brandslist as bl', 'bl.id', '=', 'ptet.tag_type_id')
+            ->where('ptet.tag_type', 'brand')
+            ->where('p.created_at', '>=', $start)
+            ->where('p.created_at', '<', $endExclusive)
+            ->select('bl.key', DB::raw('SUM(ptet.quantity) as total'))
+            ->groupBy('bl.key')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->pluck('total', 'key')
+            ->mapWithKeys(fn ($total, $key) => [self::formatKey($key) => (int) $total])
             ->toArray();
     }
-
-    /* ------------------------------------------------------------------
-     *  Top 10 brands (single query via photo_tag_extra_tags)
-     * ------------------------------------------------------------------ */
-
-    // v5 version
-//    private function getTopBrands(Carbon $start, Carbon $endExclusive): array
-//    {
-//        return DB::table('photo_tag_extra_tags as ptet')
-//            ->join('photo_tags as pt', 'pt.id', '=', 'ptet.photo_tag_id')
-//            ->join('photos as p', 'p.id', '=', 'pt.photo_id')
-//            ->join('brandslist as bl', 'bl.id', '=', 'ptet.tag_type_id')
-//            ->where('ptet.tag_type', 'brand')
-//            ->where('p.created_at', '>=', $start)
-//            ->where('p.created_at', '<', $endExclusive)
-//            ->select('bl.key', DB::raw('SUM(ptet.quantity) as total'))
-//            ->groupBy('bl.key')
-//            ->orderByDesc('total')
-//            ->limit(10)
-//            ->pluck('total', 'key')
-//            ->mapWithKeys(fn ($total, $key) => [self::formatKey($key) => (int) $total])
-//            ->toArray();
-//    }
 
     /**
      * beer_bottle → Beer Bottle, coca-cola → Coca Cola
@@ -258,6 +223,14 @@ class GenerateImpactReportController extends Controller
 
     private function resolveDateRange(string $period, $year, $monthOrWeek): array
     {
+        if ($period === 'annual') {
+            $yearInt = $year !== null ? (int) $year : now()->subYear()->year;
+            $start = Carbon::createFromDate($yearInt, 1, 1)->startOfDay();
+            $endExclusive = $start->copy()->addYear();
+
+            return [$start, $endExclusive, (string) $yearInt];
+        }
+
         $hasParams = $year !== null && $monthOrWeek !== null;
 
         if ($period === 'weekly') {

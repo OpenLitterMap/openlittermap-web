@@ -14,9 +14,6 @@ use Illuminate\Support\Facades\Route;
 // Impact reports (renders its own HTML, not the SPA)
 Route::get('impact/{period?}/{year?}/{monthOrWeek?}', GenerateImpactReportController::class);
 
-// We are replacing Auth (Laravel's built-in login/register/password views + POST handlers)
-// Auth::routes();
-
 // Email confirmation
 Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
 Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail')
@@ -34,28 +31,6 @@ Route::get('/check-auth', fn () => response()->json(['success' => Auth::check()]
 
 // Password reset — named route for the email notification link
 Route::get('password/reset/{token}', HomeController::class)->name('password.reset');
-
-// Email previews (local dev only)
-if (app()->isLocal()) {
-    Route::get('dev/mail/welcome', function () {
-        $user = \App\Models\Users\User::first()
-            ?? \App\Models\Users\User::factory()->make([
-                'token' => 'preview-token',
-                'sub_token' => 'preview-sub-token',
-            ]);
-
-        if (! $user->token) {
-            $user->token = 'preview-token';
-        }
-
-        if (! $user->sub_token) {
-            $user->sub_token = 'preview-sub-token';
-        }
-
-        return new \App\Mail\WelcomeToOpenLitterMap($user);
-    });
-
-}
 
 /*
 |--------------------------------------------------------------------------

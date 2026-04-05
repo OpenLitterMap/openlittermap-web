@@ -20,6 +20,8 @@ The mobile app must use v3/v5 API endpoints exclusively. All legacy v1/v2/v4 end
 | List photos | `GET` | `/api/v3/user/photos` | `?tagged=false&per_page=100` |
 | Photo stats | `GET` | `/api/v3/user/photos/stats` | Aggregate counts |
 | Delete photo | `POST` | `/api/profile/photos/delete` | `{ "photoid": 123 }` |
+| Toggle photo visibility | `PATCH` | `/api/v3/photos/{id}/visibility` | `{ "is_public": bool }` → `{ "success": true, "is_public": bool }` |
+| Update setting | `POST` | `/api/settings/update` | `{ "key": "public_photos", "value": bool }` → `{ "success": true }` |
 | Tag catalog | `GET` | `/api/tags/all` | Returns full taxonomy for search index |
 | Profile | `GET` | `/api/user/profile/index` | User stats, level, rank (also returned by auth/token, so not needed after login) |
 | Global stats | `GET` | `/api/global/stats-data` | No auth; total tags/images/users |
@@ -77,6 +79,49 @@ Response includes `picked_up` (boolean, never null) and `remaining` (deprecated 
 `POST /api/profile/photos/delete` — body: `{ "photoid": 123 }` (lowercase, no underscore).
 
 Response: `{ "message": "Photo deleted successfully!" }`
+
+## Photo Visibility (`is_public`)
+
+Photos can be public (visible on the global map) or private (hidden from map but metrics still count).
+
+### User default setting
+
+`users.public_photos` (boolean, default `true`) — applies to all new uploads unless overridden.
+
+- **Read:** Returned in auth/token response and `GET /api/user/profile/index` as `user.public_photos`
+- **Write:** `POST /api/settings/update` with `{ "key": "public_photos", "value": false }`
+
+### Upload precedence
+
+When uploading via `POST /api/v3/upload`, the optional `is_public` param controls visibility:
+
+1. **School team** → always `false` (overridden by server, cannot be changed)
+2. **Request `is_public` param** → used if provided
+3. **`user.public_photos` default** → used if no param sent
+4. **Fallback** → `true`
+
+### Per-photo toggle
+
+`PATCH /api/v3/photos/{id}/visibility` — toggles an individual photo's visibility after upload.
+
+- **Request:** `{ "is_public": true|false }`
+- **Response:** `{ "success": true, "is_public": true|false }`
+- **403:** If photo belongs to a school team (teacher controls visibility)
+- **403:** If not the photo owner
+
+### Reading visibility state
+
+`GET /api/v3/user/photos` returns per photo:
+- `is_public` (boolean) — current visibility
+- `school_team` (boolean) — if true, disable the toggle in UI (teacher-managed)
+
+### Mobile UI recommendations
+
+1. **Settings screen:** Toggle for "Photos public by default" (`public_photos`)
+2. **Photo list:** Eye icon per photo — green if public, gray if private. Disabled if `school_team === true`
+3. **Upload screen (optional):** Override toggle to set `is_public` per-upload
+
+---
 
 ## `picked_up` vs `remaining`
 

@@ -408,6 +408,11 @@ class User extends Authenticatable
         );
     }
 
+    public function quickTags(): HasMany
+    {
+        return $this->hasMany(UserQuickTag::class)->orderBy('sort_order');
+    }
+
     /**
      * @deprecated
      */

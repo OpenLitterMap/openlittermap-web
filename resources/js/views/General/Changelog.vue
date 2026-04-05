@@ -247,6 +247,13 @@ const updatesList = [
         date: '22nd March 2026',
         component: 'update26',
     },
+    {
+        id: 27,
+        number: 'Update #27',
+        title: 'New Mobile Apps & More!',
+        date: '4th April 2026',
+        component: 'update27',
+    },
 ];
 const changelogs = ref([...updatesList].reverse());
 const selectedId = ref(updatesList[updatesList.length - 1]?.id || null);

@@ -60,10 +60,10 @@ class ParticipantPhotoController extends Controller
             ], 422);
         }
 
-        // Delete S3 files and soft-delete the photo
+        // Delete S3 files and hard-delete the photo
         // No metrics reversal needed — school photos not processed until approval
         $deletePhotoAction->run($photo);
-        $photo->delete();
+        $photo->forceDelete();
 
         return response()->json([
             'success' => true,

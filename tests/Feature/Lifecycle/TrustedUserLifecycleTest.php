@@ -205,7 +205,7 @@ class TrustedUserLifecycleTest extends TestCase
             ->postJson('/api/profile/photos/delete', ['photoid' => $photoId]);
         $deleteResponse->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // Redis: pruned from leaderboard
         $this->assertFalse(

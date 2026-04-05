@@ -823,6 +823,65 @@ Toggling `is_public` on a verified (`>= ADMIN_APPROVED`) photo marks its cluster
 
 ---
 
+### GET /api/v3/user/top-tags — User's Top Tagged Items
+
+**Auth:** Required (Sanctum)
+
+Returns the authenticated user's most-tagged items grouped by CLO + type, ordered by total quantity. Used by mobile to populate Quick Tags with personal presets via "Use my top tags."
+
+**Query parameters:**
+- `limit` — integer, 1-30, default 20
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "tags": [
+    {
+      "clo_id": 141,
+      "category_key": "smoking",
+      "object_key": "butts",
+      "type_id": null,
+      "type_key": null,
+      "brand_id": null,
+      "brand_key": null,
+      "total": 9819
+    },
+    {
+      "clo_id": 5,
+      "category_key": "alcohol",
+      "object_key": "can",
+      "type_id": 1,
+      "type_key": "beer",
+      "brand_id": null,
+      "brand_key": null,
+      "total": 773
+    },
+    {
+      "clo_id": 149,
+      "category_key": "softdrinks",
+      "object_key": "can",
+      "type_id": 23,
+      "type_key": "energy",
+      "brand_id": 42,
+      "brand_key": "redbull",
+      "total": 656
+    }
+  ]
+}
+```
+
+**Minimum threshold:** Items with total quantity < 3 are excluded (noise filter). The response may contain fewer items than `limit`.
+
+**Brand logic:** `brand_id`/`brand_key` are populated only when a single brand accounts for >50% of that CLO+type group's total quantity. Otherwise null.
+
+**Empty state:** User with no tags returns `{"success": true, "tags": []}`.
+
+**Controller:** `App\Http\Controllers\API\QuickTagsController@topTags`
+**Test:** `tests/Feature/QuickTags/TopTagsTest.php`
+
+---
+
 ### POST /api/user/profile/photos/delete — Bulk Delete Photos
 
 **Auth:** Required (Sanctum)
@@ -1341,7 +1400,7 @@ Supports ETag-based caching (`If-None-Match` header returns 304 if unchanged). R
 
 **Auth:** None (public)
 
-World totals from the metrics table (all-time, timescale=0, location_type=Global). User growth stats from `users.created_at`. Tag and photo growth stats from daily metric buckets (timescale=1).
+World totals from the metrics table (all-time, timescale=0, location_type=Global). User growth from `users.created_at` (exact 24h window). Tag and photo growth from daily metric buckets (timescale=1) — "last 24 hours" uses `bucket_date >= yesterday` (daily-granularity approximation).
 
 **Response (200):**
 ```json
@@ -1349,16 +1408,22 @@ World totals from the metrics table (all-time, timescale=0, location_type=Global
   "total_tags": 150000,
   "total_images": 50000,
   "total_users": 10000,
-  "new_users_today": 12,
+  "new_users_last_24_hours": 12,
   "new_users_last_7_days": 85,
   "new_users_last_30_days": 320,
-  "new_tags_today": 156,
+  "new_tags_last_24_hours": 156,
   "new_tags_last_7_days": 1230,
   "new_tags_last_30_days": 4870,
-  "new_photos_today": 45,
+  "new_photos_last_24_hours": 45,
   "new_photos_last_7_days": 310,
-  "new_photos_last_30_days": 1250
+  "new_photos_last_30_days": 1250,
+  "new_users_today": 12,
+  "new_tags_today": 156,
+  "new_photos_today": 45
 }
+```
+
+**Legacy compat:** `*_today` keys are aliases for `*_last_24_hours` (same values). New clients should use the `*_last_24_hours` keys.
 ```
 
 **Controller:** `App\Http\Controllers\API\GlobalStatsController@index`

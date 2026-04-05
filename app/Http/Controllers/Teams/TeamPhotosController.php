@@ -491,7 +491,7 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
         }
 
-        // Reverse metrics before soft delete (if photo was processed)
+        // Reverse metrics before delete (if photo was processed)
         // MetricsService::deletePhoto() reverses both upload XP and tag XP
         // from MySQL metrics, Redis, and users.xp
         if ($photo->processed_at !== null) {
@@ -501,8 +501,8 @@ class TeamPhotosController extends Controller
         // Delete S3 files
         app(DeletePhotoAction::class)->run($photo);
 
-        // Soft delete
-        $photo->delete();
+        // Hard delete — cascading FKs clean up photo_tags and extras
+        $photo->forceDelete();
 
         return response()->json([
             'success' => true,

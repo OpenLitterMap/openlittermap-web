@@ -292,9 +292,18 @@ export const urlHelper = {
     },
 
     updateUrlPhotoIdAndFlyToLocation: ({ latitude, longitude, photoId, mapInstance }) => {
-        urlStateManager.updatePhotoId(photoId, true); // User clicked photo
-
         const zoom = 17;
+
+        // Set full URL immediately so it's shareable before fly animation completes
+        const url = new URL(window.location.href);
+        url.searchParams.set('photo', photoId);
+        url.searchParams.set('lat', latitude.toFixed(6));
+        url.searchParams.set('lon', longitude.toFixed(6));
+        url.searchParams.set('zoom', zoom.toFixed(2));
+        url.searchParams.set('load', 'true');
+        url.searchParams.set('open', 'true');
+        urlStateManager.commitURL(url, false);
+
         const currentZoom = Math.round(mapInstance.getZoom());
         const distance = mapInstance.distance(mapInstance.getCenter(), [latitude, longitude]);
 

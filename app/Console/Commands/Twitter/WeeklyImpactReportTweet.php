@@ -29,16 +29,15 @@ class WeeklyImpactReportTweet extends Command
         $url = "https://openlittermap.com/impact/weekly/{$isoYear}/{$isoWeek}";
         $dir = public_path("images/reports/weekly/{$isoYear}/{$isoWeek}");
 
-        if (! file_exists($dir)) {
-            mkdir($dir, 0755, true);
-        }
+        @mkdir($dir, 0755, true);
 
         $path = "{$dir}/impact-report.png";
 
         try {
             Browsershot::url($url)
                 ->windowSize(1200, 800)
-                ->setChromePath('/snap/bin/chromium')
+                ->waitUntilNetworkIdle()
+                ->setChromePath(config('services.browsershot.chrome_path'))
                 ->save($path);
         } catch (\Throwable $e) {
             $this->error("Browsershot failed: {$e->getMessage()}");

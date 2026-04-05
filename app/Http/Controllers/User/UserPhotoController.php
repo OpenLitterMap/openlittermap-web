@@ -30,8 +30,8 @@ class UserPhotoController extends Controller
     /**
      * Bulk delete user's own photos.
      *
-     * Reverses metrics, removes S3 files, soft-deletes each photo,
-     * and decrements user counters.
+     * Reverses metrics, removes S3 files, hard-deletes each photo.
+     * Cascading FKs on photo_tags (→ photo_tag_extras) handle relationship cleanup.
      */
     public function destroy(Request $request): array
     {
@@ -51,7 +51,7 @@ class UserPhotoController extends Controller
                     continue;
                 }
 
-                // Reverse metrics before soft delete (if photo was processed)
+                // Reverse metrics before delete (if photo was processed)
                 // MetricsService::deletePhoto() reverses both upload XP and tag XP
                 // from MySQL metrics, Redis, and users.xp
                 if ($photo->processed_at !== null) {
@@ -61,8 +61,8 @@ class UserPhotoController extends Controller
                 // Delete S3 files
                 $deletePhotoAction->run($photo);
 
-                // Soft delete
-                $photo->delete();
+                // Hard delete — cascading FKs clean up photo_tags and extras
+                $photo->forceDelete();
 
                 $deleted++;
             } catch (\Exception $e) {

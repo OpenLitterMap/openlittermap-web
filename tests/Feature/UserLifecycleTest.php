@@ -175,7 +175,7 @@ class UserLifecycleTest extends TestCase
             ->postJson('/api/profile/photos/delete', ['photoid' => $photoId]);
         $deleteResponse->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // Redis: user pruned from leaderboard
         $this->assertFalse(
@@ -349,7 +349,7 @@ class UserLifecycleTest extends TestCase
             ->postJson('/api/profile/photos/delete', ['photoid' => $photoId]);
         $response->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photoId]);
+        $this->assertDatabaseMissing('photos', ['id' => $photoId]);
 
         // Redis: pruned from leaderboard
         $this->assertFalse(Redis::zScore(RedisKeys::xpRanking($globalScope), (string) $user->id));

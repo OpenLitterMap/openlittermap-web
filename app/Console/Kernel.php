@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('twitter:changelog')->dailyAt('07:00');
         $schedule->command('twitter:weekly-impact-report-tweet')->weeklyOn(1, '06:30');
         $schedule->command('twitter:monthly-impact-report-tweet')->monthlyOn(1, '06:30');
+        $schedule->command('twitter:annual-impact-report-tweet')->yearlyOn(1, 1, '06:30');
     }
 
     /**

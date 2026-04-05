@@ -36,7 +36,7 @@ class WebDeletePhotoTest extends TestCase
             ->post('/api/profile/photos/delete', ['photoid' => $photo->id])
             ->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
 
         Storage::disk('s3')->assertMissing($filepath);
         Storage::disk('bbox')->assertMissing($filepath);
@@ -90,9 +90,9 @@ class WebDeletePhotoTest extends TestCase
         $this->assertEquals(5, $user->xp);
     }
 
-    public function test_processed_photo_has_metrics_reversed(): void
+    public function test_processed_photo_is_hard_deleted_with_metrics_reversed(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['xp' => 10]);
         $photo = Photo::factory()->create([
             'user_id' => $user->id,
             'processed_at' => now(),
@@ -104,15 +104,14 @@ class WebDeletePhotoTest extends TestCase
             ->post('/api/profile/photos/delete', ['photoid' => $photo->id])
             ->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+        $this->assertNull(Photo::withTrashed()->find($photo->id));
 
-        $deletedPhoto = Photo::withTrashed()->find($photo->id);
-        $this->assertNull($deletedPhoto->processed_at);
-        $this->assertNull($deletedPhoto->processed_xp);
-        $this->assertNull($deletedPhoto->processed_tags);
+        $user->refresh();
+        $this->assertEquals(7, $user->xp);
     }
 
-    public function test_unprocessed_photo_skips_metrics_reversal(): void
+    public function test_unprocessed_photo_is_hard_deleted(): void
     {
         $user = User::factory()->create();
         $photo = Photo::factory()->create([
@@ -120,12 +119,34 @@ class WebDeletePhotoTest extends TestCase
             'processed_at' => null,
         ]);
 
-        $this->assertNull($photo->processed_at);
+        $this->actingAs($user)
+            ->post('/api/profile/photos/delete', ['photoid' => $photo->id])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+        $this->assertNull(Photo::withTrashed()->find($photo->id));
+    }
+
+    public function test_photo_tags_are_cascade_deleted(): void
+    {
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        // Create a photo_tag manually
+        \DB::table('photo_tags')->insert([
+            'photo_id' => $photo->id,
+            'quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertDatabaseHas('photo_tags', ['photo_id' => $photo->id]);
 
         $this->actingAs($user)
             ->post('/api/profile/photos/delete', ['photoid' => $photo->id])
             ->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 }

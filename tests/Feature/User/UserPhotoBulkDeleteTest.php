@@ -48,7 +48,7 @@ class UserPhotoBulkDeleteTest extends TestCase
             ->assertJsonPath('success', true);
 
         foreach ($photos as $photo) {
-            $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+            $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
         }
     }
 
@@ -131,11 +131,7 @@ class UserPhotoBulkDeleteTest extends TestCase
             ])
             ->assertOk();
 
-        $this->assertSoftDeleted('photos', ['id' => $photo->id]);
-
-        // processed_at should be cleared by MetricsService::deletePhoto()
-        $deletedPhoto = Photo::withTrashed()->find($photo->id);
-        $this->assertNull($deletedPhoto->processed_at);
+        $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
     }
 
     public function test_bulk_delete_with_select_all(): void
@@ -159,7 +155,7 @@ class UserPhotoBulkDeleteTest extends TestCase
             ->assertOk();
 
         foreach ($photos as $photo) {
-            $this->assertSoftDeleted('photos', ['id' => $photo->id]);
+            $this->assertDatabaseMissing('photos', ['id' => $photo->id]);
         }
     }
 }

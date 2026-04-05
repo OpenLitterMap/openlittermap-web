@@ -180,7 +180,7 @@ All team routes use `auth:sanctum` and work with Bearer tokens.
 | Method | Route | Notes |
 |--------|-------|-------|
 | GET | `/api/leaderboard` | Params: `timeFilter` (all-time, today, yesterday, this-month, last-month, this-year, last-year), `locationType`, `locationId`, `page`. Returns `users[]` with `user_id`, `name`, `username`, `xp`, `global_flag`, `rank`, `public_profile` |
-| GET | `/api/global/stats-data` | Returns `total_tags`, `total_images`, `total_users`, `new_users_today`, `new_users_last_7_days`, `new_users_last_30_days` |
+| GET | `/api/global/stats-data` | Returns `total_tags`, `total_images`, `total_users`, `new_users_last_24_hours`, `new_users_last_7_days`, `new_users_last_30_days`, `new_tags_last_24_hours`, `new_tags_last_7_days`, `new_tags_last_30_days`, `new_photos_last_24_hours`, `new_photos_last_7_days`, `new_photos_last_30_days` |
 | GET | `/api/levels` | XP threshold config for level display |
 | GET | `/api/achievements` | `auth:sanctum` — user's unlocked achievements |
 
