@@ -327,10 +327,17 @@ ORDER BY total_qty DESC
 LIMIT 20;
 ```
 
-## What This Does NOT Touch
+## What This Command Does NOT Touch
 
+The `olm:fix-orphaned-tags` command itself only updates `photo_tags` pointer columns. It does NOT recalculate summaries, XP, or metrics. However, **follow-up commands are required** after the pointer fix:
+
+1. **`olm:regenerate-summaries --orphan-fix`** — regenerates ~171k stale summaries (summary JSON contains old orphan IDs after the pointer fix)
+2. **`olm:reprocess-metrics`** — reprocesses all summary-changed photos to update `processed_fp`, `processed_tags`, and apply any XP/metrics deltas
+
+See `readme/changelog/production-orphan-fix-runbook.md` for the full 6-step production procedure.
+
+**Unchanged by the entire procedure:**
 - **photo_tag_extra_tags:** Materials and brands are already correct from the migration.
-- **XP / metrics / summaries:** This is a CLO/LO pointer fix only. No recalculation.
 - **TagsConfig.php:** Not modified.
 - **Orphaned litter_objects rows:** The 71 orphaned LO rows (beer_can, water_bottle, etc.) remain in the `litter_objects` table. They just won't have photo_tags pointing at them anymore. Safe to clean up later if desired.
 - **DEPRECATED_TAG_MAP:** The mappings in ClassifyTagsService are not modified. They only affect future v4→v5 migrations, which are complete.

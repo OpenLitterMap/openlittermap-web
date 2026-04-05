@@ -16,6 +16,7 @@ class RegenerateSummaries extends Command
         {--limit=0 : Limit number of photos to process (0 = all)}
         {--batch=500 : Batch size for DB chunking and processing}
         {--log= : Write output to log file}
+        {--changed-ids= : Write all changed photo IDs to this file (one per line)}
         {--dry-run : Show what would change without saving}';
 
     protected $description = 'Regenerate photo summaries from photo_tags (source of truth). No metrics/events/Redis side effects.';
@@ -30,9 +31,13 @@ class RegenerateSummaries extends Command
     /** @var resource|null */
     private $logFile = null;
 
+    /** @var resource|null */
+    private $changedIdsFile = null;
+
     public function handle(GeneratePhotoSummaryService $summaryService): int
     {
         $this->openLog();
+        $this->openChangedIdsFile();
 
         $this->limit = (int) $this->option('limit');
         $batchSize = (int) $this->option('batch');
@@ -209,6 +214,7 @@ class RegenerateSummaries extends Command
 
             if ($summaryChanged || $xpChanged) {
                 $this->changed++;
+                $this->writeChangedId($photo->id);
                 $xpDelta = $photo->xp - $oldXp;
                 if ($xpDelta !== 0) {
                     $this->log("    Photo {$photo->id}: summary updated, xp: {$oldXp}→{$photo->xp}");
@@ -251,6 +257,12 @@ class RegenerateSummaries extends Command
         $this->log("Skipped (already regenerated): {$this->skipped}");
         $this->log("Errors: {$this->errors}");
 
+        if ($this->changedIdsFile) {
+            $path = $this->option('changed-ids');
+            $this->log("Changed photo IDs written to: {$path}");
+        }
+
+        $this->closeChangedIdsFile();
         $this->closeLog();
 
         return 0;
@@ -295,6 +307,41 @@ class RegenerateSummaries extends Command
         if ($this->logFile) {
             fclose($this->logFile);
             $this->logFile = null;
+        }
+    }
+
+    private function openChangedIdsFile(): void
+    {
+        $path = $this->option('changed-ids');
+
+        if (! $path) {
+            return;
+        }
+
+        $dir = dirname($path);
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $this->changedIdsFile = fopen($path, 'a');
+
+        if ($this->changedIdsFile) {
+            $this->info("Writing changed photo IDs to: {$path}");
+        }
+    }
+
+    private function writeChangedId(int $photoId): void
+    {
+        if ($this->changedIdsFile) {
+            fwrite($this->changedIdsFile, $photoId . "\n");
+        }
+    }
+
+    private function closeChangedIdsFile(): void
+    {
+        if ($this->changedIdsFile) {
+            fclose($this->changedIdsFile);
+            $this->changedIdsFile = null;
         }
     }
 }
