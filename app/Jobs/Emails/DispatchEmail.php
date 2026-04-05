@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Queue\Middleware\RateLimited;
 
 class DispatchEmail implements ShouldQueue
 {
@@ -23,6 +24,11 @@ class DispatchEmail implements ShouldQueue
     public function __construct($user)
     {
         $this->user = $user;
+    }
+
+    public function middleware(): array
+    {
+        return [new RateLimited('ses-emails')];
     }
 
     public function handle(): void

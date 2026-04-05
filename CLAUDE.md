@@ -214,6 +214,7 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/Privacy.md` — Privacy Policy source content with GDPR legal basis (Vue component renders this)
 - `readme/Twitter.md` — Automated Twitter/X commands (schedule, data sources, tweet format, Browsershot config)
 - `readme/TagSuggestions.md` — Quick tags sync API (mobile presets, bulk-replace, cross-device sync)
+- `readme/ExportData.md` — CSV data export system (user/team/location exports, column layout, date filters, S3 pipeline)
 
 ## Daily Changelog
 After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries by session. This is the running record of all work done each day.

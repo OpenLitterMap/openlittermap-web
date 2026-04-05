@@ -2,7 +2,10 @@
 
 namespace App\Exports;
 
+use App\Enums\VerificationStatus;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObjectType;
+use App\Models\Litter\Tags\Materials;
 use App\Models\Photo;
 
 use Illuminate\Bus\Queueable;
@@ -29,6 +32,12 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     private array $categoryObjects = [];
 
+    /** @var array<int, array{id: int, key: string}> */
+    private array $materials = [];
+
+    /** @var array<int, array{id: int, key: string}> */
+    private array $types = [];
+
     public $timeout = 240;
 
     public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [])
@@ -50,6 +59,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                     'key' => $obj->key,
                 ])->values()->toArray(),
             ])
+            ->toArray();
+
+        $this->materials = Materials::orderBy('id')->get()
+            ->map(fn ($m) => ['id' => $m->id, 'key' => $m->key])
+            ->toArray();
+
+        $this->types = LitterObjectType::orderBy('id')->get()
+            ->map(fn ($t) => ['id' => $t->id, 'key' => $t->key])
             ->toArray();
     }
 
@@ -81,6 +98,21 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
+        // Materials columns
+        $result[] = 'MATERIALS';
+        foreach ($this->materials as $material) {
+            $result[] = $material['key'];
+        }
+
+        // Types columns
+        $result[] = 'TYPES';
+        foreach ($this->types as $type) {
+            $result[] = $type['key'];
+        }
+
+        // Brands (single delimited column)
+        $result[] = 'brands';
+
         return array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
     }
 
@@ -105,15 +137,31 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         ];
 
         $tags = $row->summary['tags'] ?? [];
+        $brandKeys = $row->summary['keys']['brands'] ?? [];
 
-        // Build lookup: category_id → object_id → quantity (from flat tags array)
+        // Single pass: iterate nested summary structure
+        // Structure: { catId: { objId: { quantity, materials: {id: qty}, brands: {id: qty}, custom_tags } } }
         $tagLookup = [];
-        foreach ($tags as $tag) {
-            $catId = $tag['category_id'] ?? 0;
-            $objId = $tag['object_id'] ?? 0;
-            $tagLookup[$catId][$objId] = ($tagLookup[$catId][$objId] ?? 0) + ($tag['quantity'] ?? 0);
+        $materialLookup = [];
+        $brandParts = [];
+
+        foreach ($tags as $catId => $objects) {
+            foreach ($objects as $objId => $tagData) {
+                $qty = $tagData['quantity'] ?? 0;
+                $tagLookup[$catId][$objId] = ($tagLookup[$catId][$objId] ?? 0) + $qty;
+
+                foreach ($tagData['materials'] ?? [] as $materialId => $materialQty) {
+                    $materialLookup[$materialId] = ($materialLookup[$materialId] ?? 0) + $materialQty;
+                }
+
+                foreach ($tagData['brands'] ?? [] as $brandId => $brandQty) {
+                    $brandName = $brandKeys[$brandId] ?? "brand_{$brandId}";
+                    $brandParts[$brandName] = ($brandParts[$brandName] ?? 0) + $brandQty;
+                }
+            }
         }
 
+        // Category/object columns
         foreach ($this->categoryObjects as $category) {
             $result[] = null; // category separator column
 
@@ -121,6 +169,31 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                 $result[] = $tagLookup[$category['id']][$object['id']] ?? null;
             }
         }
+
+        // Materials columns
+        $result[] = null; // MATERIALS separator
+        foreach ($this->materials as $material) {
+            $result[] = $materialLookup[$material['id']] ?? null;
+        }
+
+        // Types: read from DB relationship (NOT summary — type_id doesn't exist in summary)
+        $typeLookup = [];
+        foreach ($row->photoTags as $pt) {
+            if ($pt->litter_object_type_id) {
+                $typeLookup[$pt->litter_object_type_id] =
+                    ($typeLookup[$pt->litter_object_type_id] ?? 0) + $pt->quantity;
+            }
+        }
+
+        $result[] = null; // TYPES separator
+        foreach ($this->types as $type) {
+            $result[] = $typeLookup[$type['id']] ?? null;
+        }
+
+        // Brands: single delimited column
+        $result[] = !empty($brandParts)
+            ? implode(';', array_map(fn ($name, $qty) => "{$name}:{$qty}", array_keys($brandParts), array_values($brandParts)))
+            : null;
 
         // Custom tags from extra_tags (eager-loaded in query())
         $customTagNames = $row->photoTags
@@ -148,15 +221,20 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         }
 
         if ($this->user_id) {
-            return $query->where(['user_id' => $this->user_id]);
-        } elseif ($this->team_id) {
-            return $query->where(['team_id' => $this->team_id, 'verified' => 2]);
+            return $query->where('user_id', $this->user_id);
+        }
+
+        // Team/location exports: only approved photos (ADMIN_APPROVED and above)
+        $query->where('verified', '>=', VerificationStatus::ADMIN_APPROVED->value);
+
+        if ($this->team_id) {
+            return $query->where('team_id', $this->team_id);
         } elseif ($this->location_type === 'city') {
-            return $query->where(['city_id' => $this->location_id, 'verified' => 2]);
+            return $query->where('city_id', $this->location_id);
         } elseif ($this->location_type === 'state') {
-            return $query->where(['state_id' => $this->location_id, 'verified' => 2]);
+            return $query->where('state_id', $this->location_id);
         } else {
-            return $query->where(['country_id' => $this->location_id, 'verified' => 2]);
+            return $query->where('country_id', $this->location_id);
         }
     }
 }

@@ -274,17 +274,28 @@
                             </p>
                         </div>
 
-                        <select
-                            v-model="period"
-                            class="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none w-auto"
-                            @change="loadDashboard"
-                        >
-                            <option value="all" class="bg-slate-800">{{ $t('All Time') }}</option>
-                            <option value="today" class="bg-slate-800">{{ $t('Today') }}</option>
-                            <option value="week" class="bg-slate-800">{{ $t('This Week') }}</option>
-                            <option value="month" class="bg-slate-800">{{ $t('This Month') }}</option>
-                            <option value="year" class="bg-slate-800">{{ $t('This Year') }}</option>
-                        </select>
+                        <div class="flex items-center gap-2">
+                            <select
+                                v-model="period"
+                                class="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none w-auto"
+                                @change="loadDashboard"
+                            >
+                                <option value="all" class="bg-slate-800">{{ $t('All Time') }}</option>
+                                <option value="today" class="bg-slate-800">{{ $t('Today') }}</option>
+                                <option value="week" class="bg-slate-800">{{ $t('This Week') }}</option>
+                                <option value="month" class="bg-slate-800">{{ $t('This Month') }}</option>
+                                <option value="year" class="bg-slate-800">{{ $t('This Year') }}</option>
+                            </select>
+
+                            <button
+                                v-if="isLeader || isSchoolManager"
+                                @click="exportTeamCsv"
+                                :disabled="exporting"
+                                class="bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:border-emerald-500/50 focus:outline-none"
+                            >
+                                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Stats row -->
@@ -392,6 +403,44 @@ const isSchoolManager = computed(() => {
     return roles.some((r) => r.name === 'school_manager');
 });
 const joinErrors = computed(() => teamsStore.errors);
+const exporting = ref(false);
+
+const getPeriodDateFilter = () => {
+    const now = new Date();
+    const toDate = now.toISOString().split('T')[0];
+    let fromDate = null;
+
+    if (period.value === 'today') {
+        fromDate = toDate;
+    } else if (period.value === 'week') {
+        const d = new Date(now);
+        d.setDate(d.getDate() - 7);
+        fromDate = d.toISOString().split('T')[0];
+    } else if (period.value === 'month') {
+        const d = new Date(now);
+        d.setMonth(d.getMonth() - 1);
+        fromDate = d.toISOString().split('T')[0];
+    } else if (period.value === 'year') {
+        const d = new Date(now);
+        d.setFullYear(d.getFullYear() - 1);
+        fromDate = d.toISOString().split('T')[0];
+    }
+
+    if (!fromDate) return {};
+    return { dateField: 'datetime', fromDate, toDate };
+};
+
+const exportTeamCsv = async () => {
+    exporting.value = true;
+    try {
+        await teamsStore.downloadTeamData(selectedTeamId.value, getPeriodDateFilter());
+        toast.success('Export started — check your email for the download link.');
+    } catch {
+        toast.error('Export failed. Please try again.');
+    } finally {
+        exporting.value = false;
+    }
+};
 
 // Show "try OLM yourself first" banner for school managers who haven't uploaded yet
 const showFacilitatorOnboarding = computed(() => {

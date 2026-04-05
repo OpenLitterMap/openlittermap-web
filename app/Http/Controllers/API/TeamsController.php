@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\DownloadTeamDataAction;
+use Carbon\Carbon;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
 use App\Actions\Teams\ListTeamMembersAction;
@@ -232,7 +233,26 @@ class TeamsController extends Controller
             return $this->fail('not-a-member');
         }
 
-        $action->run($user, $team);
+        if (!$team->isLeader($user->id) && !$user->hasRole('school_manager')) {
+            return $this->fail('not-authorized');
+        }
+
+        $dateFilter = [];
+        if ($request->dateField && ($request->fromDate || $request->toDate)) {
+            $dateFilter = [
+                'column' => in_array($request->dateField, ['created_at', 'datetime', 'updated_at'])
+                    ? $request->dateField
+                    : 'datetime',
+                'fromDate' => $request->fromDate
+                    ? Carbon::parse($request->fromDate)->toDateString()
+                    : '2017-01-01',
+                'toDate' => $request->toDate
+                    ? Carbon::parse($request->toDate)->toDateString()
+                    : now()->toDateString(),
+            ];
+        }
+
+        $action->run($user, $team, $dateFilter);
 
         return $this->success();
     }

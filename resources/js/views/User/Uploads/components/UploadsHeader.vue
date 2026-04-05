@@ -1,8 +1,32 @@
 <script setup>
 import { usePhotosStore } from '@/stores/photos';
+import axios from 'axios';
 import { computed, ref, onMounted } from 'vue';
 
 const store = usePhotosStore();
+
+const exporting = ref(false);
+const exportMessage = ref('');
+
+const exportCsv = async () => {
+    exporting.value = true;
+    exportMessage.value = '';
+
+    try {
+        const params = {
+            dateField: 'datetime',
+        };
+        if (filters.value.dateFrom) params.fromDate = filters.value.dateFrom;
+        if (filters.value.dateTo) params.toDate = filters.value.dateTo;
+
+        await axios.get('/api/user/profile/download', { params });
+        exportMessage.value = 'Export started — check your email for the download link.';
+    } catch {
+        exportMessage.value = 'Export failed. Please try again.';
+    } finally {
+        exporting.value = false;
+    }
+};
 
 const filters = ref({
     id: '',
@@ -246,6 +270,20 @@ onMounted(async () => {
             >
                 {{ $t('Apply') }}
             </button>
+
+            <!-- Export CSV Button -->
+            <button
+                @click="exportCsv"
+                :disabled="exporting"
+                class="px-4 py-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+            >
+                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+            </button>
+        </div>
+
+        <!-- Export message -->
+        <div v-if="exportMessage" class="px-6 pb-3">
+            <p class="text-xs text-green-600">{{ exportMessage }}</p>
         </div>
     </div>
 </template>
