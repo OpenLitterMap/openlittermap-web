@@ -8,6 +8,8 @@ use App\Models\Users\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class DownloadTeamDataTest extends TestCase
@@ -95,5 +97,28 @@ class DownloadTeamDataTest extends TestCase
             $this->assertEquals($expectedPath, $mail->path);
             return true;
         });
+    }
+
+    public function test_a_school_manager_can_download_a_teams_data()
+    {
+        Mail::fake();
+        Storage::fake('s3');
+        Carbon::setTestNow(now());
+
+        Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        /** @var User $manager */
+        $manager = User::factory()->create();
+        $manager->assignRole('school_manager');
+        /** @var Team $team */
+        $team = Team::factory()->create();
+        $manager->teams()->attach($team);
+
+        $response = $this->actingAs($manager)->postJson("api/teams/download?team_id=$team->id");
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+        Mail::assertSent(ExportWithLink::class);
     }
 }

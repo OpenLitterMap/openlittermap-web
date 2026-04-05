@@ -132,11 +132,9 @@ FOOD, sweetwrappers, ...
 
 | Section | Columns | Source | Format |
 |---------|---------|--------|--------|
-| Materials | `MATERIALS` separator + 40 material keys | `summary.tags.{catId}.{objId}.materials` (`{materialId: qty}`) | Integer quantity per material, aggregated across all tags |
-| Types | `TYPES` separator + 33 type keys | `photo_tags.litter_object_type_id` (DB relationship) | Integer quantity per type, aggregated across all photo_tags |
-| Brands | Single `brands` column | `summary.tags.{catId}.{objId}.brands` (`{brandId: qty}`) + `summary.keys.brands` for name resolution | Semicolon-delimited string: `brandname:qty;brandname:qty` |
-
-**Why types come from DB, not summary:** The `summary.tags` JSON does not include `type_id`. Types live on `photo_tags.litter_object_type_id` in the database. The `photoTags` relationship is eager-loaded in the export query.
+| Materials | `MATERIALS` separator + 40 material keys | `summary.tags[*].materials` (array of material IDs) | Integer quantity per material (inherits parent tag quantity), aggregated across all tags |
+| Types | `TYPES` separator + 33 type keys | `summary.tags[*].type_id` | Integer quantity per type, aggregated across all tags |
+| Brands | Single `brands` column | `summary.tags[*].brands` (`{brandId: qty}`) + `summary.keys.brands` for name resolution | Semicolon-delimited string: `brandname:qty;brandname:qty` |
 
 **Why brands are a single column:** There are 2,600+ brands in the database. One column per brand would make the CSV unusable. The delimited format is parseable with Excel `TEXTSPLIT()` or Python `str.split(';')`.
 
@@ -152,39 +150,45 @@ Extracted from the eager-loaded `photoTags.extraTags.extraTag` relationship. Lim
 
 ## Summary JSON Structure
 
-The `map()` method reads from the nested `photos.summary` JSON:
+The `map()` method reads from the `photos.summary` JSON (v5.1 flat array format):
 
 ```json
 {
-    "tags": {
-        "2": {
-            "15": {
-                "quantity": 5,
-                "materials": { "3": 5, "7": 5 },
-                "brands": { "12": 3 },
-                "custom_tags": {}
-            }
+    "tags": [
+        {
+            "clo_id": 152,
+            "category_id": 16,
+            "object_id": 5,
+            "type_id": 24,
+            "quantity": 1,
+            "picked_up": true,
+            "materials": [5],
+            "brands": {"77": 1},
+            "custom_tags": [321]
         }
-    },
+    ],
     "totals": {
-        "litter": 15,
-        "materials": 10,
-        "brands": 3,
-        "custom_tags": 0
+        "litter": 1,
+        "materials": 1,
+        "brands": 1,
+        "custom_tags": 1
     },
     "keys": {
-        "categories": { "2": "smoking" },
-        "objects": { "15": "butts" },
-        "materials": { "3": "plastic", "7": "paper" },
-        "brands": { "12": "marlboro" }
+        "categories": { "16": "softdrinks" },
+        "objects": { "5": "can" },
+        "types": { "24": "soda" },
+        "materials": { "5": "aluminium" },
+        "brands": { "77": "pepsi" },
+        "custom_tags": { "321": "bn:Alani Nu" }
     }
 }
 ```
 
-- **Tags**: Nested `{ categoryId: { objectId: { quantity, materials, brands, custom_tags } } }`
-- **Materials**: `{ materialId: quantity }` objects (NOT arrays of IDs)
+- **Tags**: Flat array — each entry has `category_id`, `object_id`, `type_id`, `quantity`
+- **Materials**: Array of material IDs `[5]` — quantity is inherited from parent tag
 - **Brands**: `{ brandId: quantity }` objects with independent quantities
-- **Custom tags**: `{ customTagId: quantity }` objects
+- **Custom tags**: Array of custom tag IDs `[321]` — quantity inherited from parent tag
+- **type_id**: Present in the summary (can be null) — used for type column mapping
 - **Keys**: Human-readable name lookups by ID (used for brand name resolution in CSV)
 
 ## Date Filter Plumbing

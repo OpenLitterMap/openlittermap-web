@@ -94,9 +94,26 @@ export const requests = {
     /**
      * Fetch stats separately (can be cached)
      */
-    async GET_UNTAGGED_STATS() {
+    async GET_UNTAGGED_STATS(filters = {}) {
         try {
-            const response = await axios.get('/api/v3/user/photos/stats');
+            const params = {};
+
+            if (filters.tagged !== null && filters.tagged !== undefined) {
+                params.tagged = filters.tagged ? 1 : 0;
+            }
+            if (filters.id) {
+                params.id = filters.id;
+                params.id_operator = filters.idOperator || '=';
+            }
+            if (filters.pickedUp && filters.pickedUp !== 'all') {
+                params.picked_up = filters.pickedUp;
+            }
+            if (filters.tag) params.tag = filters.tag;
+            if (filters.customTag) params.custom_tag = filters.customTag;
+            if (filters.dateFrom) params.date_from = filters.dateFrom;
+            if (filters.dateTo) params.date_to = filters.dateTo;
+
+            const response = await axios.get('/api/v3/user/photos/stats', { params });
 
             this.untaggedStats = {
                 totalPhotos: response.data.totalPhotos || 0,

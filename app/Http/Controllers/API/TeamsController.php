@@ -239,17 +239,21 @@ class TeamsController extends Controller
 
         $dateFilter = [];
         if ($request->dateField && ($request->fromDate || $request->toDate)) {
-            $dateFilter = [
-                'column' => in_array($request->dateField, ['created_at', 'datetime', 'updated_at'])
-                    ? $request->dateField
-                    : 'datetime',
-                'fromDate' => $request->fromDate
-                    ? Carbon::parse($request->fromDate)->toDateString()
-                    : '2017-01-01',
-                'toDate' => $request->toDate
-                    ? Carbon::parse($request->toDate)->toDateString()
-                    : now()->toDateString(),
-            ];
+            try {
+                $dateFilter = [
+                    'column' => in_array($request->dateField, ['created_at', 'datetime', 'updated_at'], true)
+                        ? $request->dateField
+                        : 'datetime',
+                    'fromDate' => $request->fromDate
+                        ? Carbon::parse($request->fromDate)->toDateString()
+                        : '2017-01-01',
+                    'toDate' => $request->toDate
+                        ? Carbon::parse($request->toDate)->toDateString()
+                        : now()->toDateString(),
+                ];
+            } catch (\Exception) {
+                // Invalid date format — ignore filter and export all data
+            }
         }
 
         $action->run($user, $team, $dateFilter);

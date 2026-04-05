@@ -12,6 +12,7 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Photo;
+use App\Models\Users\User;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Tests\TestCase;
 
@@ -23,65 +24,93 @@ class CreateCSVExportTest extends TestCase
         $this->seed(GenerateTagsSeeder::class);
     }
 
-    public function test_it_has_correct_headings_for_all_categories_and_tags()
+    public function test_empty_export_has_only_fixed_columns()
     {
         $expected = ['id', 'verification', 'phone', 'date_taken', 'date_uploaded', 'lat', 'lon', 'picked up', 'address', 'total_tags'];
-
-        $categories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
-        foreach ($categories as $category) {
-            $expected[] = strtoupper($category->key);
-            foreach ($category->litterObjects as $object) {
-                $expected[] = $object->key;
-            }
-        }
-
-        // Materials columns
-        $expected[] = 'MATERIALS';
-        foreach (Materials::orderBy('id')->get() as $material) {
-            $expected[] = $material->key;
-        }
-
-        // Types columns
-        $expected[] = 'TYPES';
-        foreach (LitterObjectType::orderBy('id')->get() as $type) {
-            $expected[] = $type->key;
-        }
-
-        // Brands + custom tags
-        $expected[] = 'brands';
-        $expected = array_merge($expected, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
-
-        $this->assertDatabaseCount('photos', 0);
 
         $export = new CreateCSVExport('null', 1, null, null);
 
         $this->assertEquals($expected, $export->headings());
-        $this->assertDatabaseCount('photos', 0);
     }
 
-    public function test_it_has_correct_mappings_for_all_categories_and_tags()
+    public function test_headings_include_only_columns_with_data()
     {
-        // Pick a category with at least 2 objects (unclassified only has 1)
         $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
             ->orderBy('id')
             ->get()
             ->first(fn ($c) => $c->litterObjects->count() >= 2);
-        $objects = $category->litterObjects;
-        $obj1 = $objects[0];
-        $obj2 = $objects[1];
+        $obj1 = $category->litterObjects[0];
+        $obj2 = $category->litterObjects[1];
+
+        $cloId1 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj1->id)->value('id');
+
+        $material = Materials::orderBy('id')->first();
+        $type = LitterObjectType::orderBy('id')->first();
+        $brand = BrandList::firstOrCreate(['key' => 'test_brand']);
+        $customTag = CustomTagNew::firstOrCreate(['key' => 'my_custom']);
+
+        // Create a user photo with specific tags
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['verified' => 2, 'user_id' => $user->id]);
+        $pt = PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $obj1->id,
+            'category_litter_object_id' => $cloId1,
+            'litter_object_type_id' => $type->id,
+            'quantity' => 3,
+        ]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'material', 'tag_type_id' => $material->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag->id, 'quantity' => 1]);
+
+        $export = new CreateCSVExport(null, null, null, $user->id);
+        $headings = $export->headings();
+
+        // Fixed columns always present
+        $this->assertEquals('id', $headings[0]);
+        $this->assertEquals('total_tags', $headings[9]);
+
+        // Only the used category + its used object should appear (not all categories)
+        $this->assertContains(strtoupper($category->key), $headings);
+        $this->assertContains($obj1->key, $headings);
+        // obj2 is in the same category but has no photo_tags — should be excluded
+        $this->assertNotContains($obj2->key, $headings);
+
+        // Only the used material, type, brand, custom_tag sections should appear
+        $this->assertContains('MATERIALS', $headings);
+        $this->assertContains($material->key, $headings);
+        $this->assertContains('TYPES', $headings);
+        $this->assertContains($type->key, $headings);
+        $this->assertContains('brands', $headings);
+        $this->assertContains('custom_tag_1', $headings);
+
+        // Unused materials/types should NOT appear
+        $otherMaterial = Materials::where('id', '!=', $material->id)->orderBy('id')->first();
+        if ($otherMaterial) {
+            $this->assertNotContains($otherMaterial->key, $headings);
+        }
+    }
+
+    public function test_it_has_correct_mappings()
+    {
+        $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+            ->orderBy('id')
+            ->get()
+            ->first(fn ($c) => $c->litterObjects->count() >= 2);
+        $obj1 = $category->litterObjects[0];
+        $obj2 = $category->litterObjects[1];
 
         $cloId1 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj1->id)->value('id');
         $cloId2 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj2->id)->value('id');
 
-        // Get a material for testing (seeded by GenerateTagsSeeder)
         $material = Materials::orderBy('id')->first();
-
-        // Create a brand (not seeded)
         $brand = BrandList::firstOrCreate(['key' => 'test_brand_export']);
 
-        // Nested summary format: { catId: { objId: { quantity, materials: {id: qty}, brands: {id: qty} } } }
+        $user = User::factory()->create();
         $photo = Photo::factory()->create([
             'verified' => 2,
+            'user_id' => $user->id,
             'model' => 'Redmi Note 8 pro',
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
@@ -91,151 +120,100 @@ class CreateCSVExportTest extends TestCase
             'total_tags' => 15,
             'summary' => [
                 'tags' => [
-                    (string) $category->id => [
-                        (string) $obj1->id => [
-                            'quantity' => 5,
-                            'materials' => [(string) $material->id => 5],
-                            'brands' => [(string) $brand->id => 2],
-                            'custom_tags' => (object) [],
-                        ],
-                        (string) $obj2->id => [
-                            'quantity' => 10,
-                            'materials' => (object) [],
-                            'brands' => (object) [],
-                            'custom_tags' => (object) [],
-                        ],
-                    ],
+                    ['clo_id' => $cloId1, 'category_id' => $category->id, 'object_id' => $obj1->id, 'type_id' => null, 'quantity' => 5, 'materials' => [$material->id], 'brands' => [$brand->id => 2], 'custom_tags' => []],
+                    ['clo_id' => $cloId2, 'category_id' => $category->id, 'object_id' => $obj2->id, 'type_id' => null, 'quantity' => 10, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],
                 ],
                 'totals' => ['litter' => 15, 'materials' => 5, 'brands' => 2, 'custom_tags' => 0],
-                'keys' => [
-                    'brands' => [(string) $brand->id => 'test_brand_export'],
-                ],
+                'keys' => ['brands' => [(string) $brand->id => 'test_brand_export']],
             ],
         ]);
 
-        // Create custom tags via v5 photo_tags
+        // Create photo_tags so the pre-scan finds columns
+        $pt1 = PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $obj1->id, 'category_litter_object_id' => $cloId1, 'quantity' => 5]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt1->id, 'tag_type' => 'material', 'tag_type_id' => $material->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt1->id, 'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 2]);
+        PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $obj2->id, 'category_litter_object_id' => $cloId2, 'quantity' => 10]);
+
+        // Add custom tags
         $customTag1 = CustomTagNew::firstOrCreate(['key' => 'my_custom_1']);
         $customTag2 = CustomTagNew::firstOrCreate(['key' => 'my_custom_2']);
         $customTag3 = CustomTagNew::firstOrCreate(['key' => 'my_custom_3']);
         $unclassifiedCloId = $this->getUnclassifiedOtherCloId();
-        $pt1 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
-        PhotoTagExtraTags::create(['photo_tag_id' => $pt1->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag1->id, 'quantity' => 1]);
-        $pt2 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
-        PhotoTagExtraTags::create(['photo_tag_id' => $pt2->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag2->id, 'quantity' => 1]);
-        $pt3 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
-        PhotoTagExtraTags::create(['photo_tag_id' => $pt3->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag3->id, 'quantity' => 1]);
+        $ptc1 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptc1->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag1->id, 'quantity' => 1]);
+        $ptc2 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptc2->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag2->id, 'quantity' => 1]);
+        $ptc3 = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptc3->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag3->id, 'quantity' => 1]);
 
-        $this->assertDatabaseCount('photos', 1);
+        $export = new CreateCSVExport(null, null, null, $user->id);
+        $mapped = $export->map($photo->fresh());
+        $headings = $export->headings();
 
-        $export = new CreateCSVExport('null', 1, null, null);
+        // Fixed columns
+        $this->assertEquals($photo->id, $mapped[0]);
+        $this->assertEquals(2, $mapped[1]); // verified->value
+        $this->assertEquals('No', $mapped[7]); // picked_up = false (remaining=true)
+        $this->assertEquals(15, $mapped[9]); // total_tags
 
-        // Build expected row
-        $expected = [
-            $photo->id,
-            $photo->verified,
-            'Redmi Note 8 pro',
-            $photo->datetime,
-            $photo->created_at,
-            42.0,
-            42.0,
-            'No', // remaining=true means not picked up
-            $photo->display_name,
-            15, // total_objects from summary
-        ];
+        // Object quantities in correct columns
+        $obj1Index = array_search($obj1->key, $headings);
+        $obj2Index = array_search($obj2->key, $headings);
+        $this->assertEquals(5, $mapped[$obj1Index]);
+        $this->assertEquals(10, $mapped[$obj2Index]);
 
-        // Category/object columns — only the two tagged objects have values
-        $allCategories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
-        foreach ($allCategories as $cat) {
-            $expected[] = null; // category separator
-            foreach ($cat->litterObjects as $obj) {
-                if ($cat->id === $category->id && $obj->id === $obj1->id) {
-                    $expected[] = 5;
-                } elseif ($cat->id === $category->id && $obj->id === $obj2->id) {
-                    $expected[] = 10;
-                } else {
-                    $expected[] = null;
-                }
-            }
-        }
+        // Material in correct column
+        $matIndex = array_search($material->key, $headings);
+        $this->assertEquals(5, $mapped[$matIndex]); // inherits parent tag qty
 
-        // Materials columns — material has qty 5 (from the nested materials object)
-        $expected[] = null; // MATERIALS separator
-        foreach (Materials::orderBy('id')->get() as $mat) {
-            $expected[] = $mat->id === $material->id ? 5 : null;
-        }
+        // Brands
+        $brandsIndex = array_search('brands', $headings);
+        $this->assertEquals('test_brand_export:2', $mapped[$brandsIndex]);
 
-        // Types columns — no photo_tags with litter_object_type_id in this test
-        $expected[] = null; // TYPES separator
-        foreach (LitterObjectType::orderBy('id')->get() as $type) {
-            $expected[] = null;
-        }
-
-        // Brands column
-        $expected[] = 'test_brand_export:2';
-
-        $expected = array_merge($expected, ['my_custom_1', 'my_custom_2', 'my_custom_3']);
-
-        $this->assertEquals($expected, $export->map($photo->fresh()));
-        $this->assertDatabaseCount('photos', 1);
+        // Custom tags
+        $ct1Index = array_search('custom_tag_1', $headings);
+        $this->assertEquals('my_custom_1', $mapped[$ct1Index]);
+        $this->assertEquals('my_custom_2', $mapped[$ct1Index + 1]);
+        $this->assertEquals('my_custom_3', $mapped[$ct1Index + 2]);
     }
 
-    public function test_it_maps_to_null_values_for_all_missing_categories()
+    public function test_it_maps_to_null_values_for_empty_tags()
     {
+        $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+            ->orderBy('id')
+            ->get()
+            ->first(fn ($c) => $c->litterObjects->count() >= 1);
+        $obj = $category->litterObjects->first();
+        $cloId = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj->id)->value('id');
+
+        // Photo with empty summary but has a photo_tag (so category appears in pre-scan)
+        $user = User::factory()->create();
         $photo = Photo::factory()->create([
             'verified' => 2,
-            'model' => 'Redmi Note 8 pro',
+            'user_id' => $user->id,
+            'model' => 'Test',
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
             'lon' => 42.0,
             'remaining' => true,
-            'address_array' => ['road' => '12345 Street', 'country' => 'Ireland'],
-            'summary' => [
-                'tags' => (object) [],
-                'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0],
-            ],
+            'address_array' => ['country' => 'Ireland'],
+            'summary' => ['tags' => [], 'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0]],
         ]);
+        PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $obj->id, 'category_litter_object_id' => $cloId, 'quantity' => 0]);
 
-        $expected = [
-            $photo->id,
-            $photo->verified,
-            'Redmi Note 8 pro',
-            $photo->datetime,
-            $photo->created_at,
-            42.0,
-            42.0,
-            'No',
-            $photo->display_name,
-            0, // total_objects from summary
-        ];
+        $export = new CreateCSVExport(null, null, null, $user->id);
+        $mapped = $export->map($photo->fresh());
+        $headings = $export->headings();
 
-        $allCategories = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])->orderBy('id')->get();
-        foreach ($allCategories as $cat) {
-            $expected[] = null; // category separator
-            foreach ($cat->litterObjects as $obj) {
-                $expected[] = null;
-            }
-        }
+        // Object column should be null (summary has no tags)
+        $objIndex = array_search($obj->key, $headings);
+        $this->assertNull($mapped[$objIndex]);
 
-        // Materials — all null
-        $expected[] = null;
-        foreach (Materials::orderBy('id')->get() as $mat) {
-            $expected[] = null;
-        }
-
-        // Types — all null
-        $expected[] = null;
-        foreach (LitterObjectType::orderBy('id')->get() as $type) {
-            $expected[] = null;
-        }
-
-        // Brands — null
-        $expected[] = null;
-
-        $expected = array_merge($expected, [null, null, null]);
-
-        $export = new CreateCSVExport('null', 1, null, null);
-
-        $this->assertEquals($expected, $export->map($photo->fresh()));
+        // No materials/types/brands/custom_tags sections
+        $this->assertNotContains('MATERIALS', $headings);
+        $this->assertNotContains('TYPES', $headings);
+        $this->assertNotContains('brands', $headings);
+        $this->assertNotContains('custom_tag_1', $headings);
     }
 
     public function test_materials_are_aggregated_across_multiple_tags()
@@ -244,46 +222,44 @@ class CreateCSVExportTest extends TestCase
             ->orderBy('id')
             ->get()
             ->first(fn ($c) => $c->litterObjects->count() >= 2);
-        $objects = $category->litterObjects;
-        $obj1 = $objects[0];
-        $obj2 = $objects[1];
+        $obj1 = $category->litterObjects[0];
+        $obj2 = $category->litterObjects[1];
+
+        $cloId1 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj1->id)->value('id');
+        $cloId2 = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj2->id)->value('id');
 
         $material = Materials::orderBy('id')->first();
 
-        // Nested summary: both objects have the same material with different quantities
+        $user = User::factory()->create();
         $photo = Photo::factory()->create([
             'verified' => 2,
+            'user_id' => $user->id,
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
             'lon' => 42.0,
             'address_array' => ['country' => 'Ireland'],
             'summary' => [
                 'tags' => [
-                    (string) $category->id => [
-                        (string) $obj1->id => [
-                            'quantity' => 3,
-                            'materials' => [(string) $material->id => 3],
-                            'brands' => (object) [],
-                            'custom_tags' => (object) [],
-                        ],
-                        (string) $obj2->id => [
-                            'quantity' => 7,
-                            'materials' => [(string) $material->id => 7],
-                            'brands' => (object) [],
-                            'custom_tags' => (object) [],
-                        ],
-                    ],
+                    ['clo_id' => $cloId1, 'category_id' => $category->id, 'object_id' => $obj1->id, 'type_id' => null, 'quantity' => 3, 'materials' => [$material->id], 'brands' => (object) [], 'custom_tags' => []],
+                    ['clo_id' => $cloId2, 'category_id' => $category->id, 'object_id' => $obj2->id, 'type_id' => null, 'quantity' => 7, 'materials' => [$material->id], 'brands' => (object) [], 'custom_tags' => []],
                 ],
                 'totals' => ['litter' => 10, 'materials' => 10, 'brands' => 0, 'custom_tags' => 0],
             ],
         ]);
 
-        $export = new CreateCSVExport('null', 1, null, null);
+        // Photo tags for pre-scan
+        $pt1 = PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $obj1->id, 'category_litter_object_id' => $cloId1, 'quantity' => 3]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt1->id, 'tag_type' => 'material', 'tag_type_id' => $material->id, 'quantity' => 1]);
+        $pt2 = PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $obj2->id, 'category_litter_object_id' => $cloId2, 'quantity' => 7]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt2->id, 'tag_type' => 'material', 'tag_type_id' => $material->id, 'quantity' => 1]);
+
+        $export = new CreateCSVExport(null, null, null, $user->id);
         $mapped = $export->map($photo->fresh());
         $headings = $export->headings();
 
-        // Find the material column — search after the MATERIALS separator
         $materialsHeaderIndex = array_search('MATERIALS', $headings);
+        $this->assertNotFalse($materialsHeaderIndex);
+
         $materialIndex = null;
         for ($i = $materialsHeaderIndex + 1; $i < count($headings); $i++) {
             if ($headings[$i] === $material->key) {
@@ -292,9 +268,8 @@ class CreateCSVExportTest extends TestCase
             }
         }
 
-        $this->assertNotNull($materialIndex, "Material column '{$material->key}' not found in headings");
-        // Material should be 3 + 7 = 10 (sum of both tag quantities)
-        $this->assertEquals(10, $mapped[$materialIndex]);
+        $this->assertNotNull($materialIndex);
+        $this->assertEquals(10, $mapped[$materialIndex]); // 3 + 7
     }
 
     public function test_brands_formatted_as_delimited_string()
@@ -304,49 +279,46 @@ class CreateCSVExportTest extends TestCase
             ->get()
             ->first(fn ($c) => $c->litterObjects->count() >= 1);
         $obj = $category->litterObjects->first();
+        $cloId = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj->id)->value('id');
 
         $brand1 = BrandList::firstOrCreate(['key' => 'test_brand_1']);
         $brand2 = BrandList::firstOrCreate(['key' => 'test_brand_2']);
 
-        // Nested summary with brands as {id: qty} objects
+        $user = User::factory()->create();
         $photo = Photo::factory()->create([
             'verified' => 2,
+            'user_id' => $user->id,
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
             'lon' => 42.0,
             'address_array' => ['country' => 'Ireland'],
             'summary' => [
                 'tags' => [
-                    (string) $category->id => [
-                        (string) $obj->id => [
-                            'quantity' => 5,
-                            'materials' => (object) [],
-                            'brands' => [(string) $brand1->id => 1, (string) $brand2->id => 3],
-                            'custom_tags' => (object) [],
-                        ],
-                    ],
+                    ['clo_id' => $cloId, 'category_id' => $category->id, 'object_id' => $obj->id, 'type_id' => null, 'quantity' => 5, 'materials' => [], 'brands' => [(string) $brand1->id => 1, (string) $brand2->id => 3], 'custom_tags' => []],
                 ],
                 'totals' => ['litter' => 5, 'materials' => 0, 'brands' => 4, 'custom_tags' => 0],
-                'keys' => [
-                    'brands' => [(string) $brand1->id => 'test_brand_1', (string) $brand2->id => 'test_brand_2'],
-                ],
+                'keys' => ['brands' => [(string) $brand1->id => 'test_brand_1', (string) $brand2->id => 'test_brand_2']],
             ],
         ]);
 
-        $export = new CreateCSVExport('null', 1, null, null);
+        $pt = PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $category->id, 'litter_object_id' => $obj->id, 'category_litter_object_id' => $cloId, 'quantity' => 5]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'brand', 'tag_type_id' => $brand1->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'brand', 'tag_type_id' => $brand2->id, 'quantity' => 3]);
+
+        $export = new CreateCSVExport(null, null, null, $user->id);
         $mapped = $export->map($photo->fresh());
         $headings = $export->headings();
 
         $brandsIndex = array_search('brands', $headings);
-        $brandsValue = $mapped[$brandsIndex];
+        $this->assertNotFalse($brandsIndex);
 
-        $this->assertNotNull($brandsValue);
+        $brandsValue = $mapped[$brandsIndex];
         $this->assertStringContainsString('test_brand_1:1', $brandsValue);
         $this->assertStringContainsString('test_brand_2:3', $brandsValue);
         $this->assertStringContainsString(';', $brandsValue);
     }
 
-    public function test_types_are_mapped_from_photo_tags()
+    public function test_types_are_mapped_from_summary()
     {
         $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
             ->orderBy('id')
@@ -357,29 +329,22 @@ class CreateCSVExportTest extends TestCase
 
         $type = LitterObjectType::orderBy('id')->first();
 
-        // Summary doesn't contain type_id — types come from photo_tags DB rows
+        $user = User::factory()->create();
         $photo = Photo::factory()->create([
             'verified' => 2,
+            'user_id' => $user->id,
             'datetime' => now()->toDateTimeString(),
             'lat' => 42.0,
             'lon' => 42.0,
             'address_array' => ['country' => 'Ireland'],
             'summary' => [
                 'tags' => [
-                    (string) $category->id => [
-                        (string) $obj->id => [
-                            'quantity' => 8,
-                            'materials' => (object) [],
-                            'brands' => (object) [],
-                            'custom_tags' => (object) [],
-                        ],
-                    ],
+                    ['clo_id' => $cloId, 'category_id' => $category->id, 'object_id' => $obj->id, 'type_id' => $type->id, 'quantity' => 8, 'materials' => [], 'brands' => (object) [], 'custom_tags' => []],
                 ],
                 'totals' => ['litter' => 8, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0],
             ],
         ]);
 
-        // Create a photo_tag row with litter_object_type_id — this is the DB source for types
         PhotoTag::create([
             'photo_id' => $photo->id,
             'category_id' => $category->id,
@@ -389,12 +354,13 @@ class CreateCSVExportTest extends TestCase
             'quantity' => 8,
         ]);
 
-        $export = new CreateCSVExport('null', 1, null, null);
+        $export = new CreateCSVExport(null, null, null, $user->id);
         $mapped = $export->map($photo->fresh());
         $headings = $export->headings();
 
-        // Find the type column — search after TYPES separator
         $typesHeaderIndex = array_search('TYPES', $headings);
+        $this->assertNotFalse($typesHeaderIndex);
+
         $typeIndex = null;
         for ($i = $typesHeaderIndex + 1; $i < count($headings); $i++) {
             if ($headings[$i] === $type->key) {
@@ -403,20 +369,7 @@ class CreateCSVExportTest extends TestCase
             }
         }
 
-        $this->assertNotNull($typeIndex, "Type column '{$type->key}' not found in headings");
+        $this->assertNotNull($typeIndex);
         $this->assertEquals(8, $mapped[$typeIndex]);
-
-        // Other types should be null
-        $otherType = LitterObjectType::where('id', '!=', $type->id)->orderBy('id')->first();
-        if ($otherType) {
-            $otherIndex = null;
-            for ($i = $typesHeaderIndex + 1; $i < count($headings); $i++) {
-                if ($headings[$i] === $otherType->key) {
-                    $otherIndex = $i;
-                    break;
-                }
-            }
-            $this->assertNull($mapped[$otherIndex]);
-        }
     }
 }
