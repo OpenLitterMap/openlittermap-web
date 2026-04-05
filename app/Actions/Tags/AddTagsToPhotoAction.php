@@ -170,20 +170,6 @@ class AddTagsToPhotoAction
             }
         }
 
-        // Validate "other" object requires at least one extra tag
-        $object = LitterObject::find($clo->litter_object_id);
-        if ($object && $object->key === 'other') {
-            $hasMaterials = ! empty($tag['materials']);
-            $hasBrands = ! empty($tag['brands']);
-            $hasCustomTags = ! empty($tag['custom_tags']);
-
-            if (! $hasMaterials && ! $hasBrands && ! $hasCustomTags) {
-                throw ValidationException::withMessages([
-                    'tags' => ['Object "other" requires at least one material, brand, or custom tag.'],
-                ]);
-            }
-        }
-
         // Create the PhotoTag
         $photoTag = PhotoTag::create([
             'photo_id' => $photoId,
