@@ -156,10 +156,10 @@ Route::post('/password/validate-token', [ResetPasswordController::class, 'valida
 Route::post('/password/reset', [ResetPasswordController::class, 'reset']);
 
 Route::post('/auth/login', [LoginController::class, 'login'])
-    ->middleware(app()->isLocal() ? ['web'] : ['web', 'throttle:5,1']);
+    ->middleware(app()->isLocal() ? ['web'] : ['web', 'throttle:login']);
 
 Route::post('/auth/token', [AuthTokenController::class, 'login'])
-    ->middleware('throttle:10,1');
+    ->middleware('throttle:login-token');
 
 Route::post('/auth/logout', [LoginController::class, 'logout'])
     ->middleware(['web', 'auth:web']);
