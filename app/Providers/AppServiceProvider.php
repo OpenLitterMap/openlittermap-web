@@ -11,6 +11,7 @@ use App\Observers\PhotoObserver;
 use App\Services\Clustering\ClusteringService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -51,6 +52,14 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('ses-emails', function () {
             return Limit::perSecond(12);
+        });
+
+        RateLimiter::for('login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('login-token', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
         });
     }
 }
