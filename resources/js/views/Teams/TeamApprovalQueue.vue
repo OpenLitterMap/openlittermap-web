@@ -28,7 +28,7 @@
         <div v-if="!loading && photos.data.length === 0" class="text-center py-12">
             <div class="text-4xl mb-3">&#10003;</div>
             <p class="text-slate-500 font-medium">All caught up!</p>
-            <p class="text-sm text-slate-400 mt-1">No photos pending approval.</p>
+            <p class="text-sm text-slate-500 mt-1">No photos pending approval.</p>
         </div>
 
         <!-- Photo cards -->
@@ -42,7 +42,7 @@
                 <div class="w-24 h-24 shrink-0 rounded-lg bg-slate-100 overflow-hidden">
                     <img
                         v-if="photo.filename"
-                        :src="`/storage/photos/${photo.filename}`"
+                        :src="resolvePhotoUrl(photo.filename)"
                         class="w-full h-full object-cover"
                         loading="lazy"
                     />
@@ -57,7 +57,7 @@
                                 &middot;
                                 {{ photo.total_tags || 0 }} items
                             </p>
-                            <p class="text-xs text-slate-400 mt-0.5">
+                            <p class="text-xs text-slate-500 mt-0.5">
                                 by {{ photo.user?.name || 'Unknown' }}
                                 &middot;
                                 {{ formatDate(photo.created_at) }}
@@ -98,7 +98,7 @@
                         </span>
                         <span
                             v-if="(photo.photo_tags || []).length > 6"
-                            class="px-2 py-0.5 text-xs bg-slate-100 text-slate-400 rounded"
+                            class="px-2 py-0.5 text-xs bg-slate-100 text-slate-500 rounded"
                         >
                             +{{ photo.photo_tags.length - 6 }} more
                         </span>
@@ -145,6 +145,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 import TeamPhotoEdit from './TeamPhotoEdit.vue';
 
 export default {
@@ -222,7 +223,7 @@ export default {
 
         return {
             photos, stats, loading, approving, editingPhoto, successMessage,
-            approveOne, approveAll, deletePhoto, editPhoto, onEditSaved, onPhotoDeleted, changePage, formatDate,
+            approveOne, approveAll, deletePhoto, editPhoto, onEditSaved, onPhotoDeleted, changePage, formatDate, resolvePhotoUrl,
         };
     },
 };

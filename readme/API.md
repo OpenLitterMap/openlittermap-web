@@ -1990,13 +1990,32 @@ Returns max 5000 points with `id`, `lat`, `lng`, `tags`, `verified`, `is_public`
 
 ### POST /api/teams/download — Download Team Data
 
-**Auth:** Required (Sanctum)
+**Auth:** Required (Sanctum). Must be team leader or have `school_manager` role.
 
-**Request:** `{ "team_id": 1 }`
+**Request:**
+```json
+{
+  "team_id": 1,
+  "dateField": "datetime",
+  "fromDate": "2025-01-01",
+  "toDate": "2025-12-31"
+}
+```
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `team_id` | int | Yes | Team ID |
+| `dateField` | string | No | Column to filter: `created_at`, `datetime`, or `updated_at` |
+| `fromDate` | string | No | Start date (YYYY-MM-DD). Default: `2017-01-01` |
+| `toDate` | string | No | End date (YYYY-MM-DD). Default: today |
+
 **Response:** `{ "success": true }`
-**Error:** `{ "success": false, "message": "not-a-member" }`
+**Errors:**
+- `{ "success": false, "message": "team-not-found" }` — invalid team_id
+- `{ "success": false, "message": "not-a-member" }` — user not on team
+- `{ "success": false, "message": "not-authorized" }` — member but not leader/school_manager
 
-Queues background export job.
+Queues background CSV export (only `verified >= ADMIN_APPROVED` photos). Emails S3 download link when ready. See `readme/ExportData.md` for full CSV column layout.
 
 ---
 

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div v-if="photosStore.memberStats.length === 0" class="text-center py-12 text-slate-400">
+        <div v-if="photosStore.memberStats.length === 0" class="text-center py-12 text-slate-500">
             No members found.
         </div>
 
@@ -24,7 +24,7 @@
                     >
                         <td class="px-4 py-3">
                             <div class="font-medium text-slate-800">{{ member.name }}</div>
-                            <div v-if="member.username" class="text-xs text-slate-400">
+                            <div v-if="member.username" class="text-xs text-slate-500">
                                 @{{ member.username }}
                             </div>
                         </td>
@@ -33,7 +33,7 @@
                         </td>
                         <td class="px-4 py-3 text-right text-sm">
                             <span
-                                :class="member.pending > 0 ? 'text-amber-600 font-semibold' : 'text-slate-400'"
+                                :class="member.pending > 0 ? 'text-amber-600 font-semibold' : 'text-slate-500'"
                             >
                                 {{ member.pending }}
                             </span>

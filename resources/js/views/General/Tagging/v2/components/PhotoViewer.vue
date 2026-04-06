@@ -3,7 +3,7 @@
         <div class="relative w-full h-full flex items-center justify-center">
             <!-- Delete button -->
             <button
-                v-if="photoSrc && !loading && !error"
+                v-if="resolvedSrc && !loading && !error"
                 @click.stop="emit('delete')"
                 :disabled="deleting"
                 class="absolute top-2 right-2 z-10 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shadow-lg"
@@ -19,7 +19,7 @@
             </button>
 
             <!-- Empty state: no photo available -->
-            <div v-if="!photoSrc && !loading" class="bg-white/5 border border-white/10 rounded-lg aspect-video flex flex-col items-center justify-center">
+            <div v-if="!resolvedSrc && !loading" class="bg-white/5 border border-white/10 rounded-lg aspect-video flex flex-col items-center justify-center">
                 <svg class="w-16 h-16 text-white/10 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         stroke-linecap="round"
@@ -48,8 +48,8 @@
 
             <!-- Actual image -->
             <img
-                v-show="!loading && !error && photoSrc"
-                :src="photoSrc"
+                v-show="!loading && !error && resolvedSrc"
+                :src="resolvedSrc"
                 @load="handleLoad"
                 @error="handleError"
                 alt="Photo to tag"
@@ -80,13 +80,14 @@
             @click="toggleZoom"
             class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center cursor-zoom-out"
         >
-            <img :src="photoSrc" alt="Zoomed photo" class="max-w-[90vw] max-h-[90vh] object-contain" />
+            <img :src="resolvedSrc" alt="Zoomed photo" class="max-w-[90vw] max-h-[90vh] object-contain" />
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 
 const props = defineProps({
     photoSrc: String,
@@ -101,6 +102,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['image-loaded', 'delete']);
+
+const resolvedSrc = computed(() => props.photoSrc ? resolvePhotoUrl(props.photoSrc) : null);
 
 const error = ref(false);
 const zoomed = ref(false);
@@ -123,7 +126,7 @@ const handleError = () => {
 };
 
 const toggleZoom = () => {
-    if (!error.value && props.photoSrc) {
+    if (!error.value && resolvedSrc.value) {
         zoomed.value = !zoomed.value;
     }
 };

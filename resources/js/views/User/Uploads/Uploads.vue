@@ -21,7 +21,7 @@
             >
                 <!-- Photo Thumbnail -->
                 <div class="relative h-44 bg-gray-100">
-                    <img :src="photo.filename" :alt="`Photo ${photo.id}`" class="w-full h-full object-cover" />
+                    <img :src="resolvePhotoUrl(photo.filename)" :alt="`Photo ${photo.id}`" class="w-full h-full object-cover" />
 
                     <!-- Untagged badge -->
                     <span
@@ -197,6 +197,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { usePhotosStore } from '@/stores/photos';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 import UploadTags from './UploadTags.vue';
 import UploadsHeader from './components/UploadsHeader.vue';
 import UploadsPagination from './components/UploadsPagination.vue';

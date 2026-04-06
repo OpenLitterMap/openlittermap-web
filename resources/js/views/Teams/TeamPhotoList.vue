@@ -16,12 +16,12 @@
         </div>
 
         <!-- Loading -->
-        <div v-if="loading" class="text-center py-12 text-slate-400">Loading photos...</div>
+        <div v-if="loading" class="text-center py-12 text-slate-500">Loading photos...</div>
 
         <!-- Empty state -->
         <div v-else-if="photos.data.length === 0" class="text-center py-12">
             <p class="text-slate-500">No photos found.</p>
-            <p class="text-sm text-slate-400 mt-1">Upload photos with this team set as active to see them here.</p>
+            <p class="text-sm text-slate-500 mt-1">Upload photos with this team set as active to see them here.</p>
         </div>
 
         <!-- Photo grid -->
@@ -36,7 +36,7 @@
                 <div class="aspect-square bg-slate-100 relative">
                     <img
                         v-if="photo.filename"
-                        :src="`/storage/photos/${photo.filename}`"
+                        :src="resolvePhotoUrl(photo.filename)"
                         :alt="`Photo ${photo.id}`"
                         class="w-full h-full object-cover"
                         loading="lazy"
@@ -68,9 +68,9 @@
                 <div class="p-3">
                     <div class="flex justify-between items-center">
                         <span class="text-sm text-slate-500">{{ photo.photo_tags?.length || 0 }} tags</span>
-                        <span class="text-xs text-slate-400">{{ formatDate(photo.created_at) }}</span>
+                        <span class="text-xs text-slate-500">{{ formatDate(photo.created_at) }}</span>
                     </div>
-                    <p v-if="photo.user" class="text-xs text-slate-400 mt-1 truncate">
+                    <p v-if="photo.user" class="text-xs text-slate-500 mt-1 truncate">
                         by {{ photo.user.name }}
                     </p>
                     <button
@@ -122,6 +122,7 @@
 <script>
 import { ref, computed } from 'vue';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 import TeamPhotoEdit from './TeamPhotoEdit.vue';
 
 const VERIFICATION_LABELS = {
@@ -202,7 +203,7 @@ export default {
         return {
             photos, loading, filter, filters, selectedPhoto,
             setFilter, changePage, openPhoto, onPhotoSaved, onPhotoDeleted, revokePhoto,
-            formatDate, verificationLabel, verificationClass,
+            formatDate, verificationLabel, verificationClass, resolvePhotoUrl,
         };
     },
 };

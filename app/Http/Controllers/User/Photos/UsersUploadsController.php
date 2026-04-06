@@ -24,79 +24,7 @@ class UsersUploadsController extends Controller
         $query = Photo::where('user_id', $user->id)
             ->where('filename', '!=', '/assets/verified.jpg');
 
-        // Tagged/Untagged filter — uses summary column (set by GeneratePhotoSummaryService on tagging)
-        if ($request->has('tagged')) {
-            $request->boolean('tagged')
-                ? $query->whereNotNull('summary')
-                : $query->whereNull('summary');
-        }
-
-        // ID filter
-        if ($request->filled('id')) {
-            $id = $request->integer('id');
-            $operator = $request->input('id_operator', '=');
-            if (! in_array($operator, ['=', '>', '<'], true)) {
-                $operator = '=';
-            }
-            $query->where('id', $operator, $id);
-        }
-
-        // Tag filter (search by litter object key)
-        if ($request->filled('tag')) {
-            $tag = $request->input('tag');
-            $query->whereHas('photoTags.object', function($q) use ($tag) {
-                $q->where('key', 'like', "%{$tag}%");
-            });
-        }
-
-        // Custom tag filter (search through extra tags)
-        if ($request->filled('custom_tag')) {
-            $customTag = $request->input('custom_tag');
-            $query->whereHas('photoTags.extraTags', function($q) use ($customTag) {
-                $q->where('tag_type', 'custom_tag')
-                    ->whereHas('extraTag', function($q2) use ($customTag) {
-                        $q2->where('key', 'like', "%{$customTag}%");
-                    });
-            });
-        }
-
-        // Picked up filter (per-tag level: true, false, or null=no info)
-        if ($request->has('picked_up')) {
-            $pickedUp = $request->input('picked_up');
-            if ($pickedUp === 'true') {
-                $query->whereHas('photoTags', fn($q) => $q->where('picked_up', true));
-            } elseif ($pickedUp === 'false') {
-                $query->whereHas('photoTags', fn($q) => $q->where('picked_up', false));
-            }
-        }
-
-        // Country filter
-        if ($request->filled('country')) {
-            $query->whereHas('countryRelation', fn($q) => $q->where('country', $request->input('country')));
-        }
-
-        // State filter
-        if ($request->filled('state')) {
-            $query->whereHas('stateRelation', fn($q) => $q->where('state', $request->input('state')));
-        }
-
-        // City filter
-        if ($request->filled('city')) {
-            $query->whereHas('cityRelation', fn($q) => $q->where('city', $request->input('city')));
-        }
-
-        // Verified status filter
-        if ($request->has('verified') && $request->input('verified') !== null) {
-            $query->where('verified', (int) $request->input('verified'));
-        }
-
-        // Date range filter
-        if ($request->filled('date_from')) {
-            $query->where('datetime', '>=', $request->input('date_from'));
-        }
-        if ($request->filled('date_to')) {
-            $query->where('datetime', '<=', $request->input('date_to'));
-        }
+        $this->applyFilters($query, $request);
 
         $photos = $query
             ->with([
@@ -204,7 +132,13 @@ class UsersUploadsController extends Controller
         $user = $request->user();
         $userId = $user->id;
 
-        // Use photo count in cache key for auto-invalidation on upload
+        $hasFilters = $request->hasAny(['tagged', 'id', 'tag', 'custom_tag', 'picked_up', 'country', 'state', 'city', 'verified', 'date_from', 'date_to']);
+
+        if ($hasFilters) {
+            return $this->filteredStats($request, $userId);
+        }
+
+        // Unfiltered: use cached global stats
         $baseQuery = Photo::where('user_id', $userId)
             ->where('filename', '!=', '/assets/verified.jpg');
         $totalPhotos = $baseQuery->count();
@@ -239,6 +173,30 @@ class UsersUploadsController extends Controller
         });
 
         return response()->json($data);
+    }
+
+    private function filteredStats(Request $request, int $userId): JsonResponse
+    {
+        $query = Photo::where('user_id', $userId)
+            ->where('filename', '!=', '/assets/verified.jpg');
+
+        $this->applyFilters($query, $request);
+
+        $totalPhotos = (clone $query)->count();
+        $leftToTag = (clone $query)->whereNull('summary')->count();
+        $totalTags = (int) (clone $query)->sum('total_tags');
+
+        $taggedPhotos = max(0, $totalPhotos - $leftToTag);
+        $taggedPercentage = $totalPhotos > 0
+            ? (int) round(($taggedPhotos / $totalPhotos) * 100)
+            : 0;
+
+        return response()->json([
+            'totalPhotos' => $totalPhotos,
+            'totalTags' => $totalTags,
+            'leftToTag' => $leftToTag,
+            'taggedPercentage' => $taggedPercentage,
+        ]);
     }
 
     /**
@@ -411,5 +369,76 @@ class UsersUploadsController extends Controller
         }
 
         return $newTags;
+    }
+
+    /**
+     * Apply shared filters to a user photos query.
+     */
+    private function applyFilters($query, Request $request): void
+    {
+        if ($request->has('tagged')) {
+            $request->boolean('tagged')
+                ? $query->whereNotNull('summary')
+                : $query->whereNull('summary');
+        }
+
+        if ($request->filled('id')) {
+            $id = $request->integer('id');
+            $operator = $request->input('id_operator', '=');
+            if (! in_array($operator, ['=', '>', '<'], true)) {
+                $operator = '=';
+            }
+            $query->where('id', $operator, $id);
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->input('tag');
+            $query->whereHas('photoTags.object', function ($q) use ($tag) {
+                $q->where('key', 'like', "%{$tag}%");
+            });
+        }
+
+        if ($request->filled('custom_tag')) {
+            $customTag = $request->input('custom_tag');
+            $query->whereHas('photoTags.extraTags', function ($q) use ($customTag) {
+                $q->where('tag_type', 'custom_tag')
+                    ->whereHas('extraTag', function ($q2) use ($customTag) {
+                        $q2->where('key', 'like', "%{$customTag}%");
+                    });
+            });
+        }
+
+        if ($request->has('picked_up')) {
+            $pickedUp = $request->input('picked_up');
+            if ($pickedUp === 'true') {
+                $query->whereHas('photoTags', fn ($q) => $q->where('picked_up', true));
+            } elseif ($pickedUp === 'false') {
+                $query->whereHas('photoTags', fn ($q) => $q->where('picked_up', false));
+            }
+        }
+
+        if ($request->filled('country')) {
+            $query->whereHas('countryRelation', fn ($q) => $q->where('country', $request->input('country')));
+        }
+
+        if ($request->filled('state')) {
+            $query->whereHas('stateRelation', fn ($q) => $q->where('state', $request->input('state')));
+        }
+
+        if ($request->filled('city')) {
+            $query->whereHas('cityRelation', fn ($q) => $q->where('city', $request->input('city')));
+        }
+
+        if ($request->has('verified') && $request->input('verified') !== null) {
+            $query->where('verified', (int) $request->input('verified'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('datetime', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('datetime', '<=', $request->input('date_to'));
+        }
     }
 }

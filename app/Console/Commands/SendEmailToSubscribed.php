@@ -37,9 +37,9 @@ class SendEmailToSubscribed extends Command
 
         $userCount = User::where('emailsub', 1)->count();
 
-        // Subscribers not already in users table (avoid duplicates)
-        $userEmails = User::where('emailsub', 1)->pluck('email')->toArray();
-        $subscriberCount = Subscriber::whereNotIn('email', $userEmails)->count();
+        // Exclude ALL user emails from subscribers (users control their own sub via emailsub flag)
+        $userEmailSubquery = User::withoutGlobalScopes()->select('email');
+        $subscriberCount = Subscriber::whereNotIn('email', $userEmailSubquery)->count();
 
         $totalCount = $userCount + $subscriberCount;
 
@@ -78,7 +78,7 @@ class SendEmailToSubscribed extends Command
             });
 
         // ─── Subscribers (deduplicated) ──────────────────────────────
-        Subscriber::whereNotIn('email', $userEmails)
+        Subscriber::whereNotIn('email', $userEmailSubquery)
             ->orderBy('id')
             ->chunk($chunkSize, function ($subscribers) use (&$dispatched, $bar) {
                 foreach ($subscribers as $subscriber) {

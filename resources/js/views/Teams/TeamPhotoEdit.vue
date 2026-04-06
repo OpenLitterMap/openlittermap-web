@@ -18,7 +18,7 @@
                 <div class="aspect-video bg-slate-100 rounded-lg overflow-hidden mb-4">
                     <img
                         v-if="photo.filename"
-                        :src="`/storage/photos/${photo.filename}`"
+                        :src="resolvePhotoUrl(photo.filename)"
                         class="w-full h-full object-contain"
                     />
                 </div>
@@ -130,6 +130,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 
 export default {
     name: 'TeamPhotoEdit',
@@ -220,7 +221,7 @@ export default {
 
         return {
             editTags, saving, deleting, error, canEdit,
-            addTag, removeTag, save, deletePhoto, formatDate,
+            addTag, removeTag, save, deletePhoto, formatDate, resolvePhotoUrl,
         };
     },
 };

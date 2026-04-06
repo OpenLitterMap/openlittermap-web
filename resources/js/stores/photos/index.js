@@ -71,7 +71,10 @@ export const usePhotosStore = defineStore('photos', {
             this.loading.stats = true;
             this.currentFilters = { ...this.currentFilters, ...filters };
             try {
-                await Promise.all([this.GET_USERS_PHOTOS(page, this.currentFilters), this.GET_UNTAGGED_STATS()]);
+                await Promise.all([
+                    this.GET_USERS_PHOTOS(page, this.currentFilters),
+                    this.GET_UNTAGGED_STATS(this.currentFilters),
+                ]);
             } finally {
                 this.loading.photos = false;
                 this.loading.stats = false;
@@ -79,16 +82,10 @@ export const usePhotosStore = defineStore('photos', {
         },
 
         /**
-         * Just fetch photos (for pagination)
+         * Fetch photos and refresh stats (for filter/pagination changes)
          */
         async fetchPhotosOnly(page = 1, filters = {}) {
-            this.loading.photos = true;
-            this.currentFilters = { ...this.currentFilters, ...filters };
-            try {
-                await this.GET_USERS_PHOTOS(page, this.currentFilters);
-            } finally {
-                this.loading.photos = false;
-            }
+            return this.fetchUntaggedData(page, filters);
         },
 
         /**

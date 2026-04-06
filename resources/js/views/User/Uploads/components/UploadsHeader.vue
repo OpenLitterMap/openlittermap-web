@@ -1,8 +1,36 @@
 <script setup>
 import { usePhotosStore } from '@/stores/photos';
+import axios from 'axios';
 import { computed, ref, onMounted } from 'vue';
 
 const store = usePhotosStore();
+
+const exporting = ref(false);
+const exportMessage = ref('');
+
+const exportSuccess = ref(false);
+
+const exportCsv = async () => {
+    exporting.value = true;
+    exportMessage.value = '';
+
+    try {
+        const params = {
+            dateField: 'datetime',
+        };
+        if (filters.value.dateFrom) params.fromDate = filters.value.dateFrom;
+        if (filters.value.dateTo) params.toDate = filters.value.dateTo;
+
+        await axios.get('/api/user/profile/download', { params });
+        exportSuccess.value = true;
+        exportMessage.value = 'Export started — check your email for the download link.';
+    } catch {
+        exportSuccess.value = false;
+        exportMessage.value = 'Export failed. Please try again.';
+    } finally {
+        exporting.value = false;
+    }
+};
 
 const filters = ref({
     id: '',
@@ -16,11 +44,14 @@ const filters = ref({
     pickedUp: 'all', // 'all' | 'true' | 'false'
 });
 
-// Get stats from store
+// Get stats from store (updates when filters are applied)
 const totalPhotos = computed(() => store.untaggedStats.totalPhotos);
 const totalTags = computed(() => store.untaggedStats.totalTags);
 const leftToTag = computed(() => store.untaggedStats.leftToTag);
 const taggedPercentage = computed(() => store.untaggedStats.taggedPercentage);
+
+// Show header once data has loaded (even if filtered to 0)
+const hasEverLoaded = computed(() => store.pagination.total !== undefined);
 
 // Convert taggedState to API parameter
 const getTaggedParam = () => {
@@ -77,9 +108,9 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div v-if="totalPhotos > 0" class="bg-white rounded-lg shadow-sm mb-6">
+    <div v-if="hasEverLoaded" class="bg-white rounded-lg shadow-sm mb-6">
         <!-- Stats Row -->
-        <div class="grid grid-cols-4 px-6 py-2 border-b border-gray-100">
+        <div v-if="totalPhotos > 0" class="grid grid-cols-4 px-6 py-2 border-b border-gray-100">
             <!-- Total Photos Column -->
             <div class="flex items-center justify-center">
                 <div class="text-center">
@@ -123,7 +154,7 @@ onMounted(async () => {
         <div class="flex items-end gap-3 px-6 py-4 flex-wrap justify-center">
             <!-- Three-state Toggle for Tagged/Untagged/All -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Photo Status') }}</label>
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Tagged') }}</label>
                 <button
                     @click="cycleTaggedState"
                     class="px-3 py-1.5 text-xs font-medium border rounded transition-colors min-w-[90px]"
@@ -246,6 +277,20 @@ onMounted(async () => {
             >
                 {{ $t('Apply') }}
             </button>
+
+            <!-- Export CSV Button -->
+            <button
+                @click="exportCsv"
+                :disabled="exporting"
+                class="px-4 py-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+            >
+                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+            </button>
+        </div>
+
+        <!-- Export message -->
+        <div v-if="exportMessage" class="px-6 pb-3">
+            <p class="text-xs" :class="exportSuccess ? 'text-green-600' : 'text-red-600'">{{ exportMessage }}</p>
         </div>
     </div>
 </template>

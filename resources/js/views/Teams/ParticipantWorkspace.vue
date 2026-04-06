@@ -5,7 +5,7 @@
             <div class="max-w-4xl mx-auto flex items-center justify-between">
                 <div>
                     <h1 class="text-lg font-semibold text-white">{{ session?.team_name }}</h1>
-                    <p class="text-sm text-white/40">{{ session?.display_name }} (Slot {{ session?.slot_number }})</p>
+                    <p class="text-sm text-white/60">{{ session?.display_name }} (Slot {{ session?.slot_number }})</p>
                 </div>
                 <button
                     class="text-sm text-red-400 hover:text-red-300 font-medium transition-colors"
@@ -25,7 +25,7 @@
                     class="px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors"
                     :class="activeTab === tab.id
                         ? 'border-emerald-400 text-emerald-400'
-                        : 'border-transparent text-white/40 hover:text-white/60'"
+                        : 'border-transparent text-white/60 hover:text-white/80'"
                     @click="activeTab = tab.id"
                 >
                     {{ tab.label }}
@@ -60,7 +60,7 @@
                             class="hidden"
                             @change="handleFileSelect"
                         />
-                        <p v-if="!uploadPreview" class="text-white/30">
+                        <p v-if="!uploadPreview" class="text-white/50">
                             Click to take a photo or select from gallery
                         </p>
                         <img
@@ -88,11 +88,11 @@
 
             <!-- My Photos Tab -->
             <div v-if="activeTab === 'photos'">
-                <div v-if="photos.length === 0 && !loadingPhotos" class="text-center py-12 text-white/30">
+                <div v-if="photos.length === 0 && !loadingPhotos" class="text-center py-12 text-white/50">
                     No photos yet. Upload your first photo!
                 </div>
 
-                <div v-else-if="loadingPhotos" class="text-center py-12 text-white/30">Loading...</div>
+                <div v-else-if="loadingPhotos" class="text-center py-12 text-white/50">Loading...</div>
 
                 <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div
@@ -102,7 +102,7 @@
                     >
                         <div class="aspect-square bg-white/5 relative">
                             <img
-                                :src="`/storage/${photo.filename}`"
+                                :src="resolvePhotoUrl(photo.filename)"
                                 class="w-full h-full object-cover"
                                 alt="Uploaded photo"
                             />
@@ -116,7 +116,7 @@
                             </span>
                         </div>
                         <div class="p-3 space-y-2">
-                            <p class="text-xs text-white/30">{{ formatDate(photo.created_at) }}</p>
+                            <p class="text-xs text-white/50">{{ formatDate(photo.created_at) }}</p>
                             <div class="flex gap-2">
                                 <button
                                     v-if="photo.total_tags === 0"
@@ -140,12 +140,12 @@
 
             <!-- Tag Tab -->
             <div v-if="activeTab === 'tag'">
-                <div v-if="!selectedPhotoId" class="text-center py-12 text-white/30">
+                <div v-if="!selectedPhotoId" class="text-center py-12 text-white/50">
                     Select a photo from "My Photos" to start tagging.
                 </div>
                 <div v-else class="bg-white/5 border border-white/10 rounded-xl p-6">
-                    <p class="text-sm text-white/50 mb-4">Tagging photo #{{ selectedPhotoId }}</p>
-                    <p class="text-white/40 text-sm">
+                    <p class="text-sm text-white/60 mb-4">Tagging photo #{{ selectedPhotoId }}</p>
+                    <p class="text-white/60 text-sm">
                         Use the full tagging interface at
                         <router-link :to="`/tag?photo=${selectedPhotoId}`" class="text-emerald-400 hover:underline">
                             /tag?photo={{ selectedPhotoId }}
@@ -162,6 +162,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 
 const router = useRouter();
 const toast = useToast();

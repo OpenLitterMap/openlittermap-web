@@ -3,7 +3,7 @@
         <div class="max-w-md w-full">
             <div class="text-center mb-8">
                 <h1 class="text-2xl font-bold text-white">Join a Session</h1>
-                <p class="text-white/50 mt-2 text-sm">
+                <p class="text-white/60 mt-2 text-sm">
                     Enter the session code provided by your teacher to start collecting litter data.
                 </p>
             </div>
@@ -15,7 +15,7 @@
                         v-model="token"
                         type="text"
                         placeholder="Paste your session code here"
-                        class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                        class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm font-mono text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                         :class="error ? 'border-red-400/50' : ''"
                         @input="error = ''"
                     />

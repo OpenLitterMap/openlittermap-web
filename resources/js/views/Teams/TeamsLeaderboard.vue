@@ -1,13 +1,13 @@
 <template>
     <div>
-        <h1 class="text-2xl font-bold text-slate-800 mb-6">Teams Leaderboard</h1>
+        <h1 class="text-2xl font-bold text-white mb-6">Teams Leaderboard</h1>
 
-        <p v-if="loading" class="text-slate-500">Loading leaderboard...</p>
+        <p v-if="loading" class="text-white/60">Loading leaderboard...</p>
 
         <template v-else>
-            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+            <div class="bg-white/5 border border-white/10 rounded-xl overflow-x-auto">
                 <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-600 text-left">
+                    <thead class="border-b border-white/10 text-white/60 text-left">
                         <tr>
                             <th class="px-4 py-3 font-medium text-center w-16">#</th>
                             <th class="px-4 py-3 font-medium">Team</th>
@@ -16,11 +16,11 @@
                             <th class="px-4 py-3 font-medium text-right">Created</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-white/5">
                         <tr
                             v-for="(team, i) in teams"
                             :key="team.id"
-                            class="hover:bg-slate-50"
+                            class="hover:bg-white/[0.03]"
                         >
                             <td class="px-4 py-3 text-center font-medium"
                                 :class="{
@@ -32,24 +32,24 @@
                             >
                                 {{ rank(i) }}
                             </td>
-                            <td class="px-4 py-3 font-medium">{{ team.name }}</td>
-                            <td class="px-4 py-3 text-right tabular-nums">{{ team.total_tags?.toLocaleString() }}</td>
-                            <td class="px-4 py-3 text-right tabular-nums">{{ team.total_photos?.toLocaleString() }}</td>
-                            <td class="px-4 py-3 text-right text-slate-500 text-xs">
+                            <td class="px-4 py-3 font-medium text-white">{{ team.name }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ team.total_tags?.toLocaleString() }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-white/70">{{ team.total_photos?.toLocaleString() }}</td>
+                            <td class="px-4 py-3 text-right text-white/50 text-xs">
                                 {{ formatDate(team.created_at) }}
                             </td>
                         </tr>
                     </tbody>
                 </table>
 
-                <p v-if="!teams.length" class="p-6 text-center text-slate-400">
+                <p v-if="!teams.length" class="p-6 text-center text-white/50">
                     No teams on the leaderboard yet.
                 </p>
             </div>
 
             <!-- Pagination -->
             <div v-if="lastPage > 1" class="flex items-center justify-between mt-4">
-                <p class="text-sm text-slate-500">
+                <p class="text-sm text-white/50">
                     {{ total }} {{ total === 1 ? 'team' : 'teams' }}
                 </p>
                 <div class="flex gap-1">
@@ -58,8 +58,8 @@
                         :key="p"
                         class="px-3 py-1 rounded text-sm font-medium transition-colors"
                         :class="p === currentPage
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'"
                         @click="goToPage(p)"
                     >
                         {{ p }}

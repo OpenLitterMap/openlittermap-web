@@ -290,11 +290,15 @@ export const useTeamsStore = defineStore('teams', {
             }
         },
 
-        async downloadTeamData(teamId) {
+        async downloadTeamData(teamId, dateFilter = {}) {
             try {
-                await axios.post('/api/teams/download', { team_id: teamId });
+                await axios.post('/api/teams/download', {
+                    team_id: teamId,
+                    ...dateFilter,
+                });
             } catch (e) {
                 console.error('downloadTeamData', e);
+                throw e;
             }
         },
 

@@ -1,7 +1,7 @@
 <template>
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900 py-8 px-4">
         <div class="max-w-lg mx-auto">
-            <router-link to="/teams" class="inline-flex items-center text-sm text-white/40 hover:text-white/60 mb-4 transition-colors">
+            <router-link to="/teams" class="inline-flex items-center text-sm text-white/60 hover:text-white/80 mb-4 transition-colors">
                 <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -11,7 +11,7 @@
             <!-- No remaining teams and not a school manager -->
             <div v-if="remaining <= 0 && !isSchoolManager" class="bg-white/5 border border-white/10 rounded-xl p-6">
                 <h2 class="text-lg font-semibold text-white mb-2">{{ $t('Want to set up a team?') }}</h2>
-                <p class="text-white/50 text-sm">
+                <p class="text-white/60 text-sm">
                     {{ $t("Contact us to set up a team for your school. We'll assign you as a school manager so you can create and manage your team.") }}
                 </p>
                 <a
@@ -46,7 +46,7 @@
                             type="text"
                             required
                             placeholder="My Awesome Team"
-                            class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                            class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                             :class="errors.name ? 'border-red-400/50' : ''"
                             @input="teamsStore.clearError('name')"
                         />
@@ -56,13 +56,13 @@
                     <!-- Identifier -->
                     <div>
                         <label class="block text-sm font-medium text-white/70 mb-1">{{ $t('Unique team ID') }}</label>
-                        <p class="text-xs text-white/30 mb-1">{{ $t('Share this code so others can join your team.') }}</p>
+                        <p class="text-xs text-white/50 mb-1">{{ $t('Share this code so others can join your team.') }}</p>
                         <input
                             v-model="identifier"
                             type="text"
                             required
                             placeholder="Awesome2026"
-                            class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                            class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                             :class="errors.identifier ? 'border-red-400/50' : ''"
                             @input="teamsStore.clearError('identifier')"
                         />
@@ -88,7 +88,7 @@
                                     alt="Logo preview"
                                 />
                                 <template v-else>
-                                    <p class="text-white/30 text-sm">{{ $t('Click or drag to upload logo') }}</p>
+                                    <p class="text-white/50 text-sm">{{ $t('Click or drag to upload logo') }}</p>
                                     <p class="text-white/20 text-xs mt-1">PNG, JPG — max 2MB</p>
                                 </template>
                                 <button
@@ -117,7 +117,7 @@
                                 type="email"
                                 required
                                 placeholder="teacher@school.ie"
-                                class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                                 :class="errors.contact_email ? 'border-red-400/50' : ''"
                                 @input="teamsStore.clearError('contact_email')"
                             />
@@ -129,7 +129,7 @@
                                 v-model="county"
                                 type="text"
                                 placeholder="Roscommon"
-                                class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                             />
                         </div>
                         <div class="grid grid-cols-2 gap-4">
@@ -139,7 +139,7 @@
                                     v-model="academicYear"
                                     type="text"
                                     placeholder="2025/2026"
-                                    class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                    class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                                 />
                             </div>
                             <div>
@@ -148,20 +148,20 @@
                                     v-model="classGroup"
                                     type="text"
                                     placeholder="5th Class"
-                                    class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                    class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                                 />
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-white/70 mb-1">{{ $t('Max participants') }}</label>
-                            <p class="text-xs text-white/30 mb-1">{{ $t('Maximum number of students who can join this team.') }}</p>
+                            <p class="text-xs text-white/50 mb-1">{{ $t('Maximum number of students who can join this team.') }}</p>
                             <input
                                 v-model.number="maxParticipants"
                                 type="number"
                                 min="1"
                                 max="500"
                                 placeholder="30"
-                                class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                                 :class="errors.max_participants ? 'border-red-400/50' : ''"
                                 @input="teamsStore.clearError('max_participants')"
                             />
@@ -178,7 +178,7 @@
                                 <label for="participant_sessions" class="block text-sm font-medium text-white/70">
                                     {{ $t('Enable participant sessions') }}
                                 </label>
-                                <p class="text-xs text-white/30 mt-0.5">
+                                <p class="text-xs text-white/50 mt-0.5">
                                     {{ $t('Students join with session codes instead of creating accounts. Photos are owned by the facilitator.') }}
                                 </p>
                             </div>

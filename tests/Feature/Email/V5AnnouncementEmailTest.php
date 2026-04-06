@@ -95,6 +95,21 @@ class V5AnnouncementEmailTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_unsubscribed_user_with_subscriber_row_is_fully_excluded(): void
+    {
+        Bus::fake();
+
+        // User opted out (emailsub=0) but also has a row in subscribers table
+        $user = User::factory()->create(['emailsub' => 0, 'email' => 'optout@test.com']);
+        Subscriber::create(['email' => 'optout@test.com']);
+
+        $this->artisan('olm:send-email-to-subscribed --dry-run')
+            ->expectsOutputToContain('Users (emailsub=1): 0')
+            ->expectsOutputToContain('Subscribers (unique): 0')
+            ->expectsOutputToContain('Total: 0')
+            ->assertSuccessful();
+    }
+
     // ─── Command: respects unsubscribe ───────────────────────────────
 
     public function test_unsubscribed_users_are_excluded(): void

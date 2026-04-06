@@ -9,11 +9,12 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Observers\PhotoObserver;
 use App\Services\Clustering\ClusteringService;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,6 +47,10 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewPulse', function (User $user) {
             return $user->hasRole('superadmin');
+        });
+
+        RateLimiter::for('ses-emails', function () {
+            return Limit::perSecond(12);
         });
     }
 }
