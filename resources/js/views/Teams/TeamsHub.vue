@@ -18,7 +18,7 @@
         <!-- State 1: No teams -->
         <div v-else-if="!hasTeams" class="relative max-w-xl mx-auto py-16 px-4">
             <h1 class="text-3xl font-bold text-white mb-2">{{ $t('Teams') }}</h1>
-            <p class="text-white/50 mb-8">
+            <p class="text-white/60 mb-8">
                 {{ $t('Join a team to contribute together, or create your own.') }}
             </p>
 
@@ -28,7 +28,7 @@
                 class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 mb-6"
             >
                 <h3 class="text-white font-semibold text-sm mb-1">{{ $t('Before you create your team, try OpenLitterMap yourself.') }}</h3>
-                <p class="text-white/40 text-sm mb-3">
+                <p class="text-white/60 text-sm mb-3">
                     {{ $t('Go for a short walk, photograph some litter, upload it, and tag it. This takes about 30 minutes and you\'ll understand exactly what your students will do.') }}
                 </p>
                 <router-link
@@ -43,7 +43,7 @@
                 <!-- Join -->
                 <div class="bg-white/5 border border-white/10 rounded-xl p-6">
                     <h2 class="text-lg font-semibold text-white mb-1">{{ $t('Join a Team') }}</h2>
-                    <p class="text-sm text-white/40 mb-4">
+                    <p class="text-sm text-white/60 mb-4">
                         {{ $t('Enter the team identifier shared by your team leader.') }}
                     </p>
                     <form class="space-y-3" @submit.prevent="submitJoin">
@@ -52,7 +52,7 @@
                             type="text"
                             required
                             :placeholder="$t('e.g. Awesome2026')"
-                            class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none"
+                            class="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:border-emerald-500/50 focus:outline-none"
                             :class="joinErrors.identifier ? 'border-red-500/50' : ''"
                             @input="teamsStore.clearError('identifier')"
                         />
@@ -75,7 +75,7 @@
                 <!-- Create -->
                 <div class="bg-white/5 border border-white/10 rounded-xl p-6 flex flex-col">
                     <h2 class="text-lg font-semibold text-white mb-1">{{ $t('Create a Team') }}</h2>
-                    <p class="text-sm text-white/40 mb-4 flex-1">
+                    <p class="text-sm text-white/60 mb-4 flex-1">
                         {{ $t('Start a new team for your school or community.') }}
                     </p>
                     <router-link
@@ -217,7 +217,7 @@
                             v-model="joinIdentifier"
                             type="text"
                             :placeholder="$t('Team identifier...')"
-                            class="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:border-emerald-500/50 focus:outline-none"
+                            class="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/50 focus:border-emerald-500/50 focus:outline-none"
                             @input="teamsStore.clearError('identifier')"
                             @keyup.enter="submitJoin"
                         />
@@ -231,7 +231,7 @@
                         >
                             {{ joinProcessing ? $t('Joining...') : $t('Join') }}
                         </button>
-                        <button class="px-2 py-2 text-white/30 hover:text-white/50" @click="showJoinForm = false">
+                        <button class="px-2 py-2 text-white/50 hover:text-white/70" @click="showJoinForm = false">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -267,7 +267,7 @@
                                     {{ isSchoolTeam ? $t('School') : $t('Community') }}
                                 </span>
                             </div>
-                            <p v-if="isSchoolTeam && (team?.class_group || team?.academic_year)" class="text-sm text-white/40 mt-0.5">
+                            <p v-if="isSchoolTeam && (team?.class_group || team?.academic_year)" class="text-sm text-white/60 mt-0.5">
                                 <span v-if="team?.class_group">{{ team.class_group }}</span>
                                 <span v-if="team?.class_group && team?.academic_year"> — </span>
                                 <span v-if="team?.academic_year">{{ team.academic_year }}</span>
@@ -301,15 +301,15 @@
                     <!-- Stats row -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                         <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Photos') }}</div>
+                            <div class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Photos') }}</div>
                             <div class="text-white text-2xl font-bold tabular-nums tracking-tight">{{ dashboard.photos_count }}</div>
                         </div>
                         <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Litter Tagged') }}</div>
+                            <div class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Litter Tagged') }}</div>
                             <div class="text-white text-2xl font-bold tabular-nums tracking-tight">{{ dashboard.litter_count }}</div>
                         </div>
                         <div class="bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Members') }}</div>
+                            <div class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Members') }}</div>
                             <div class="text-white text-2xl font-bold tabular-nums tracking-tight">{{ dashboard.members_count }}</div>
                         </div>
                         <div
@@ -319,7 +319,7 @@
                                 : 'border-white/10'"
                             @click="isSchoolTeam && photoStats.pending > 0 && setTab('approval')"
                         >
-                            <div class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">
+                            <div class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">
                                 {{ isSchoolTeam ? $t('Pending') : $t('Approved') }}
                             </div>
                             <div

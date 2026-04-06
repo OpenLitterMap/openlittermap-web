@@ -3,7 +3,7 @@
         <p v-if="error" class="text-red-500 text-sm mb-4">{{ error }}</p>
 
         <!-- Loading -->
-        <div v-if="loading" class="text-center py-12 text-white/40">{{ $t('Loading...') }}</div>
+        <div v-if="loading" class="text-center py-12 text-white/60">{{ $t('Loading...') }}</div>
 
         <!-- Empty state with guided setup -->
         <div v-else-if="participants.length === 0" class="max-w-lg mx-auto py-8">
@@ -12,12 +12,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 <h3 class="text-lg font-semibold text-white mb-2">{{ $t('Create participant slots') }}</h3>
-                <p class="text-sm text-white/40 mb-6">
+                <p class="text-sm text-white/60 mb-6">
                     {{ $t('Each slot gets a unique session code that a student enters to start uploading photos. No accounts needed.') }}
                 </p>
 
                 <div class="flex items-center justify-center gap-3">
-                    <label class="text-sm text-white/50">{{ $t('How many students?') }}</label>
+                    <label class="text-sm text-white/60">{{ $t('How many students?') }}</label>
                     <input
                         v-model.number="slotCount"
                         type="number"
@@ -80,7 +80,7 @@
                 >
                     <div class="flex items-center justify-between mb-3">
                         <div>
-                            <span class="text-xs font-mono text-white/30">Slot {{ p.slot_number }}</span>
+                            <span class="text-xs font-mono text-white/50">Slot {{ p.slot_number }}</span>
                             <h3 class="font-medium text-white">{{ p.display_name }}</h3>
                         </div>
                         <span
@@ -93,14 +93,14 @@
                         </span>
                     </div>
 
-                    <div class="text-sm text-white/40 space-y-1 mb-3">
+                    <div class="text-sm text-white/60 space-y-1 mb-3">
                         <p>{{ $t('Photos') }}: {{ p.photo_count ?? 0 }}</p>
                         <p v-if="p.last_active_at">{{ $t('Last active') }}: {{ formatDate(p.last_active_at) }}</p>
                     </div>
 
                     <!-- Token display (only after create/reset) -->
                     <div v-if="revealedTokens[p.id]" class="mb-3">
-                        <p class="text-xs text-white/30 mb-1">{{ $t('Session Code') }}:</p>
+                        <p class="text-xs text-white/50 mb-1">{{ $t('Session Code') }}:</p>
                         <div class="flex items-center gap-2">
                             <code class="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded font-mono break-all flex-1 text-white/70">
                                 {{ revealedTokens[p.id] }}

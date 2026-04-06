@@ -4,7 +4,7 @@
 
         <!-- Status -->
         <div>
-            <label class="text-xs text-gray-400 block mb-1.5">Status</label>
+            <label class="text-xs text-gray-300 block mb-1.5">Status</label>
             <div class="space-y-1">
                 <button
                     v-for="opt in statusOptions"
@@ -22,7 +22,7 @@
 
         <!-- Date range -->
         <div>
-            <label class="text-xs text-gray-400 block mb-1.5">Date From</label>
+            <label class="text-xs text-gray-300 block mb-1.5">Date From</label>
             <input
                 type="date"
                 :value="dateFrom"
@@ -32,7 +32,7 @@
         </div>
 
         <div>
-            <label class="text-xs text-gray-400 block mb-1.5">Date To</label>
+            <label class="text-xs text-gray-300 block mb-1.5">Date To</label>
             <input
                 type="date"
                 :value="dateTo"
@@ -44,7 +44,7 @@
         <!-- Reset -->
         <button
             @click="$emit('reset')"
-            class="w-full px-3 py-1.5 text-sm text-gray-400 hover:text-white border border-gray-600 rounded hover:border-gray-500 transition-colors"
+            class="w-full px-3 py-1.5 text-sm text-gray-300 hover:text-white border border-gray-600 rounded hover:border-gray-500 transition-colors"
         >
             Reset Filters
         </button>

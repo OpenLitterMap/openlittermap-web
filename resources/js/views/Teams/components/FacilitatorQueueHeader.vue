@@ -4,10 +4,10 @@
         <div class="flex items-center gap-4">
             <div class="text-sm">
                 <span class="text-yellow-400 font-semibold">{{ pendingCount }}</span>
-                <span class="text-gray-400"> pending</span>
+                <span class="text-gray-300"> pending</span>
             </div>
 
-            <div v-if="photo" class="flex items-center gap-3 text-sm text-gray-400">
+            <div v-if="photo" class="flex items-center gap-3 text-sm text-gray-300">
                 <span>
                     Photo <span class="text-white font-mono">#{{ photo.id }}</span>
                 </span>
@@ -27,7 +27,7 @@
             >
                 <span class="hidden sm:inline text-gray-500 text-xs mr-1">J</span> Prev
             </button>
-            <span class="text-gray-400 text-sm">
+            <span class="text-gray-300 text-sm">
                 {{ currentIndex + 1 }} / {{ totalOnPage }}
             </span>
             <button

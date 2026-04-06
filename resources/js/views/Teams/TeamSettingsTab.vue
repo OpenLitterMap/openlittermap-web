@@ -2,7 +2,7 @@
     <div class="space-y-8 max-w-3xl">
         <!-- Edit Team (leader only) -->
         <section v-if="isLeader" class="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h2 class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Team Details') }}</h2>
+            <h2 class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Team Details') }}</h2>
 
             <div class="space-y-4">
                 <SettingsField
@@ -21,14 +21,14 @@
 
         <!-- Privacy & Safeguarding (school teams) -->
         <section v-if="isSchoolTeam" class="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h2 class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Privacy & Safeguarding') }}</h2>
+            <h2 class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Privacy & Safeguarding') }}</h2>
 
             <div class="space-y-4">
                 <!-- Safeguarding is always on for school teams — informational -->
                 <div class="flex items-center justify-between gap-4 py-1">
                     <div>
                         <div class="text-white text-sm">{{ $t('Mask student identities') }}</div>
-                        <div class="text-white/30 text-xs">{{ $t('Student names and usernames are never visible. All contributions attributed to the school.') }}</div>
+                        <div class="text-white/50 text-xs">{{ $t('Student names and usernames are never visible. All contributions attributed to the school.') }}</div>
                     </div>
                     <div class="relative w-11 h-6 rounded-full bg-emerald-500 opacity-60 cursor-not-allowed">
                         <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full translate-x-5"></span>
@@ -48,13 +48,13 @@
 
         <!-- Privacy Settings (community teams only) -->
         <section v-if="!isSchoolTeam" class="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h2 class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Privacy') }}</h2>
-            <p class="text-sm text-white/30 mb-4">
+            <h2 class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Privacy') }}</h2>
+            <p class="text-sm text-white/50 mb-4">
                 {{ $t('Control how your name and username appear on this team\'s maps and leaderboards.') }}
             </p>
 
             <div v-if="privacyTeam" class="space-y-3">
-                <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{{ $t('Team Map') }}</p>
+                <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest">{{ $t('Team Map') }}</p>
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" v-model="privacy.show_name_maps" class="rounded bg-white/5 border-white/20 text-emerald-500 focus:ring-emerald-500" />
                     <span class="text-sm text-white/70">{{ $t('Show my name') }}</span>
@@ -71,7 +71,7 @@
                     {{ $t("You won't appear on the team map.") }}
                 </p>
 
-                <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mt-4">{{ $t('Team Leaderboard') }}</p>
+                <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mt-4">{{ $t('Team Leaderboard') }}</p>
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" v-model="privacy.show_name_leaderboards" class="rounded bg-white/5 border-white/20 text-emerald-500 focus:ring-emerald-500" />
                     <span class="text-sm text-white/70">{{ $t('Show my name') }}</span>
@@ -103,7 +103,7 @@
 
         <!-- Visibility & Data (leader only) -->
         <section v-if="isLeader" class="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h2 class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Visibility & Data') }}</h2>
+            <h2 class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-4">{{ $t('Visibility & Data') }}</h2>
 
             <div class="space-y-4">
                 <SettingsToggle
@@ -116,7 +116,7 @@
                 <div class="flex items-center justify-between pt-4 border-t border-white/10">
                     <div>
                         <p class="text-sm text-white">{{ $t('Download team data') }}</p>
-                        <p class="text-xs text-white/30">{{ $t('Export all team photo data as CSV.') }}</p>
+                        <p class="text-xs text-white/50">{{ $t('Export all team photo data as CSV.') }}</p>
                     </div>
                     <button
                         class="px-3 py-1.5 text-sm font-medium rounded-lg border border-white/20 text-white/60 hover:bg-white/5 transition-colors"
@@ -135,7 +135,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-white">{{ $t('Leave this team') }}</p>
-                    <p class="text-xs text-white/30">
+                    <p class="text-xs text-white/50">
                         {{ team?.members <= 1
                             ? $t('You are the only member — leaving will leave the team empty.')
                             : $t('Your uploads will remain attributed to this team.')

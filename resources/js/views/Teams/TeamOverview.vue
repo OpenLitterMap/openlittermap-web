@@ -96,7 +96,7 @@
 
             <!-- Join code block -->
             <div v-if="!team?.participant_sessions_enabled" class="mt-6 pt-5 border-t border-white/10">
-                <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-2">{{ $t('Your join code') }}</p>
+                <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-2">{{ $t('Your join code') }}</p>
                 <div class="flex items-center gap-3">
                     <code class="text-lg font-mono font-bold text-white bg-white/5 border border-white/10 px-4 py-2 rounded-lg tracking-wider">
                         {{ team?.identifier }}
@@ -108,24 +108,24 @@
                         {{ $t('Copy') }}
                     </button>
                 </div>
-                <p class="text-white/30 text-xs mt-2">
+                <p class="text-white/50 text-xs mt-2">
                     {{ $t('Share this code with students so they can join your team after creating an account.') }}
                 </p>
             </div>
 
             <!-- Onboarding paths explainer (school teams) -->
             <div v-if="isSchoolTeam && !onboardingDone" class="mt-6 pt-5 border-t border-white/10">
-                <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-3">{{ $t('Two ways to onboard students') }}</p>
+                <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-3">{{ $t('Two ways to onboard students') }}</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="bg-white/5 border border-white/10 rounded-lg p-4">
                         <p class="text-sm font-medium text-white mb-1">{{ $t('Join code') }}</p>
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-white/60">
                             {{ $t('Students create their own OpenLitterMap accounts and join your team. Best for older students or ongoing programs.') }}
                         </p>
                     </div>
                     <div class="bg-white/5 border border-white/10 rounded-lg p-4">
                         <p class="text-sm font-medium text-white mb-1">{{ $t('Participant sessions') }}</p>
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-white/60">
                             {{ $t('You create numbered slots. Students enter a code — no accounts needed. Best for younger students or one-off workshops.') }}
                         </p>
                         <button
@@ -143,11 +143,11 @@
         <div class="bg-white/5 border border-white/10 rounded-xl p-6">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                    <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Team Identifier') }}</p>
+                    <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Team Identifier') }}</p>
                     <div class="flex items-center gap-2">
                         <code class="text-sm font-mono bg-white/5 border border-white/10 px-2 py-1 rounded text-white">{{ team?.identifier }}</code>
                         <button
-                            class="p-1 text-white/30 hover:text-white/60 transition-colors"
+                            class="p-1 text-white/50 hover:text-white/70 transition-colors"
                             :title="$t('Copy identifier')"
                             @click="copyIdentifier"
                         >
@@ -156,14 +156,14 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs text-white/30 mt-1">{{ $t('Share this code so others can join.') }}</p>
+                    <p class="text-xs text-white/50 mt-1">{{ $t('Share this code so others can join.') }}</p>
                 </div>
                 <div>
-                    <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Created') }}</p>
+                    <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Created') }}</p>
                     <p class="text-sm text-white/70">{{ formatDate(team?.created_at) }}</p>
                 </div>
                 <div>
-                    <p class="text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Members') }}</p>
+                    <p class="text-white/60 text-[11px] font-semibold uppercase tracking-widest mb-1">{{ $t('Members') }}</p>
                     <p class="text-sm text-white/70">{{ team?.members ?? 0 }}</p>
                 </div>
             </div>
@@ -185,7 +185,7 @@
                                 {{ $t('Name') }}
                                 <span v-if="sortKey === 'name'" class="ml-0.5">{{ sortAsc ? '↑' : '↓' }}</span>
                             </th>
-                            <th class="px-4 py-3 font-medium text-white/50 text-left text-[11px] uppercase tracking-widest">{{ $t('Type') }}</th>
+                            <th class="px-4 py-3 font-medium text-white/60 text-left text-[11px] uppercase tracking-widest">{{ $t('Type') }}</th>
                             <th
                                 class="px-4 py-3 font-medium text-right text-[11px] uppercase tracking-widest cursor-pointer select-none transition-colors"
                                 :class="sortKey === 'members' ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'"
@@ -241,7 +241,7 @@
                                 >{{ $t('Active') }}</span>
                                 <button
                                     v-else
-                                    class="text-xs text-white/40 hover:text-emerald-400 font-medium transition-colors"
+                                    class="text-xs text-white/60 hover:text-emerald-400 font-medium transition-colors"
                                     @click="$emit('switch-team', t.id)"
                                 >
                                     {{ $t('Switch') }}

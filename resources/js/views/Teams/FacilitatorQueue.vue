@@ -37,7 +37,7 @@
 
         <!-- Loading -->
         <div v-if="photosStore.loading" class="flex-1 flex items-center justify-center">
-            <div class="text-gray-400">Loading photos...</div>
+            <div class="text-gray-300">Loading photos...</div>
         </div>
 
         <!-- Empty state -->
@@ -54,7 +54,7 @@
                 />
             </svg>
             <h2 class="text-white text-xl font-semibold mb-2">Queue is clear!</h2>
-            <p class="text-gray-400">No photos match the current filters.</p>
+            <p class="text-gray-300">No photos match the current filters.</p>
         </div>
 
         <!-- Main content: 3-panel layout -->
@@ -128,7 +128,7 @@
             >
                 Prev Page
             </button>
-            <span class="text-gray-400 text-sm">
+            <span class="text-gray-300 text-sm">
                 Page {{ photosStore.photos.current_page }} / {{ photosStore.photos.last_page }}
             </span>
             <button

@@ -21,6 +21,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 
 const props = defineProps({
     filename: {
@@ -36,16 +37,7 @@ const props = defineProps({
 const imageError = ref(false);
 const imageLoaded = ref(false);
 
-// Construct full image URL
-const imageSrc = computed(() => {
-    // If it's already a full URL, use it as is
-    if (props.filename.startsWith('http')) {
-        return props.filename;
-    }
-    // Otherwise, prepend the base URL (adjust this to match your setup)
-    // You might need to use an environment variable or config here
-    return `${window.location.origin}${props.filename}`;
-});
+const imageSrc = computed(() => resolvePhotoUrl(props.filename));
 
 const fileName = computed(() => {
     if (!props.filename) return 'No filename';

@@ -446,19 +446,41 @@ class TeamPhotosController extends Controller
         $points = Photo::where('team_id', $team->id)
             ->whereNotNull('lat')
             ->whereNotNull('lon')
-            ->select(['id', 'lat', 'lon', 'verified', 'is_public', 'total_tags', 'created_at'])
+            ->with(['user:id,name,username,show_username_maps,show_name_maps,global_flag'])
+            ->select([
+                'id', 'user_id', 'lat', 'lon', 'verified', 'is_public',
+                'total_tags', 'remaining', 'filename', 'datetime', 'summary',
+                'created_at',
+            ])
             ->orderByDesc('created_at')
             ->limit(5000)
             ->get()
-            ->map(fn ($photo) => [
-                'id' => $photo->id,
-                'lat' => $photo->lat,
-                'lng' => $photo->lon,
-                'tags' => $photo->total_tags,
-                'verified' => $photo->verified->value,
-                'is_public' => $photo->is_public,
-                'date' => $photo->created_at->toDateString(),
-            ]);
+            ->map(function ($photo) use ($team) {
+                $applySafeguarding = $team->safeguarding;
+
+                return [
+                    'id' => $photo->id,
+                    'lat' => $photo->lat,
+                    'lng' => $photo->lon,
+                    'tags' => $photo->total_tags,
+                    'verified' => $photo->verified->value,
+                    'is_public' => $photo->is_public,
+                    'date' => $photo->created_at->toDateString(),
+                    // Popup fields — same shape as global map PointsController::show
+                    'filename' => $photo->filename,
+                    'datetime' => $photo->datetime,
+                    'picked_up' => $photo->picked_up,
+                    'summary' => $photo->summary,
+                    'team' => $team->name,
+                    'name' => $applySafeguarding ? null : (
+                        $photo->user && $photo->user->show_name_maps ? $photo->user->name : null
+                    ),
+                    'username' => $applySafeguarding ? null : (
+                        $photo->user && $photo->user->show_username_maps ? $photo->user->username : null
+                    ),
+                    'flag' => $applySafeguarding ? null : $photo->user?->global_flag,
+                ];
+            });
 
         return response()->json([
             'success' => true,

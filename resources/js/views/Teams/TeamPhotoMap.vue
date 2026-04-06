@@ -36,6 +36,8 @@
 <script>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
+import { popupHelper } from '@/views/Maps/helpers/popup.js';
+import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 
 export default {
     name: 'TeamPhotoMap',
@@ -57,7 +59,7 @@ export default {
         const initMap = () => {
             if (!mapContainer.value || !window.L) return;
 
-            map = window.L.map(mapContainer.value).setView([53.35, -6.26], 7); // Cork/Dublin default
+            map = window.L.map(mapContainer.value).setView([53.35, -6.26], 7);
 
             window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
@@ -67,6 +69,33 @@ export default {
             markerGroup = window.L.layerGroup().addTo(map);
 
             renderMarkers();
+        };
+
+        const loadPopupImage = (popupEl, point) => {
+            const img = popupEl?.querySelector('.leaflet-litter-img');
+            if (!img) return;
+
+            if (point.filename) {
+                const url = resolvePhotoUrl(point.filename);
+                img.src = url;
+                img.onload = () => {
+                    img.classList.remove('leaflet-litter-img--hidden');
+                    const wrap = img.closest('.popup-image-wrap');
+                    if (wrap) wrap.classList.remove('popup-image-wrap--loading');
+                };
+                img.style.cursor = 'pointer';
+                img.title = 'View full image';
+                img.onclick = () => window.open(url, '_blank');
+
+                const wrap = img.closest('.popup-image-wrap');
+                if (wrap && !wrap.querySelector('.popup-image-gradient')) {
+                    const gradient = document.createElement('div');
+                    gradient.className = 'popup-image-gradient';
+                    wrap.appendChild(gradient);
+                }
+            } else {
+                popupHelper.showAwaitingVerification(img);
+            }
         };
 
         const renderMarkers = () => {
@@ -88,13 +117,17 @@ export default {
                     fillOpacity: 0.8,
                 });
 
-                marker.bindPopup(`
-                    <strong>${point.tags} items</strong><br/>
-                    <span style="font-size:12px;color:#64748b">${point.date}</span><br/>
-                    <span style="font-size:11px;color:${point.is_public ? '#22c55e' : '#f59e0b'}">
-                        ${point.is_public ? 'Published' : 'Pending'}
-                    </span>
-                `);
+                marker.on('click', () => {
+                    const content = popupHelper.getContent(point);
+
+                    const popup = window.L.popup(popupHelper.popupOptions)
+                        .setLatLng([point.lat, point.lng])
+                        .setContent(content)
+                        .openOn(map);
+
+                    // Load image directly (not via signed-url — pending team photos are is_public=false)
+                    loadPopupImage(popup.getElement(), point);
+                });
 
                 markerGroup.addLayer(marker);
             });
