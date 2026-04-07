@@ -64,6 +64,6 @@
     "postcss-nesting": "^13.0.1",
     "prettier": "^3.4.2",
     "sass-embedded": "^1.83.0",
-    "vite": "^6.0.5"
+    "vite": "^6.4.2"
   }
 }
