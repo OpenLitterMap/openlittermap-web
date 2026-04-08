@@ -3,6 +3,8 @@
 namespace Tests\Unit\Exports;
 
 use App\Exports\CreateCSVExport;
+use App\Mail\ExportFailed;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
@@ -316,6 +318,81 @@ class CreateCSVExportTest extends TestCase
         $this->assertStringContainsString('test_brand_1:1', $brandsValue);
         $this->assertStringContainsString('test_brand_2:3', $brandsValue);
         $this->assertStringContainsString(';', $brandsValue);
+    }
+
+    public function test_mapped_cells_are_all_stringifiable_for_phpspreadsheet()
+    {
+        // Regression: PhpSpreadsheet's DefaultValueBinder casts every cell to string.
+        // A raw backed enum (e.g. VerificationStatus) has no __toString() and fatals the export.
+        // Guard: every cell returned by map() must be scalar, null, or Stringable.
+        // Covers BOTH user-export and team-export branches (team branch was the one that
+        // failed in production — Horizon job 5c86f106, team_id 211).
+        $team = \App\Models\Teams\Team::factory()->create();
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create([
+            'verified' => 2,
+            'user_id' => $user->id,
+            'team_id' => $team->id,
+            'datetime' => now()->toDateTimeString(),
+            'lat' => 42.0,
+            'lon' => 42.0,
+            'address_array' => ['country' => 'Ireland'],
+            'summary' => ['tags' => [], 'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 0, 'custom_tags' => 0]],
+        ]);
+
+        $userExport = new CreateCSVExport(null, null, null, $user->id);
+        $teamExport = new CreateCSVExport(null, null, $team->id, null);
+
+        foreach ([$userExport, $teamExport] as $export) {
+            $mapped = $export->map($photo->fresh());
+
+            foreach ($mapped as $i => $cell) {
+                $this->assertTrue(
+                    $cell === null || is_scalar($cell) || $cell instanceof \Stringable,
+                    "Cell {$i} is not stringifiable: " . (is_object($cell) ? get_class($cell) : gettype($cell))
+                );
+            }
+
+            // verified column must be the int value, not the enum instance
+            $this->assertSame(2, $mapped[1]);
+        }
+    }
+
+    public function test_failed_method_exists_with_throwable_signature()
+    {
+        // Maatwebsite's ProxyFailures trait calls $this->sheetExport->failed($e) via direct
+        // method invocation. If someone renames or removes the method, the regression test
+        // for the email behaviour would still pass (Mail::fake intercepts before the dispatch
+        // pipeline) but the production failure-notification path would silently break.
+        // Pin the method existence and signature.
+        $this->assertTrue(method_exists(CreateCSVExport::class, 'failed'));
+
+        $reflection = new \ReflectionMethod(CreateCSVExport::class, 'failed');
+        $params = $reflection->getParameters();
+        $this->assertCount(1, $params);
+        $this->assertSame('Throwable', (string) $params[0]->getType());
+    }
+
+    public function test_failed_hook_emails_the_user()
+    {
+        Mail::fake();
+
+        $export = (new CreateCSVExport(null, null, null, 1))
+            ->notifyOnFailure('user@example.com');
+
+        $export->failed(new \RuntimeException('boom'));
+
+        Mail::assertSent(ExportFailed::class, fn ($mail) => $mail->hasTo('user@example.com'));
+    }
+
+    public function test_failed_hook_is_noop_without_notify_email()
+    {
+        Mail::fake();
+
+        $export = new CreateCSVExport(null, null, null, 1);
+        $export->failed(new \RuntimeException('boom'));
+
+        Mail::assertNothingSent();
     }
 
     public function test_types_are_mapped_from_summary()

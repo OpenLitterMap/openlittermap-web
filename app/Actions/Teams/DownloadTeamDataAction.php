@@ -25,6 +25,7 @@ class DownloadTeamDataAction
 
         /* Dispatch job to create CSV file for export */
         (new CreateCSVExport(null, null, $team->id, null, $dateFilter))
+            ->notifyOnFailure($user->email)
             ->queue($path, 's3', null, ['visibility' => 'public'])
             ->chain([
                 // These jobs are executed when above is finished.

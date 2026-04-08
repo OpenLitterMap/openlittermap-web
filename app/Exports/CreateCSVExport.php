@@ -14,6 +14,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ExportFailed;
 
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\Exportable;
@@ -25,6 +28,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $location_type, $location_id, $team_id, $user_id;
+    /** @var string|null recipient for failure notification */
+    public ?string $notifyEmail = null;
     /** @var array */
     private $dateFilter;
 
@@ -180,7 +185,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     {
         $result = [
             $row->id,
-            $row->verified->value,
+            $row->verified?->value ?? 0,
             $row->model,
             $row->datetime,
             $row->created_at,
@@ -281,6 +286,43 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         return $this->scopeQuery(
             Photo::with(['photoTags.extraTags.extraTag'])
         );
+    }
+
+    /**
+     * Fluent setter for the recipient email — used to notify the user if the export fails.
+     */
+    public function notifyOnFailure(?string $email): self
+    {
+        $this->notifyEmail = $email;
+
+        return $this;
+    }
+
+    /**
+     * Called by Maatwebsite Excel when any queued sheet job fails.
+     * We email the user so they aren't left waiting forever for a download that will never arrive.
+     */
+    public function failed(\Throwable $e): void
+    {
+        Log::error('CreateCSVExport failed', [
+            'user_id' => $this->user_id,
+            'team_id' => $this->team_id,
+            'location_type' => $this->location_type,
+            'location_id' => $this->location_id,
+            'notifyEmail' => $this->notifyEmail,
+            'error' => $e->getMessage(),
+        ]);
+
+        if ($this->notifyEmail) {
+            try {
+                Mail::to($this->notifyEmail)->send(new ExportFailed());
+            } catch (\Throwable $mailError) {
+                Log::error('Failed to send ExportFailed mail', [
+                    'to' => $this->notifyEmail,
+                    'error' => $mailError->getMessage(),
+                ]);
+            }
+        }
     }
 
     /**

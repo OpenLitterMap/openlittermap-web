@@ -69,6 +69,7 @@ class DownloadControllerNew extends Controller
 
             /* Dispatch job to create CSV file for export */
             (new CreateCSVExport($request->locationType, $location_id))
+                ->notifyOnFailure($email)
                 ->queue($path, 's3', null, ['visibility' => 'public'])
                 ->chain([
                     // These jobs are executed when above is finished.

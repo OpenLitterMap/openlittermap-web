@@ -49,6 +49,7 @@ class ProfileController extends Controller
 
         /* Dispatch job to create CSV file for export */
         (new CreateCSVExport(null, null, null, $user->id, $dateFilter))
+            ->notifyOnFailure($user->email)
             ->queue($path, 's3', null, ['visibility' => 'public'])
             ->chain([
                 // These jobs are executed when above is finished.
