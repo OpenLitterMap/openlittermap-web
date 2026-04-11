@@ -1,6 +1,6 @@
 {
   "name": "openlittermap-web",
-  "version": "5.8.4",
+  "version": "5.8.5",
   "type": "module",
   "author": "Seán Lynch",
   "license": "GPL v3",
@@ -24,7 +24,7 @@
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "autoprefixer": "^10.4.20",
-    "axios": "^1.7.9",
+    "axios": "^1.15.0",
     "chart.js": "^4.4.8",
     "filepond": "^4.32.6",
     "filepond-plugin-file-validate-size": "^2.2.8",
