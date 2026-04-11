@@ -14,6 +14,7 @@ trait HasPhotoUploads
 {
     protected TestLocationService $locationService;
     protected FakeReverseGeocodingAction|null $geocodingAction = null;
+    private static int $uploadCounter = 0;
 
     protected function setUpPhotoUploads(): void
     {
@@ -68,7 +69,7 @@ trait HasPhotoUploads
 
         $address = $this->address;
 
-        $dateTime = now()->addSeconds(rand(1, 999)); // carbon instance
+        $dateTime = now()->addSeconds(++static::$uploadCounter); // carbon instance
         $year = $dateTime->year;
         $month = $dateTime->month < 10 ? "0$dateTime->month" : $dateTime->month;
         $day = $dateTime->day < 10 ? "0$dateTime->day" : $dateTime->day;
