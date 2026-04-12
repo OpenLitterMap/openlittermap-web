@@ -48,15 +48,19 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     private bool $hasBrands = false;
     private bool $hasCustomTags = false;
 
+    /** @var array Extra filters for team exports (tag, custom_tag, picked_up, member_id, status) */
+    private array $extraFilters;
+
     public $timeout = 240;
 
-    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [])
+    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [], array $extraFilters = [])
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
         $this->team_id = $team_id;
         $this->user_id = $user_id;
         $this->dateFilter = $dateFilter;
+        $this->extraFilters = $extraFilters;
 
         // Pre-scan: find which columns actually have data for this export scope.
         // Use subqueries (not pluck) so MySQL optimizes internally for large exports.
@@ -350,13 +354,66 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $query->where('verified', '>=', VerificationStatus::ADMIN_APPROVED->value);
 
         if ($this->team_id) {
-            return $query->where('team_id', $this->team_id);
+            $query->where('team_id', $this->team_id);
         } elseif ($this->location_type === 'city') {
-            return $query->where('city_id', $this->location_id);
+            $query->where('city_id', $this->location_id);
         } elseif ($this->location_type === 'state') {
-            return $query->where('state_id', $this->location_id);
+            $query->where('state_id', $this->location_id);
         } else {
-            return $query->where('country_id', $this->location_id);
+            $query->where('country_id', $this->location_id);
+        }
+
+        $this->applyExtraFilters($query);
+
+        return $query;
+    }
+
+    /**
+     * Apply additional filters for team exports (tag, custom_tag, picked_up, member_id, status).
+     */
+    private function applyExtraFilters($query): void
+    {
+        if (empty($this->extraFilters)) {
+            return;
+        }
+
+        if (!empty($this->extraFilters['tag'])) {
+            $tag = $this->extraFilters['tag'];
+            $query->whereHas('photoTags.object', function ($q) use ($tag) {
+                $q->where('key', 'like', "%{$tag}%");
+            });
+        }
+
+        if (!empty($this->extraFilters['custom_tag'])) {
+            $customTag = $this->extraFilters['custom_tag'];
+            $query->whereHas('photoTags.extraTags', function ($q) use ($customTag) {
+                $q->where('tag_type', 'custom_tag')
+                    ->whereHas('extraTag', function ($q2) use ($customTag) {
+                        $q2->where('key', 'like', "%{$customTag}%");
+                    });
+            });
+        }
+
+        if (isset($this->extraFilters['picked_up'])) {
+            $pickedUp = $this->extraFilters['picked_up'];
+            if ($pickedUp === 'true') {
+                $query->whereHas('photoTags', fn ($q) => $q->where('picked_up', true));
+            } elseif ($pickedUp === 'false') {
+                $query->whereHas('photoTags', fn ($q) => $q->where('picked_up', false));
+            }
+        }
+
+        if (!empty($this->extraFilters['member_id'])) {
+            $query->where('user_id', (int) $this->extraFilters['member_id']);
+        }
+
+        if (!empty($this->extraFilters['status']) && $this->team_id) {
+            $status = $this->extraFilters['status'];
+            if ($status === 'pending') {
+                $query->where('is_public', false)->whereNull('team_approved_at');
+            } elseif ($status === 'approved') {
+                $query->whereNotNull('team_approved_at');
+            }
         }
     }
 }

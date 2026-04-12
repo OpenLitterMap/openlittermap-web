@@ -53,10 +53,11 @@ class DownloadTeamDataTest extends TestCase
         Mail::assertNothingSent();
     }
 
-    public function test_a_regular_member_cannot_download_a_teams_data()
+    public function test_a_regular_member_can_download_a_teams_data()
     {
         Mail::fake();
         Storage::fake('s3');
+        Carbon::setTestNow(now());
         /** @var User $member */
         $member = User::factory()->create();
         /** @var User $leader */
@@ -68,8 +69,30 @@ class DownloadTeamDataTest extends TestCase
         $response = $this->actingAs($member)->postJson("api/teams/download?team_id=$team->id");
 
         $response->assertOk();
-        $response->assertJsonFragment(['success' => false, 'message' => 'not-authorized']);
-        Mail::assertNothingSent();
+        $response->assertJson(['success' => true]);
+        Mail::assertSent(ExportWithLink::class);
+    }
+
+    public function test_a_member_can_download_with_extra_filters()
+    {
+        Mail::fake();
+        Storage::fake('s3');
+        Carbon::setTestNow(now());
+        /** @var User $leader */
+        $leader = User::factory()->create();
+        /** @var Team $team */
+        $team = Team::factory()->create(['leader' => $leader->id]);
+        $leader->teams()->attach($team);
+
+        $response = $this->actingAs($leader)->postJson("api/teams/download?team_id=$team->id", [
+            'tag' => 'butts',
+            'picked_up' => 'true',
+            'member_id' => $leader->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+        Mail::assertSent(ExportWithLink::class);
     }
 
     public function test_a_leader_can_download_with_date_filter()

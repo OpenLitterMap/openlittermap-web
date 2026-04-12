@@ -290,12 +290,26 @@ export const useTeamsStore = defineStore('teams', {
             }
         },
 
-        async downloadTeamData(teamId, dateFilter = {}) {
+        async downloadTeamData(teamId, filters = {}) {
             try {
-                await axios.post('/api/teams/download', {
-                    team_id: teamId,
-                    ...dateFilter,
-                });
+                const payload = { team_id: teamId };
+
+                // Map frontend filter keys to API params
+                if (filters.date_from) {
+                    payload.dateField = 'datetime';
+                    payload.fromDate = filters.date_from;
+                }
+                if (filters.date_to) {
+                    payload.dateField = 'datetime';
+                    payload.toDate = filters.date_to;
+                }
+                if (filters.tag) payload.tag = filters.tag;
+                if (filters.custom_tag) payload.custom_tag = filters.custom_tag;
+                if (filters.picked_up && filters.picked_up !== 'all') payload.picked_up = filters.picked_up;
+                if (filters.member_id) payload.member_id = filters.member_id;
+                if (filters.status && filters.status !== 'all') payload.status = filters.status;
+
+                await axios.post('/api/teams/download', payload);
             } catch (e) {
                 console.error('downloadTeamData', e);
                 throw e;

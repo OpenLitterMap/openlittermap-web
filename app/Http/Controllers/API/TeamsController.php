@@ -233,10 +233,6 @@ class TeamsController extends Controller
             return $this->fail('not-a-member');
         }
 
-        if (!$team->isLeader($user->id) && !$user->hasRole('school_manager')) {
-            return $this->fail('not-authorized');
-        }
-
         $dateFilter = [];
         if ($request->dateField && ($request->fromDate || $request->toDate)) {
             try {
@@ -256,7 +252,15 @@ class TeamsController extends Controller
             }
         }
 
-        $action->run($user, $team, $dateFilter);
+        $extraFilters = array_filter([
+            'tag' => $request->input('tag'),
+            'custom_tag' => $request->input('custom_tag'),
+            'picked_up' => $request->input('picked_up'),
+            'member_id' => $request->input('member_id'),
+            'status' => $request->input('status'),
+        ]);
+
+        $action->run($user, $team, $dateFilter, $extraFilters);
 
         return $this->success();
     }
