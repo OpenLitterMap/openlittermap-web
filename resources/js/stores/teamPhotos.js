@@ -39,12 +39,17 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
             this.loading = true;
 
             try {
+                // Clean null/undefined values from extra params
+                const cleanParams = Object.fromEntries(
+                    Object.entries(extraParams).filter(([, v]) => v != null),
+                );
+
                 const { data } = await axios.get('/api/teams/photos', {
                     params: {
                         team_id: teamId,
                         status: this.filter,
                         page,
-                        ...extraParams,
+                        ...cleanParams,
                     },
                 });
 

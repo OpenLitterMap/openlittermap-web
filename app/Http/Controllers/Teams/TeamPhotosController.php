@@ -34,6 +34,7 @@ class TeamPhotosController extends Controller
         $request->validate([
             'team_id' => 'required|exists:teams,id',
             'status' => 'nullable|in:pending,approved,all',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
         $user = auth()->user();
@@ -61,7 +62,10 @@ class TeamPhotosController extends Controller
             $query->whereNotNull('team_approved_at');
         }
 
-        $photos = $query->paginate(20);
+        $this->applyFilters($query, $request);
+
+        $perPage = min((int) $request->input('per_page', 20), 100);
+        $photos = $query->paginate($perPage);
 
         // Safeguarding — mask student names at API level
         $applySafeguarding = $team->safeguarding
@@ -704,6 +708,65 @@ class TeamPhotosController extends Controller
      * Stable because we order by pivot row ID (creation order), not by
      * photo data or pagination position.
      */
+    /**
+     * Apply shared filters to a team photos query.
+     */
+    private function applyFilters($query, Request $request): void
+    {
+        if ($request->has('tagged')) {
+            $request->boolean('tagged')
+                ? $query->whereNotNull('summary')
+                : $query->whereNull('summary');
+        }
+
+        if ($request->filled('id')) {
+            $id = $request->integer('id');
+            $operator = $request->input('id_operator', '=');
+            if (! in_array($operator, ['=', '>', '<'], true)) {
+                $operator = '=';
+            }
+            $query->where('id', $operator, $id);
+        }
+
+        if ($request->filled('tag')) {
+            $tag = $request->input('tag');
+            $query->whereHas('photoTags.object', function ($q) use ($tag) {
+                $q->where('key', 'like', "%{$tag}%");
+            });
+        }
+
+        if ($request->filled('custom_tag')) {
+            $customTag = $request->input('custom_tag');
+            $query->whereHas('photoTags.extraTags', function ($q) use ($customTag) {
+                $q->where('tag_type', 'custom_tag')
+                    ->whereHas('extraTag', function ($q2) use ($customTag) {
+                        $q2->where('key', 'like', "%{$customTag}%");
+                    });
+            });
+        }
+
+        if ($request->has('picked_up')) {
+            $pickedUp = $request->input('picked_up');
+            if ($pickedUp === 'true') {
+                $query->whereHas('photoTags', fn ($q) => $q->where('picked_up', true));
+            } elseif ($pickedUp === 'false') {
+                $query->whereHas('photoTags', fn ($q) => $q->where('picked_up', false));
+            }
+        }
+
+        if ($request->filled('member_id')) {
+            $query->where('user_id', $request->integer('member_id'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->where('datetime', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->where('datetime', '<=', $request->input('date_to'));
+        }
+    }
+
     protected function applySafeguarding($photos, Team $team): void
     {
         // Build stable mapping: user_id → "Student N"

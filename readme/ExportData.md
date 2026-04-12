@@ -64,7 +64,7 @@ Exports **all** user photos (any verification status). Email sent when ready.
 
 ### POST /api/teams/download — Team Data Export
 
-**Auth:** Required (Sanctum). Must be a team member.
+**Auth:** Required (Sanctum). Must be a team member (any role).
 
 **Request body:**
 
@@ -74,13 +74,16 @@ Exports **all** user photos (any verification status). Email sent when ready.
 | `dateField` | string | No | Column to filter: `created_at`, `datetime`, or `updated_at` |
 | `fromDate` | string | No | Start date (YYYY-MM-DD). Default: `2017-01-01` |
 | `toDate` | string | No | End date (YYYY-MM-DD). Default: today |
+| `tag` | string | No | Filter by tag name (partial match on litter object key) |
+| `custom_tag` | string | No | Filter by custom tag (partial match) |
+| `picked_up` | string | No | `true` or `false` — filter by picked-up status |
+| `member_id` | int | No | Filter by team member's user ID |
+| `status` | string | No | `pending`, `approved`, or `all` (team approval status) |
 
 **Response:** `{ "success": true }`
 **Error:** `{ "success": false, "message": "not-a-member" }`
 
-Only team leaders and `school_manager` role can export. Returns `{ "success": false, "message": "not-authorized" }` for other members.
-
-Exports only `verified >= ADMIN_APPROVED` team photos (includes BBOX_APPLIED, BBOX_VERIFIED, AI_READY). Email sent when ready.
+All team members can export. Exports only `verified >= ADMIN_APPROVED` team photos (includes BBOX_APPLIED, BBOX_VERIFIED, AI_READY). Extra filters narrow the export scope. Email sent when ready.
 
 ### POST /api/download — Location Data Export
 
@@ -225,19 +228,27 @@ $dateFilter = [
 - Sends `GET /api/user/profile/download` with `dateField: 'datetime'` and the current `dateFrom`/`dateTo` filter values
 - Shows inline success message: "Export started — check your email for the download link."
 
-### Teams Page (`TeamsHub.vue`)
+### Teams Photos Tab (`TeamPhotosHeader.vue` + `TeamPhotoList.vue`)
 
-- "Export CSV" button next to the period selector in the team header
-- Converts the period selector value (`today`, `week`, `month`, `year`, `all`) to `fromDate`/`toDate` date strings
-- Sends `POST /api/teams/download` with `team_id` and date filter
-- Uses toast notification for success/error feedback
-- Only visible/functional for team leaders and school managers (server returns `not-authorized` for other members)
+- Rich filter bar in the Photos tab with: status (All/Pending/Approved), tagged/untagged, picked up, photo ID, tag search, custom tag, member dropdown, date range, per page
+- "Export CSV" button sends current filters to `POST /api/teams/download`
+- All team members can export (not restricted to leaders/school managers)
+- Filter bar emits `@apply` (refresh grid) and `@export` (download CSV) events
+- Uses dark glass theme (`bg-white/5 border-white/10`, emerald accents)
 
 ### Teams Store (`stores/teams/index.js`)
 
 ```js
-async downloadTeamData(teamId, dateFilter = {}) {
-    await axios.post('/api/teams/download', { team_id: teamId, ...dateFilter });
+async downloadTeamData(teamId, filters = {}) {
+    const payload = { team_id: teamId };
+    if (filters.date_from) { payload.dateField = 'datetime'; payload.fromDate = filters.date_from; }
+    if (filters.date_to) { payload.dateField = 'datetime'; payload.toDate = filters.date_to; }
+    if (filters.tag) payload.tag = filters.tag;
+    if (filters.custom_tag) payload.custom_tag = filters.custom_tag;
+    if (filters.picked_up && filters.picked_up !== 'all') payload.picked_up = filters.picked_up;
+    if (filters.member_id) payload.member_id = filters.member_id;
+    if (filters.status && filters.status !== 'all') payload.status = filters.status;
+    await axios.post('/api/teams/download', payload);
 }
 ```
 
@@ -246,7 +257,7 @@ async downloadTeamData(teamId, dateFilter = {}) {
 | Export Type | Verification Filter | Auth | Photos Included |
 |-------------|-------------------|------|-----------------|
 | User | None | Any authenticated user (own data) | All photos (any status) |
-| Team | `verified >= ADMIN_APPROVED` | Team leader or `school_manager` only | Approved photos (ADMIN_APPROVED, BBOX_APPLIED, BBOX_VERIFIED, AI_READY) |
+| Team | `verified >= ADMIN_APPROVED` | Any team member | Approved photos (ADMIN_APPROVED, BBOX_APPLIED, BBOX_VERIFIED, AI_READY) + extra filters |
 | Location | `verified >= ADMIN_APPROVED` | Optional (email param for guests) | Approved photos (same as above) |
 
 School team photos with `is_public = false` are excluded because teacher approval is required to reach `ADMIN_APPROVED`, and approval also sets `is_public = true`.
