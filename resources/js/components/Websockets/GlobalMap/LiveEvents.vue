@@ -1,5 +1,5 @@
 <template>
-    <div class="absolute top-16 right-2 w-80 max-h-[80vh] overflow-y-scroll z-[999] text-sm p-4">
+    <div class="absolute top-16 right-2 w-80 max-h-[80vh] overflow-y-auto overflow-x-hidden z-[999] text-sm p-4">
         <transition-group
             name="list"
             @after-enter="handleAfterEnter"

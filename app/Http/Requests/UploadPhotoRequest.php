@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Photo;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -48,6 +49,16 @@ class UploadPhotoRequest extends FormRequest
     {
         $firstMessage = $validator->errors()->first();
         $errorCode = $this->resolveErrorCode($firstMessage);
+
+        Log::warning('Upload validation failed', [
+            'user_id' => auth()->id(),
+            'error_code' => $errorCode,
+            'message' => $firstMessage,
+            'errors' => $validator->errors()->toArray(),
+            'has_photo' => $this->hasFile('photo'),
+            'has_explicit_coords' => $this->has('lat') && $this->has('lon') && $this->has('date'),
+            'platform' => ($this->has('lat') && $this->has('lon') && $this->has('date')) ? 'mobile' : 'web',
+        ]);
 
         throw new HttpResponseException(response()->json([
             'success' => false,

@@ -482,6 +482,41 @@ class AddTagsToPhotoTest extends TestCase
 
     // ─── Material-only tags ───
 
+    public function test_tagging_photo_with_null_state_id_fires_event_without_error()
+    {
+        Event::fake(TagsVerifiedByAdmin::class);
+
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create([
+            'user_id' => $user->id,
+            'state_id' => null,
+            'city_id' => null,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                [
+                    'category' => 'smoking',
+                    'object' => 'butts',
+                    'quantity' => 1,
+                    'picked_up' => true,
+                ],
+            ],
+        ])->assertOk();
+
+        Event::assertDispatched(
+            TagsVerifiedByAdmin::class,
+            function (TagsVerifiedByAdmin $e) use ($photo) {
+                return $e->photo_id === $photo->id
+                    && $e->state_id === null
+                    && $e->city_id === null;
+            }
+        );
+    }
+
     public function test_material_only_tag_creates_photo_tag_with_material()
     {
         $user = User::factory()->create();

@@ -551,6 +551,41 @@ class UploadPhotoTest extends TestCase
         $this->assertEquals(\App\Enums\XpScore::Upload->xp(), $response->json('xp_awarded'));
     }
 
+    public function test_upload_succeeds_when_geocoding_returns_no_state_or_city()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        // Override with an address that has no state or city keys
+        $this->swap(
+            ReverseGeocodeLocationAction::class,
+            (new FakeReverseGeocodingAction())->withAddress([
+                'country' => 'Maldives',
+                'country_code' => 'mv',
+            ])
+        );
+
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+        ]);
+
+        $response->assertOk();
+
+        $photo = Photo::find($response->json('photo_id'));
+        $this->assertNotNull($photo);
+        $this->assertNotNull($photo->country_id);
+        $this->assertNull($photo->state_id);
+        $this->assertNull($photo->city_id);
+    }
+
     public function test_non_school_team_photo_gets_immediate_upload_xp()
     {
         Storage::fake('s3');
