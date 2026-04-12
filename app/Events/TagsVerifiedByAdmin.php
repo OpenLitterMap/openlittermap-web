@@ -15,7 +15,7 @@ class TagsVerifiedByAdmin implements ShouldBroadcast
     public int $photo_id;
     public int $user_id;
     public int $country_id;
-    public int $state_id;
+    public ?int $state_id;
     public ?int $city_id;
     public ?int $team_id;
 
@@ -30,7 +30,7 @@ class TagsVerifiedByAdmin implements ShouldBroadcast
         int $photo_id,
         int $user_id,
         int $country_id,
-        int $state_id,
+        ?int $state_id,
         ?int $city_id = null,
         ?int $team_id = null
     ) {
