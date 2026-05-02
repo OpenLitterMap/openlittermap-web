@@ -10,6 +10,18 @@ const exportMessage = ref('');
 
 const exportSuccess = ref(false);
 
+const formatSplit = ref(true);
+const formatJoined = ref(false);
+
+const exportDisabled = computed(() => exporting.value || (!formatSplit.value && !formatJoined.value));
+
+const buildFormatParam = () => {
+    const parts = [];
+    if (formatSplit.value) parts.push('split');
+    if (formatJoined.value) parts.push('joined');
+    return parts.join(',');
+};
+
 const exportCsv = async () => {
     exporting.value = true;
     exportMessage.value = '';
@@ -17,6 +29,7 @@ const exportCsv = async () => {
     try {
         const params = {
             dateField: 'datetime',
+            format: buildFormatParam(),
         };
         if (filters.value.dateFrom) params.fromDate = filters.value.dateFrom;
         if (filters.value.dateTo) params.toDate = filters.value.dateTo;
@@ -278,10 +291,25 @@ onMounted(async () => {
                 {{ $t('Apply') }}
             </button>
 
+            <!-- CSV Format Selector -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('CSV Format') }}</label>
+                <div class="flex items-center gap-3 h-[28px]">
+                    <label class="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
+                        <input type="checkbox" v-model="formatSplit" class="h-3.5 w-3.5" />
+                        {{ $t('Split') }}
+                    </label>
+                    <label class="flex items-center gap-1 text-xs text-gray-700 cursor-pointer" :title="$t('v4-style joined columns (e.g. spirits_bottle)')">
+                        <input type="checkbox" v-model="formatJoined" class="h-3.5 w-3.5" />
+                        {{ $t('Joined') }}
+                    </label>
+                </div>
+            </div>
+
             <!-- Export CSV Button -->
             <button
                 @click="exportCsv"
-                :disabled="exporting"
+                :disabled="exportDisabled"
                 class="px-4 py-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
             >
                 {{ exporting ? $t('Exporting...') : $t('Export CSV') }}

@@ -30,6 +30,9 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $dateFilter = $this->getDownloadDateFilter($request);
+        $formats = CreateCSVExport::normalizeFormats(
+            array_filter(explode(',', (string) $request->input('format', '')))
+        );
 
         $x     = new \DateTime();
         $date  = $x->format('Y-m-d');
@@ -48,7 +51,7 @@ class ProfileController extends Controller
         $path .= '_MyData_OpenLitterMap.csv';
 
         /* Dispatch job to create CSV file for export */
-        (new CreateCSVExport(null, null, null, $user->id, $dateFilter))
+        (new CreateCSVExport(null, null, null, $user->id, $dateFilter, [], $formats))
             ->notifyOnFailure($user->email)
             ->queue($path, 's3', null, ['visibility' => 'public'])
             ->chain([

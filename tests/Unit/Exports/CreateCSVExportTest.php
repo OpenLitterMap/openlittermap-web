@@ -13,8 +13,10 @@ use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\PhotoTagExtraTags;
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Services\Tags\GeneratePhotoSummaryService;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Tests\TestCase;
 
@@ -393,6 +395,212 @@ class CreateCSVExportTest extends TestCase
         $export->failed(new \RuntimeException('boom'));
 
         Mail::assertNothingSent();
+    }
+
+    public function test_migrated_alcohol_bottle_with_subtype_and_inferred_material_populates_columns()
+    {
+        // Regression: pre-Apr-12 CSV export iterated summary as a nested {catId:{objId:...}}
+        // structure, but the v5.1 summary is a flat array. Migrated alcohol/softdrinks photos
+        // (where the v4 spiritBottle/beerBottle/wineBottle/beerCan/water/fizzy keys collapse to
+        // (litter_object=bottle|can, litter_object_type=spirits|beer|wine|water|...)) had blank
+        // ALCOHOL.bottle / TYPES.spirits / MATERIALS.glass columns in the CSV. This test pins
+        // the post-fix behaviour against a real GeneratePhotoSummaryService run so any future
+        // summary-shape change re-trips the regression.
+        $alcohol = Category::firstOrCreate(['key' => 'alcohol']);
+        $bottle = LitterObject::firstOrCreate(['key' => 'bottle']);
+        $can = LitterObject::firstOrCreate(['key' => 'can']);
+        $spirits = LitterObjectType::firstOrCreate(['key' => 'spirits']);
+        $beer = LitterObjectType::firstOrCreate(['key' => 'beer']);
+        $glass = Materials::firstOrCreate(['key' => 'glass']);
+        $aluminium = Materials::firstOrCreate(['key' => 'aluminium']);
+
+        $bottleCloId = CategoryObject::firstOrCreate([
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $bottle->id,
+        ])->id;
+        $canCloId = CategoryObject::firstOrCreate([
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $can->id,
+        ])->id;
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create([
+            'verified' => 2,
+            'user_id' => $user->id,
+            'datetime' => now()->toDateTimeString(),
+            'lat' => 42.0,
+            'lon' => 42.0,
+            'address_array' => ['country' => 'Ireland'],
+            'remaining' => false,
+            'migrated_at' => now(),
+        ]);
+
+        // Spirit bottle: object=bottle, type=spirits, material=glass — qty 1
+        $ptSpirit = PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $bottle->id,
+            'category_litter_object_id' => $bottleCloId,
+            'litter_object_type_id' => $spirits->id,
+            'quantity' => 1,
+            'picked_up' => true,
+        ]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptSpirit->id, 'tag_type' => 'material', 'tag_type_id' => $glass->id, 'quantity' => 1]);
+
+        // Beer can: object=can, type=beer, material=aluminium — qty 3
+        $ptBeerCan = PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $can->id,
+            'category_litter_object_id' => $canCloId,
+            'litter_object_type_id' => $beer->id,
+            'quantity' => 3,
+            'picked_up' => true,
+        ]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptBeerCan->id, 'tag_type' => 'material', 'tag_type_id' => $aluminium->id, 'quantity' => 1]);
+
+        // Beer bottle: object=bottle (collapses with spirit), type=beer, material=glass — qty 2
+        $ptBeerBottle = PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $bottle->id,
+            'category_litter_object_id' => $bottleCloId,
+            'litter_object_type_id' => $beer->id,
+            'quantity' => 2,
+            'picked_up' => true,
+        ]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptBeerBottle->id, 'tag_type' => 'material', 'tag_type_id' => $glass->id, 'quantity' => 1]);
+
+        // Build summary the real way — through the service. Tests the actual pipeline rather
+        // than a hand-built JSON which could mask a regression in summary structure.
+        app(GeneratePhotoSummaryService::class)->run($photo->fresh());
+
+        $export = new CreateCSVExport(null, null, null, $user->id);
+        $headings = $export->headings();
+        $mapped = $export->map($photo->fresh());
+
+        $alcoholHeader = strtoupper($alcohol->key);
+        $alcoholHeaderIndex = array_search($alcoholHeader, $headings);
+        $this->assertNotFalse($alcoholHeaderIndex, 'ALCOHOL category section is missing');
+
+        // ALCOHOL.bottle = 1 (spirit) + 2 (beer) = 3
+        $bottleIndex = array_search('bottle', $headings);
+        $this->assertNotFalse($bottleIndex);
+        $this->assertEquals(3, $mapped[$bottleIndex], 'ALCOHOL.bottle column should aggregate spirit + beer bottle quantities');
+
+        // ALCOHOL.can = 3 (beer can)
+        $canIndex = array_search('can', $headings);
+        $this->assertNotFalse($canIndex);
+        $this->assertEquals(3, $mapped[$canIndex], 'ALCOHOL.can column should equal beer can quantity');
+
+        // TYPES.spirits = 1, TYPES.beer = 5 (2 bottle + 3 can)
+        $typesIndex = array_search('TYPES', $headings);
+        $this->assertNotFalse($typesIndex);
+        $spiritsIndex = array_search('spirits', $headings);
+        $beerIndex = array_search('beer', $headings);
+        $this->assertNotFalse($spiritsIndex);
+        $this->assertNotFalse($beerIndex);
+        $this->assertEquals(1, $mapped[$spiritsIndex], 'TYPES.spirits column should equal spirit bottle quantity');
+        $this->assertEquals(5, $mapped[$beerIndex], 'TYPES.beer column should aggregate beer bottle + beer can quantities');
+
+        // MATERIALS.glass = 1 (spirit) + 2 (beer bottle) = 3 (parent qty)
+        // MATERIALS.aluminium = 3 (beer can parent qty)
+        $materialsIndex = array_search('MATERIALS', $headings);
+        $this->assertNotFalse($materialsIndex);
+        $glassIndex = array_search('glass', $headings);
+        $aluminiumIndex = array_search('aluminium', $headings);
+        $this->assertNotFalse($glassIndex);
+        $this->assertNotFalse($aluminiumIndex);
+        $this->assertEquals(3, $mapped[$glassIndex], 'MATERIALS.glass column should aggregate parent qty across bottle PhotoTags');
+        $this->assertEquals(3, $mapped[$aluminiumIndex], 'MATERIALS.aluminium column should equal beer can parent qty');
+    }
+
+    public function test_total_tags_column_includes_custom_only_brand_only_and_material_extras()
+    {
+        // Regression: CSV `total_tags` column previously read summary.totals.litter, which is
+        // objects-only. Custom-only and brand-only photos showed 0 even though they have tags.
+        // The fix reads $row->total_tags (DB column), set by GeneratePhotoSummaryService to
+        // include objects + materials + brands + custom tags.
+        $category = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+            ->orderBy('id')
+            ->get()
+            ->first(fn ($c) => $c->litterObjects->count() >= 1);
+        $obj = $category->litterObjects->first();
+        $cloId = CategoryObject::where('category_id', $category->id)->where('litter_object_id', $obj->id)->value('id');
+        $unclassifiedCloId = $this->getUnclassifiedOtherCloId();
+
+        $material = Materials::orderBy('id')->first();
+        $brand = BrandList::firstOrCreate(['key' => 'totals_brand']);
+        $customTag = CustomTagNew::firstOrCreate(['key' => 'totals_custom']);
+
+        $user = User::factory()->create();
+
+        // Custom-only photo: one PhotoTag with no object, just a custom tag extra
+        $customOnlyPhoto = Photo::factory()->create([
+            'verified' => 2,
+            'user_id' => $user->id,
+            'datetime' => now()->toDateTimeString(),
+            'lat' => 42.0,
+            'lon' => 42.0,
+            'address_array' => ['country' => 'Ireland'],
+            'total_tags' => 1,
+            'summary' => [
+                'tags' => [
+                    ['clo_id' => $unclassifiedCloId, 'category_id' => 0, 'object_id' => 0, 'type_id' => null, 'quantity' => 1, 'materials' => [], 'brands' => (object) [], 'custom_tags' => [$customTag->id]],
+                ],
+                'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 0, 'custom_tags' => 1],
+            ],
+        ]);
+        $ptCustom = PhotoTag::create(['photo_id' => $customOnlyPhoto->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptCustom->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag->id, 'quantity' => 1]);
+
+        // Brand-only photo
+        $brandOnlyPhoto = Photo::factory()->create([
+            'verified' => 2,
+            'user_id' => $user->id,
+            'datetime' => now()->toDateTimeString(),
+            'lat' => 42.0,
+            'lon' => 42.0,
+            'address_array' => ['country' => 'Ireland'],
+            'total_tags' => 4,
+            'summary' => [
+                'tags' => [
+                    ['clo_id' => $unclassifiedCloId, 'category_id' => 0, 'object_id' => 0, 'type_id' => null, 'quantity' => 4, 'materials' => [], 'brands' => [(string) $brand->id => 4], 'custom_tags' => []],
+                ],
+                'totals' => ['litter' => 0, 'materials' => 0, 'brands' => 4, 'custom_tags' => 0],
+                'keys' => ['brands' => [(string) $brand->id => 'totals_brand']],
+            ],
+        ]);
+        $ptBrand = PhotoTag::create(['photo_id' => $brandOnlyPhoto->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 4]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptBrand->id, 'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 4]);
+
+        // Mixed photo: 1 object × qty 3, plus 1 material, 1 brand, 1 custom — grand total 3+3+1+3=10
+        $mixedPhoto = Photo::factory()->create([
+            'verified' => 2,
+            'user_id' => $user->id,
+            'datetime' => now()->toDateTimeString(),
+            'lat' => 42.0,
+            'lon' => 42.0,
+            'address_array' => ['country' => 'Ireland'],
+            'total_tags' => 10,
+            'summary' => [
+                'tags' => [
+                    ['clo_id' => $cloId, 'category_id' => $category->id, 'object_id' => $obj->id, 'type_id' => null, 'quantity' => 3, 'materials' => [$material->id], 'brands' => [(string) $brand->id => 1], 'custom_tags' => [$customTag->id]],
+                ],
+                'totals' => ['litter' => 3, 'materials' => 3, 'brands' => 1, 'custom_tags' => 3],
+                'keys' => ['brands' => [(string) $brand->id => 'totals_brand']],
+            ],
+        ]);
+        $ptMixed = PhotoTag::create(['photo_id' => $mixedPhoto->id, 'category_id' => $category->id, 'litter_object_id' => $obj->id, 'category_litter_object_id' => $cloId, 'quantity' => 3]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptMixed->id, 'tag_type' => 'material', 'tag_type_id' => $material->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptMixed->id, 'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $ptMixed->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $customTag->id, 'quantity' => 1]);
+
+        $export = new CreateCSVExport(null, null, null, $user->id);
+
+        $this->assertSame(1, $export->map($customOnlyPhoto->fresh())[9], 'Custom-only photo should have total_tags = 1');
+        $this->assertSame(4, $export->map($brandOnlyPhoto->fresh())[9], 'Brand-only photo should have total_tags = 4');
+        $this->assertSame(10, $export->map($mixedPhoto->fresh())[9], 'Mixed photo should have total_tags = 10 (3 objects + 3 materials + 1 brand + 3 custom)');
     }
 
     public function test_types_are_mapped_from_summary()

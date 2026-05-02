@@ -534,12 +534,41 @@ class TeamPhotosTest extends TestCase
         $this->assertEquals($this->student->username, $members[0]['username']);
     }
 
-    public function test_member_stats_requires_leader_or_permission()
+    public function test_member_stats_rejects_non_team_members()
     {
-        $response = $this->actingAs($this->student)
+        $stranger = User::factory()->create();
+
+        $response = $this->actingAs($stranger)
             ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
 
         $response->assertStatus(403);
+    }
+
+    public function test_member_stats_is_visible_to_any_team_member()
+    {
+        // Regression: previously gated to isLeader || school_manager, which made the
+        // Members tab silently empty for regular members. The data is intentionally
+        // safeguarded (pseudonyms on school teams), so any member can see it.
+        Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => true,
+            'team_approved_at' => now(),
+            'total_tags' => 7,
+        ]);
+
+        $response = $this->actingAs($this->student)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        $members = $response->json('members');
+        $this->assertCount(1, $members);
+        $this->assertEquals(1, $members[0]['total_photos']);
+        $this->assertEquals(7, $members[0]['litter_count']);
+        // Safeguarding pseudonyms still applied for non-leader school team members
+        $this->assertStringStartsWith('Student', $members[0]['name']);
     }
 
     // ─── Dashboard with Verification Breakdown ────────

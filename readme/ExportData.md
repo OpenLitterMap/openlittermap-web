@@ -57,6 +57,7 @@ User receives email with S3 download URL
 | `dateField` | string | Column to filter: `created_at`, `datetime`, or `updated_at` |
 | `fromDate` | string | Start date (YYYY-MM-DD). Default: `2017-01-01` |
 | `toDate` | string | End date (YYYY-MM-DD). Default: today |
+| `format` | string | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. |
 
 **Response:** `{ "success": true }`
 
@@ -79,6 +80,7 @@ Exports **all** user photos (any verification status). Email sent when ready.
 | `picked_up` | string | No | `true` or `false` — filter by picked-up status |
 | `member_id` | int | No | Filter by team member's user ID |
 | `status` | string | No | `pending`, `approved`, or `all` (team approval status) |
+| `format` | string | No | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. |
 
 **Response:** `{ "success": true }`
 **Error:** `{ "success": false, "message": "not-a-member" }`
@@ -96,6 +98,7 @@ All team members can export. Exports only `verified >= ADMIN_APPROVED` team phot
 | `locationType` | string | Yes | `country`, `state`, or `city` |
 | `locationId` | int | Yes | Location ID |
 | `email` | string | No | Required if unauthenticated |
+| `format` | string | No | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. |
 
 **Response:** `{ "success": true }`
 
@@ -118,7 +121,7 @@ The CSV has four sections:
 | `lon` | `photos.lon` |
 | `picked up` | Inverted from `photos.remaining` (`Yes`/`No`) |
 | `address` | `photos.display_name` accessor (derived from `address_array` JSON) |
-| `total_tags` | `summary.totals.litter` (fallback: `photos.total_tags`) |
+| `total_tags` | `photos.total_tags` (sum of objects + materials + brands + custom — set by `GeneratePhotoSummaryService`) |
 
 ### 2. Category/object columns (~180 dynamic)
 
@@ -261,6 +264,40 @@ async downloadTeamData(teamId, filters = {}) {
 | Location | `verified >= ADMIN_APPROVED` | Optional (email param for guests) | Approved photos (same as above) |
 
 School team photos with `is_public = false` are excluded because teacher approval is required to reach `ADMIN_APPROVED`, and approval also sets `is_public = true`.
+
+## CSV Format
+
+The `format` query/body parameter selects one or both column blocks. Comma-separated, case-insensitive, deduped. Empty / unrecognized → `split`.
+
+| Format | What it emits | Use when |
+|--------|---------------|----------|
+| `split` (default) | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
+| `joined` | v4-style. Per-category `{type}_{object}` columns (or bare `{object}` if no type). Suppresses the per-category split block AND the `TYPES` block. `MATERIALS` + `brands` + `custom_tag_*` still emitted | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/`water_bottle`/etc. as single columns. |
+| `split,joined` | Both blocks. Split appears first, then joined. `MATERIALS` appears once. | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
+
+**Joined column key generation.** For each distinct `(category_id, litter_object_id, litter_object_type_id)` triple in the export scope, the column key is `{type_key}_{object_key}` when a type is set, else the bare `{object_key}`. Examples: `spirits_bottle`, `beer_bottle`, `wine_bottle`, `bottle` (no type), `beer_can`, `water_bottle`, `soda_can`, `butts`. Per-category `ALCOHOL`/`SOFTDRINKS`/etc. sub-headers separate sections so the same key (e.g. bare `bottle` under both alcohol and softdrinks) does not collide visually.
+
+**Joined block does not collapse materials.** A "plastic cup" still emits two columns: `cup` (joined block) and `plastic` (MATERIALS block). Joining material into the object key would produce a combinatorial explosion of columns; the MATERIALS block already gives you the per-material totals.
+
+## v4 → v5 Column Layout Notes
+
+**Subtype split.** v4 had per-subtype columns (`spiritBottle`, `beerBottle`, `wineBottle`, `tinCan`, `fizzyDrinkBottle`, `waterBottle`, etc.). v5 splits these across two sections:
+
+| v4 column | v5 columns |
+|-----------|------------|
+| `spiritBottle` | `ALCOHOL.bottle` (qty) + `TYPES.spirits` (qty) + `MATERIALS.glass` |
+| `beerBottle`   | `ALCOHOL.bottle` (qty) + `TYPES.beer` (qty)    + `MATERIALS.glass` |
+| `wineBottle`   | `ALCOHOL.bottle` (qty) + `TYPES.wine` (qty)    + `MATERIALS.glass` |
+| `beerCan`      | `ALCOHOL.can` (qty)    + `TYPES.beer` (qty)    + `MATERIALS.aluminium` |
+| `waterBottle`  | `SOFTDRINKS.bottle`    + `TYPES.water`         + `MATERIALS.plastic` |
+| `fizzyDrinkBottle` | `SOFTDRINKS.bottle` + (no specific type)   + `MATERIALS.plastic` |
+| `tinCan`       | `SOFTDRINKS.can`       + `TYPES.soda`          + `MATERIALS.aluminium` |
+
+To recover v4-style per-subtype counts you must combine the object column with the type column, filtered by category section.
+
+**Auto-inferred materials.** During the v5 migration, `ClassifyTagsService::normalizeDeprecatedTag()` attached default materials to subtype-bearing PhotoTags (glass on spirit/beer/wine bottles, aluminium on beer/soda cans, plastic on water/fizzy bottles, etc.). These are intentional (the materials are physically correct for the subtype) and remain on migrated photos. They appear in the `MATERIALS` section of the CSV even if the v4 user never tagged a material.
+
+**`total_tags` = grand total.** The `total_tags` column reads `photos.total_tags`, which is the sum of objects + materials + brands + custom tags (every dimension contributes). Custom-only and brand-only photos therefore have `total_tags > 0`.
 
 ## Timeout
 

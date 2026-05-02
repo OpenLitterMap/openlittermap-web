@@ -51,9 +51,24 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     /** @var array Extra filters for team exports (tag, custom_tag, picked_up, member_id, status) */
     private array $extraFilters;
 
+    /** @var bool Emit the v5 split block (per-category object columns + TYPES block). */
+    private bool $emitSplit = true;
+
+    /** @var bool Emit the v4-style joined block (one column per {type}_{object}, per category). */
+    private bool $emitJoined = false;
+
+    /**
+     * Per-category joined column descriptors.
+     * [['category_id'=>int,'category_key'=>string,'columns'=>[['key'=>'spirits_bottle','object_id'=>int,'type_id'=>int|null]]]].
+     */
+    private array $categoryJoinedColumns = [];
+
     public $timeout = 240;
 
-    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [], array $extraFilters = [])
+    /**
+     * @param array<string> $formats Subset of ['split','joined']. Empty/invalid → ['split'].
+     */
+    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [], array $extraFilters = [], array $formats = ['split'])
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
@@ -61,6 +76,10 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $this->user_id = $user_id;
         $this->dateFilter = $dateFilter;
         $this->extraFilters = $extraFilters;
+
+        $normalized = self::normalizeFormats($formats);
+        $this->emitSplit = in_array('split', $normalized, true);
+        $this->emitJoined = in_array('joined', $normalized, true);
 
         // Pre-scan: find which columns actually have data for this export scope.
         // Use subqueries (not pluck) so MySQL optimizes internally for large exports.
@@ -125,12 +144,114 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                 ->map(fn ($t) => ['id' => $t->id, 'key' => $t->key])
                 ->toArray()
             : [];
+
+        if ($this->emitJoined) {
+            $this->categoryJoinedColumns = $this->buildJoinedColumns($photoIdQuery);
+        }
     }
 
     /**
-     * Define column titles.
+     * Normalize a raw format list (array or comma-string-friendly) into a deduped subset of ['split','joined'].
+     * Falls back to ['split'] when the result would be empty.
      *
-     * Layout: fixed columns, then [CATEGORY, object, object, ...] per category, then custom tags.
+     * @param array<int, string> $formats
+     * @return array<int, string>
+     */
+    public static function normalizeFormats(array $formats): array
+    {
+        $allowed = ['split', 'joined'];
+        $clean = [];
+
+        foreach ($formats as $f) {
+            $f = strtolower(trim((string) $f));
+            if (in_array($f, $allowed, true) && ! in_array($f, $clean, true)) {
+                $clean[] = $f;
+            }
+        }
+
+        return empty($clean) ? ['split'] : $clean;
+    }
+
+    /**
+     * Pre-scan distinct (category, object, type) triples in the export scope and build
+     * the per-category column list for the joined block.
+     *
+     * @return array<int, array{category_id:int, category_key:string, columns:array<int, array{key:string, object_id:int, type_id:int|null}>}>
+     */
+    private function buildJoinedColumns($photoIdQuery): array
+    {
+        $triples = PhotoTag::whereIn('photo_id', $photoIdQuery)
+            ->whereNotNull('category_id')
+            ->whereNotNull('litter_object_id')
+            ->select('category_id', 'litter_object_id', 'litter_object_type_id')
+            ->distinct()
+            ->get();
+
+        if ($triples->isEmpty()) {
+            return [];
+        }
+
+        $catIds = $triples->pluck('category_id')->unique()->values()->all();
+        $objIds = $triples->pluck('litter_object_id')->unique()->values()->all();
+        $typeIds = $triples->pluck('litter_object_type_id')->filter()->unique()->values()->all();
+
+        $catKeys = Category::whereIn('id', $catIds)->orderBy('id')->pluck('key', 'id')->all();
+        $objKeys = \App\Models\Litter\Tags\LitterObject::whereIn('id', $objIds)->pluck('key', 'id')->all();
+        $typeKeys = !empty($typeIds)
+            ? LitterObjectType::whereIn('id', $typeIds)->pluck('key', 'id')->all()
+            : [];
+
+        $byCat = [];
+        foreach ($triples as $row) {
+            $catId = (int) $row->category_id;
+            $objId = (int) $row->litter_object_id;
+            $typeId = $row->litter_object_type_id !== null ? (int) $row->litter_object_type_id : null;
+
+            $objKey = $objKeys[$objId] ?? null;
+            if ($objKey === null) {
+                continue;
+            }
+
+            $key = $typeId !== null && isset($typeKeys[$typeId])
+                ? $typeKeys[$typeId] . '_' . $objKey
+                : $objKey;
+
+            $byCat[$catId][] = [
+                'key' => $key,
+                'object_id' => $objId,
+                'type_id' => $typeId,
+            ];
+        }
+
+        $result = [];
+        foreach ($catKeys as $catId => $catKey) {
+            if (empty($byCat[$catId])) {
+                continue;
+            }
+
+            $columns = collect($byCat[$catId])
+                ->sortBy(fn ($c) => sprintf('%010d-%010d', $c['object_id'], $c['type_id'] ?? 0))
+                ->values()
+                ->all();
+
+            $result[] = [
+                'category_id' => $catId,
+                'category_key' => $catKey,
+                'columns' => $columns,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Define column titles. Order: fixed → split block (when emitSplit) →
+     * MATERIALS → brands → custom tags → joined block (when emitJoined).
+     *
+     * Joined block appends after the shared MATERIALS/brands/custom block so
+     * users requesting `format=split,joined` see the v5 layout first, then the
+     * v4-style joined columns. Joined-only mode suppresses the per-category
+     * split columns AND the TYPES block (their data is in the joined keys).
      */
     public function headings(): array
     {
@@ -147,11 +268,13 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             'total_tags',
         ];
 
-        foreach ($this->categoryObjects as $category) {
-            $result[] = strtoupper($category['key']);
+        if ($this->emitSplit) {
+            foreach ($this->categoryObjects as $category) {
+                $result[] = strtoupper($category['key']);
 
-            foreach ($category['objects'] as $object) {
-                $result[] = $object['key'];
+                foreach ($category['objects'] as $object) {
+                    $result[] = $object['key'];
+                }
             }
         }
 
@@ -162,7 +285,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        if (!empty($this->types)) {
+        if ($this->emitSplit && !empty($this->types)) {
             $result[] = 'TYPES';
             foreach ($this->types as $type) {
                 $result[] = $type['key'];
@@ -175,6 +298,15 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
         if ($this->hasCustomTags) {
             $result = array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
+        }
+
+        if ($this->emitJoined) {
+            foreach ($this->categoryJoinedColumns as $category) {
+                $result[] = strtoupper($category['category_key']);
+                foreach ($category['columns'] as $col) {
+                    $result[] = $col['key'];
+                }
+            }
         }
 
         return $result;
@@ -197,7 +329,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $row->lon,
             $row->picked_up ? 'Yes' : 'No',
             $row->display_name,
-            $row->summary['totals']['litter'] ?? $row->total_tags,
+            $row->total_tags,
         ];
 
         $tags = $row->summary['tags'] ?? [];
@@ -209,6 +341,9 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $materialLookup = [];
         $typeLookup = [];
         $brandParts = [];
+        // joinedLookup[catId][objId][typeId|0] = qty — keyed by 0 when type is null
+        // so the joined block can read both type-bearing and bare-object combinations.
+        $joinedLookup = [];
 
         foreach ($tags as $tag) {
             $catId = $tag['category_id'] ?? 0;
@@ -228,6 +363,12 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                 $typeLookup[$typeId] = ($typeLookup[$typeId] ?? 0) + $qty;
             }
 
+            $joinedTypeKey = $typeId ?? 0;
+            if ($catId && $objId) {
+                $joinedLookup[$catId][$objId][$joinedTypeKey] =
+                    ($joinedLookup[$catId][$objId][$joinedTypeKey] ?? 0) + $qty;
+            }
+
             // Brands: {id: qty} objects with independent quantities
             foreach ($tag['brands'] ?? [] as $brandId => $brandQty) {
                 $brandName = $brandKeys[$brandId] ?? "brand_{$brandId}";
@@ -235,12 +376,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        // Category/object columns
-        foreach ($this->categoryObjects as $category) {
-            $result[] = null; // category separator column
+        // Split block: category/object columns
+        if ($this->emitSplit) {
+            foreach ($this->categoryObjects as $category) {
+                $result[] = null; // category separator column
 
-            foreach ($category['objects'] as $object) {
-                $result[] = $tagLookup[$category['id']][$object['id']] ?? null;
+                foreach ($category['objects'] as $object) {
+                    $result[] = $tagLookup[$category['id']][$object['id']] ?? null;
+                }
             }
         }
 
@@ -252,8 +395,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        // Types columns (only if any exist in export scope)
-        if (!empty($this->types)) {
+        // Types columns (split block only — joined columns subsume the type dimension)
+        if ($this->emitSplit && !empty($this->types)) {
             $result[] = null; // TYPES separator
             foreach ($this->types as $type) {
                 $result[] = $typeLookup[$type['id']] ?? null;
@@ -277,6 +420,18 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                 ->toArray();
 
             $result = array_merge($result, array_pad($customTagNames, 3, null));
+        }
+
+        // Joined block: per-category {type}_{object} columns (or bare {object} when no type).
+        if ($this->emitJoined) {
+            foreach ($this->categoryJoinedColumns as $category) {
+                $result[] = null; // category separator column
+                $catId = $category['category_id'];
+                foreach ($category['columns'] as $col) {
+                    $typeKey = $col['type_id'] ?? 0;
+                    $result[] = $joinedLookup[$catId][$col['object_id']][$typeKey] ?? null;
+                }
+            }
         }
 
         return $result;

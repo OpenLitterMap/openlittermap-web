@@ -309,12 +309,12 @@ class TeamPhotosController extends Controller
     }
 
     /**
-     * Per-member stats for the team (leader/facilitator only).
+     * Per-member stats for the team. Visible to any team member.
      *
      * GET /api/teams/photos/member-stats?team_id=X
      *
      * Returns per-student: total photos, pending, approved, litter count, last active.
-     * Applies safeguarding pseudonyms when enabled.
+     * Applies safeguarding pseudonyms when enabled (school teams).
      */
     public function memberStats(Request $request): JsonResponse
     {
@@ -325,8 +325,8 @@ class TeamPhotosController extends Controller
         $user = auth()->user();
         $team = Team::findOrFail($request->team_id);
 
-        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
-            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        if (! $user->isMemberOfTeam($team->id)) {
+            return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
         // Get all members (excluding leader)
