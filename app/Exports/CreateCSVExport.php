@@ -232,6 +232,15 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     }
 
     /**
+     * User-facing filename slug for a layout — keeps the saved CSV name in sync with
+     * the UI label (Number-based / Full-detail) without scattering the mapping across controllers.
+     */
+    public static function layoutSlug(string $layout): string
+    {
+        return self::normalizeLayout($layout) === 'long' ? 'full-detail' : 'number-based';
+    }
+
+    /**
      * Build the per-category column list for the joined block from the constructor's triple scan.
      * Reuses already-loaded categoryObjects/types — no extra DB queries.
      *
@@ -542,6 +551,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $typeKeys = $keys['types'] ?? [];
         $materialKeys = $keys['materials'] ?? [];
         $brandKeys = $keys['brands'] ?? [];
+        $customTagKeys = $keys['custom_tags'] ?? [];
 
         $base = [
             'photo_id' => $row->id,
@@ -586,7 +596,9 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
 
             foreach ($customExtras as $extra) {
-                $ctKey = $extra->extraTag?->key ?? '';
+                // Prefer summary keys (no relation hop); fall back to the eager-loaded relation
+                // for legacy rows where summary['keys']['custom_tags'] is missing the entry.
+                $ctKey = $customTagKeys[$extra->tag_type_id] ?? $extra->extraTag?->key ?? '';
                 $rows[] = $this->longRow($base, $catKey, $objKey, $typeKey, '', '', $ctKey, 1, $ptId);
             }
         }
@@ -628,7 +640,15 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $with[] = 'team:id,name';
         }
 
-        return $this->scopeQuery(Photo::with($with));
+        $query = $this->scopeQuery(Photo::with($with));
+
+        // Long mode: skip photos with no summary (untagged or pre-summary). Spec says these emit
+        // zero rows in long format, so filtering at query level avoids per-row hydration.
+        if ($this->layout === 'long') {
+            $query->whereNotNull('summary');
+        }
+
+        return $query;
     }
 
     /**

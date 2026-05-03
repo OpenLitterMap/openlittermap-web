@@ -21,7 +21,7 @@ class DownloadTeamDataAction
             $path .= '_from_' . $dateFilter['fromDate'] . '_to_' . $dateFilter['toDate'];
         }
 
-        $path .= '/_Team_OpenLitterMap_' . now()->format('Y-m-d_His') . '.csv';
+        $path .= '/_Team_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout) . '_' . now()->format('Y-m-d_His') . '.csv';
 
         /* Dispatch job to create CSV file for export */
         (new CreateCSVExport(null, null, $team->id, null, $dateFilter, $extraFilters, $formats, $layout))

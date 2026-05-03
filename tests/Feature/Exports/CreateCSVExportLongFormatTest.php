@@ -186,16 +186,11 @@ class CreateCSVExportLongFormatTest extends TestCase
         $brand = BrandList::firstOrCreate(['key' => 'lone_brand']);
 
         $photo = $this->makePhoto();
-        $unclassifiedCloId = CategoryObject::whereHas('category', fn ($q) => $q->where('key', 'unclassified'))
-            ->value('id') ?? CategoryObject::firstOrCreate([
-                'category_id' => Category::firstOrCreate(['key' => 'unclassified'])->id,
-                'litter_object_id' => LitterObject::firstOrCreate(['key' => 'other'])->id,
-            ])->id;
 
-        // Brand-only PhotoTag: no object/category, just an extra
+        // Brand-only PhotoTag matches production extras-only shape: category_id,
+        // litter_object_id, AND category_litter_object_id all NULL (per AddTagsToPhotoAction::createExtraTagOnly).
         $pt = PhotoTag::create([
             'photo_id' => $photo->id,
-            'category_litter_object_id' => $unclassifiedCloId,
             'quantity' => 1,
         ]);
         PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 5]);
@@ -213,13 +208,10 @@ class CreateCSVExportLongFormatTest extends TestCase
     {
         $ct1 = CustomTagNew::firstOrCreate(['key' => 'long_ct1']);
         $ct2 = CustomTagNew::firstOrCreate(['key' => 'long_ct2']);
-        $unclassifiedCloId = CategoryObject::firstOrCreate([
-            'category_id' => Category::firstOrCreate(['key' => 'unclassified'])->id,
-            'litter_object_id' => LitterObject::firstOrCreate(['key' => 'other'])->id,
-        ])->id;
 
         $photo = $this->makePhoto();
-        $pt = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 1]);
+        // Extras-only PhotoTag: matches production createExtraTagOnly shape (no CLO/cat/obj).
+        $pt = PhotoTag::create(['photo_id' => $photo->id, 'quantity' => 1]);
         PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $ct1->id, 'quantity' => 1]);
         PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $ct2->id, 'quantity' => 1]);
         app(GeneratePhotoSummaryService::class)->run($photo->fresh());
@@ -238,13 +230,10 @@ class CreateCSVExportLongFormatTest extends TestCase
     public function test_material_only_phototag_emits_only_material_rows()
     {
         $cardboard = Materials::firstOrCreate(['key' => 'cardboard']);
-        $unclassifiedCloId = CategoryObject::firstOrCreate([
-            'category_id' => Category::firstOrCreate(['key' => 'unclassified'])->id,
-            'litter_object_id' => LitterObject::firstOrCreate(['key' => 'other'])->id,
-        ])->id;
 
         $photo = $this->makePhoto();
-        $pt = PhotoTag::create(['photo_id' => $photo->id, 'category_litter_object_id' => $unclassifiedCloId, 'quantity' => 2]);
+        // Extras-only PhotoTag: matches production createExtraTagOnly shape (no CLO/cat/obj).
+        $pt = PhotoTag::create(['photo_id' => $photo->id, 'quantity' => 2]);
         PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'material', 'tag_type_id' => $cardboard->id, 'quantity' => 1]);
         app(GeneratePhotoSummaryService::class)->run($photo->fresh());
 

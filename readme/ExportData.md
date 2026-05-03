@@ -286,7 +286,7 @@ School team photos with `is_public = false` are excluded because teacher approva
 
 ## CSV Format
 
-> **Layout switch:** the `format` parameter only takes effect in the default **Wide** layout. See [Wide vs Long Layout](#wide-vs-long-layout) below for the row-shape switch — Long layout ignores `format` entirely.
+> **Layout switch:** the `format` parameter only takes effect in the default **Number-based** layout (`layout=wide`). See [Wide vs Long Layout](#wide-vs-long-layout) below for the row-shape switch — the Full-detail layout (`layout=long`) ignores `format` entirely.
 
 The download UI exposes two checkboxes: **Separate columns** (default, on) and **Combined columns** (off). Either or both may be selected. They map to the `format` query/body parameter values `split` and `joined` respectively.
 
@@ -306,14 +306,16 @@ Controllers (`ProfileController::download`, `TeamsController::download`, `Downlo
 
 ## Wide vs Long Layout
 
+> **Naming note:** the API calls these `wide` and `long`. Users see them as **Number-based** (wide) and **Full-detail (one row per tag)** (long) in the download UI and in saved filenames (`_number-based_` / `_full-detail_` slugs). Internal code, tests, and the API/developer docs below keep `wide`/`long`.
+
 The `layout` query/body parameter chooses the row shape of the CSV. Two values: `wide` (default) and `long`. Parsed by `CreateCSVExport::parseLayout(?string $raw)` — the single source of truth — and passed as the 8th constructor argument to `CreateCSVExport`.
 
-| Layout | What it emits | Use when |
-|--------|---------------|----------|
-| `wide` (default) | One row per photo. Hundreds of columns, one per possible tag value. Honours `format=split,joined`. | Eyeballing in Excel; matches the historical OpenLitterMap export. |
-| `long` | One row per tag dimension. 14 fixed columns. **Ignores `format`** (no Separate/Combined split/joined blocks). | Loading into pandas, SQL, Tableau, R — anywhere you'd `groupby` / `pivot_table` afterwards. |
+| Layout (API) | UI label | What it emits | Use when |
+|--------------|----------|---------------|----------|
+| `wide` (default) | Number-based | One row per photo. Hundreds of columns, one per possible tag value. Honours `format=split,joined`. | Eyeballing in Excel; matches the historical OpenLitterMap export. |
+| `long` | Full-detail (one row per tag) | One row per tag dimension. 14 fixed columns. **Ignores `format`** (no Separate/Combined split/joined blocks). | Loading into pandas, SQL, Tableau, R — anywhere you'd `groupby` / `pivot_table` afterwards. |
 
-### Long layout columns (14)
+### Full-detail (long) layout columns (14)
 
 | # | Column | Source | Notes |
 |---|--------|--------|-------|
@@ -352,14 +354,14 @@ The long-format schema does not include a `username` column in v1. School teams 
 
 A single photo with one object PhotoTag — `bottle, beer, glass, qty=3` — plus brand extras `{coca_cola: 2, pepsi: 1}`.
 
-**Wide layout** (one row, ~200+ columns shown abbreviated):
+**Number-based layout** (`layout=wide`, one row, ~200+ columns shown abbreviated):
 
 ```
 id  ... ALCOHOL  bottle  TYPES  beer  MATERIALS  glass  brands
 42  ... null     3       null   3     null       3      coca_cola:2;pepsi:1
 ```
 
-**Long layout** (4 rows, 14 columns each):
+**Full-detail layout** (`layout=long`, 4 rows, 14 columns each):
 
 ```
 photo_id  datetime ... category  object  type  material  brand       custom_tag  quantity  photo_tag_id
