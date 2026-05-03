@@ -58,6 +58,9 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     /** @var bool Emit the v4-style joined block (one column per {type}_{object}, per category). */
     private bool $emitJoined = false;
 
+    /** @var string Row layout — 'wide' (one row per photo) or 'long' (one row per tag dimension). */
+    private string $layout = 'wide';
+
     /**
      * Per-category joined column descriptors.
      * [['category_id'=>int,'category_key'=>string,'columns'=>[['key'=>'spirits_bottle','object_id'=>int,'type_id'=>int|null]]]].
@@ -68,8 +71,9 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
 
     /**
      * @param array<string> $formats Subset of ['split','joined']. Empty/invalid → ['split'].
+     * @param string        $layout  'wide' (default) or 'long'. Long ignores $formats.
      */
-    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [], array $extraFilters = [], array $formats = ['split'])
+    public function __construct($location_type, $location_id, $team_id = null, $user_id = null, array $dateFilter = [], array $extraFilters = [], array $formats = ['split'], string $layout = 'wide')
     {
         $this->location_type = $location_type;
         $this->location_id = $location_id;
@@ -77,6 +81,13 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $this->user_id = $user_id;
         $this->dateFilter = $dateFilter;
         $this->extraFilters = $extraFilters;
+        $this->layout = self::normalizeLayout($layout);
+
+        // Long mode has a fixed 14-column schema and reads tag keys per-row from
+        // summary['keys']; the wide pre-scan and format normalization aren't needed.
+        if ($this->layout === 'long') {
+            return;
+        }
 
         $normalized = self::normalizeFormats($formats);
         $this->emitSplit = in_array('split', $normalized, true);
@@ -136,10 +147,11 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $this->hasBrands = $extraTagTypes->where('tag_type', 'brand')->isNotEmpty();
         $this->hasCustomTags = $extraTagTypes->where('tag_type', 'custom_tag')->isNotEmpty();
 
-        // Load and filter category/object columns to only those with data
-        $this->categoryObjects = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
+        // Load and filter category/object columns to only those with data.
+        // Sorting by `key` (a-z) for stable, reader-friendly column order.
+        $this->categoryObjects = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.key')])
             ->whereIn('id', $activeCatIds)
-            ->orderBy('id')
+            ->orderBy('key')
             ->get()
             ->map(fn ($cat) => [
                 'id' => $cat->id,
@@ -154,15 +166,15 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             ->values()
             ->toArray();
 
-        // Filter materials and types to only those with data
+        // Filter materials and types to only those with data; alphabetical by key.
         $this->materials = !empty($activeMaterialIds)
-            ? Materials::whereIn('id', $activeMaterialIds)->orderBy('id')->get()
+            ? Materials::whereIn('id', $activeMaterialIds)->orderBy('key')->get()
                 ->map(fn ($m) => ['id' => $m->id, 'key' => $m->key])
                 ->toArray()
             : [];
 
         $this->types = !empty($activeTypeIds)
-            ? LitterObjectType::whereIn('id', $activeTypeIds)->orderBy('id')->get()
+            ? LitterObjectType::whereIn('id', $activeTypeIds)->orderBy('key')->get()
                 ->map(fn ($t) => ['id' => $t->id, 'key' => $t->key])
                 ->toArray()
             : [];
@@ -201,6 +213,22 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     public static function parseFormats(?string $raw): array
     {
         return self::normalizeFormats(array_filter(explode(',', (string) $raw)));
+    }
+
+    /**
+     * Normalize a raw layout value to 'wide' or 'long'. Anything unrecognized → 'wide'.
+     */
+    public static function normalizeLayout(?string $raw): string
+    {
+        return strtolower(trim((string) $raw)) === 'long' ? 'long' : 'wide';
+    }
+
+    /**
+     * Parse the `layout` request param. Use this from controllers so parsing stays in one place.
+     */
+    public static function parseLayout(?string $raw): string
+    {
+        return self::normalizeLayout($raw);
     }
 
     /**
@@ -254,7 +282,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
 
             $columns = collect($byCat[$catId])
-                ->sortBy(fn ($c) => sprintf('%010d-%010d', $c['object_id'], $c['type_id'] ?? 0))
+                ->sortBy('key')
                 ->values()
                 ->all();
 
@@ -269,16 +297,21 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     }
 
     /**
-     * Define column titles. Order: fixed → split block (when emitSplit) →
-     * MATERIALS → brands → custom tags → joined block (when emitJoined).
+     * Define column titles.
      *
-     * Joined block appends after the shared MATERIALS/brands/custom block so
-     * users requesting `format=split,joined` see the v5 layout first, then the
-     * v4-style joined columns. Joined-only mode suppresses the per-category
-     * split columns AND the TYPES block (their data is in the joined keys).
+     * Order: fixed → split block (emitSplit) → TYPES (emitSplit) → MATERIALS →
+     *        joined block (emitJoined) → brands → custom_tag_*.
+     *
+     * Categories/objects/materials/types are sorted A-Z by key. Joined-only
+     * mode suppresses the split block AND the TYPES block (their data is
+     * folded into the joined keys).
      */
     public function headings(): array
     {
+        if ($this->layout === 'long') {
+            return $this->headingsLong();
+        }
+
         $result = [
             'id',
             'verification',
@@ -302,13 +335,6 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        if (!empty($this->materials)) {
-            $result[] = 'MATERIALS';
-            foreach ($this->materials as $material) {
-                $result[] = $material['key'];
-            }
-        }
-
         if ($this->emitSplit && !empty($this->types)) {
             $result[] = 'TYPES';
             foreach ($this->types as $type) {
@@ -316,12 +342,11 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        if ($this->hasBrands) {
-            $result[] = 'brands';
-        }
-
-        if ($this->hasCustomTags) {
-            $result = array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
+        if (!empty($this->materials)) {
+            $result[] = 'MATERIALS';
+            foreach ($this->materials as $material) {
+                $result[] = $material['key'];
+            }
         }
 
         if ($this->emitJoined) {
@@ -331,6 +356,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                     $result[] = $col['key'];
                 }
             }
+        }
+
+        if ($this->hasBrands) {
+            $result[] = 'brands';
+        }
+
+        if ($this->hasCustomTags) {
+            $result = array_merge($result, ['custom_tag_1', 'custom_tag_2', 'custom_tag_3']);
         }
 
         return $result;
@@ -343,6 +376,10 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function map($row): array
     {
+        if ($this->layout === 'long') {
+            return $this->mapLong($row);
+        }
+
         $result = [
             $row->id,
             $row->verified?->value ?? 0,
@@ -409,6 +446,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
+        // Types columns (split block only — joined columns subsume the type dimension)
+        if ($this->emitSplit && !empty($this->types)) {
+            $result[] = null; // TYPES separator
+            foreach ($this->types as $type) {
+                $result[] = $typeLookup[$type['id']] ?? null;
+            }
+        }
+
         // Materials columns (only if any exist in export scope)
         if (!empty($this->materials)) {
             $result[] = null; // MATERIALS separator
@@ -417,11 +462,15 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             }
         }
 
-        // Types columns (split block only — joined columns subsume the type dimension)
-        if ($this->emitSplit && !empty($this->types)) {
-            $result[] = null; // TYPES separator
-            foreach ($this->types as $type) {
-                $result[] = $typeLookup[$type['id']] ?? null;
+        // Joined block: per-category {type}_{object} columns (or bare {object} when no type).
+        if ($this->emitJoined) {
+            foreach ($this->categoryJoinedColumns as $category) {
+                $result[] = null; // category separator column
+                $catId = $category['category_id'];
+                foreach ($category['columns'] as $col) {
+                    $typeKey = $col['type_id'] ?? 0;
+                    $result[] = $joinedLookup[$catId][$col['object_id']][$typeKey] ?? null;
+                }
             }
         }
 
@@ -448,19 +497,124 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $result = array_merge($result, array_pad($customTagNames, 3, null));
         }
 
-        // Joined block: per-category {type}_{object} columns (or bare {object} when no type).
-        if ($this->emitJoined) {
-            foreach ($this->categoryJoinedColumns as $category) {
-                $result[] = null; // category separator column
-                $catId = $category['category_id'];
-                foreach ($category['columns'] as $col) {
-                    $typeKey = $col['type_id'] ?? 0;
-                    $result[] = $joinedLookup[$catId][$col['object_id']][$typeKey] ?? null;
-                }
+        return $result;
+    }
+
+    /**
+     * Long-format column headings (14 fixed columns).
+     * `lng` heading deliberately mismatches the wide format's `lon` per spec.
+     */
+    private function headingsLong(): array
+    {
+        return [
+            'photo_id',
+            'datetime',
+            'lat',
+            'lng',
+            'team',
+            'verification',
+            'category',
+            'object',
+            'type',
+            'material',
+            'brand',
+            'custom_tag',
+            'quantity',
+            'photo_tag_id',
+        ];
+    }
+
+    /**
+     * Long-format row builder. Returns one row per tag dimension on the photo.
+     *
+     * Per-extra rows (NOT cartesian) — a PhotoTag with multiple materials/brands
+     * emits one row per extra plus one bare-object row. Users can dedupe via
+     * the `photo_tag_id` column before SUM-ing `quantity` to avoid overcounting.
+     *
+     * Returns [] for photos with no PhotoTags so Maatwebsite emits zero rows.
+     */
+    private function mapLong(Photo $row): array
+    {
+        $rows = [];
+        $keys = $row->summary['keys'] ?? [];
+        $catKeys = $keys['categories'] ?? [];
+        $objKeys = $keys['objects'] ?? [];
+        $typeKeys = $keys['types'] ?? [];
+        $materialKeys = $keys['materials'] ?? [];
+        $brandKeys = $keys['brands'] ?? [];
+
+        $base = [
+            'photo_id' => $row->id,
+            'datetime' => $row->datetime,
+            'lat' => $row->lat,
+            'lng' => $row->lon,
+            'team' => $row->team?->name ?? '',
+            'verification' => $row->verified?->value ?? 0,
+        ];
+
+        foreach ($row->photoTags as $pt) {
+            $catId = $pt->category_id;
+            $objId = $pt->litter_object_id;
+            $typeId = $pt->litter_object_type_id;
+            $ptId = $pt->id;
+            $parentQty = $pt->quantity;
+
+            $catKey = ($catId !== null) ? ($catKeys[$catId] ?? '') : '';
+            $objKey = ($objId !== null) ? ($objKeys[$objId] ?? '') : '';
+            $typeKey = ($typeId !== null) ? ($typeKeys[$typeId] ?? '') : '';
+            $hasObject = $objId !== null;
+
+            $extras = $pt->extraTags;
+            $materialExtras = $extras->where('tag_type', 'material');
+            $brandExtras = $extras->where('tag_type', 'brand');
+            $customExtras = $extras->where('tag_type', 'custom_tag');
+
+            // Bare object row (only when this PhotoTag has a litter_object).
+            // Always emitted so dedup-by-photo_tag_id can recover the parent qty.
+            if ($hasObject) {
+                $rows[] = $this->longRow($base, $catKey, $objKey, $typeKey, '', '', '', $parentQty, $ptId);
+            }
+
+            foreach ($materialExtras as $extra) {
+                $matKey = $materialKeys[$extra->tag_type_id] ?? '';
+                $rows[] = $this->longRow($base, $catKey, $objKey, $typeKey, $matKey, '', '', $parentQty, $ptId);
+            }
+
+            foreach ($brandExtras as $extra) {
+                $brandKey = $brandKeys[$extra->tag_type_id] ?? '';
+                $rows[] = $this->longRow($base, $catKey, $objKey, $typeKey, '', $brandKey, '', $extra->quantity, $ptId);
+            }
+
+            foreach ($customExtras as $extra) {
+                $ctKey = $extra->extraTag?->key ?? '';
+                $rows[] = $this->longRow($base, $catKey, $objKey, $typeKey, '', '', $ctKey, 1, $ptId);
             }
         }
 
-        return $result;
+        return $rows;
+    }
+
+    /**
+     * Build a single long-format row in column order.
+     */
+    private function longRow(array $base, string $catKey, string $objKey, string $typeKey, string $matKey, string $brandKey, string $ctKey, $quantity, int $ptId): array
+    {
+        return [
+            $base['photo_id'],
+            $base['datetime'],
+            $base['lat'],
+            $base['lng'],
+            $base['team'],
+            $base['verification'],
+            $catKey,
+            $objKey,
+            $typeKey,
+            $matKey,
+            $brandKey,
+            $ctKey,
+            $quantity,
+            $ptId,
+        ];
     }
 
     /**
@@ -468,9 +622,13 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query()
     {
-        return $this->scopeQuery(
-            Photo::with(['photoTags.extraTags.extraTag'])
-        );
+        $with = ['photoTags.extraTags.extraTag'];
+
+        if ($this->layout === 'long') {
+            $with[] = 'team:id,name';
+        }
+
+        return $this->scopeQuery(Photo::with($with));
     }
 
     /**

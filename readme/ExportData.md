@@ -57,7 +57,8 @@ User receives email with S3 download URL
 | `dateField` | string | Column to filter: `created_at`, `datetime`, or `updated_at` |
 | `fromDate` | string | Start date (YYYY-MM-DD). Default: `2017-01-01` |
 | `toDate` | string | End date (YYYY-MM-DD). Default: today |
-| `format` | string | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. |
+| `format` | string | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. Ignored when `layout=long`. |
+| `layout` | string | `wide` (default) or `long`. See [Wide vs Long Layout](#wide-vs-long-layout). |
 
 **Response:** `{ "success": true }`
 
@@ -80,7 +81,8 @@ Exports **all** user photos (any verification status). Email sent when ready.
 | `picked_up` | string | No | `true` or `false` — filter by picked-up status |
 | `member_id` | int | No | Filter by team member's user ID |
 | `status` | string | No | `pending`, `approved`, or `all` (team approval status) |
-| `format` | string | No | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. |
+| `format` | string | No | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. Ignored when `layout=long`. |
+| `layout` | string | No | `wide` (default) or `long`. See [Wide vs Long Layout](#wide-vs-long-layout). |
 
 **Response:** `{ "success": true }`
 **Error:** `{ "success": false, "message": "not-a-member" }`
@@ -98,13 +100,30 @@ All team members can export. Exports only `verified >= ADMIN_APPROVED` team phot
 | `locationType` | string | Yes | `country`, `state`, or `city` |
 | `locationId` | int | Yes | Location ID |
 | `email` | string | No | Required if unauthenticated |
-| `format` | string | No | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. |
+| `format` | string | No | Comma-separated subset of `split,joined`. Default `split`. See [CSV Format](#csv-format) below. Ignored when `layout=long`. |
+| `layout` | string | No | `wide` (default) or `long`. See [Wide vs Long Layout](#wide-vs-long-layout). |
 
 **Response:** `{ "success": true }`
 
 Exports only `verified >= ADMIN_APPROVED` photos for the location.
 
 ## CSV Column Layout
+
+> **⚠ Column positions are not stable across format modes.** Selecting `split`, `joined`, or `split,joined` changes which blocks appear and how many columns precede each section. Always reference columns by **header name**, not index, in downstream scripts.
+>
+> Categories, objects, materials, and types are sorted **A-Z by key** (deterministic) so column positions within a single format mode are stable when the underlying tag set doesn't change.
+
+**Block order (per mode):**
+
+| Block | `split` | `joined` | `split,joined` |
+|-------|:-------:|:--------:|:--------------:|
+| Fixed cols (10) | always | always | always |
+| Split categories (per-category, A-Z) | ✓ | — | ✓ |
+| TYPES | ✓ | — | ✓ |
+| MATERIALS | ✓ | ✓ | ✓ |
+| Joined categories (per-category, A-Z) | — | ✓ | ✓ |
+| brands | when present | when present | when present |
+| custom_tag_1/2/3 | when present | when present | when present |
 
 The CSV has four sections:
 
@@ -267,19 +286,99 @@ School team photos with `is_public = false` are excluded because teacher approva
 
 ## CSV Format
 
-The `format` query/body parameter selects one or both column blocks. Comma-separated, case-insensitive, deduped. Empty / unrecognized → `split`.
+> **Layout switch:** the `format` parameter only takes effect in the default **Wide** layout. See [Wide vs Long Layout](#wide-vs-long-layout) below for the row-shape switch — Long layout ignores `format` entirely.
+
+The download UI exposes two checkboxes: **Separate columns** (default, on) and **Combined columns** (off). Either or both may be selected. They map to the `format` query/body parameter values `split` and `joined` respectively.
+
+The `format` parameter is comma-separated, case-insensitive, deduped. Empty / unrecognized → `split` (Separate).
 
 Controllers (`ProfileController::download`, `TeamsController::download`, `DownloadControllerNew::index`) all parse this through `CreateCSVExport::parseFormats(?string $raw)` — the single source of truth for splitting, normalizing, and validating the param.
 
-| Format | What it emits | Use when |
-|--------|---------------|----------|
-| `split` (default) | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
-| `joined` | v4-style. Per-category `{type}_{object}` columns (or bare `{object}` if no type). Suppresses the per-category split block AND the `TYPES` block. `MATERIALS` + `brands` + `custom_tag_*` still emitted | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/`water_bottle`/etc. as single columns. |
-| `split,joined` | Both blocks. Split appears first, then joined. `MATERIALS` appears once. | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
+| UI label | `format` value | What it emits | Use when |
+|----------|---------------|---------------|----------|
+| Separate columns (default) | `split` | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
+| Combined columns | `joined` | v4-style. Per-category `{type}_{object}` columns (or bare `{object}` if no type). Suppresses the per-category split block AND the `TYPES` block. `MATERIALS` + `brands` + `custom_tag_*` still emitted | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/`water_bottle`/etc. as single columns. |
+| Both checked | `split,joined` | Both blocks. Separate appears first, then Combined. `MATERIALS` appears once. | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
 
 **Joined column key generation.** For each distinct `(category_id, litter_object_id, litter_object_type_id)` triple in the export scope, the column key is `{type_key}_{object_key}` when a type is set, else the bare `{object_key}`. Examples: `spirits_bottle`, `beer_bottle`, `wine_bottle`, `bottle` (no type), `beer_can`, `water_bottle`, `soda_can`, `butts`. Per-category `ALCOHOL`/`SOFTDRINKS`/etc. sub-headers separate sections so the same key (e.g. bare `bottle` under both alcohol and softdrinks) does not collide visually.
 
 **Joined block does not collapse materials.** A "plastic cup" still emits two columns: `cup` (joined block) and `plastic` (MATERIALS block). Joining material into the object key would produce a combinatorial explosion of columns; the MATERIALS block already gives you the per-material totals.
+
+## Wide vs Long Layout
+
+The `layout` query/body parameter chooses the row shape of the CSV. Two values: `wide` (default) and `long`. Parsed by `CreateCSVExport::parseLayout(?string $raw)` — the single source of truth — and passed as the 8th constructor argument to `CreateCSVExport`.
+
+| Layout | What it emits | Use when |
+|--------|---------------|----------|
+| `wide` (default) | One row per photo. Hundreds of columns, one per possible tag value. Honours `format=split,joined`. | Eyeballing in Excel; matches the historical OpenLitterMap export. |
+| `long` | One row per tag dimension. 14 fixed columns. **Ignores `format`** (no Separate/Combined split/joined blocks). | Loading into pandas, SQL, Tableau, R — anywhere you'd `groupby` / `pivot_table` afterwards. |
+
+### Long layout columns (14)
+
+| # | Column | Source | Notes |
+|---|--------|--------|-------|
+| 1 | `photo_id` | `photos.id` | |
+| 2 | `datetime` | `photos.datetime` | |
+| 3 | `lat` | `photos.lat` | |
+| 4 | `lng` | `photos.lon` | Heading is `lng` (long-format spec); value comes from the wide-format `lon` column. |
+| 5 | `team` | `photos.team->name` | Empty if photo has no team. |
+| 6 | `verification` | `photos.verified` | VerificationStatus enum value. |
+| 7 | `category` | `summary.keys.categories[category_id]` | Empty when PhotoTag has no category (extras-only rows). |
+| 8 | `object` | `summary.keys.objects[litter_object_id]` | Empty for brand-only / material-only / custom-only PhotoTags. |
+| 9 | `type` | `summary.keys.types[litter_object_type_id]` | Empty when `type_id` is null. |
+| 10 | `material` | `summary.keys.materials[tag_type_id]` | Populated only on material rows. |
+| 11 | `brand` | `summary.keys.brands[tag_type_id]` | Populated only on brand rows. |
+| 12 | `custom_tag` | `extraTag.key` (relation walk) | Populated only on custom-tag rows. |
+| 13 | `quantity` | parent or per-extra qty (see below) | |
+| 14 | `photo_tag_id` | `photo_tags.id` | **Use to dedupe before SUM** — see worked example. |
+
+### Row emission rules
+
+For each PhotoTag attached to the photo:
+
+- **Object PhotoTag** (`litter_object_id IS NOT NULL`): emit one **bare-object row** (object/type populated, all extras empty, `qty = $pt->quantity`) plus one row per material extra (qty = parent qty), one row per brand extra (qty = brand-specific qty from the extra row), one row per custom_tag extra (qty = 1).
+- **Brand-only PhotoTag** (`litter_object_id IS NULL`, has brand extras): one row per brand, only `brand` populated, qty = brand-specific qty. **No** bare-object row.
+- **Material-only PhotoTag**: one row per material, only `material` populated, qty = parent qty.
+- **Custom-tag-only PhotoTag**: one row per custom_tag, only `custom_tag` populated, qty = 1.
+- **Photo with no PhotoTags**: emits zero rows.
+
+Rows are **per-extra, not cartesian** — a PhotoTag with 5 materials and 56 brands emits 1 + 5 + 56 = 62 rows (not 5 × 56 = 280). The `photo_tag_id` column lets analysis pipelines dedupe correctly when summing.
+
+### `username` deliberately excluded
+
+The long-format schema does not include a `username` column in v1. School teams use safeguarding pseudonyms elsewhere on the platform, and the simplest privacy posture for a CSV that may be saved/shared off-platform is to omit the column entirely. Teams that need per-user analysis can join the CSV against their own roster via `photo_id` (admins) or the team's own member list.
+
+### Worked example
+
+A single photo with one object PhotoTag — `bottle, beer, glass, qty=3` — plus brand extras `{coca_cola: 2, pepsi: 1}`.
+
+**Wide layout** (one row, ~200+ columns shown abbreviated):
+
+```
+id  ... ALCOHOL  bottle  TYPES  beer  MATERIALS  glass  brands
+42  ... null     3       null   3     null       3      coca_cola:2;pepsi:1
+```
+
+**Long layout** (4 rows, 14 columns each):
+
+```
+photo_id  datetime ... category  object  type  material  brand       custom_tag  quantity  photo_tag_id
+42        ...      ... alcohol   bottle  beer  ""        ""          ""          3         77   ← bare object
+42        ...      ... alcohol   bottle  beer  glass     ""          ""          3         77   ← material row
+42        ...      ... alcohol   bottle  beer  ""        coca_cola   ""          2         77   ← brand row, brand qty
+42        ...      ... alcohol   bottle  beer  ""        pepsi       ""          1         77   ← brand row, brand qty
+```
+
+Naive `SUM(quantity)` across all four rows gives 9 (overcount). Correct dedup approaches:
+
+- Recover the parent qty: `WHERE material='' AND brand='' AND custom_tag=''` → 3.
+- Per-brand totals: `WHERE brand='coca_cola'` → 2.
+- Per-material totals: `WHERE material='glass'` → 3.
+- Total objects per photo: `GROUP BY photo_tag_id, MAX(quantity) WHERE material='' AND brand='' AND custom_tag=''`.
+
+### Tests
+
+See `tests/Feature/Exports/CreateCSVExportLongFormatTest.php` (13 cases) for the full row-emission contract.
 
 ## v4 → v5 Column Layout Notes
 

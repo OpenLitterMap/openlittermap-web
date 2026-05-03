@@ -309,6 +309,7 @@ export const useTeamsStore = defineStore('teams', {
                 if (filters.member_id) payload.member_id = filters.member_id;
                 if (filters.status && filters.status !== 'all') payload.status = filters.status;
                 if (filters.format) payload.format = filters.format;
+                if (filters.layout) payload.layout = filters.layout;
 
                 await axios.post('/api/teams/download', payload);
             } catch (e) {

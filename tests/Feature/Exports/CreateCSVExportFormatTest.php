@@ -3,6 +3,8 @@
 namespace Tests\Feature\Exports;
 
 use App\Exports\CreateCSVExport;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
@@ -130,13 +132,19 @@ class CreateCSVExportFormatTest extends TestCase
         $this->assertEquals(1, count(array_keys($headings, 'glass')), 'glass column appears once');
         $this->assertEquals(1, count(array_keys($headings, 'MATERIALS')), 'MATERIALS separator appears once');
 
-        // Ordering: split block (incl. ALCOHOL section + TYPES block) sits before the joined block
+        // Full ordering contract for split,joined mode:
+        //   fixed → split (ALCOHOL …) → TYPES → MATERIALS → joined (spirits_bottle …) → brands → custom_tag_*
         $splitAlcoholIndex = array_search('ALCOHOL', $headings);
         $typesIndex = array_search('TYPES', $headings);
+        $materialsIndex = array_search('MATERIALS', $headings);
         $joinedSpiritsBottleIndex = array_search('spirits_bottle', $headings);
         $this->assertNotFalse($splitAlcoholIndex);
         $this->assertNotFalse($typesIndex);
-        $this->assertLessThan($joinedSpiritsBottleIndex, $typesIndex, 'TYPES block appears before joined block');
+        $this->assertNotFalse($materialsIndex);
+
+        $this->assertLessThan($typesIndex, $splitAlcoholIndex, 'split categories appear before TYPES');
+        $this->assertLessThan($materialsIndex, $typesIndex, 'TYPES appears before MATERIALS');
+        $this->assertLessThan($joinedSpiritsBottleIndex, $materialsIndex, 'MATERIALS appears before joined block');
 
         // Bare bottle column (split block) must equal 1; joined spirits_bottle must also equal 1 — same data, two presentations.
         $bottleIndex = array_search('bottle', $headings);
@@ -312,5 +320,35 @@ class CreateCSVExportFormatTest extends TestCase
         // No combined material_object key like "plastic_cup"
         $this->assertNotContains('plastic_cup', $headings);
         $this->assertNotContains('paper_cup', $headings);
+    }
+
+    public function test_materials_then_brands_then_custom_tags_ordering_holds_in_all_modes()
+    {
+        // Add a brand and a custom tag to the fireball photo so all three blocks appear
+        // alongside the existing object/type/material data. Asserts MATERIALS < brands < custom_tag_*
+        // in every format mode (split, joined, split,joined).
+        $brand = BrandList::firstOrCreate(['key' => 'order_test_brand']);
+        $custom = CustomTagNew::firstOrCreate(['key' => 'order_test_custom']);
+
+        $pt = $this->fireballPhoto->photoTags()->first();
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 1]);
+        PhotoTagExtraTags::create(['photo_tag_id' => $pt->id, 'tag_type' => 'custom_tag', 'tag_type_id' => $custom->id, 'quantity' => 1]);
+        app(GeneratePhotoSummaryService::class)->run($this->fireballPhoto->fresh());
+
+        foreach ([['split'], ['joined'], ['split', 'joined']] as $formats) {
+            $headings = (new CreateCSVExport(null, null, null, $this->user->id, [], [], $formats))->headings();
+
+            $materialsIndex = array_search('MATERIALS', $headings);
+            $brandsIndex = array_search('brands', $headings);
+            $customIndex = array_search('custom_tag_1', $headings);
+
+            $label = implode(',', $formats);
+            $this->assertNotFalse($materialsIndex, "MATERIALS missing in {$label}");
+            $this->assertNotFalse($brandsIndex, "brands missing in {$label}");
+            $this->assertNotFalse($customIndex, "custom_tag_1 missing in {$label}");
+
+            $this->assertLessThan($brandsIndex, $materialsIndex, "MATERIALS must precede brands in {$label}");
+            $this->assertLessThan($customIndex, $brandsIndex, "brands must precede custom_tag_1 in {$label}");
+        }
     }
 }

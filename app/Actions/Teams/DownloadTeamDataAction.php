@@ -10,7 +10,7 @@ use App\Models\Users\User;
 class DownloadTeamDataAction
 {
 
-    public function run(User $user, Team $team, array $dateFilter = [], array $extraFilters = [], array $formats = ['split']): void
+    public function run(User $user, Team $team, array $dateFilter = [], array $extraFilters = [], array $formats = ['split'], string $layout = 'wide'): void
     {
         $path = now()->format('Y') .
             "/" . now()->format('m') .
@@ -21,10 +21,10 @@ class DownloadTeamDataAction
             $path .= '_from_' . $dateFilter['fromDate'] . '_to_' . $dateFilter['toDate'];
         }
 
-        $path .= '/_Team_OpenLitterMap.csv';
+        $path .= '/_Team_OpenLitterMap_' . now()->format('Y-m-d_His') . '.csv';
 
         /* Dispatch job to create CSV file for export */
-        (new CreateCSVExport(null, null, $team->id, null, $dateFilter, $extraFilters, $formats))
+        (new CreateCSVExport(null, null, $team->id, null, $dateFilter, $extraFilters, $formats, $layout))
             ->notifyOnFailure($user->email)
             ->queue($path, 's3', null, ['visibility' => 'public'])
             ->chain([

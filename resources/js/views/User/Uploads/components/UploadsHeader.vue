@@ -10,12 +10,16 @@ const exportMessage = ref('');
 
 const exportSuccess = ref(false);
 
+const layout = ref('wide');
 const formatSplit = ref(true);
 const formatJoined = ref(false);
 
-const exportDisabled = computed(() => exporting.value || (!formatSplit.value && !formatJoined.value));
+const exportDisabled = computed(() =>
+    exporting.value || (layout.value === 'wide' && !formatSplit.value && !formatJoined.value)
+);
 
 const buildFormatParam = () => {
+    if (layout.value === 'long') return '';
     const parts = [];
     if (formatSplit.value) parts.push('split');
     if (formatJoined.value) parts.push('joined');
@@ -29,6 +33,7 @@ const exportCsv = async () => {
     try {
         const params = {
             dateField: 'datetime',
+            layout: layout.value,
             format: buildFormatParam(),
         };
         if (filters.value.dateFrom) params.fromDate = filters.value.dateFrom;
@@ -293,15 +298,49 @@ onMounted(async () => {
 
             <!-- CSV Format Selector -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('CSV Format') }}</label>
-                <div class="flex items-center gap-3 h-[28px]">
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Format') }}</label>
+                <div class="flex flex-col gap-1">
                     <label class="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
-                        <input type="checkbox" v-model="formatSplit" class="h-3.5 w-3.5" />
-                        {{ $t('Split') }}
+                        <input type="radio" value="wide" v-model="layout" class="h-3.5 w-3.5" />
+                        {{ $t('Wide format') }}
+                        <span
+                            v-tooltip="$t('One row per photo with a column for every possible tag. Easy to scan in Excel. Most cells will be empty.')"
+                            :title="$t('One row per photo with a column for every possible tag. Easy to scan in Excel. Most cells will be empty.')"
+                            class="text-gray-400 hover:text-gray-600 cursor-help select-none"
+                            aria-label="Wide format help"
+                        >ⓘ</span>
                     </label>
-                    <label class="flex items-center gap-1 text-xs text-gray-700 cursor-pointer" :title="$t('v4-style joined columns (e.g. spirits_bottle)')">
-                        <input type="checkbox" v-model="formatJoined" class="h-3.5 w-3.5" />
-                        {{ $t('Joined') }}
+                    <div class="ml-5 flex items-center gap-3" :class="layout === 'long' ? 'opacity-50' : ''">
+                        <label class="flex items-center gap-1 text-xs text-gray-700" :class="layout === 'long' ? 'cursor-not-allowed' : 'cursor-pointer'">
+                            <input type="checkbox" v-model="formatSplit" :disabled="layout === 'long'" class="h-3.5 w-3.5" />
+                            {{ $t('Separate columns') }}
+                            <span
+                                v-tooltip="$t('One column each for object, type, and material. Recommended for new analyses.')"
+                                :title="$t('One column each for object, type, and material. Recommended for new analyses.')"
+                                class="text-gray-400 hover:text-gray-600 cursor-help select-none"
+                                aria-label="Separate columns help"
+                            >ⓘ</span>
+                        </label>
+                        <label class="flex items-center gap-1 text-xs text-gray-700" :class="layout === 'long' ? 'cursor-not-allowed' : 'cursor-pointer'">
+                            <input type="checkbox" v-model="formatJoined" :disabled="layout === 'long'" class="h-3.5 w-3.5" />
+                            {{ $t('Combined columns') }}
+                            <span
+                                v-tooltip="$t('Object and type joined into one column (v4-style). Use this if your existing scripts expect columns like spirits_bottle.')"
+                                :title="$t('Object and type joined into one column (v4-style). Use this if your existing scripts expect columns like spirits_bottle.')"
+                                class="text-gray-400 hover:text-gray-600 cursor-help select-none"
+                                aria-label="Combined columns help"
+                            >ⓘ</span>
+                        </label>
+                    </div>
+                    <label class="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
+                        <input type="radio" value="long" v-model="layout" class="h-3.5 w-3.5" />
+                        {{ $t('Long format') }}
+                        <span
+                            v-tooltip="$t('One row per tag, with photo details repeated. Each tag gets its own row. Best for analysis tools like pandas, SQL, or Tableau.')"
+                            :title="$t('One row per tag, with photo details repeated. Each tag gets its own row. Best for analysis tools like pandas, SQL, or Tableau.')"
+                            class="text-gray-400 hover:text-gray-600 cursor-help select-none"
+                            aria-label="Long format help"
+                        >ⓘ</span>
                     </label>
                 </div>
             </div>

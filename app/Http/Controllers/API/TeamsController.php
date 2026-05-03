@@ -262,8 +262,9 @@ class TeamsController extends Controller
         ]);
 
         $formats = CreateCSVExport::parseFormats($request->input('format'));
+        $layout = CreateCSVExport::parseLayout($request->input('layout'));
 
-        $action->run($user, $team, $dateFilter, $extraFilters, $formats);
+        $action->run($user, $team, $dateFilter, $extraFilters, $formats, $layout);
 
         return $this->success();
     }

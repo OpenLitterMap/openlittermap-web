@@ -46,7 +46,7 @@ class DownloadControllerNew extends Controller
             {
                 if ($city = City::find($request->locationId))
                 {
-                    $path .= $city->city . '_OpenLitterMap.csv';
+                    $path .= $city->city . '_OpenLitterMap_' . now()->format('Y-m-d_His') . '.csv';
                     $location_id = $city->id;
                 }
             }
@@ -54,7 +54,7 @@ class DownloadControllerNew extends Controller
             {
                 if ($state = State::find($request->locationId))
                 {
-                    $path .= $state->state . '_OpenLitterMap.csv';
+                    $path .= $state->state . '_OpenLitterMap_' . now()->format('Y-m-d_His') . '.csv';
                     $location_id = $state->id;
                 }
             }
@@ -62,15 +62,16 @@ class DownloadControllerNew extends Controller
             {
                 if ($country = Country::find($request->locationId))
                 {
-                    $path .= $country->country . '_OpenLitterMap.csv';
+                    $path .= $country->country . '_OpenLitterMap_' . now()->format('Y-m-d_His') . '.csv';
                     $location_id = $country->id;
                 }
             }
 
             $formats = CreateCSVExport::parseFormats($request->input('format'));
+            $layout = CreateCSVExport::parseLayout($request->input('layout'));
 
             /* Dispatch job to create CSV file for export */
-            (new CreateCSVExport($request->locationType, $location_id, null, null, [], [], $formats))
+            (new CreateCSVExport($request->locationType, $location_id, null, null, [], [], $formats, $layout))
                 ->notifyOnFailure($email)
                 ->queue($path, 's3', null, ['visibility' => 'public'])
                 ->chain([
