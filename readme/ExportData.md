@@ -269,6 +269,8 @@ School team photos with `is_public = false` are excluded because teacher approva
 
 The `format` query/body parameter selects one or both column blocks. Comma-separated, case-insensitive, deduped. Empty / unrecognized → `split`.
 
+Controllers (`ProfileController::download`, `TeamsController::download`, `DownloadControllerNew::index`) all parse this through `CreateCSVExport::parseFormats(?string $raw)` — the single source of truth for splitting, normalizing, and validating the param.
+
 | Format | What it emits | Use when |
 |--------|---------------|----------|
 | `split` (default) | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |

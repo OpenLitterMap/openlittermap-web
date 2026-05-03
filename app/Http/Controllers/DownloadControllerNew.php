@@ -67,9 +67,7 @@ class DownloadControllerNew extends Controller
                 }
             }
 
-            $formats = CreateCSVExport::normalizeFormats(
-                array_filter(explode(',', (string) $request->input('format', '')))
-            );
+            $formats = CreateCSVExport::parseFormats($request->input('format'));
 
             /* Dispatch job to create CSV file for export */
             (new CreateCSVExport($request->locationType, $location_id, null, null, [], [], $formats))

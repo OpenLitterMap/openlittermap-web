@@ -110,13 +110,13 @@ async function download() {
         await axios.post('/api/download', payload);
         downloadSuccess.value = true;
         downloadMessage.value = t('Export started — check your email for the download link.');
+        email.value = '';
+        emailEntered.value = false;
     } catch {
         downloadSuccess.value = false;
         downloadMessage.value = t('Export failed. Please try again.');
     } finally {
         downloading.value = false;
-        email.value = '';
-        emailEntered.value = false;
     }
 }
 </script>

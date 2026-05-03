@@ -251,6 +251,11 @@ class CreateCSVExportFormatTest extends TestCase
         $mapped = $export->map($sodaPhoto->fresh());
         $this->assertEquals(2, $mapped[$bottlePositions[0]], 'SOFTDRINKS bottle slot reflects soda photo qty');
         $this->assertNull($mapped[$spiritsBottlePositions[0]], 'soda photo has nothing in ALCOHOL.spirits_bottle');
+
+        // Symmetric assertion: fireball (spirit bottle) lands in ALCOHOL.spirits_bottle and not in SOFTDRINKS.bottle.
+        $fireballMapped = $export->map($this->fireballPhoto->fresh());
+        $this->assertEquals(1, $fireballMapped[$spiritsBottlePositions[0]], 'fireball populates ALCOHOL.spirits_bottle');
+        $this->assertNull($fireballMapped[$bottlePositions[0]], 'fireball must not bleed into SOFTDRINKS.bottle');
     }
 
     public function test_joined_block_does_not_collapse_materials_into_object_columns()

@@ -261,9 +261,7 @@ class TeamsController extends Controller
             'status' => $request->input('status'),
         ]);
 
-        $formats = CreateCSVExport::normalizeFormats(
-            array_filter(explode(',', (string) $request->input('format', '')))
-        );
+        $formats = CreateCSVExport::parseFormats($request->input('format'));
 
         $action->run($user, $team, $dateFilter, $extraFilters, $formats);
 

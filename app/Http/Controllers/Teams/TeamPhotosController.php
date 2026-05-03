@@ -329,6 +329,11 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
+        // Non-school teams intentionally show real names/usernames to all members:
+        // those fields are already public platform-wide (leaderboard, profile, points map).
+        // Privacy on minors is enforced separately via $team->safeguarding (school teams only),
+        // which swaps in "Student N" pseudonyms below.
+
         // Get all members (excluding leader)
         $members = $team->users()
             ->where('users.id', '!=', $team->leader)

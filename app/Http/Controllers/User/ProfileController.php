@@ -30,9 +30,7 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $dateFilter = $this->getDownloadDateFilter($request);
-        $formats = CreateCSVExport::normalizeFormats(
-            array_filter(explode(',', (string) $request->input('format', '')))
-        );
+        $formats = CreateCSVExport::parseFormats($request->input('format'));
 
         $x     = new \DateTime();
         $date  = $x->format('Y-m-d');

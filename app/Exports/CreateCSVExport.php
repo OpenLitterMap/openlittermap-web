@@ -9,6 +9,7 @@ use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Photo;
+use Illuminate\Support\Collection;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -86,16 +87,43 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $photoIdQuery = $this->scopeQuery(Photo::query())->select('id');
         $tagIdQuery = PhotoTag::whereIn('photo_id', $photoIdQuery)->select('id');
 
-        $activeObjectIds = PhotoTag::whereIn('photo_id', $photoIdQuery)
-            ->whereNotNull('category_id')
-            ->whereNotNull('litter_object_id')
-            ->select('category_id', 'litter_object_id')
-            ->distinct()
-            ->get();
+        // Joined mode needs (cat, obj, type) triples; split-only needs (cat, obj) + types separately.
+        // Combining into a single triple scan when joined avoids a second filtered photo_tags scan.
+        if ($this->emitJoined) {
+            $activeTriples = PhotoTag::whereIn('photo_id', $photoIdQuery)
+                ->whereNotNull('category_id')
+                ->whereNotNull('litter_object_id')
+                ->select('category_id', 'litter_object_id', 'litter_object_type_id')
+                ->distinct()
+                ->get();
+
+            $activeObjectIds = $activeTriples;
+            $activeTypeIds = $activeTriples
+                ->pluck('litter_object_type_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        } else {
+            $activeObjectIds = PhotoTag::whereIn('photo_id', $photoIdQuery)
+                ->whereNotNull('category_id')
+                ->whereNotNull('litter_object_id')
+                ->select('category_id', 'litter_object_id')
+                ->distinct()
+                ->get();
+
+            $activeTypeIds = PhotoTag::whereIn('photo_id', $photoIdQuery)
+                ->whereNotNull('litter_object_type_id')
+                ->distinct()
+                ->pluck('litter_object_type_id')
+                ->all();
+
+            $activeTriples = collect();
+        }
 
         $activeCatIds = $activeObjectIds->pluck('category_id')->unique()->all();
         $activeObjMap = $activeObjectIds->groupBy('category_id')
-            ->map(fn ($rows) => $rows->pluck('litter_object_id')->all())
+            ->map(fn ($rows) => $rows->pluck('litter_object_id')->unique()->all())
             ->all();
 
         // Single query for all extra tag types
@@ -107,12 +135,6 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $activeMaterialIds = $extraTagTypes->where('tag_type', 'material')->pluck('tag_type_id')->all();
         $this->hasBrands = $extraTagTypes->where('tag_type', 'brand')->isNotEmpty();
         $this->hasCustomTags = $extraTagTypes->where('tag_type', 'custom_tag')->isNotEmpty();
-
-        $activeTypeIds = PhotoTag::whereIn('photo_id', $photoIdQuery)
-            ->whereNotNull('litter_object_type_id')
-            ->distinct()
-            ->pluck('litter_object_type_id')
-            ->all();
 
         // Load and filter category/object columns to only those with data
         $this->categoryObjects = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.id')])
@@ -146,7 +168,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             : [];
 
         if ($this->emitJoined) {
-            $this->categoryJoinedColumns = $this->buildJoinedColumns($photoIdQuery);
+            $this->categoryJoinedColumns = $this->buildJoinedColumns($activeTriples);
         }
     }
 
@@ -173,33 +195,35 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     }
 
     /**
-     * Pre-scan distinct (category, object, type) triples in the export scope and build
-     * the per-category column list for the joined block.
+     * Parse the `format` request param (comma-separated string) into a normalized format list.
+     * Use this from controllers so parsing/validation stays in one place.
+     */
+    public static function parseFormats(?string $raw): array
+    {
+        return self::normalizeFormats(array_filter(explode(',', (string) $raw)));
+    }
+
+    /**
+     * Build the per-category column list for the joined block from the constructor's triple scan.
+     * Reuses already-loaded categoryObjects/types — no extra DB queries.
      *
      * @return array<int, array{category_id:int, category_key:string, columns:array<int, array{key:string, object_id:int, type_id:int|null}>}>
      */
-    private function buildJoinedColumns($photoIdQuery): array
+    private function buildJoinedColumns(Collection $triples): array
     {
-        $triples = PhotoTag::whereIn('photo_id', $photoIdQuery)
-            ->whereNotNull('category_id')
-            ->whereNotNull('litter_object_id')
-            ->select('category_id', 'litter_object_id', 'litter_object_type_id')
-            ->distinct()
-            ->get();
-
         if ($triples->isEmpty()) {
             return [];
         }
 
-        $catIds = $triples->pluck('category_id')->unique()->values()->all();
-        $objIds = $triples->pluck('litter_object_id')->unique()->values()->all();
-        $typeIds = $triples->pluck('litter_object_type_id')->filter()->unique()->values()->all();
+        $catKeys = array_column($this->categoryObjects, 'key', 'id');
+        $typeKeys = array_column($this->types, 'key', 'id');
 
-        $catKeys = Category::whereIn('id', $catIds)->orderBy('id')->pluck('key', 'id')->all();
-        $objKeys = \App\Models\Litter\Tags\LitterObject::whereIn('id', $objIds)->pluck('key', 'id')->all();
-        $typeKeys = !empty($typeIds)
-            ? LitterObjectType::whereIn('id', $typeIds)->pluck('key', 'id')->all()
-            : [];
+        $objKeys = [];
+        foreach ($this->categoryObjects as $cat) {
+            foreach ($cat['objects'] as $obj) {
+                $objKeys[$obj['id']] = $obj['key'];
+            }
+        }
 
         $byCat = [];
         foreach ($triples as $row) {
@@ -341,8 +365,6 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         $materialLookup = [];
         $typeLookup = [];
         $brandParts = [];
-        // joinedLookup[catId][objId][typeId|0] = qty — keyed by 0 when type is null
-        // so the joined block can read both type-bearing and bare-object combinations.
         $joinedLookup = [];
 
         foreach ($tags as $tag) {
@@ -363,8 +385,8 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                 $typeLookup[$typeId] = ($typeLookup[$typeId] ?? 0) + $qty;
             }
 
-            $joinedTypeKey = $typeId ?? 0;
-            if ($catId && $objId) {
+            if ($this->emitJoined && $catId && $objId) {
+                $joinedTypeKey = $typeId ?? 0;
                 $joinedLookup[$catId][$objId][$joinedTypeKey] =
                     ($joinedLookup[$catId][$objId][$joinedTypeKey] ?? 0) + $qty;
             }
@@ -410,7 +432,11 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
                 : null;
         }
 
-        // Custom tags (only if any exist in export scope)
+        // Custom tags (only if any exist in export scope).
+        // Walks the relation rather than reading summary['tags'][i]['custom_tags'] because
+        // some legacy rows have stale per-tag arrays (e.g. extras-only photos where summary
+        // pre-dates a custom_tag write). The eager-loaded photoTags.extraTags.extraTag
+        // chain in query() keeps this O(1) per row.
         if ($this->hasCustomTags) {
             $customTagNames = $row->photoTags
                 ->flatMap(fn ($pt) => $pt->extraTags->where('tag_type', 'custom_tag'))
