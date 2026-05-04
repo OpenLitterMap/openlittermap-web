@@ -63,7 +63,10 @@ class DownloadControllerNew extends Controller
 
         // Slug the location name to prevent unexpected path segments from DB-sourced strings
         // (S3 keys are flat strings so traversal can't escape, but `..` produces malformed keys).
-        $path = $now->format('Y/m/d') . '/' . $now->timestamp . '/' . Str::slug($locationName) . $fileSuffix;
+        // Str::slug() returns '' for all-non-Latin names (中国, العربية, Ελλάδα, …) — fall back
+        // to a typed identifier so the file stays distinguishable in S3 listings.
+        $locationSlug = Str::slug($locationName) ?: ($request->locationType . '-' . $location_id);
+        $path = $now->format('Y/m/d') . '/' . $now->timestamp . '/' . $locationSlug . $fileSuffix;
 
         try
         {
