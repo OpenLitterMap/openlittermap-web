@@ -56,6 +56,8 @@ class AppServiceProvider extends ServiceProvider
         // CSV exports queue jobs + write to S3 + send email — abuse vector if uncapped.
         // Two limits stack so neither can be sidestepped by varying the other dimension:
         //   1. per-(user|ip+email) per-minute — blocks one user/bot hammering one address.
+        //      Authenticated users are limited per-account, NOT per-IP, so switching
+        //      networks (mobile ↔ laptop on the same login) doesn't multiply the budget.
         //   2. per-ip per-hour — blocks a single ip spraying many victim emails to multiply
         //      its budget under limit (1).
         RateLimiter::for('csv-export', function ($request) {

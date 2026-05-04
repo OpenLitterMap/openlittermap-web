@@ -656,10 +656,10 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         // on large exports. Filter columns (user_id, team_id, country/state/city_id,
         // is_public, team_approved_at, updated_at) don't need to be SELECTed.
         $base = $this->layout === 'long'
-            ? Photo::query()->select(['id', 'datetime', 'lat', 'lon', 'verified', 'summary', 'team_id'])->with($with)
+            ? Photo::query()->select(['id', 'datetime', 'created_at', 'updated_at', 'lat', 'lon', 'verified', 'summary', 'team_id'])->with($with)
             : Photo::query()->select([
-                'id', 'verified', 'model', 'datetime', 'created_at', 'lat', 'lon',
-                'remaining', 'address_array', 'total_tags', 'summary',
+                'id', 'verified', 'model', 'datetime', 'created_at', 'updated_at',
+                'lat', 'lon', 'remaining', 'address_array', 'total_tags', 'summary',
             ])->with($with);
 
         $query = $this->scopeQuery($base);
