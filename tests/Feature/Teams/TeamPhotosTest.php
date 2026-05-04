@@ -513,9 +513,12 @@ class TeamPhotosTest extends TestCase
         $this->assertNull($members[0]['username']);
     }
 
-    public function test_member_stats_shows_real_names_without_safeguarding()
+    public function test_member_stats_keeps_pseudonyms_when_teacher_disables_safeguarding_on_school_team()
     {
-        // Disable safeguarding
+        // Pseudonyms gate on isSchool() not safeguarding — flipping the flag off
+        // on a school team must NOT expose minors' real names to the teacher view.
+        // (Teacher sees real names elsewhere via the photo list / facilitator queue;
+        // memberStats stays pseudonymized for any school team.)
         $this->schoolTeam->update(['safeguarding' => false]);
 
         Photo::factory()->create([
@@ -530,8 +533,8 @@ class TeamPhotosTest extends TestCase
         $response->assertOk();
 
         $members = $response->json('members');
-        $this->assertEquals($this->student->name, $members[0]['name']);
-        $this->assertEquals($this->student->username, $members[0]['username']);
+        $this->assertStringStartsWith('Student', $members[0]['name']);
+        $this->assertNull($members[0]['username']);
     }
 
     public function test_member_stats_rejects_non_team_members()
@@ -548,7 +551,7 @@ class TeamPhotosTest extends TestCase
     {
         // Regression: previously gated to isLeader || school_manager, which made the
         // Members tab silently empty for regular members. The data is intentionally
-        // safeguarded (pseudonyms on school teams), so any member can see it.
+        // pseudonymized for school teams, so any member can see it.
         Photo::factory()->create([
             'user_id' => $this->student->id,
             'team_id' => $this->schoolTeam->id,
@@ -567,8 +570,74 @@ class TeamPhotosTest extends TestCase
         $this->assertCount(1, $members);
         $this->assertEquals(1, $members[0]['total_photos']);
         $this->assertEquals(7, $members[0]['litter_count']);
-        // Safeguarding pseudonyms still applied for non-leader school team members
+        // School team → pseudonyms regardless of safeguarding flag
         $this->assertStringStartsWith('Student', $members[0]['name']);
+        $this->assertNull($members[0]['username']);
+    }
+
+    public function test_member_stats_pseudonymizes_school_team_with_safeguarding_off()
+    {
+        // The DB default for `safeguarding` is 0 — only CreateTeamAction flips it on
+        // for newly-created school teams. Pre-existing school teams (or any school team
+        // where a manager toggled it off) must still pseudonymize minor classmates.
+        $this->schoolTeam->update(['safeguarding' => false]);
+
+        Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => true,
+            'team_approved_at' => now(),
+            'total_tags' => 3,
+        ]);
+
+        $response = $this->actingAs($this->student)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $this->schoolTeam->id);
+
+        $response->assertOk();
+
+        $members = $response->json('members');
+        $this->assertCount(1, $members);
+        $this->assertStringStartsWith('Student', $members[0]['name']);
+        $this->assertNull($members[0]['username']);
+        $this->assertNotEquals($this->student->name, $members[0]['name']);
+    }
+
+    public function test_member_stats_shows_real_names_on_non_school_teams()
+    {
+        // Community/business/etc. teams keep real names — those fields are public
+        // platform-wide (leaderboard, profile, points map). Pseudonyms only apply
+        // to school teams.
+        // team_types requires price + description; use the seeded Community row if present
+        // (seeders use capitalized 'Community') and otherwise create with full required fields.
+        $communityType = TeamType::where('team', '!=', 'school')->first()
+            ?? TeamType::create(['team' => 'community', 'price' => 0, 'description' => 'community']);
+        $leader = User::factory()->create();
+        $member = User::factory()->create();
+        $communityTeam = Team::factory()->create([
+            'type_id' => $communityType->id,
+            'leader' => $leader->id,
+            'safeguarding' => false,
+        ]);
+        $communityTeam->users()->attach($leader->id);
+        $communityTeam->users()->attach($member->id);
+
+        Photo::factory()->create([
+            'user_id' => $member->id,
+            'team_id' => $communityTeam->id,
+            'is_public' => true,
+            'team_approved_at' => now(),
+            'total_tags' => 2,
+        ]);
+
+        $response = $this->actingAs($member)
+            ->getJson('/api/teams/photos/member-stats?team_id=' . $communityTeam->id);
+
+        $response->assertOk();
+
+        $members = $response->json('members');
+        $this->assertCount(1, $members);
+        $this->assertEquals($member->name, $members[0]['name']);
+        $this->assertEquals($member->username, $members[0]['username']);
     }
 
     // ─── Dashboard with Verification Breakdown ────────

@@ -329,10 +329,12 @@ class TeamPhotosController extends Controller
             return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
 
-        // Non-school teams intentionally show real names/usernames to all members:
-        // those fields are already public platform-wide (leaderboard, profile, points map).
-        // Privacy on minors is enforced separately via $team->safeguarding (school teams only),
-        // which swaps in "Student N" pseudonyms below.
+        // Pseudonyms apply to ALL school teams, regardless of the safeguarding flag.
+        // Rationale: safeguarding has historically governed extra protections (map masking
+        // in PointsController via MasksStudentIdentity) but its DB default is 0, so any
+        // school team predating CreateTeamAction's default flip — or one where a manager
+        // toggled it off — would otherwise expose minor classmates' real names + activity.
+        // Non-school teams keep real names: those fields are already public platform-wide.
 
         // Get all members (excluding leader)
         $members = $team->users()
@@ -340,9 +342,8 @@ class TeamPhotosController extends Controller
             ->select('users.id', 'users.name', 'users.username')
             ->get();
 
-        // Build safeguarding pseudonym map
         $pseudonyms = [];
-        if ($team->safeguarding) {
+        if ($team->isSchool()) {
             $memberOrder = DB::table('team_user')
                 ->where('team_id', $team->id)
                 ->where('user_id', '!=', $team->leader)
