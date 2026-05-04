@@ -33,21 +33,15 @@ class ProfileController extends Controller
         $formats = CreateCSVExport::parseFormats($request->input('format'));
         $layout = CreateCSVExport::parseLayout($request->input('layout'));
 
-        $x     = new \DateTime();
-        $date  = $x->format('Y-m-d');
-        $date  = explode('-', $date);
-        $year  = $date[0];
-        $month = $date[1];
-        $day   = $date[2];
-        $unix  = now()->timestamp;
-
-        $path = $year.'/'.$month.'/'.$day.'/'.$unix;  // 2020/10/25/unix/
+        // Pin one $now so timestamp + Y-m-d_His can't disagree across a second boundary.
+        $now = now();
+        $path = $now->format('Y/m/d') . '/' . $now->timestamp;
 
         if (!empty($dateFilter)) {
             $path .= "_from_{$dateFilter['fromDate']}_to_{$dateFilter['toDate']}";
         }
 
-        $path .= '_MyData_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout) . '_' . now()->format('Y-m-d_His') . '_u' . $user->id . '.csv';
+        $path .= '_MyData_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout) . '_' . $now->format('Y-m-d_His') . '_u' . $user->id . '.csv';
 
         /* Dispatch job to create CSV file for export */
         (new CreateCSVExport(null, null, null, $user->id, $dateFilter, [], $formats, $layout))

@@ -641,18 +641,26 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
      */
     public function query()
     {
-        $with = ['photoTags.extraTags.extraTag'];
+        // Long mode always walks `extraTag` (custom-tag fallback in mapLong);
+        // wide mode only walks it when hasCustomTags — skip the JOIN otherwise.
+        $with = ($this->layout === 'long' || $this->hasCustomTags)
+            ? ['photoTags.extraTags.extraTag']
+            : ['photoTags.extraTags'];
 
         if ($this->layout === 'long') {
             $with[] = 'team:id,name';
         }
 
-        // Long mode only reads id/datetime/lat/lon/verified/summary/team_id — skipping the
-        // heavy unused columns (address_array, geom BLOB, result_string, model, …) cuts
-        // hydration + memory churn on large exports.
+        // Trim columns to what map()/headings() actually read. Skips the heavy unused
+        // ones (geom BLOB, result_string, filename, …) — cuts hydration + memory churn
+        // on large exports. Filter columns (user_id, team_id, country/state/city_id,
+        // is_public, team_approved_at, updated_at) don't need to be SELECTed.
         $base = $this->layout === 'long'
             ? Photo::query()->select(['id', 'datetime', 'lat', 'lon', 'verified', 'summary', 'team_id'])->with($with)
-            : Photo::with($with);
+            : Photo::query()->select([
+                'id', 'verified', 'model', 'datetime', 'created_at', 'lat', 'lon',
+                'remaining', 'address_array', 'total_tags', 'summary',
+            ])->with($with);
 
         $query = $this->scopeQuery($base);
 
@@ -720,6 +728,7 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         }
 
         if ($this->user_id) {
+            // User exports skip extras by design — only Teams pass extra filters.
             return $query->where('user_id', $this->user_id);
         }
 

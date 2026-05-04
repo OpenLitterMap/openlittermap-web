@@ -12,6 +12,7 @@ use App\Models\Location\City;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class DownloadControllerNew extends Controller
 {
@@ -51,14 +52,18 @@ class DownloadControllerNew extends Controller
         $formats = CreateCSVExport::parseFormats($request->input('format'));
         $layout = CreateCSVExport::parseLayout($request->input('layout'));
 
-        $unix = now()->timestamp;
-        $userSlug = $authUser ? '_u' . $authUser->id : '_uguest';
+        // Pin one $now so timestamp + Y-m-d_His + Y/m/d can't disagree across a second boundary.
+        $now = now();
+        // Random suffix for guests prevents same-second collisions; auth users get a stable id.
+        $userSlug = $authUser ? '_u' . $authUser->id : '_g' . Str::random(6);
         $fileSuffix = '_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout)
-            . '_' . now()->format('Y-m-d_His')
+            . '_' . $now->format('Y-m-d_His')
             . $userSlug
             . '.csv';
 
-        $path = now()->format('Y/m/d') . '/' . $unix . '/' . $locationName . $fileSuffix;
+        // Slug the location name to prevent unexpected path segments from DB-sourced strings
+        // (S3 keys are flat strings so traversal can't escape, but `..` produces malformed keys).
+        $path = $now->format('Y/m/d') . '/' . $now->timestamp . '/' . Str::slug($locationName) . $fileSuffix;
 
         try
         {

@@ -346,6 +346,8 @@ For each PhotoTag attached to the photo:
 
 Rows are **per-extra, not cartesian** — a PhotoTag with 5 materials and 56 brands emits 1 + 5 + 56 = 62 rows (not 5 × 56 = 280). The `photo_tag_id` column lets analysis pipelines dedupe correctly when summing.
 
+> ⚠ **Don't naively `SUM(quantity)`.** Material rows replicate their parent PhotoTag's quantity, so summing every row in a category overcounts by ~Nx materials. Either filter to bare-object rows (`material = '' AND brand = '' AND custom_tag = ''`) before summing, or `GROUP BY photo_tag_id` first. See the worked example below.
+
 ### `username` deliberately excluded
 
 The long-format schema does not include a `username` column in v1. School teams use safeguarding pseudonyms elsewhere on the platform, and the simplest privacy posture for a CSV that may be saved/shared off-platform is to omit the column entirely. Teams that need per-user analysis can join the CSV against their own roster via `photo_id` (admins) or the team's own member list.
