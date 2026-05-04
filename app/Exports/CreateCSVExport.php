@@ -207,11 +207,16 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     }
 
     /**
-     * Parse the `format` request param (comma-separated string) into a normalized format list.
-     * Use this from controllers so parsing/validation stays in one place.
+     * Parse the `format` request param into a normalized format list.
+     * Accepts comma-string ("split,joined"), array (?format[]=split&format[]=joined),
+     * or anything else — array/null/garbage degrade to ['split'].
+     * `mixed` so a request with format[]= doesn't 500 on the type-strict signature.
      */
-    public static function parseFormats(?string $raw): array
+    public static function parseFormats(mixed $raw): array
     {
+        if (is_array($raw)) {
+            return self::normalizeFormats($raw);
+        }
         return self::normalizeFormats(array_filter(explode(',', (string) $raw)));
     }
 
@@ -224,11 +229,11 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
     }
 
     /**
-     * Parse the `layout` request param. Use this from controllers so parsing stays in one place.
+     * Parse the `layout` request param. `mixed` so an array input doesn't 500.
      */
-    public static function parseLayout(?string $raw): string
+    public static function parseLayout(mixed $raw): string
     {
-        return self::normalizeLayout($raw);
+        return self::normalizeLayout(is_array($raw) ? null : $raw);
     }
 
     /**
