@@ -654,9 +654,10 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         // Trim columns to what map()/headings() actually read. Skips the heavy unused
         // ones (geom BLOB, result_string, filename, …) — cuts hydration + memory churn
         // on large exports. Filter columns (user_id, team_id, country/state/city_id,
-        // is_public, team_approved_at, updated_at) don't need to be SELECTed.
+        // is_public, team_approved_at) don't need to be SELECTed. updated_at IS kept
+        // for Eloquent timestamp-accessor safety even though map() doesn't read it.
         $base = $this->layout === 'long'
-            ? Photo::query()->select(['id', 'datetime', 'created_at', 'updated_at', 'lat', 'lon', 'verified', 'summary', 'team_id'])->with($with)
+            ? Photo::query()->select(['id', 'datetime', 'updated_at', 'lat', 'lon', 'verified', 'summary', 'team_id'])->with($with)
             : Photo::query()->select([
                 'id', 'verified', 'model', 'datetime', 'created_at', 'updated_at',
                 'lat', 'lon', 'remaining', 'address_array', 'total_tags', 'summary',

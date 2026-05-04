@@ -172,8 +172,15 @@ const onExport = async (filters) => {
     try {
         await teamsStore.downloadTeamData(props.teamId, filters);
         toast.success('Export started — check your email for the download link.');
-    } catch {
-        toast.error('Export failed. Please try again.');
+    } catch (err) {
+        if (err?.response?.status === 429) {
+            const retry = err.response.headers?.['retry-after'];
+            toast.error(retry
+                ? `Too many exports — try again in ${retry}s.`
+                : 'Too many exports — try again in a moment.');
+        } else {
+            toast.error('Export failed. Please try again.');
+        }
     } finally {
         exporting.value = false;
     }

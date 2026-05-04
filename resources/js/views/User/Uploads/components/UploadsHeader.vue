@@ -50,9 +50,16 @@ const exportCsv = async () => {
         await axios.get('/api/user/profile/download', { params });
         exportSuccess.value = true;
         exportMessage.value = 'Export started — check your email for the download link.';
-    } catch {
+    } catch (err) {
         exportSuccess.value = false;
-        exportMessage.value = 'Export failed. Please try again.';
+        if (err?.response?.status === 429) {
+            const retry = err.response.headers?.['retry-after'];
+            exportMessage.value = retry
+                ? `Too many exports — try again in ${retry}s.`
+                : 'Too many exports — try again in a moment.';
+        } else {
+            exportMessage.value = 'Export failed. Please try again.';
+        }
     } finally {
         exporting.value = false;
     }

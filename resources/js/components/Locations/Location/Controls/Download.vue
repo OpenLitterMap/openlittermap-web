@@ -167,9 +167,16 @@ async function download() {
         downloadMessage.value = t('Export started — check your email for the download link.');
         email.value = '';
         emailEntered.value = false;
-    } catch {
+    } catch (err) {
         downloadSuccess.value = false;
-        downloadMessage.value = t('Export failed. Please try again.');
+        if (err?.response?.status === 429) {
+            const retry = err.response.headers?.['retry-after'];
+            downloadMessage.value = retry
+                ? t('Too many exports — try again in {seconds}s.', { seconds: retry })
+                : t('Too many exports — try again in a moment.');
+        } else {
+            downloadMessage.value = t('Export failed. Please try again.');
+        }
     } finally {
         downloading.value = false;
     }

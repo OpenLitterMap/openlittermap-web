@@ -314,7 +314,7 @@ class TeamPhotosController extends Controller
      * GET /api/teams/photos/member-stats?team_id=X
      *
      * Returns per-student: total photos, pending, approved, litter count, last active.
-     * Applies safeguarding pseudonyms when enabled (school teams).
+     * Always pseudonymizes school teams (regardless of the safeguarding flag).
      */
     public function memberStats(Request $request): JsonResponse
     {
