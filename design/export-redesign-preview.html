@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenLitterMap · Export Configurator (preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Geist+Mono:wght@300..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f5efdf;
+    --paper-warm: #ebe2cc;
+    --paper-shadow: rgba(20, 33, 61, 0.07);
+    --ink: #14213d;
+    --ink-mid: rgba(20, 33, 61, 0.62);
+    --ink-soft: rgba(20, 33, 61, 0.32);
+    --ink-faint: rgba(20, 33, 61, 0.14);
+    --hairline: #d9cfb3;
+    --hairline-strong: #c4b893;
+    --cinnabar: #dc4a1f;
+    --cinnabar-deep: #a83515;
+    --sage: #5b7560;
+    --serif: 'Fraunces', 'Times New Roman', serif;
+    --mono: 'Geist Mono', ui-monospace, 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: #0a0f1c;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Background = pretend dark app behind the modal */
+  body {
+    background:
+      radial-gradient(circle at 30% 20%, rgba(16, 95, 75, 0.25), transparent 50%),
+      radial-gradient(circle at 75% 80%, rgba(20, 35, 90, 0.35), transparent 55%),
+      linear-gradient(135deg, #0c1428 0%, #0a1a2c 50%, #0d2a25 100%);
+    background-attachment: fixed;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    padding: 32px;
+  }
+
+  /* Faint backdrop — texture hints of "the app" the modal is sitting over */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 64px 64px;
+    pointer-events: none;
+  }
+
+  /* Vignette for depth */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+  }
+
+  /* ───────── Modal shell ───────── */
+  .configurator {
+    position: relative;
+    width: min(1080px, 100%);
+    height: min(720px, calc(100vh - 64px));
+    background: var(--paper);
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 30px 80px rgba(0, 0, 0, 0.55),
+      0 5px 20px rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "header header"
+      "config preview"
+      "footer footer";
+    overflow: hidden;
+    z-index: 1;
+    /* Subtle paper texture via SVG noise data URI */
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.08  0 0 0 0 0.13  0 0 0 0 0.24  0 0 0 0.04 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  }
+
+  /* ───────── Header ───────── */
+  .header {
+    grid-area: header;
+    padding: 24px 36px 20px;
+    border-bottom: 1px solid var(--hairline);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eyebrow-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--cinnabar);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(220, 74, 31, 0.15);
+  }
+
+  .title {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 380;
+    font-variation-settings: 'opsz' 144, 'SOFT' 50;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .title em {
+    font-style: italic;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    color: var(--cinnabar);
+    font-weight: 320;
+  }
+
+  .scope {
+    text-align: right;
+  }
+
+  .scope-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 4px;
+  }
+
+  .scope-value {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-style: italic;
+    font-variation-settings: 'opsz' 36;
+    color: var(--ink);
+  }
+
+  .scope-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-mid);
+    margin-top: 2px;
+  }
+
+  /* ───────── Config column ───────── */
+  .config {
+    grid-area: config;
+    padding: 28px 32px 24px 36px;
+    overflow-y: auto;
+    border-right: 1px solid var(--hairline);
+  }
+
+  .config::-webkit-scrollbar { width: 8px; }
+  .config::-webkit-scrollbar-track { background: transparent; }
+  .config::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 4px; }
+
+  .section {
+    margin-bottom: 28px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .section-num {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--cinnabar);
+    font-variation-settings: 'opsz' 36;
+    width: 18px;
+  }
+
+  .section-title {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 450;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+
+  .section-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
+  }
+
+  /* ───────── Format cards ───────── */
+  .format-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .card {
+    position: relative;
+    padding: 14px 14px 12px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--hairline);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .card:hover {
+    border-color: var(--ink-mid);
+    background: rgba(255, 255, 255, 0.75);
+  }
+
+  .card.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .card.active .card-name { color: var(--paper); }
+  .card.active .card-desc { color: rgba(245, 239, 223, 0.65); }
+  .card.active .card-shape { background: rgba(245, 239, 223, 0.1); }
+  .card.active .card-shape-cell { background: var(--paper); }
+  .card.active .card-corner { color: var(--cinnabar); }
+
+  .card-corner {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-family: var(--serif);
+    font-size: 10px;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  .card-name {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 480;
+    line-height: 1;
+    margin-bottom: 6px;
+    margin-top: 14px;
+    color: var(--ink);
+  }
+
+  .card-desc {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-mid);
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+
+  /* Tiny iconographic shape preview inside each card */
+  .card-shape {
+    height: 24px;
+    background: rgba(20, 33, 61, 0.05);
+    padding: 3px;
+    display: grid;
+    gap: 2px;
+  }
+
+  .card-shape.wide {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: 1fr 1fr 1fr;
+  }
+
+  .card-shape.long {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+
+  .card-shape-cell {
+    background: var(--ink-mid);
+    opacity: 0.4;
+  }
+
+  .card-shape-cell.filled { opacity: 0.95; }
+  .card-shape-cell.head { opacity: 1; background: var(--cinnabar); }
+
+  /* ───────── Date range ───────── */
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 14px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+  }
+
+  .field-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--ink-soft);
+    padding: 4px 0 6px;
+    font-family: var(--serif);
+    font-size: 16px;
+    font-style: italic;
+    color: var(--ink);
+    font-variation-settings: 'opsz' 36;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field-input:focus {
+    border-bottom-color: var(--cinnabar);
+    border-bottom-width: 2px;
+    padding-bottom: 5px;
+  }
+
+  .date-arrow {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-soft);
+    padding-bottom: 7px;
+    font-size: 18px;
+  }
+
+  /* ───────── Advanced (expandable) ───────── */
+  .advanced-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 0;
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mid);
+    letter-spacing: 0.04em;
+    transition: color 0.15s;
+  }
+
+  .advanced-toggle:hover { color: var(--ink); }
+
+  .advanced-toggle::before {
+    content: '+';
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 0.7;
+    color: var(--cinnabar);
+    transition: transform 0.2s;
+  }
+
+  .advanced-toggle.open::before {
+    content: '−';
+  }
+
+  .advanced-body {
+    display: none;
+    padding: 14px 0 4px 18px;
+    border-left: 1px dashed var(--hairline-strong);
+    margin: 6px 0 0 6px;
+  }
+
+  .advanced-body.open { display: block; }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .toggle-row + .toggle-row {
+    border-top: 1px dashed var(--hairline);
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 32px;
+    height: 16px;
+    background: var(--ink-faint);
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--paper);
+    transition: transform 0.2s;
+  }
+
+  .toggle-switch.on { background: var(--cinnabar); }
+  .toggle-switch.on::after { transform: translateX(16px); }
+
+  .toggle-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+
+  .toggle-hint {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 11px;
+    color: var(--ink-mid);
+    margin-left: 4px;
+  }
+
+  /* ───────── Preview pane ───────── */
+  .preview {
+    grid-area: preview;
+    padding: 28px 36px 24px 32px;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.4), transparent 30%),
+      var(--paper-warm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+
+  .preview-title {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-style: italic;
+    color: var(--ink-mid);
+    font-variation-settings: 'opsz' 36;
+  }
+
+  .preview-stamp {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border: 1px solid var(--ink-soft);
+    padding: 3px 6px;
+  }
+
+  /* Live mini-table preview of the CSV columns */
+  .table-wrap {
+    flex: 1;
+    overflow: auto;
+    background: var(--paper);
+    border: 1px solid var(--hairline);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+    position: relative;
+  }
+
+  .table-wrap::-webkit-scrollbar { height: 8px; width: 8px; }
+  .table-wrap::-webkit-scrollbar-track { background: transparent; }
+  .table-wrap::-webkit-scrollbar-thumb { background: var(--hairline-strong); }
+
+  table.csv {
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 10px;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  table.csv th {
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-right: 1px solid rgba(245, 239, 223, 0.12);
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+
+  table.csv th.section-marker {
+    background: var(--cinnabar);
+    color: var(--paper);
+    text-transform: uppercase;
+    font-size: 8px;
+    letter-spacing: 0.18em;
+  }
+
+  table.csv td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--hairline);
+    border-right: 1px solid var(--hairline);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  table.csv tr:nth-child(even) td {
+    background: rgba(20, 33, 61, 0.02);
+  }
+
+  table.csv .empty {
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  table.csv .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Estimate callout */
+  .estimate {
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.4);
+    border-left: 2px solid var(--cinnabar);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .estimate-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 4px;
+  }
+
+  .estimate-value {
+    font-family: var(--serif);
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 380;
+    font-variation-settings: 'opsz' 144;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .estimate-unit {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-mid);
+    padding-bottom: 6px;
+  }
+
+  .estimate-warn {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--cinnabar);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    grid-column: 1 / -1;
+    display: none;
+  }
+
+  .estimate.over .estimate-warn { display: block; }
+  .estimate.over { border-left-color: var(--cinnabar-deep); }
+
+  /* ───────── Footer ───────── */
+  .footer {
+    grid-area: footer;
+    padding: 18px 36px;
+    border-top: 1px solid var(--hairline);
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.5), transparent);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .footer-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-mid);
+    line-height: 1.5;
+  }
+
+  .footer-meta a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--ink-soft);
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .footer-meta a:hover { text-decoration-color: var(--cinnabar); color: var(--cinnabar); }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .btn-cancel {
+    background: none;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mid);
+    padding: 12px 18px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-cancel:hover { color: var(--ink); }
+
+  .btn-export {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 14px 28px;
+    font-family: var(--serif);
+    font-size: 15px;
+    font-style: italic;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+    transition: background 0.15s, transform 0.05s;
+    position: relative;
+    font-variation-settings: 'opsz' 36;
+  }
+
+  .btn-export::after {
+    content: ' →';
+    font-style: normal;
+    color: var(--cinnabar);
+    transition: transform 0.15s;
+    display: inline-block;
+  }
+
+  .btn-export:hover {
+    background: var(--cinnabar);
+  }
+
+  .btn-export:hover::after {
+    color: var(--paper);
+    transform: translateX(3px);
+  }
+
+  /* Queued state overlay */
+  .queued-state {
+    position: absolute;
+    inset: 0;
+    background: rgba(245, 239, 223, 0.96);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    z-index: 10;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .queued-state.visible { display: flex; }
+
+  .queued-mark {
+    font-family: var(--serif);
+    font-size: 80px;
+    line-height: 1;
+    color: var(--cinnabar);
+    font-style: italic;
+    font-variation-settings: 'opsz' 144;
+  }
+
+  .queued-title {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-variation-settings: 'opsz' 144;
+    color: var(--ink);
+    font-weight: 380;
+    letter-spacing: -0.01em;
+  }
+
+  .queued-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-mid);
+    max-width: 380px;
+    line-height: 1.55;
+  }
+
+  .queued-meta strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .queued-back {
+    margin-top: 12px;
+    background: none;
+    border: 1px solid var(--ink-soft);
+    color: var(--ink);
+    padding: 10px 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .queued-back:hover { background: var(--ink); color: var(--paper); }
+
+  /* ───────── Recent exports drawer ───────── */
+  .recent-drawer {
+    position: absolute;
+    inset: 0;
+    background: var(--paper);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .recent-drawer.open { transform: translateX(0); }
+
+  .recent-head {
+    padding: 24px 36px 20px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+  }
+
+  .recent-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 36px;
+  }
+
+  .recent-item {
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--hairline);
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .recent-num {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-style: italic;
+    color: var(--cinnabar);
+    width: 22px;
+    font-variation-settings: 'opsz' 36;
+  }
+
+  .recent-info {
+    line-height: 1.4;
+  }
+
+  .recent-name {
+    font-family: var(--serif);
+    font-size: 15px;
+    color: var(--ink);
+    font-variation-settings: 'opsz' 36;
+  }
+
+  .recent-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-mid);
+    margin-top: 2px;
+  }
+
+  .recent-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    border: 1px solid var(--hairline-strong);
+    padding: 3px 8px;
+  }
+
+  .recent-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--cinnabar);
+    text-decoration: none;
+    border-bottom: 1px solid var(--cinnabar);
+    padding-bottom: 1px;
+  }
+
+  /* Marginalia — handwritten-feel labels in the gutter */
+  .margin-note {
+    position: absolute;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 11px;
+    color: var(--cinnabar);
+    transform: rotate(-2deg);
+    pointer-events: none;
+    font-variation-settings: 'opsz' 36, 'SOFT' 100;
+  }
+
+  @media (max-width: 920px) {
+    .configurator { grid-template-columns: 1fr; grid-template-areas: "header" "config" "preview" "footer"; height: auto; max-height: calc(100vh - 64px); }
+    .config { border-right: none; border-bottom: 1px solid var(--hairline); }
+  }
+</style>
+</head>
+<body>
+
+<div class="configurator" id="configurator">
+
+  <!-- ───────── Header ───────── -->
+  <header class="header">
+    <div>
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        Export configurator · v5.11
+      </div>
+      <h1 class="title">Compose your <em>data extract</em></h1>
+    </div>
+    <div class="scope">
+      <div class="scope-label">Exporting</div>
+      <div class="scope-value">Cork City</div>
+      <div class="scope-meta">city #1248 · 14,238 photos approved</div>
+    </div>
+  </header>
+
+  <!-- ───────── Config column ───────── -->
+  <section class="config">
+
+    <!-- Format -->
+    <div class="section">
+      <div class="section-head">
+        <span class="section-num">i.</span>
+        <span class="section-title">Choose a shape</span>
+        <span class="section-rule"></span>
+      </div>
+      <div class="format-cards">
+        <div class="card active" data-layout="wide" onclick="selectLayout('wide')">
+          <div class="card-corner">a</div>
+          <div class="card-name">Standard</div>
+          <div class="card-desc">One row per photo. Tag counts go in columns. Made for spreadsheets.</div>
+          <div class="card-shape wide">
+            <div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div>
+            <div class="card-shape-cell filled"></div><div class="card-shape-cell"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell"></div><div class="card-shape-cell"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell"></div><div class="card-shape-cell"></div>
+            <div class="card-shape-cell"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell"></div><div class="card-shape-cell"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell"></div>
+          </div>
+        </div>
+        <div class="card" data-layout="long" onclick="selectLayout('long')">
+          <div class="card-corner">b</div>
+          <div class="card-name">Long-form</div>
+          <div class="card-desc">One row per tag. Built for pandas, SQL, R — anything you'll <em>groupby</em>.</div>
+          <div class="card-shape long">
+            <div class="card-shape-cell head"></div><div class="card-shape-cell head"></div><div class="card-shape-cell head"></div>
+            <div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div>
+            <div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div>
+            <div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div>
+            <div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div><div class="card-shape-cell filled"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date range -->
+    <div class="section">
+      <div class="section-head">
+        <span class="section-num">ii.</span>
+        <span class="section-title">Bound the time window</span>
+        <span class="section-rule"></span>
+      </div>
+      <div class="date-row">
+        <div class="field">
+          <label class="field-label">From</label>
+          <input class="field-input" type="date" value="2024-01-01" onchange="updateEstimate()" />
+        </div>
+        <span class="date-arrow">→</span>
+        <div class="field">
+          <label class="field-label">Through</label>
+          <input class="field-input" type="date" value="2026-05-04" onchange="updateEstimate()" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced expandable -->
+    <div class="section" style="margin-bottom: 0;">
+      <button class="advanced-toggle" id="advToggle" onclick="toggleAdvanced()">
+        Advanced — for specific tools or v4-compatible scripts
+      </button>
+      <div class="advanced-body" id="advBody">
+        <div class="toggle-row">
+          <div class="toggle-switch on" id="splitSwitch" onclick="toggleSwitch('split')"></div>
+          <div>
+            <div class="toggle-label">Separate columns <span class="toggle-hint">— object · type · material in their own columns</span></div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-switch" id="joinedSwitch" onclick="toggleSwitch('joined')"></div>
+          <div>
+            <div class="toggle-label">Combined columns <span class="toggle-hint">— v4 layout: <span style="font-family:var(--mono);">spirits_bottle</span> as one column</span></div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-switch" id="pickupSwitch" onclick="toggleSwitch('pickup')"></div>
+          <div>
+            <div class="toggle-label">Picked-up only <span class="toggle-hint">— exclude photos where litter was left in place</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ───────── Preview pane ───────── -->
+  <aside class="preview">
+    <div class="preview-head">
+      <div class="preview-title">A preview of what you'll receive</div>
+      <div class="preview-stamp">Live</div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="csv" id="previewTable">
+        <!-- populated by JS -->
+      </table>
+    </div>
+
+    <div class="estimate" id="estimate">
+      <div>
+        <div class="estimate-label">Estimated rows</div>
+        <div>
+          <span class="estimate-value" id="estimateValue">14,238</span>
+          <span class="estimate-unit" id="estimateUnit">photos</span>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="estimate-label">Approx. file size</div>
+        <div class="estimate-value" style="font-size:18px;" id="estimateSize">3.1 MB</div>
+      </div>
+      <div class="estimate-warn" id="estimateWarn">
+        ⚠ Over 50,000 rows — your export will arrive in chunks. First chunk will include a "next page" link.
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───────── Footer ───────── -->
+  <footer class="footer">
+    <div class="footer-meta">
+      Delivery to <strong style="color:var(--ink);">researcher@university.edu</strong>. Link expires after 7 days.<br>
+      <a onclick="openRecent()">View recent exports →</a>
+    </div>
+    <div class="actions">
+      <button class="btn-cancel">Cancel</button>
+      <button class="btn-export" onclick="submitExport()">Send to inbox</button>
+    </div>
+  </footer>
+
+  <!-- ───────── Queued state overlay ───────── -->
+  <div class="queued-state" id="queuedState">
+    <div class="queued-mark">✦</div>
+    <div class="queued-title">Queued.</div>
+    <div class="queued-meta">
+      Your export of <strong>Cork City</strong> is on its way. We'll send the download link to <strong>researcher@university.edu</strong> as soon as it's ready — usually under a minute, occasionally longer for very large extracts.
+    </div>
+    <button class="queued-back" onclick="resetState()">Configure another</button>
+  </div>
+
+  <!-- ───────── Recent exports drawer ───────── -->
+  <div class="recent-drawer" id="recentDrawer">
+    <div class="recent-head">
+      <div>
+        <div class="eyebrow"><span class="eyebrow-dot"></span> History</div>
+        <h2 class="title" style="font-size: 24px;">Your recent <em>extracts</em></h2>
+      </div>
+      <button class="queued-back" onclick="closeRecent()">← Back to configurator</button>
+    </div>
+    <div class="recent-list">
+      <div class="recent-item">
+        <span class="recent-num">i.</span>
+        <div class="recent-info">
+          <div class="recent-name">Cork City — Standard</div>
+          <div class="recent-meta">2026-05-04 · 14:22 · 14,238 rows · 3.1 MB</div>
+        </div>
+        <span class="recent-tag">ready</span>
+        <a class="recent-link" href="#">download.csv ↓</a>
+      </div>
+      <div class="recent-item">
+        <span class="recent-num">ii.</span>
+        <div class="recent-info">
+          <div class="recent-name">My uploads — Long-form</div>
+          <div class="recent-meta">2026-05-03 · 09:11 · 487 rows · 96 KB</div>
+        </div>
+        <span class="recent-tag">ready</span>
+        <a class="recent-link" href="#">download.csv ↓</a>
+      </div>
+      <div class="recent-item">
+        <span class="recent-num">iii.</span>
+        <div class="recent-info">
+          <div class="recent-name">Iowa Litter Crew — Standard</div>
+          <div class="recent-meta">2026-05-01 · 18:04 · 2,108 rows · 612 KB</div>
+        </div>
+        <span class="recent-tag">expired</span>
+        <a class="recent-link" href="#" style="color:var(--ink-soft);border-color:var(--ink-soft);pointer-events:none;">re-export</a>
+      </div>
+      <div class="recent-item">
+        <span class="recent-num">iv.</span>
+        <div class="recent-info">
+          <div class="recent-name">Ireland — Standard + Combined</div>
+          <div class="recent-meta">2026-04-28 · 12:55 · 50,000 of 78,221 rows · chunk 1 of 2</div>
+        </div>
+        <span class="recent-tag">paginated</span>
+        <a class="recent-link" href="#">resume from #50,001 →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- decorative marginalia -->
+  <div class="margin-note" style="bottom: 70px; right: 36px; font-size: 13px;">↗ &nbsp;updates as you tune</div>
+
+</div>
+
+<script>
+  // ───────── State ─────────
+  const state = {
+    layout: 'wide',
+    split: true,
+    joined: false,
+    pickup: false,
+    estimateBase: 14238,  // pretend "approved photos in scope"
+  };
+
+  // ───────── Format card selection ─────────
+  function selectLayout(layout) {
+    state.layout = layout;
+    document.querySelectorAll('.card').forEach(c => c.classList.toggle('active', c.dataset.layout === layout));
+    renderPreview();
+    updateEstimate();
+  }
+
+  // ───────── Advanced toggles ─────────
+  function toggleAdvanced() {
+    document.getElementById('advToggle').classList.toggle('open');
+    document.getElementById('advBody').classList.toggle('open');
+  }
+
+  function toggleSwitch(key) {
+    state[key] = !state[key];
+    const el = document.getElementById(key + 'Switch');
+    el.classList.toggle('on', state[key]);
+    // Wide-mode: at least one of split/joined must remain on
+    if (!state.split && !state.joined && state.layout === 'wide') {
+      state.split = true;
+      document.getElementById('splitSwitch').classList.add('on');
+    }
+    renderPreview();
+    updateEstimate();
+  }
+
+  // ───────── Preview table builder ─────────
+  function renderPreview() {
+    const t = document.getElementById('previewTable');
+    if (state.layout === 'long') {
+      t.innerHTML = `
+        <thead><tr>
+          <th>photo_id</th><th>datetime</th><th>lat</th><th>lng</th>
+          <th>category</th><th>object</th><th>type</th>
+          <th>material</th><th>brand</th><th class="num">qty</th><th>photo_tag_id</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>418293</td><td>2026-04-12 14:22</td><td>51.8985</td><td>-8.4756</td><td>alcohol</td><td>bottle</td><td>spirits</td><td class="empty">—</td><td class="empty">—</td><td class="num">3</td><td>77182</td></tr>
+          <tr><td>418293</td><td>2026-04-12 14:22</td><td>51.8985</td><td>-8.4756</td><td>alcohol</td><td>bottle</td><td>spirits</td><td>glass</td><td class="empty">—</td><td class="num">3</td><td>77182</td></tr>
+          <tr><td>418293</td><td>2026-04-12 14:22</td><td>51.8985</td><td>-8.4756</td><td>alcohol</td><td>bottle</td><td>spirits</td><td class="empty">—</td><td>fireball</td><td class="num">2</td><td>77182</td></tr>
+          <tr><td>418294</td><td>2026-04-12 14:24</td><td>51.8990</td><td>-8.4748</td><td>smoking</td><td>butts</td><td class="empty">—</td><td class="empty">—</td><td class="empty">—</td><td class="num">12</td><td>77185</td></tr>
+          <tr><td>418295</td><td>2026-04-12 14:31</td><td>51.9001</td><td>-8.4732</td><td>softdrinks</td><td>can</td><td>soda</td><td>aluminium</td><td class="empty">—</td><td class="num">1</td><td>77191</td></tr>
+        </tbody>
+      `;
+    } else {
+      // Wide mode — header structure depends on split/joined toggles
+      let cols = `<th>id</th><th>datetime</th><th>lat</th><th>lon</th><th>picked_up</th><th>address</th><th class="num">total_tags</th>`;
+      if (state.split) {
+        cols += `<th class="section-marker">ALCOHOL</th><th>bottle</th><th>can</th>`;
+        cols += `<th class="section-marker">SMOKING</th><th>butts</th>`;
+        cols += `<th class="section-marker">TYPES</th><th>spirits</th><th>soda</th>`;
+      }
+      cols += `<th class="section-marker">MATERIALS</th><th>glass</th><th>aluminium</th>`;
+      if (state.joined) {
+        cols += `<th class="section-marker">ALCOHOL</th><th>spirits_bottle</th><th>beer_can</th>`;
+      }
+      cols += `<th>brands</th>`;
+      let body = '';
+      const row1cells = [`418293`, `2026-04-12 14:22`, `51.8985`, `-8.4756`, `Yes`, `Cork, IE`, `<span class="num">8</span>`];
+      const row2cells = [`418295`, `2026-04-12 14:31`, `51.9001`, `-8.4732`, `Yes`, `Cork, IE`, `<span class="num">3</span>`];
+      // split block
+      const splitR1 = state.split ? [`<span class="empty">—</span>`, `<span class="num">3</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="num">3</span>`, `<span class="empty">—</span>`] : [];
+      const splitR2 = state.split ? [`<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="num">1</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="num">1</span>`] : [];
+      // materials always shown
+      const matR1 = [`<span class="empty">—</span>`, `<span class="num">3</span>`, `<span class="empty">—</span>`];
+      const matR2 = [`<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="num">1</span>`];
+      // joined block
+      const jnR1 = state.joined ? [`<span class="empty">—</span>`, `<span class="num">3</span>`, `<span class="empty">—</span>`] : [];
+      const jnR2 = state.joined ? [`<span class="empty">—</span>`, `<span class="empty">—</span>`, `<span class="empty">—</span>`] : [];
+      const brR1 = `fireball:2`;
+      const brR2 = `<span class="empty">—</span>`;
+      body += `<tr>${[...row1cells, ...splitR1, ...matR1, ...jnR1, brR1].map(c => `<td>${c}</td>`).join('')}</tr>`;
+      body += `<tr>${[...row2cells, ...splitR2, ...matR2, ...jnR2, brR2].map(c => `<td>${c}</td>`).join('')}</tr>`;
+      t.innerHTML = `<thead><tr>${cols}</tr></thead><tbody>${body}</tbody>`;
+    }
+  }
+
+  // ───────── Estimate updater ─────────
+  function updateEstimate() {
+    let count, unit, sizeKb;
+    if (state.layout === 'long') {
+      count = Math.round(state.estimateBase * 2.7);  // average ~2.7 rows per photo
+      unit = 'rows';
+      sizeKb = Math.round(count * 0.18);
+    } else {
+      count = state.estimateBase;
+      unit = 'photos';
+      // wide mode size depends on column count
+      let multiplier = 0.22;
+      if (state.joined) multiplier += 0.08;
+      if (!state.split) multiplier -= 0.05;
+      sizeKb = Math.round(count * multiplier);
+    }
+    if (state.pickup) count = Math.round(count * 0.34);  // pretend filter cuts ~2/3
+    sizeKb = Math.round(sizeKb * (state.pickup ? 0.34 : 1));
+
+    document.getElementById('estimateValue').textContent = count.toLocaleString();
+    document.getElementById('estimateUnit').textContent = unit;
+    const sizeMb = sizeKb / 1024;
+    document.getElementById('estimateSize').textContent = sizeMb >= 1
+      ? sizeMb.toFixed(1) + ' MB'
+      : sizeKb + ' KB';
+
+    document.getElementById('estimate').classList.toggle('over', count > 50000);
+  }
+
+  // ───────── Submit / queued ─────────
+  function submitExport() {
+    document.getElementById('queuedState').classList.add('visible');
+  }
+  function resetState() {
+    document.getElementById('queuedState').classList.remove('visible');
+  }
+
+  // ───────── Recent exports drawer ─────────
+  function openRecent() {
+    document.getElementById('recentDrawer').classList.add('open');
+  }
+  function closeRecent() {
+    document.getElementById('recentDrawer').classList.remove('open');
+  }
+
+  // ───────── Init ─────────
+  renderPreview();
+  updateEstimate();
+</script>
+
+</body>
+</html>

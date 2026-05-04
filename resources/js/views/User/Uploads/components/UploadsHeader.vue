@@ -1,64 +1,55 @@
 <script setup>
 import { usePhotosStore } from '@/stores/photos';
+import { useUserStore } from '@/stores/user';
 import axios from 'axios';
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
+import ExportDrawer from '@/components/ExportDrawer.vue';
 
 const store = usePhotosStore();
+const userStore = useUserStore();
 
 const exporting = ref(false);
-const exportMessage = ref('');
+const exportError = ref('');
+const drawerOpen = ref(false);
+const drawerQueued = ref(false);
 
-const exportSuccess = ref(false);
+const userEmail = computed(() => userStore.user?.email ?? '');
 
-const layout = ref('wide');
-const formatSplit = ref(true);
-const formatJoined = ref(false);
-
-// Switching back to wide with both checkboxes off would silently disable export.
-// Restore Separate by default so Wide always has at least one block selected.
-watch(layout, (next) => {
-    if (next === 'wide' && !formatSplit.value && !formatJoined.value) {
-        formatSplit.value = true;
+const toggleDrawer = () => {
+    if (drawerOpen.value) {
+        drawerOpen.value = false;
+        drawerQueued.value = false;
+        exportError.value = '';
+    } else {
+        drawerOpen.value = true;
     }
-});
-
-const exportDisabled = computed(() =>
-    exporting.value || (layout.value === 'wide' && !formatSplit.value && !formatJoined.value)
-);
-
-const buildFormatParam = () => {
-    if (layout.value === 'long') return '';
-    const parts = [];
-    if (formatSplit.value) parts.push('split');
-    if (formatJoined.value) parts.push('joined');
-    return parts.join(',');
 };
 
-const exportCsv = async () => {
+const onDrawerCancel = () => {
+    drawerOpen.value = false;
+    drawerQueued.value = false;
+    exportError.value = '';
+};
+
+const exportCsv = async ({ layout, format }) => {
     exporting.value = true;
-    exportMessage.value = '';
+    exportError.value = '';
 
     try {
-        const params = {
-            dateField: 'datetime',
-            layout: layout.value,
-            format: buildFormatParam(),
-        };
+        const params = { dateField: 'datetime', layout, format };
         if (filters.value.dateFrom) params.fromDate = filters.value.dateFrom;
         if (filters.value.dateTo) params.toDate = filters.value.dateTo;
 
         await axios.get('/api/user/profile/download', { params });
-        exportSuccess.value = true;
-        exportMessage.value = 'Export started — check your email for the download link.';
+        drawerQueued.value = true;
     } catch (err) {
-        exportSuccess.value = false;
         if (err?.response?.status === 429) {
             const retry = err.response.headers?.['retry-after'];
-            exportMessage.value = retry
+            exportError.value = retry
                 ? `Too many exports — try again in ${retry}s.`
                 : 'Too many exports — try again in a moment.';
         } else {
-            exportMessage.value = 'Export failed. Please try again.';
+            exportError.value = 'Export failed. Please try again.';
         }
     } finally {
         exporting.value = false;
@@ -311,76 +302,32 @@ onMounted(async () => {
                 {{ $t('Apply') }}
             </button>
 
-            <!-- CSV Format Selector -->
-            <div class="flex flex-col gap-2 max-w-md">
-                <label class="text-xs font-medium text-gray-600 uppercase tracking-wider">{{ $t('Format') }}</label>
-                <div class="flex flex-col gap-2">
-                    <div>
-                        <label class="flex items-center gap-1 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input type="radio" value="wide" v-model="layout" class="h-3.5 w-3.5" />
-                            {{ $t('Number-based') }}
-                            <span
-                                v-tooltip="$t('Each photo is one row. Tags are counted in columns — for example, the ALCOHOL.bottle column shows how many alcohol bottles were in the photo. Most cells will be empty since most tags don\'t apply to every photo.')"
-                                :title="$t('Each photo is one row. Tags are counted in columns — for example, the ALCOHOL.bottle column shows how many alcohol bottles were in the photo. Most cells will be empty since most tags don\'t apply to every photo.')"
-                                class="text-gray-400 hover:text-gray-600 cursor-help select-none"
-                                aria-label="Number-based help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 mt-0.5 text-[11px] text-gray-500 leading-snug">{{ $t('One row per photo. Counts how many of each tag appear in columns. Best for browsing in Excel or Google Sheets.') }}</p>
-                    </div>
-                    <div class="ml-5 flex flex-col gap-1" :class="layout === 'long' ? 'opacity-50' : ''">
-                        <label class="flex items-center gap-1 text-xs text-gray-700" :class="layout === 'long' ? 'cursor-not-allowed' : 'cursor-pointer'">
-                            <input type="checkbox" v-model="formatSplit" :disabled="layout === 'long'" class="h-3.5 w-3.5" />
-                            {{ $t('Separate columns') }}
-                            <span
-                                v-tooltip="$t('Object, type, and material each get their own column. Recommended for new analyses.')"
-                                :title="$t('Object, type, and material each get their own column. Recommended for new analyses.')"
-                                class="text-gray-400 hover:text-gray-600 cursor-help select-none"
-                                aria-label="Separate columns help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 text-[11px] text-gray-500 leading-snug">{{ $t('Object, type, and material in their own columns.') }}</p>
-                        <label class="flex items-center gap-1 text-xs text-gray-700 mt-1" :class="layout === 'long' ? 'cursor-not-allowed' : 'cursor-pointer'">
-                            <input type="checkbox" v-model="formatJoined" :disabled="layout === 'long'" class="h-3.5 w-3.5" />
-                            {{ $t('Combined columns') }}
-                            <span
-                                v-tooltip="$t('Object and type are joined into a single column name like spirits_bottle. Use this if your existing scripts expect the v4 column layout.')"
-                                :title="$t('Object and type are joined into a single column name like spirits_bottle. Use this if your existing scripts expect the v4 column layout.')"
-                                class="text-gray-400 hover:text-gray-600 cursor-help select-none"
-                                aria-label="Combined columns help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 text-[11px] text-gray-500 leading-snug">{{ $t('Object and type joined (e.g. spirits_bottle). Use this if your existing scripts expect the v4 layout.') }}</p>
-                    </div>
-                    <div>
-                        <label class="flex items-center gap-1 text-xs font-medium text-gray-700 cursor-pointer">
-                            <input type="radio" value="long" v-model="layout" class="h-3.5 w-3.5" />
-                            {{ $t('Full-detail (one row per tag)') }}
-                            <span
-                                v-tooltip="$t('Each tag becomes a row. A photo with 3 different tags produces 3 rows, with photo details repeated. The photo_tag_id column lets you group rows back together. Best for analysis tools.')"
-                                :title="$t('Each tag becomes a row. A photo with 3 different tags produces 3 rows, with photo details repeated. The photo_tag_id column lets you group rows back together. Best for analysis tools.')"
-                                class="text-gray-400 hover:text-gray-600 cursor-help select-none"
-                                aria-label="Full-detail help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 mt-0.5 text-[11px] text-gray-500 leading-snug">{{ $t('One row per tag, with photo details repeated. Each material, brand, and custom tag becomes its own row. Best for pandas, SQL, Tableau, or any analysis tool.') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Export CSV Button -->
+            <!-- Export CSV Button (toggles drawer below) -->
             <button
-                @click="exportCsv"
-                :disabled="exportDisabled"
-                class="px-4 py-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                @click="toggleDrawer"
+                class="px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                :class="{ 'ring-2 ring-green-500 ring-offset-1': drawerOpen }"
             >
-                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+                {{ $t('Export CSV') }}
             </button>
         </div>
 
-        <!-- Export message -->
-        <div v-if="exportMessage" class="px-6 pb-3">
-            <p class="text-xs" :class="exportSuccess ? 'text-green-600' : 'text-red-600'">{{ exportMessage }}</p>
+        <!-- Export drawer (light theme) -->
+        <ExportDrawer
+            scope="user"
+            theme="light"
+            :open="drawerOpen"
+            :queued="drawerQueued"
+            :exporting="exporting"
+            :photo-count="totalPhotos"
+            :email="userEmail"
+            @export="exportCsv"
+            @cancel="onDrawerCancel"
+        />
+
+        <!-- Export error (only on failure — queued state lives inside the drawer) -->
+        <div v-if="exportError" class="px-6 py-2 border-t border-gray-100">
+            <p class="text-xs text-red-600">{{ exportError }}</p>
         </div>
     </div>
 </template>

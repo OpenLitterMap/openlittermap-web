@@ -1,15 +1,36 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import ExportDrawer from '@/components/ExportDrawer.vue';
 
 const { t } = useI18n();
 
 const props = defineProps({
     members: { type: Array, default: () => [] },
     exporting: { type: Boolean, default: false },
+    exportQueued: { type: Boolean, default: false },
+    photoCount: { type: Number, default: 0 },
+    teamId: { type: [Number, String], default: null },
+    userEmail: { type: String, default: '' },
 });
 
-const emit = defineEmits(['apply', 'export']);
+const emit = defineEmits(['apply', 'export', 'cancel-export']);
+
+const drawerOpen = ref(false);
+
+const toggleDrawer = () => {
+    if (drawerOpen.value) {
+        drawerOpen.value = false;
+        emit('cancel-export');
+    } else {
+        drawerOpen.value = true;
+    }
+};
+
+const onDrawerCancel = () => {
+    drawerOpen.value = false;
+    emit('cancel-export');
+};
 
 const filters = ref({
     status: 'all', // 'all' | 'pending' | 'approved'
@@ -24,28 +45,6 @@ const filters = ref({
     perPage: '20',
     memberId: '',
 });
-
-const layout = ref('wide');
-const formatSplit = ref(true);
-const formatJoined = ref(false);
-
-watch(layout, (next) => {
-    if (next === 'wide' && !formatSplit.value && !formatJoined.value) {
-        formatSplit.value = true;
-    }
-});
-
-const exportDisabled = computed(() =>
-    props.exporting || (layout.value === 'wide' && !formatSplit.value && !formatJoined.value)
-);
-
-const buildFormatParam = () => {
-    if (layout.value === 'long') return '';
-    const parts = [];
-    if (formatSplit.value) parts.push('split');
-    if (formatJoined.value) parts.push('joined');
-    return parts.join(',');
-};
 
 const buildFilterParams = () => {
     const taggedParam =
@@ -74,8 +73,8 @@ const applyFilters = () => {
     emit('apply', buildFilterParams());
 };
 
-const exportCsv = () => {
-    emit('export', { ...buildFilterParams(), format: buildFormatParam(), layout: layout.value });
+const exportCsv = ({ layout, format }) => {
+    emit('export', { ...buildFilterParams(), format, layout });
 };
 
 // Cycle through states: all -> pending -> approved -> all
@@ -274,71 +273,28 @@ const pickedUpLabel = computed(() => {
                 {{ $t('Apply') }}
             </button>
 
-            <!-- CSV Format Selector -->
-            <div class="flex flex-col gap-2 max-w-md">
-                <label class="text-[11px] font-semibold text-white/60 uppercase tracking-wider">{{ $t('Format') }}</label>
-                <div class="flex flex-col gap-2">
-                    <div>
-                        <label class="flex items-center gap-1 text-xs font-medium text-white/90 cursor-pointer">
-                            <input type="radio" value="wide" v-model="layout" class="h-3.5 w-3.5 accent-emerald-500" />
-                            {{ $t('Number-based') }}
-                            <span
-                                v-tooltip="$t('Each photo is one row. Tags are counted in columns — for example, the ALCOHOL.bottle column shows how many alcohol bottles were in the photo. Most cells will be empty since most tags don\'t apply to every photo.')"
-                                :title="$t('Each photo is one row. Tags are counted in columns — for example, the ALCOHOL.bottle column shows how many alcohol bottles were in the photo. Most cells will be empty since most tags don\'t apply to every photo.')"
-                                class="text-white/40 hover:text-white/70 cursor-help select-none"
-                                aria-label="Number-based help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 mt-0.5 text-[11px] text-white/50 leading-snug">{{ $t('One row per photo. Counts how many of each tag appear in columns. Best for browsing in Excel or Google Sheets.') }}</p>
-                    </div>
-                    <div class="ml-5 flex flex-col gap-1" :class="layout === 'long' ? 'opacity-50' : ''">
-                        <label class="flex items-center gap-1 text-xs text-white/80" :class="layout === 'long' ? 'cursor-not-allowed' : 'cursor-pointer'">
-                            <input type="checkbox" v-model="formatSplit" :disabled="layout === 'long'" class="h-3.5 w-3.5 accent-emerald-500" />
-                            {{ $t('Separate columns') }}
-                            <span
-                                v-tooltip="$t('Object, type, and material each get their own column. Recommended for new analyses.')"
-                                :title="$t('Object, type, and material each get their own column. Recommended for new analyses.')"
-                                class="text-white/40 hover:text-white/70 cursor-help select-none"
-                                aria-label="Separate columns help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 text-[11px] text-white/50 leading-snug">{{ $t('Object, type, and material in their own columns.') }}</p>
-                        <label class="flex items-center gap-1 text-xs text-white/80 mt-1" :class="layout === 'long' ? 'cursor-not-allowed' : 'cursor-pointer'">
-                            <input type="checkbox" v-model="formatJoined" :disabled="layout === 'long'" class="h-3.5 w-3.5 accent-emerald-500" />
-                            {{ $t('Combined columns') }}
-                            <span
-                                v-tooltip="$t('Object and type are joined into a single column name like spirits_bottle. Use this if your existing scripts expect the v4 column layout.')"
-                                :title="$t('Object and type are joined into a single column name like spirits_bottle. Use this if your existing scripts expect the v4 column layout.')"
-                                class="text-white/40 hover:text-white/70 cursor-help select-none"
-                                aria-label="Combined columns help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 text-[11px] text-white/50 leading-snug">{{ $t('Object and type joined (e.g. spirits_bottle). Use this if your existing scripts expect the v4 layout.') }}</p>
-                    </div>
-                    <div>
-                        <label class="flex items-center gap-1 text-xs font-medium text-white/90 cursor-pointer">
-                            <input type="radio" value="long" v-model="layout" class="h-3.5 w-3.5 accent-emerald-500" />
-                            {{ $t('Full-detail (one row per tag)') }}
-                            <span
-                                v-tooltip="$t('Each tag becomes a row. A photo with 3 different tags produces 3 rows, with photo details repeated. The photo_tag_id column lets you group rows back together. Best for analysis tools.')"
-                                :title="$t('Each tag becomes a row. A photo with 3 different tags produces 3 rows, with photo details repeated. The photo_tag_id column lets you group rows back together. Best for analysis tools.')"
-                                class="text-white/40 hover:text-white/70 cursor-help select-none"
-                                aria-label="Full-detail help"
-                            >ⓘ</span>
-                        </label>
-                        <p class="ml-5 mt-0.5 text-[11px] text-white/50 leading-snug">{{ $t('One row per tag, with photo details repeated. Each material, brand, and custom tag becomes its own row. Best for pandas, SQL, Tableau, or any analysis tool.') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Export CSV Button -->
+            <!-- Export CSV Button (toggles drawer below) -->
             <button
-                @click="exportCsv"
-                :disabled="exportDisabled"
-                class="px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                @click="toggleDrawer"
+                class="px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                :class="{ 'ring-1 ring-emerald-500/50 border-emerald-500/40': drawerOpen }"
             >
-                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+                {{ $t('Export CSV') }}
             </button>
         </div>
+
+        <!-- Export drawer (dark theme) -->
+        <ExportDrawer
+            scope="team"
+            theme="dark"
+            :scope-id="teamId"
+            :open="drawerOpen"
+            :queued="exportQueued"
+            :exporting="exporting"
+            :photo-count="photoCount"
+            :email="userEmail"
+            @export="exportCsv"
+            @cancel="onDrawerCancel"
+        />
     </div>
 </template>
