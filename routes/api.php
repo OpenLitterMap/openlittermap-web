@@ -180,7 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/profile/index', [ProfileController::class, 'index']);
     Route::get('/user/profile/refresh', [ProfileController::class, 'refresh']);
     Route::get('/user/profile/map', [ProfileController::class, 'geojson']);
-    Route::get('/user/profile/download', [ProfileController::class, 'download']);
+    Route::get('/user/profile/download', [ProfileController::class, 'download'])->middleware('throttle:csv-export');
     Route::get('/user/profile/photos/index', [UserPhotoController::class, 'index']);
     Route::get('/user/profile/photos/filter', [UserPhotoController::class, 'filter']);
     Route::post('/user/profile/photos/tags/bulkTag', [UserPhotoController::class, 'bulkTag']);
@@ -251,7 +251,7 @@ Route::prefix('/teams')->group(function () {
         Route::patch('/update/{team}', [APITeamsController::class, 'update']);
         Route::post('/active', [APITeamsController::class, 'setActiveTeam']);
         Route::post('/create', [APITeamsController::class, 'create']);
-        Route::post('/download', [APITeamsController::class, 'download']);
+        Route::post('/download', [APITeamsController::class, 'download'])->middleware('throttle:csv-export');
         Route::post('/inactivate', [APITeamsController::class, 'inactivateTeams']);
         Route::post('/join', [APITeamsController::class, 'join']);
         Route::post('/leave', [APITeamsController::class, 'leave']);
@@ -348,7 +348,7 @@ Route::post('/cleanups/{inviteLink}/leave', LeaveCleanupController::class);
 |--------------------------------------------------------------------------
 */
 
-Route::post('/download', [DownloadControllerNew::class, 'index']);
+Route::post('/download', [DownloadControllerNew::class, 'index'])->middleware('throttle:csv-export');
 
 /*
 |--------------------------------------------------------------------------

@@ -52,5 +52,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('ses-emails', function () {
             return Limit::perSecond(12);
         });
+
+        // CSV exports queue jobs + write to S3 + send email — abuse vector if uncapped.
+        // Authenticated users keyed by user id; guests by ip+email so a single ip can't
+        // spray different victim emails.
+        RateLimiter::for('csv-export', function ($request) {
+            $key = $request->user()?->id
+                ?? $request->ip() . '|' . strtolower((string) $request->input('email'));
+            return Limit::perMinute(3)->by($key);
+        });
     }
 }

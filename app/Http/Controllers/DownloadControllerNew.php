@@ -25,60 +25,49 @@ class DownloadControllerNew extends Controller
      */
     public function index (Request $request)
     {
-        $email = (is_null(auth()->user()))
-            ? $request->email
-            : auth()->user()->email;
+        $authUser = auth()->user();
 
-        $x     = new \DateTime();
-        $date  = $x->format('Y-m-d');
-        $date  = explode('-', $date);
-        $year  = $date[0];
-        $month = $date[1];
-        $day   = $date[2];
-        $unix  = now()->timestamp;
+        // Guests must supply a syntactically valid email; rate-limit also keys on it.
+        if (is_null($authUser)) {
+            $request->validate(['email' => 'required|email:rfc']);
+            $email = $request->email;
+        } else {
+            $email = $authUser->email;
+        }
 
-        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
-        $location_id = 0;
+        $locationName = match ($request->locationType) {
+            'city'    => City::find($request->locationId)?->city,
+            'state'   => State::find($request->locationId)?->state,
+            'country' => Country::find($request->locationId)?->country,
+            default   => null,
+        };
+
+        if ($locationName === null) {
+            return ['success' => false, 'message' => 'location-not-found'];
+        }
+
+        $location_id = (int) $request->locationId;
 
         $formats = CreateCSVExport::parseFormats($request->input('format'));
         $layout = CreateCSVExport::parseLayout($request->input('layout'));
-        $fileSuffix = '_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout) . '_' . now()->format('Y-m-d_His') . '.csv';
+
+        $unix = now()->timestamp;
+        $userSlug = $authUser ? '_u' . $authUser->id : '_uguest';
+        $fileSuffix = '_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout)
+            . '_' . now()->format('Y-m-d_His')
+            . $userSlug
+            . '.csv';
+
+        $path = now()->format('Y/m/d') . '/' . $unix . '/' . $locationName . $fileSuffix;
 
         try
         {
-            if ($request->locationType === 'city')
-            {
-                if ($city = City::find($request->locationId))
-                {
-                    $path .= $city->city . $fileSuffix;
-                    $location_id = $city->id;
-                }
-            }
-            else if ($request->locationType === 'state')
-            {
-                if ($state = State::find($request->locationId))
-                {
-                    $path .= $state->state . $fileSuffix;
-                    $location_id = $state->id;
-                }
-            }
-            else if ($request->locationType === 'country')
-            {
-                if ($country = Country::find($request->locationId))
-                {
-                    $path .= $country->country . $fileSuffix;
-                    $location_id = $country->id;
-                }
-            }
-
             /* Dispatch job to create CSV file for export */
             (new CreateCSVExport($request->locationType, $location_id, null, null, [], [], $formats, $layout))
                 ->notifyOnFailure($email)
                 ->queue($path, 's3', null, ['visibility' => 'public'])
                 ->chain([
-                    // These jobs are executed when above is finished.
                     new EmailUserExportCompleted($email, $path)
-                    // new ....job
                 ]);
 
             return ['success' => true];
@@ -86,7 +75,7 @@ class DownloadControllerNew extends Controller
 
         catch (Exception $e)
         {
-            Log::info(['download failed', $e->getMessage()]);
+            Log::error('download failed', ['error' => $e->getMessage()]);
 
             return ['success' => false];
         }

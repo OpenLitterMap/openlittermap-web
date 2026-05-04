@@ -574,10 +574,17 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $typeKey = ($typeId !== null) ? ($typeKeys[$typeId] ?? '') : '';
             $hasObject = $objId !== null;
 
-            $extras = $pt->extraTags;
-            $materialExtras = $extras->where('tag_type', 'material');
-            $brandExtras = $extras->where('tag_type', 'brand');
-            $customExtras = $extras->where('tag_type', 'custom_tag');
+            // Single-pass partition by tag_type beats three Collection->where() filters
+            // (each of which iterates the full extras list).
+            $materialExtras = $brandExtras = $customExtras = [];
+            foreach ($pt->extraTags as $extra) {
+                match ($extra->tag_type) {
+                    'material' => $materialExtras[] = $extra,
+                    'brand' => $brandExtras[] = $extra,
+                    'custom_tag' => $customExtras[] = $extra,
+                    default => null,
+                };
+            }
 
             // Bare object row (only when this PhotoTag has a litter_object).
             // Always emitted so dedup-by-photo_tag_id can recover the parent qty.
@@ -640,7 +647,14 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
             $with[] = 'team:id,name';
         }
 
-        $query = $this->scopeQuery(Photo::with($with));
+        // Long mode only reads id/datetime/lat/lon/verified/summary/team_id — skipping the
+        // heavy unused columns (address_array, geom BLOB, result_string, model, …) cuts
+        // hydration + memory churn on large exports.
+        $base = $this->layout === 'long'
+            ? Photo::query()->select(['id', 'datetime', 'lat', 'lon', 'verified', 'summary', 'team_id'])->with($with)
+            : Photo::with($with);
+
+        $query = $this->scopeQuery($base);
 
         // Long mode: skip photos with no summary (untagged or pre-summary). Spec says these emit
         // zero rows in long format, so filtering at query level avoids per-row hydration.

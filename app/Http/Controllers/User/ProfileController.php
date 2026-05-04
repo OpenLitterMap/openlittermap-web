@@ -47,7 +47,7 @@ class ProfileController extends Controller
             $path .= "_from_{$dateFilter['fromDate']}_to_{$dateFilter['toDate']}";
         }
 
-        $path .= '_MyData_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout) . '_' . now()->format('Y-m-d_His') . '.csv';
+        $path .= '_MyData_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout) . '_' . now()->format('Y-m-d_His') . '_u' . $user->id . '.csv';
 
         /* Dispatch job to create CSV file for export */
         (new CreateCSVExport(null, null, null, $user->id, $dateFilter, [], $formats, $layout))
