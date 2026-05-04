@@ -346,9 +346,14 @@ Route::post('/cleanups/{inviteLink}/leave', LeaveCleanupController::class);
 |--------------------------------------------------------------------------
 | Downloads
 |--------------------------------------------------------------------------
+| Auth-only. CSV exports queue jobs + write to S3 + send email; the abuse
+| surface is too large for an unauthenticated path. Per-user CSV exports
+| live under /user/profile/download; team exports under /teams/download.
 */
 
-Route::post('/download', [DownloadControllerNew::class, 'index'])->middleware('throttle:csv-export');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/download', [DownloadControllerNew::class, 'index'])->middleware('throttle:csv-export');
+});
 
 /*
 |--------------------------------------------------------------------------

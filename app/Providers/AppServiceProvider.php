@@ -54,19 +54,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // CSV exports queue jobs + write to S3 + send email — abuse vector if uncapped.
-        // Two limits stack so neither can be sidestepped by varying the other dimension:
-        //   1. per-(user|ip+email) per-minute — blocks one user/bot hammering one address.
-        //      Authenticated users are limited per-account, NOT per-IP, so switching
-        //      networks (mobile ↔ laptop on the same login) doesn't multiply the budget.
-        //   2. per-ip per-hour — blocks a single ip spraying many victim emails to multiply
-        //      its budget under limit (1).
+        // All export endpoints are auth-only, so we can key strictly on user_id —
+        // switching networks on the same login can't multiply the budget. Falls back
+        // to IP only as a paranoid backstop in case a route is ever opened to guests
+        // again without updating this limiter.
         RateLimiter::for('csv-export', function ($request) {
-            $perAddress = $request->user()?->id
-                ?? $request->ip() . '|' . strtolower((string) $request->input('email'));
-            return [
-                Limit::perMinute(3)->by($perAddress),
-                Limit::perHour(20)->by($request->ip()),
-            ];
+            return Limit::perMinute(3)->by($request->user()?->id ?? $request->ip());
         });
     }
 }

@@ -3,21 +3,11 @@
         <h1 class="text-2xl font-bold">{{ t('Free and Open Verified Citizen Science Data on Plastic Pollution.') }}</h1>
         <h1 class="text-2xl font-bold">{{ t("Let's stop plastic going into the ocean.") }}</h1>
 
-        <p class="mb-1" v-if="!isAuth">{{ t('Please enter an email address to which the data will be sent:') }}</p>
+        <p v-if="!isAuth" class="mb-4 text-gray-700">
+            {{ t('Please sign in to download location data. The download link will be sent to your account email.') }}
+        </p>
 
-        <input
-            v-if="!isAuth"
-            class="border border-gray-300 rounded p-2 mb-4 text-base"
-            placeholder="you@email.com"
-            type="email"
-            name="email"
-            required
-            v-model="email"
-            @input="textEntered"
-            autocomplete="email"
-        />
-
-        <div class="flex flex-col items-start gap-3 mb-4 max-w-md mx-auto text-left">
+        <div v-if="isAuth" class="flex flex-col items-start gap-3 mb-4 max-w-md mx-auto text-left">
             <span class="text-sm font-semibold uppercase tracking-wider text-gray-600">{{ t('Format') }}</span>
             <div>
                 <label class="flex items-center gap-1 text-sm font-medium text-gray-700 cursor-pointer">
@@ -76,6 +66,7 @@
         </div>
 
         <button
+            v-if="isAuth"
             :disabled="disableDownloadButton"
             class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded text-lg mb-4 disabled:opacity-50"
             @click="download"
@@ -108,8 +99,6 @@ const props = defineProps({
 
 const { t } = useI18n();
 
-const email = ref('');
-const emailEntered = ref(false);
 const downloading = ref(false);
 const downloadMessage = ref('');
 const downloadSuccess = ref(false);
@@ -125,19 +114,13 @@ watch(layout, (next) => {
 });
 
 const userStore = useUserStore();
-
 const isAuth = computed(() => userStore.auth);
 
 const disableDownloadButton = computed(() => {
     if (downloading.value) return true;
     if (layout.value === 'wide' && !formatSplit.value && !formatJoined.value) return true;
-    return isAuth.value ? false : !emailEntered.value;
+    return false;
 });
-
-function textEntered() {
-    const regexEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
-    emailEntered.value = regexEmail.test(email.value);
-}
 
 const buildFormatParam = () => {
     if (layout.value === 'long') return '';
@@ -152,21 +135,14 @@ async function download() {
     downloadMessage.value = '';
 
     try {
-        const payload = {
+        await axios.post('/api/download', {
             locationType: props.locationType,
             locationId: props.locationId,
             layout: layout.value,
             format: buildFormatParam(),
-        };
-        if (!isAuth.value) {
-            payload.email = email.value;
-        }
-
-        await axios.post('/api/download', payload);
+        });
         downloadSuccess.value = true;
         downloadMessage.value = t('Export started — check your email for the download link.');
-        email.value = '';
-        emailEntered.value = false;
     } catch (err) {
         downloadSuccess.value = false;
         if (err?.response?.status === 429) {

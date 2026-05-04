@@ -8,9 +8,10 @@ use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
- * Coverage for `POST /api/download` — the public location export endpoint.
- * Guest path is intentional (download.vue exposes an email field for unauthenticated
- * users); throttling + email validation gate it.
+ * Coverage for `POST /api/download` — the location export endpoint.
+ * Auth-only: the previous guest path (with email field) was removed since
+ * anonymous CSV exports are an abuse vector against the queue, S3, and
+ * outbound mail.
  */
 class DownloadLocationTest extends TestCase
 {
@@ -43,28 +44,15 @@ class DownloadLocationTest extends TestCase
         ]);
     }
 
-    public function test_guest_without_email_is_rejected()
+    public function test_guest_request_is_rejected_with_401()
     {
-        $country = Country::firstOrCreate(['country' => 'NoEmailLand', 'shortcode' => 'nl']);
+        $country = Country::firstOrCreate(['country' => 'AuthLand', 'shortcode' => 'al']);
 
         $response = $this->postJson('/api/download', [
             'locationType' => 'country',
             'locationId' => $country->id,
         ]);
 
-        $response->assertStatus(422)->assertJsonValidationErrors(['email']);
-    }
-
-    public function test_guest_with_invalid_email_is_rejected()
-    {
-        $country = Country::firstOrCreate(['country' => 'BadEmailLand', 'shortcode' => 'bl']);
-
-        $response = $this->postJson('/api/download', [
-            'locationType' => 'country',
-            'locationId' => $country->id,
-            'email' => 'not-an-email',
-        ]);
-
-        $response->assertStatus(422)->assertJsonValidationErrors(['email']);
+        $response->assertStatus(401);
     }
 }
