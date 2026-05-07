@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Actions\Teams\CreateTeamAction;
 use App\Actions\Teams\DownloadTeamDataAction;
+use App\Exports\CreateCSVExport;
 use Carbon\Carbon;
 use App\Actions\Teams\JoinTeamAction;
 use App\Actions\Teams\LeaveTeamAction;
@@ -260,7 +261,10 @@ class TeamsController extends Controller
             'status' => $request->input('status'),
         ]);
 
-        $action->run($user, $team, $dateFilter, $extraFilters);
+        $formats = CreateCSVExport::parseFormats($request->input('format'));
+        $layout = CreateCSVExport::parseLayout($request->input('layout'));
+
+        $action->run($user, $team, $dateFilter, $extraFilters, $formats, $layout);
 
         return $this->success();
     }

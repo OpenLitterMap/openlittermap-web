@@ -12,77 +12,69 @@ use App\Models\Location\City;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class DownloadControllerNew extends Controller
 {
     /**
-     * Download data for a location
+     * Download data for a location.
+     *
+     * Auth required (route lives in the auth:sanctum group). Guests previously
+     * supplied an email field; that path was removed because (a) anonymous
+     * exports are an abuse vector against the queue + S3 + outbound mail, and
+     * (b) the auth-only path lets the rate limiter key on user_id alone.
      *
      * @location_type $string = 'country', 'state', or 'city'
      * @country = 'Ireland'
      * @state = 'County Cork'
      * @city = 'Cork'
      */
-    public function index (Request $request)
+    public function index(Request $request)
     {
-        $email = (is_null(auth()->user()))
-            ? $request->email
-            : auth()->user()->email;
+        $user = auth()->user();
 
-        $x     = new \DateTime();
-        $date  = $x->format('Y-m-d');
-        $date  = explode('-', $date);
-        $year  = $date[0];
-        $month = $date[1];
-        $day   = $date[2];
-        $unix  = now()->timestamp;
+        $locationName = match ($request->locationType) {
+            'city'    => City::find($request->locationId)?->city,
+            'state'   => State::find($request->locationId)?->state,
+            'country' => Country::find($request->locationId)?->country,
+            default   => null,
+        };
 
-        $path = $year.'/'.$month.'/'.$day.'/'.$unix.'/';  // 2020/10/25/unix/
-        $location_id = 0;
+        if ($locationName === null) {
+            return ['success' => false, 'message' => 'location-not-found'];
+        }
 
-        try
-        {
-            if ($request->locationType === 'city')
-            {
-                if ($city = City::find($request->locationId))
-                {
-                    $path .= $city->city . '_OpenLitterMap.csv';
-                    $location_id = $city->id;
-                }
-            }
-            else if ($request->locationType === 'state')
-            {
-                if ($state = State::find($request->locationId))
-                {
-                    $path .= $state->state . '_OpenLitterMap.csv';
-                    $location_id = $state->id;
-                }
-            }
-            else if ($request->locationType === 'country')
-            {
-                if ($country = Country::find($request->locationId))
-                {
-                    $path .= $country->country . '_OpenLitterMap.csv';
-                    $location_id = $country->id;
-                }
-            }
+        $location_id = (int) $request->locationId;
 
+        $formats = CreateCSVExport::parseFormats($request->input('format'));
+        $layout = CreateCSVExport::parseLayout($request->input('layout'));
+
+        // Pin one $now so timestamp + Y-m-d_His + Y/m/d can't disagree across a second boundary.
+        $now = now();
+        $fileSuffix = '_OpenLitterMap_' . CreateCSVExport::layoutSlug($layout)
+            . '_' . $now->format('Y-m-d_His')
+            . '_u' . $user->id
+            . '.csv';
+
+        // Slug the location name to prevent unexpected path segments from DB-sourced strings
+        // (S3 keys are flat strings so traversal can't escape, but `..` produces malformed keys).
+        // Str::slug() returns '' for all-non-Latin names (中国, العربية, Ελλάδα, …) — fall back
+        // to a typed identifier so the file stays distinguishable in S3 listings.
+        $locationSlug = Str::slug($locationName) ?: ($request->locationType . '-' . $location_id);
+        $path = $now->format('Y/m/d') . '/' . $now->timestamp . '/' . $locationSlug . $fileSuffix;
+
+        try {
             /* Dispatch job to create CSV file for export */
-            (new CreateCSVExport($request->locationType, $location_id))
-                ->notifyOnFailure($email)
+            (new CreateCSVExport($request->locationType, $location_id, null, null, [], [], $formats, $layout))
+                ->notifyOnFailure($user->email)
                 ->queue($path, 's3', null, ['visibility' => 'public'])
                 ->chain([
-                    // These jobs are executed when above is finished.
-                    new EmailUserExportCompleted($email, $path)
-                    // new ....job
+                    new EmailUserExportCompleted($user->email, $path)
                 ]);
 
             return ['success' => true];
-        }
-
-        catch (Exception $e)
-        {
-            Log::info(['download failed', $e->getMessage()]);
+        } catch (Exception $e) {
+            Log::error('download failed', ['error' => $e->getMessage()]);
 
             return ['success' => false];
         }

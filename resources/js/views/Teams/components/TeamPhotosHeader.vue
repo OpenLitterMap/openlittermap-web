@@ -1,15 +1,36 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import ExportDrawer from '@/components/ExportDrawer.vue';
 
 const { t } = useI18n();
 
 const props = defineProps({
     members: { type: Array, default: () => [] },
     exporting: { type: Boolean, default: false },
+    exportQueued: { type: Boolean, default: false },
+    photoCount: { type: Number, default: 0 },
+    teamId: { type: [Number, String], default: null },
+    userEmail: { type: String, default: '' },
 });
 
-const emit = defineEmits(['apply', 'export']);
+const emit = defineEmits(['apply', 'export', 'cancel-export']);
+
+const drawerOpen = ref(false);
+
+const toggleDrawer = () => {
+    if (drawerOpen.value) {
+        drawerOpen.value = false;
+        emit('cancel-export');
+    } else {
+        drawerOpen.value = true;
+    }
+};
+
+const onDrawerCancel = () => {
+    drawerOpen.value = false;
+    emit('cancel-export');
+};
 
 const filters = ref({
     status: 'all', // 'all' | 'pending' | 'approved'
@@ -52,8 +73,8 @@ const applyFilters = () => {
     emit('apply', buildFilterParams());
 };
 
-const exportCsv = () => {
-    emit('export', buildFilterParams());
+const exportCsv = ({ layout, format }) => {
+    emit('export', { ...buildFilterParams(), format, layout });
 };
 
 // Cycle through states: all -> pending -> approved -> all
@@ -252,14 +273,28 @@ const pickedUpLabel = computed(() => {
                 {{ $t('Apply') }}
             </button>
 
-            <!-- Export CSV Button -->
+            <!-- Export CSV Button (toggles drawer below) -->
             <button
-                @click="exportCsv"
-                :disabled="exporting"
-                class="px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                @click="toggleDrawer"
+                class="px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white text-xs font-medium rounded-lg transition-colors focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                :class="{ 'ring-1 ring-emerald-500/50 border-emerald-500/40': drawerOpen }"
             >
-                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+                {{ $t('Export CSV') }}
             </button>
         </div>
+
+        <!-- Export drawer (dark theme) -->
+        <ExportDrawer
+            scope="team"
+            theme="dark"
+            :scope-id="teamId"
+            :open="drawerOpen"
+            :queued="exportQueued"
+            :exporting="exporting"
+            :photo-count="photoCount"
+            :email="userEmail"
+            @export="exportCsv"
+            @cancel="onDrawerCancel"
+        />
     </div>
 </template>

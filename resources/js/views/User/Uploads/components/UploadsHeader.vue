@@ -1,32 +1,56 @@
 <script setup>
 import { usePhotosStore } from '@/stores/photos';
+import { useUserStore } from '@/stores/user';
 import axios from 'axios';
 import { computed, ref, onMounted } from 'vue';
+import ExportDrawer from '@/components/ExportDrawer.vue';
 
 const store = usePhotosStore();
+const userStore = useUserStore();
 
 const exporting = ref(false);
-const exportMessage = ref('');
+const exportError = ref('');
+const drawerOpen = ref(false);
+const drawerQueued = ref(false);
 
-const exportSuccess = ref(false);
+const userEmail = computed(() => userStore.user?.email ?? '');
 
-const exportCsv = async () => {
+const toggleDrawer = () => {
+    if (drawerOpen.value) {
+        drawerOpen.value = false;
+        drawerQueued.value = false;
+        exportError.value = '';
+    } else {
+        drawerOpen.value = true;
+    }
+};
+
+const onDrawerCancel = () => {
+    drawerOpen.value = false;
+    drawerQueued.value = false;
+    exportError.value = '';
+};
+
+const exportCsv = async ({ layout, format }) => {
     exporting.value = true;
-    exportMessage.value = '';
+    exportError.value = '';
 
     try {
-        const params = {
-            dateField: 'datetime',
-        };
+        const params = { dateField: 'datetime', layout, format };
         if (filters.value.dateFrom) params.fromDate = filters.value.dateFrom;
         if (filters.value.dateTo) params.toDate = filters.value.dateTo;
 
         await axios.get('/api/user/profile/download', { params });
-        exportSuccess.value = true;
-        exportMessage.value = 'Export started — check your email for the download link.';
-    } catch {
-        exportSuccess.value = false;
-        exportMessage.value = 'Export failed. Please try again.';
+        drawerQueued.value = true;
+    } catch (err) {
+        if (err?.response?.status === 429) {
+            const retry = err.response.headers?.['retry-after'];
+            exportError.value = retry
+                ? `Too many exports — try again in ${retry}s.`
+                : 'Too many exports — try again in a moment.';
+        } else {
+            exportError.value = 'Export failed. Please try again.';
+        }
     } finally {
         exporting.value = false;
     }
@@ -278,19 +302,32 @@ onMounted(async () => {
                 {{ $t('Apply') }}
             </button>
 
-            <!-- Export CSV Button -->
+            <!-- Export CSV Button (toggles drawer below) -->
             <button
-                @click="exportCsv"
-                :disabled="exporting"
-                class="px-4 py-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                @click="toggleDrawer"
+                class="px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                :class="{ 'ring-2 ring-green-500 ring-offset-1': drawerOpen }"
             >
-                {{ exporting ? $t('Exporting...') : $t('Export CSV') }}
+                {{ $t('Export CSV') }}
             </button>
         </div>
 
-        <!-- Export message -->
-        <div v-if="exportMessage" class="px-6 pb-3">
-            <p class="text-xs" :class="exportSuccess ? 'text-green-600' : 'text-red-600'">{{ exportMessage }}</p>
+        <!-- Export drawer (light theme) -->
+        <ExportDrawer
+            scope="user"
+            theme="light"
+            :open="drawerOpen"
+            :queued="drawerQueued"
+            :exporting="exporting"
+            :photo-count="totalPhotos"
+            :email="userEmail"
+            @export="exportCsv"
+            @cancel="onDrawerCancel"
+        />
+
+        <!-- Export error (only on failure — queued state lives inside the drawer) -->
+        <div v-if="exportError" class="px-6 py-2 border-t border-gray-100">
+            <p class="text-xs text-red-600">{{ exportError }}</p>
         </div>
     </div>
 </template>

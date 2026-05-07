@@ -113,17 +113,27 @@
                     @toggle="toggleLeaderboard"
                 />
 
-                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                <div class="flex items-center justify-between pt-4 border-t border-white/10 gap-3">
                     <div>
                         <p class="text-sm text-white">{{ $t('Download team data') }}</p>
                         <p class="text-xs text-white/50">{{ $t('Export all team photo data as CSV.') }}</p>
                     </div>
-                    <button
-                        class="px-3 py-1.5 text-sm font-medium rounded-lg border border-white/20 text-white/60 hover:bg-white/5 transition-colors"
-                        @click="download"
-                    >
-                        <i class="fa fa-download mr-1" /> {{ $t('Download') }}
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button
+                            class="px-3 py-1.5 text-sm font-medium rounded-lg border border-white/20 text-white/80 hover:bg-white/5 transition-colors"
+                            :title="$t('One row per photo, with tag counts in columns. Best for Excel.')"
+                            @click="download('wide')"
+                        >
+                            <i class="fa fa-download mr-1" /> {{ $t('Number-based') }}
+                        </button>
+                        <button
+                            class="px-3 py-1.5 text-sm font-medium rounded-lg border border-white/20 text-white/80 hover:bg-white/5 transition-colors"
+                            :title="$t('One row per tag. Best for pandas, SQL, Tableau.')"
+                            @click="download('long')"
+                        >
+                            <i class="fa fa-table mr-1" /> {{ $t('Full-detail') }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -253,7 +263,7 @@ const toggleParticipantSessions = async () => {
 };
 
 // ── Data ──
-const download = () => teamsStore.downloadTeamData(props.teamId);
+const download = (layout = 'wide') => teamsStore.downloadTeamData(props.teamId, { layout });
 
 // ── Leave ──
 const leaveTeam = async () => {

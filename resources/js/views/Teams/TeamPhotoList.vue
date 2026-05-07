@@ -4,8 +4,13 @@
         <TeamPhotosHeader
             :members="memberStats"
             :exporting="exporting"
+            :export-queued="exportQueued"
+            :photo-count="photos.total || 0"
+            :team-id="teamId"
+            :user-email="userEmail"
             @apply="onApplyFilters"
             @export="onExport"
+            @cancel-export="onCancelExport"
         />
 
         <!-- Loading -->
@@ -117,6 +122,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'vue-toastification';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
 import { useTeamsStore } from '@/stores/teams';
+import { useUserStore } from '@/stores/user';
 import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 import TeamPhotoEdit from './TeamPhotoEdit.vue';
 import TeamPhotosHeader from './components/TeamPhotosHeader.vue';
@@ -148,9 +154,13 @@ const props = defineProps({
 const toast = useToast();
 const store = useTeamPhotosStore();
 const teamsStore = useTeamsStore();
+const userStore = useUserStore();
 const selectedPhoto = ref(null);
 const exporting = ref(false);
+const exportQueued = ref(false);
 const currentFilters = ref({});
+
+const userEmail = computed(() => userStore.user?.email ?? '');
 
 const photos = computed(() => store.photos);
 const loading = computed(() => store.loading);
@@ -169,14 +179,26 @@ const onApplyFilters = (filters) => {
 
 const onExport = async (filters) => {
     exporting.value = true;
+    exportQueued.value = false;
     try {
         await teamsStore.downloadTeamData(props.teamId, filters);
-        toast.success('Export started — check your email for the download link.');
-    } catch {
-        toast.error('Export failed. Please try again.');
+        exportQueued.value = true;
+    } catch (err) {
+        if (err?.response?.status === 429) {
+            const retry = err.response.headers?.['retry-after'];
+            toast.error(retry
+                ? `Too many exports — try again in ${retry}s.`
+                : 'Too many exports — try again in a moment.');
+        } else {
+            toast.error('Export failed. Please try again.');
+        }
     } finally {
         exporting.value = false;
     }
+};
+
+const onCancelExport = () => {
+    exportQueued.value = false;
 };
 
 const changePage = (page) => store.fetchPhotos(props.teamId, page, currentFilters.value);

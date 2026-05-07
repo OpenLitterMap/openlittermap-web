@@ -29,8 +29,10 @@ class DownloadTeamDataTest extends TestCase
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
-        Mail::assertSent(function (ExportWithLink $mail) use ($leader) {
-            $expectedPath = now()->year . "/" . now()->format('m') . "/" . now()->format('d') . "/" . now()->getTimestamp() . "/_Team_OpenLitterMap.csv";
+        Mail::assertSent(function (ExportWithLink $mail) use ($leader, $team) {
+            $expectedPath = now()->format('Y/m/d') . "/" . now()->getTimestamp()
+                . "/_Team_OpenLitterMap_number-based_" . now()->format('Y-m-d_His')
+                . "_u{$leader->id}_t{$team->id}.csv";
             $this->assertTrue($mail->hasTo($leader->email));
             $this->assertEquals($expectedPath, $mail->path);
             return true;
@@ -114,8 +116,11 @@ class DownloadTeamDataTest extends TestCase
 
         $response->assertOk();
         $response->assertJson(['success' => true]);
-        Mail::assertSent(function (ExportWithLink $mail) use ($leader) {
-            $expectedPath = now()->year . "/" . now()->format('m') . "/" . now()->format('d') . "/" . now()->getTimestamp() . "_from_2025-01-01_to_2025-12-31/_Team_OpenLitterMap.csv";
+        Mail::assertSent(function (ExportWithLink $mail) use ($leader, $team) {
+            $expectedPath = now()->format('Y/m/d') . "/" . now()->getTimestamp()
+                . "_from_2025-01-01_to_2025-12-31"
+                . "/_Team_OpenLitterMap_number-based_" . now()->format('Y-m-d_His')
+                . "_u{$leader->id}_t{$team->id}.csv";
             $this->assertTrue($mail->hasTo($leader->email));
             $this->assertEquals($expectedPath, $mail->path);
             return true;

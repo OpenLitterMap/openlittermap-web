@@ -152,13 +152,22 @@
                                             <i class="fa fa-star" />
                                         </button>
 
-                                        <!-- Download -->
+                                        <!-- Download (Number-based) -->
                                         <button
                                             class="p-1.5 rounded text-slate-600 hover:bg-slate-100"
-                                            :title="$t('Download team data')"
-                                            @click="download(team.id)"
+                                            :title="$t('Download team data — Number-based (one row per photo)')"
+                                            @click="download(team.id, 'wide')"
                                         >
                                             <i class="fa fa-download" />
+                                        </button>
+
+                                        <!-- Download (Full-detail) -->
+                                        <button
+                                            class="p-1.5 rounded text-slate-600 hover:bg-slate-100"
+                                            :title="$t('Download team data — Full-detail (one row per tag)')"
+                                            @click="download(team.id, 'long')"
+                                        >
+                                            <i class="fa fa-table" />
                                         </button>
 
                                         <!-- Leave -->
@@ -245,7 +254,7 @@ export default {
             }
         };
 
-        const download = (teamId) => teamsStore.downloadTeamData(teamId);
+        const download = (teamId, layout = 'wide') => teamsStore.downloadTeamData(teamId, { layout });
 
         const formatDate = (date) => {
             return new Intl.DateTimeFormat('en-IE', {

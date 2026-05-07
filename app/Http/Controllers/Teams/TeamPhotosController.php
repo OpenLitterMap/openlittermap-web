@@ -309,12 +309,12 @@ class TeamPhotosController extends Controller
     }
 
     /**
-     * Per-member stats for the team (leader/facilitator only).
+     * Per-member stats for the team. Visible to any team member.
      *
      * GET /api/teams/photos/member-stats?team_id=X
      *
      * Returns per-student: total photos, pending, approved, litter count, last active.
-     * Applies safeguarding pseudonyms when enabled.
+     * Always pseudonymizes school teams (regardless of the safeguarding flag).
      */
     public function memberStats(Request $request): JsonResponse
     {
@@ -325,9 +325,16 @@ class TeamPhotosController extends Controller
         $user = auth()->user();
         $team = Team::findOrFail($request->team_id);
 
-        if (! $team->isLeader($user->id) && ! $user->can('manage school team')) {
-            return response()->json(['success' => false, 'message' => 'unauthorized'], 403);
+        if (! $user->isMemberOfTeam($team->id)) {
+            return response()->json(['success' => false, 'message' => 'not-a-member'], 403);
         }
+
+        // Pseudonyms apply to ALL school teams, regardless of the safeguarding flag.
+        // Rationale: safeguarding has historically governed extra protections (map masking
+        // in PointsController via MasksStudentIdentity) but its DB default is 0, so any
+        // school team predating CreateTeamAction's default flip — or one where a manager
+        // toggled it off — would otherwise expose minor classmates' real names + activity.
+        // Non-school teams keep real names: those fields are already public platform-wide.
 
         // Get all members (excluding leader)
         $members = $team->users()
@@ -335,9 +342,8 @@ class TeamPhotosController extends Controller
             ->select('users.id', 'users.name', 'users.username')
             ->get();
 
-        // Build safeguarding pseudonym map
         $pseudonyms = [];
-        if ($team->safeguarding) {
+        if ($team->isSchool()) {
             $memberOrder = DB::table('team_user')
                 ->where('team_id', $team->id)
                 ->where('user_id', '!=', $team->leader)
