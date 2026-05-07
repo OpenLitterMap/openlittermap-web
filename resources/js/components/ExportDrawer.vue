@@ -91,22 +91,22 @@ const emit = defineEmits(['export', 'cancel']);
 const options = [
     {
         key: 'excel',
-        title: 'For Excel or Google Sheets',
-        desc: 'One row per photo. Tag counts in columns.',
+        title: 'OLM Original Download (many columns)',
+        desc: 'Columns: every possible tag (bottle, can, butts, glass, plastic, ...). Values: quantity counts.',
         layout: 'wide',
         format: 'split',
     },
     {
         key: 'analysis',
-        title: 'For analysis tools (pandas, SQL, R, Tableau)',
-        desc: 'One row per tag. Photo details repeat across rows.',
+        title: 'OLM New Download (fewer columns)',
+        desc: 'Columns: object, type, material, brand, custom_tag. Values: text strings (e.g. "bottle", "spirits", "glass").',
         layout: 'long',
         format: '',
     },
     {
         key: 'legacy',
-        title: 'For legacy v4 scripts',
-        desc: 'Object and type joined into one column (e.g. spirits_bottle).',
+        title: 'OLM 4.0 compatible',
+        desc: 'Columns: every possible tag, with type merged into object (e.g. spirits_bottle). Values: quantity counts.',
         layout: 'wide',
         format: 'joined',
     },

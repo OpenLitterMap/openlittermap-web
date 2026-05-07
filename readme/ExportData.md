@@ -286,19 +286,19 @@ School team photos with `is_public = false` are excluded because teacher approva
 
 ## CSV Format
 
-> **Layout switch:** the `format` parameter only takes effect in the default **Number-based** layout (`layout=wide`). See [Wide vs Long Layout](#wide-vs-long-layout) below for the row-shape switch — the Full-detail layout (`layout=long`) ignores `format` entirely.
+> **Layout switch:** the `format` parameter only takes effect in the wide layout (`layout=wide`), used by the **OLM Original Download** and **OLM 4.0 compatible** options. See [Wide vs Long Layout](#wide-vs-long-layout) below for the row-shape switch — the **OLM New Download** option (`layout=long`) ignores `format` entirely.
 
-The download UI exposes two checkboxes: **Separate columns** (default, on) and **Combined columns** (off). Either or both may be selected. They map to the `format` query/body parameter values `split` and `joined` respectively.
+The download UI exposes three radio options: **OLM Original Download (many columns)** (default), **OLM New Download (fewer columns)**, and **OLM 4.0 compatible**. The first and third map to `format` values `split` and `joined` respectively; the second maps to `layout=long` and ignores `format`.
 
-The `format` parameter is comma-separated, case-insensitive, deduped. Empty / unrecognized → `split` (Separate).
+The `format` parameter is comma-separated, case-insensitive, deduped. Empty / unrecognized → `split` (OLM Original Download).
 
 Controllers (`ProfileController::download`, `TeamsController::download`, `DownloadControllerNew::index`) all parse this through `CreateCSVExport::parseFormats(?string $raw)` — the single source of truth for splitting, normalizing, and validating the param.
 
 | UI label | `format` value | What it emits | Use when |
 |----------|---------------|---------------|----------|
-| Separate columns (default) | `split` | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
-| Combined columns | `joined` | v4-style. Per-category `{type}_{object}` columns (or bare `{object}` if no type). Suppresses the per-category split block AND the `TYPES` block. `MATERIALS` + `brands` + `custom_tag_*` still emitted | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/`water_bottle`/etc. as single columns. |
-| Both checked | `split,joined` | Both blocks. Separate appears first, then Combined. `MATERIALS` appears once. | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
+| OLM Original Download (default) | `split` | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
+| OLM 4.0 compatible | `joined` | v4-style. Per-category `{type}_{object}` columns (or bare `{object}` if no type). Suppresses the per-category split block AND the `TYPES` block. `MATERIALS` + `brands` + `custom_tag_*` still emitted | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/`water_bottle`/etc. as single columns. |
+| _(API only — not exposed in UI)_ | `split,joined` | Both blocks. Separate appears first, then Combined. `MATERIALS` appears once. | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
 
 **Joined column key generation.** For each distinct `(category_id, litter_object_id, litter_object_type_id)` triple in the export scope, the column key is `{type_key}_{object_key}` when a type is set, else the bare `{object_key}`. Examples: `spirits_bottle`, `beer_bottle`, `wine_bottle`, `bottle` (no type), `beer_can`, `water_bottle`, `soda_can`, `butts`. Per-category `ALCOHOL`/`SOFTDRINKS`/etc. sub-headers separate sections so the same key (e.g. bare `bottle` under both alcohol and softdrinks) does not collide visually.
 
@@ -306,14 +306,14 @@ Controllers (`ProfileController::download`, `TeamsController::download`, `Downlo
 
 ## Wide vs Long Layout
 
-> **Naming note:** the API calls these `wide` and `long`. Users see them as **Number-based** (wide) and **Full-detail (one row per tag)** (long) in the download UI and in saved filenames (`_number-based_` / `_full-detail_` slugs). Internal code, tests, and the API/developer docs below keep `wide`/`long`.
+> **Naming note:** the API calls these `wide` and `long`. In the download UI, **wide** is used by both the **OLM Original Download** and **OLM 4.0 compatible** options, and **long** is used by **OLM New Download**. Saved filenames use `_number-based_` (wide) / `_full-detail_` (long) slugs. Internal code, tests, and the API/developer docs below keep `wide`/`long`.
 
 The `layout` query/body parameter chooses the row shape of the CSV. Two values: `wide` (default) and `long`. Parsed by `CreateCSVExport::parseLayout(?string $raw)` — the single source of truth — and passed as the 8th constructor argument to `CreateCSVExport`.
 
-| Layout (API) | UI label | What it emits | Use when |
-|--------------|----------|---------------|----------|
-| `wide` (default) | Number-based | One row per photo. Hundreds of columns, one per possible tag value. Honours `format=split,joined`. | Eyeballing in Excel; matches the historical OpenLitterMap export. |
-| `long` | Full-detail (one row per tag) | One row per tag dimension. 14 fixed columns. **Ignores `format`** (no Separate/Combined split/joined blocks). | Loading into pandas, SQL, Tableau, R — anywhere you'd `groupby` / `pivot_table` afterwards. |
+| Layout (API) | UI label(s) | What it emits | Use when |
+|--------------|-------------|---------------|----------|
+| `wide` (default) | OLM Original Download / OLM 4.0 compatible | One row per photo. Hundreds of columns, one per possible tag value. Honours `format=split,joined`. | Eyeballing in Excel; matches the historical OpenLitterMap export. |
+| `long` | OLM New Download | One row per tag dimension. 14 fixed columns. **Ignores `format`** (no split/joined blocks). | Loading into pandas, SQL, Tableau, R — anywhere you'd `groupby` / `pivot_table` afterwards. |
 
 ### Full-detail (long) layout columns (14)
 
