@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Sentry\Laravel\Integration;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -14,6 +15,20 @@ class Handler extends ExceptionHandler
      * @var array
      */
     protected $dontReport = [];
+
+    /**
+     * Register the exception handling callbacks for the application.
+     *
+     * Reports unhandled exceptions to Sentry. The Sentry DSN is only
+     * active when APP_ENV === 'production' (see config/sentry.php), so
+     * this is a no-op in local/testing environments.
+     */
+    public function register(): void
+    {
+        $this->reportable(function (Throwable $e): void {
+            Integration::captureUnhandledException($e);
+        });
+    }
 
     /**
      * A list of the inputs that are never flashed for validation exceptions.
