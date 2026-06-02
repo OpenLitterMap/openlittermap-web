@@ -37,6 +37,7 @@ class RegisterController extends Controller
             'username' => $username,
             'email' => $data['email'],
             'password' => $data['password'],
+            'remaining_teams' => 1,
         ]);
     }
 

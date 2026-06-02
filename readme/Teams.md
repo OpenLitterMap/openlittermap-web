@@ -85,7 +85,7 @@ The `Team` model resolves its type name via `getTypeNameAttribute()`, which read
 | Column | Type | Notes |
 |--------|------|-------|
 | active_team | INT FK | Currently active team (nullable) |
-| remaining_teams | INT | How many more teams user can create |
+| remaining_teams | INT | How many more teams user can create (new signups get 1 via RegisterController; school managers granted 1) |
 
 ---
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Signup;
 
+use App\Models\Users\User;
 use Tests\TestCase;
 
 class CreateNewUserTest extends TestCase
@@ -14,6 +15,18 @@ class CreateNewUserTest extends TestCase
         ]);
 
         $response->assertOk();
+    }
+
+    public function test_new_user_can_create_one_team_on_signup()
+    {
+        $email = 'test_' . time() . '@example.com';
+
+        $this->postJson('/api/register', [
+            'email' => $email,
+            'password' => 'password8',
+        ])->assertOk();
+
+        $this->assertEquals(1, User::where('email', $email)->value('remaining_teams'));
     }
 
     public function test_user_cannot_create_account_with_short_password()

@@ -74,6 +74,48 @@ class TeamsTest extends TestCase
         });
     }
 
+    public function test_community_team_created_broadcasts_on_public_teams_channel()
+    {
+        $team = Team::create([
+            'name' => 'Community Broadcast Team',
+            'identifier' => 'CommunityBroadcast1',
+            'type_id' => $this->communityType->id,
+            'type_name' => 'community',
+            'leader' => $this->leader->id,
+            'created_by' => $this->leader->id,
+        ]);
+
+        $event = new TeamCreated($team);
+
+        $this->assertEquals('teams', $event->broadcastOn()->name);
+        $this->assertEquals('team.created', $event->broadcastAs());
+        $this->assertEquals([
+            'team_id' => $team->id,
+            'team_name' => 'Community Broadcast Team',
+        ], $event->broadcastWith());
+    }
+
+    public function test_school_team_created_broadcasts_on_private_channel_without_name()
+    {
+        $schoolType = TeamType::create([
+            'team' => 'school', 'price' => 0, 'description' => 'School',
+        ]);
+
+        $team = Team::create([
+            'name' => 'St. X 1st Years 2026',
+            'identifier' => 'SchoolBroadcast1',
+            'type_id' => $schoolType->id,
+            'type_name' => 'school',
+            'leader' => $this->leader->id,
+            'created_by' => $this->leader->id,
+        ]);
+
+        $event = new TeamCreated($team);
+
+        $this->assertEquals("private-team.{$team->id}", $event->broadcastOn()->name);
+        $this->assertEquals(['team_id' => $team->id], $event->broadcastWith());
+    }
+
     // ── Inactivate Team ──
 
     public function test_user_can_inactivate_their_active_team()
