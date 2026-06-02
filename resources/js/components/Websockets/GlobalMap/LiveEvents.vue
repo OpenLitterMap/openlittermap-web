@@ -60,6 +60,7 @@ onMounted(() => {
 onUnmounted(() => {
     clearTimeout(timer.value);
     Echo.leaveChannel('main');
+    Echo.leaveChannel('teams');
 });
 
 /**
@@ -169,15 +170,19 @@ const listenForEvents = () => {
         .listen('.App\\Events\\Littercoin\\LittercoinMined', (payload) => {
             addEvent('LittercoinMined', payload);
         })
-        .listen('TeamCreated', (payload) => {
-            addEvent('TeamCreated', payload);
-        })
         .listen('UserSignedUp', (payload) => {
             addEvent('UserSignedUp', payload.now);
         })
         .listen('.App\\Events\\Images\\BadgeCreated', (payload) => {
             addEvent('BadgeCreated', payload);
         });
+
+    // Community team creations broadcast on the public 'teams' channel under
+    // the 'team.created' alias. School teams broadcast on a private channel
+    // and are intentionally excluded from the public live feed.
+    Echo.channel('teams').listen('.team.created', (payload) => {
+        addEvent('TeamCreated', payload);
+    });
 };
 
 const updateDocumentTitle = () => {

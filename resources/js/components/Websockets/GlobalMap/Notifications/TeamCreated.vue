@@ -13,7 +13,7 @@
             <p>{{ t('A new Team has been created!') }}</p>
             <i>
                 {{ t('Say hello to') }}
-                <strong>{{ payload.teamName }}</strong>!
+                <strong>{{ payload.team_name }}</strong>!
             </i>
         </template>
     </GlobalMapNotification>
