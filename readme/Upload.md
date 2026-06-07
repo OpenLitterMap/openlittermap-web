@@ -104,6 +104,8 @@ Duplicate detection happens in the controller (idempotent — see "Idempotent Up
 
 **Transaction:** `AddTagsToPhotoAction::run()` wraps all tag creation + summary generation + verification update in a single `DB::transaction()`. This ensures photo tags, summary JSON, XP, and `TagsVerifiedByAdmin` dispatch are all atomic — a partial failure cannot leave the photo in an inconsistent state.
 
+**Idempotent POST guard:** `POST /api/v3/tags` **appends** tags (it does not replace). Since ordinary non-trusted users stay at `verified=0` after tagging, the `verified >= 1` authorize gate does not catch them, so a retried POST (lost response) would double-tag. `PhotoTagsController::store()` therefore checks `summary` first: if the photo is already tagged (`summary !== null`) it returns an idempotent no-op `{ success: true, already_tagged: true, photoTags }` without re-adding. To re-tag/edit an already-tagged photo, use `PUT /api/v3/tags` (replace — see Phase 2b).
+
 This is where `MetricsService::processPhoto()` runs via the `ProcessPhotoMetrics` listener:
 
 ```
@@ -166,6 +168,8 @@ PhotoTagsController::update()
 ├── AddTagsToPhotoAction::run()           → regenerates summary, XP, fires event
 └── MetricsService::processPhoto()        → doUpdate() calculates deltas vs old processed_tags
 ```
+
+`update()` also stamps `onboarding_completed_at` on the first non-empty tag submission (parity with `store()`), so the mobile auto-upload flow can tag exclusively via PUT. On a never-tagged photo, PUT's reset is a no-op and it runs the same `AddTagsToPhotoAction::run(..., skipVerification=false)` as POST — identical `verified`/XP/metrics for trusted, school, and ordinary users.
 
 Frontend: `/tag?photo=<id>` loads a specific photo. If it has tags, enters edit mode (PUT). If untagged, uses normal tagging (POST). Security: `ReplacePhotoTagsRequest` enforces ownership. `GET_SINGLE_PHOTO` calls `/api/v3/user/photos` which filters by `Auth::user()->id`.
 

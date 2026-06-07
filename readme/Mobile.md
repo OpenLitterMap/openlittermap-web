@@ -62,9 +62,14 @@ POST /api/validate-token  →  { message: "valid" }  // Only on app resume, NOT 
 
 **Date field:** `Carbon::createFromTimestamp((int) $dateInput)` — expects **seconds**. If you have JS milliseconds, divide by 1000: `Math.floor(Date.now() / 1000)`.
 
-Rejects `(0, 0)` coordinates. Duplicate detection uses the explicit `date` field.
+Rejects `(0, 0)` coordinates. Duplicate detection (`user_id + datetime`) uses the explicit `date` field.
 
-**Response:** `{ "success": true, "photo_id": 123 }`
+**Response (new photo):** `{ "success": true, "photo_id": 123, ... }`
+
+**Response (duplicate — idempotent, 200 not 422):**
+`{ "success": true, "photo_id": <existing>, "already_uploaded": true, "tagged": <bool>, "xp_awarded": 0 }`
+
+A re-upload of an already-uploaded photo returns the **existing** `photo_id` (no error, no second row, no extra XP) so a lost-response retry can recover. If `tagged` is `true`, skip tagging; otherwise tag via **`PUT /api/v3/tags`** (idempotent — `POST` appends and a retry would double-tag). This is the backend fix for the "photo id field must be an integer" loop.
 
 ## User Photos: Pagination & Filters
 
