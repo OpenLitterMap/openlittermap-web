@@ -811,7 +811,7 @@ Pagination: Configurable via `per_page` (default 8, max 100), ordered by `create
 
 Tags are under the `new_tags` key (v5 format with nested category/object/extra_tags). For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` may be null. `filename` is a full URL, usable directly as image source.
 
-**`picked_up` vs `remaining`:** Both are returned for backward compatibility. `picked_up` is the preferred field — `remaining` is its inverse and deprecated. Per-tag `picked_up` (inside `new_tags`) is cast to `(bool)` with fallback to photo-level `picked_up`, and is independent and nullable (true/false/null).
+**`picked_up`:** Photo-level `picked_up` is derived from the first tag (`Photo::picked_up` accessor → `summary.tags[0].picked_up`); it is `true`/`false`/`null` (**null for untagged** photos). The deprecated photo-level `remaining` field is **no longer returned** in any API response (removed; it's hidden on the model). Per-tag `picked_up` (inside `new_tags`) is cast to `(bool)`. Use `picked_up` everywhere.
 
 **Additional fields per photo:** `is_public` (boolean — whether the photo is currently visible on the public map) and `school_team` (boolean — whether the photo belongs to a school team, used to gate the per-photo visibility toggle in the UI).
 
@@ -1328,6 +1328,8 @@ Hierarchical: overview > categories > objects. Sorted by progress (highest first
 ```
 
 Only `is_public = true` photos. Masks identity for safeguarded teams. `filename` shown only if `verified >= 2`. Caches non-username-filtered requests for 2 minutes.
+
+`properties.picked_up` is derived from the **first tag** (`summary.tags[0].picked_up`), **not** the deprecated photo-level `photos.remaining` — so it reflects edits to a tag's picked-up status. Untagged photos return `null` (the map popup hides the pill). This is centralized in the `Photo::picked_up` accessor, so every map/profile/uploads/team response that returns `picked_up` behaves the same.
 
 ---
 
@@ -2432,13 +2434,9 @@ Toggles the `picked_up` boolean for the user.
 
 ---
 
-### POST /api/profile/photos/remaining/{id} — Toggle Photo Remaining Flag
+### ~~POST /api/profile/photos/remaining/{id}~~ — REMOVED
 
-**Auth:** Required (Sanctum)
-
-Toggles the `remaining` field on a specific photo.
-
-**Response:** `{ "success": true }`
+> Not registered (no route). `photos.remaining` is deprecated and no longer read for picked-up status — picked-up is per-tag (`photo_tags.picked_up`), set via `POST`/`PUT /api/v3/tags`. There is no photo-level remaining toggle.
 
 ---
 

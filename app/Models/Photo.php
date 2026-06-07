@@ -36,7 +36,7 @@ class Photo extends Model
 
     protected $appends = ['selected', 'picked_up'];
 
-    protected $hidden = ['geom'];
+    protected $hidden = ['geom', 'remaining'];
 
     protected $casts = [
         'datetime' => 'datetime',
@@ -179,9 +179,15 @@ class Photo extends Model
         return false;
     }
 
-    public function getPickedUpAttribute(): bool
+    /**
+     * Photo-level picked-up status, derived from the first tag's per-tag
+     * `photo_tags.picked_up` (via the summary), NOT the deprecated photo-level
+     * `photos.remaining`. Returns null for untagged photos (status unknown).
+     * Requires `summary` to be loaded/selected.
+     */
+    public function getPickedUpAttribute(): ?bool
     {
-        return ! $this->remaining;
+        return data_get($this->summary, 'tags.0.picked_up');
     }
 
     /**

@@ -79,7 +79,7 @@ A re-upload of an already-uploaded photo returns the **existing** `photo_id` (no
 
 Fetch all untagged: `GET /api/v3/user/photos?tagged=false&per_page=100`
 
-Response includes `picked_up` (boolean, never null) and `remaining` (deprecated inverse). Use `picked_up`.
+Response includes `picked_up` (`true`/`false`/`null` — null for untagged photos, derived from the first tag). The deprecated `remaining` field has been **removed** from responses — use `picked_up`.
 
 ## Delete Photo
 
@@ -130,13 +130,13 @@ When uploading via `POST /api/v3/upload`, the optional `is_public` param control
 
 ---
 
-## `picked_up` vs `remaining`
+## `picked_up`
 
-**`remaining` is deprecated.** Use `picked_up` everywhere.
+**`remaining` has been removed from API responses.** Use `picked_up` everywhere.
 
-- **Photo-level** (`picked_up` in response root): boolean, never null. `true` = litter collected, `false` = left behind.
-- **Tag-level** (`new_tags[].picked_up`): nullable. `true`/`false`/`null` (not specified). Independent per tag.
-- The `remaining` field (inverse of `picked_up`) is still returned for backward compatibility but will be removed.
+- **Photo-level** (`picked_up` in response root): `true`/`false`/`null`. Derived from the **first tag** — `null` for untagged photos (status unknown). `true` = litter collected, `false` = left behind.
+- **Tag-level** (`new_tags[].picked_up`): nullable. `true`/`false`/`null` (not specified). Independent per tag, and the source of truth.
+- The deprecated photo-level `remaining` field is no longer returned in any response (the column is hidden on the model).
 
 ---
 
