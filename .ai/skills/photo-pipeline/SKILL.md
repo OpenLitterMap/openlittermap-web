@@ -10,10 +10,10 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 ## Key Files
 
 - `app/Http/Controllers/Uploads/UploadPhotoController.php` — Web upload entry point
-- `app/Http/Requests/UploadPhotoRequest.php` — Web upload validation (EXIF datetime, GPS). Dedup is NOT here — it's an idempotent lookup in the controller.
+- `app/Http/Requests/UploadPhotoRequest.php` — Web upload validation (EXIF datetime, GPS). Dedup is NOT here — it's an idempotent lookup in the controller. HEIC files skip the `image`/`dimensions` rules (detected via `MakeImageAction::isHeic()`) so they reach the converter.
 - `app/Http/Controllers/API/Tags/PhotoTagsController.php` — V5 tagging endpoint (`POST /api/v3/tags` add, `PUT /api/v3/tags` replace)
 - `app/Actions/Tags/AddTagsToPhotoAction.php` — Core tagging logic (v5)
-- `app/Actions/Photos/MakeImageAction.php` — Image processing + EXIF extraction
+- `app/Actions/Photos/MakeImageAction.php` — Image processing + EXIF extraction. Converts HEIC→JPEG by shelling out to ImageMagick 6 `convert` (NOT IM7 `magick` — the server only has `convert`).
 - `app/Actions/Photos/UploadPhotoAction.php` — S3 storage (requires non-null Carbon datetime)
 - `app/Services/Tags/GeneratePhotoSummaryService.php` — Builds summary JSON + calculates XP
 - `app/Services/Tags/XpCalculator.php` — XP scoring rules
@@ -252,3 +252,4 @@ Always ensure `geom` stays in `$hidden`. If you need coordinates, use `lat`/`lon
 - **Replace tags without `DB::transaction()`.** If `AddTagsToPhotoAction::run()` fails after old tags are deleted, the photo loses all tag data. The entire delete-reset-add sequence must be atomic. `AddTagsToPhotoAction::run()` itself is also wrapped in a transaction — both operations are independently protected.
 - **`getNewTags()` conditionally includes `category`/`object`.** For extra-tag-only PhotoTags (brand/material/custom-only), `category` and `object` fields are `null`. The serializer only includes them when both `category_id` and `litter_object_id` are non-null. Frontend must handle `null` category/object gracefully.
 - **Expecting `UploadPhotoRequest` errors to match Laravel's default shape.** `UploadPhotoRequest` overrides `failedValidation()` to return a custom `{ success, error, message, errors }` shape with typed `error` codes. Do not assert the standard Laravel `{ errors: { field: [...] } }` shape for upload failures.
+- **Adding `image`/`dimensions` back unconditionally, or using `magick` for HEIC.** Laravel's `image` rule excludes HEIC and `dimensions` (`getimagesize()`) returns false for HEIC — `UploadPhotoRequest::rules()` drops both for HEIC (detected via `MakeImageAction::isHeic()`), keeping `mimes`+`max`. And `MakeImageAction` must use IM6 `convert` (the prod server has no `magick`). Reintroducing either breaks HEIC upload — it silently fails validation, or 500s at conversion.

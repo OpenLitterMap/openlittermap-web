@@ -2,9 +2,13 @@
 
 namespace Tests\Feature\Api\Photos;
 
+use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\MakeImageAction;
 use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
+use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
 use Tests\TestCase;
 
 class HeicUploadTest extends TestCase
@@ -126,6 +130,75 @@ class HeicUploadTest extends TestCase
         // Real JPEG starts with FF D8, not ftyp
         $file = $this->createUploadedFile('photo.jpg', 'image/jpeg');
         $this->assertFalse($method->invoke($action, $file));
+    }
+
+    // ---------------------------------------------------------------
+    // End-to-end: genuine HEIC reaches the controller and succeeds
+    // ---------------------------------------------------------------
+
+    /**
+     * A real HEIC file must pass validation (no longer blocked by the `image` /
+     * `dimensions` rules) and upload successfully via the mobile path.
+     *
+     * MakeImageAction is swapped for a double that returns a real JPEG-backed image,
+     * simulating a successful HEIC→JPEG conversion — the actual `convert` shell-out
+     * (Bug 1) can't run locally/CI and is verified against production. This test
+     * covers Bug 2: that genuine HEIC bytes now get through the validation layer.
+     */
+    public function test_genuine_heic_uploads_successfully(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(
+            ReverseGeocodeLocationAction::class,
+            (new FakeReverseGeocodingAction())->withAddress([
+                'house_number' => '10735',
+                'road' => 'Carlisle Pike',
+                'city' => 'Latimore Township',
+                'county' => 'Adams County',
+                'state' => 'Pennsylvania',
+                'postcode' => '17324',
+                'country' => 'United States of America',
+                'country_code' => 'us',
+                'suburb' => 'unknown',
+            ])
+        );
+
+        // Simulate a successful HEIC→JPEG conversion without the `convert` binary.
+        $this->swap(MakeImageAction::class, new class extends MakeImageAction {
+            public function run(UploadedFile $file, bool $resize = false): array
+            {
+                return ['image' => Image::make(storage_path('framework/testing/1x1.jpg')), 'exif' => []];
+            }
+        });
+
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => $heic,
+            'lat' => 40.053,
+            'lon' => -77.154,
+            'date' => '2026-06-07 12:00:00',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+        $this->assertIsInt($response->json('photo_id'));
+
+        $this->assertDatabaseHas('photos', [
+            'id' => $response->json('photo_id'),
+            'user_id' => $user->id,
+            'platform' => 'mobile',
+        ]);
     }
 
     // ---------------------------------------------------------------

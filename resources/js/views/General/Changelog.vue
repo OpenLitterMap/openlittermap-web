@@ -254,6 +254,13 @@ const updatesList = [
         date: '4th April 2026',
         component: 'update27',
     },
+    {
+        id: 28,
+        number: 'Update #28',
+        title: '1st TidyTowns Webinar | 1 Million Hours | EU Presidency Citizen Science Deliverable',
+        date: '7th June 2026',
+        component: 'update28',
+    },
 ];
 const changelogs = ref([...updatesList].reverse());
 const selectedId = ref(updatesList[updatesList.length - 1]?.id || null);

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\Photos\MakeImageAction;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -19,14 +21,24 @@ class UploadPhotoRequest extends FormRequest
 
     public function rules(): array
     {
+        // HEIC files fail Laravel's `image` rule (validateImage() excludes HEIC) and the
+        // `dimensions` rule (getimagesize() returns false for HEIC), so they'd be rejected
+        // before reaching the controller, which converts HEIC → JPEG via MakeImageAction.
+        // When the file is genuinely HEIC (same isHeic() detection the converter uses —
+        // keeps validation-skip in lockstep with conversion, and catches iOS HEIC sent as
+        // .jpg via magic bytes), drop those two rules. `mimes` (content-sniffed) and `max`
+        // stay on, so non-image content still can't slip through.
+        $file = $this->file('photo');
+        $isHeic = $file instanceof UploadedFile && $file->isValid() && (new MakeImageAction)->isHeic($file);
+
         return [
-            'photo' => [
+            'photo' => array_values(array_filter([
                 'required',
-                'image',
+                $isHeic ? null : 'image',
                 'mimes:jpg,png,jpeg,heif,heic,webp',
-                'dimensions:min_width=1,min_height=1',
-                'max:20480'
-            ],
+                $isHeic ? null : 'dimensions:min_width=1,min_height=1',
+                'max:20480',
+            ])),
             'lat' => ['sometimes', 'numeric', 'between:-90,90'],
             'lon' => ['sometimes', 'numeric', 'between:-180,180'],
             'date' => ['sometimes'],

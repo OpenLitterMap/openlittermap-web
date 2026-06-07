@@ -72,8 +72,17 @@ Duplicate detection happens in the controller (idempotent — see "Idempotent Up
 
 1. **(0, 0) coordinates rejected** — `lat == 0 && lon == 0` → 422 (Null Island guard)
 2. **Date parsed via Carbon** — Unix timestamps (seconds) or ISO 8601 strings accepted
-3. **Duplicate check** — same user + same explicit `date` → 422 rejection
+3. **Duplicate handling** — same user + same explicit `date` → idempotent: returns the existing `photo_id` (see "Idempotent Upload" above), not a 422
 4. **Platform set to `'mobile'`** — distinguishes from web (EXIF-based) uploads
+
+### HEIC / HEIF handling
+
+iPhones upload HEIC. Two things make this work:
+
+1. **Validation skip.** Laravel's `image` rule excludes HEIC and `dimensions` uses `getimagesize()` (returns `false` for HEIC), so both would reject genuine HEIC. `UploadPhotoRequest::rules()` detects HEIC via `MakeImageAction::isHeic()` (extension/MIME **and** ftyp magic bytes — catches iOS HEIC sent as `.jpg`) and **drops `image` + `dimensions` for HEIC only**. `mimes` (content-sniffed) and `max:20480` stay on. Using the same `isHeic()` the converter uses keeps the validation-skip in lockstep with conversion.
+2. **Conversion.** `MakeImageAction` shells out to **ImageMagick 6 `convert input output`** (the server has IM6 `convert`, **not** IM7 `magick` — do not reintroduce `magick`) to convert HEIC → JPEG before storage, since the Intervention GD driver can't decode HEIC.
+
+**Known limitation (follow-up ticket):** web-mode HEIC (no explicit `lat`/`lon`/`date`) still hits `after()`'s `exif_read_data()`/GPS checks, which are unreliable on HEIC. The mobile path (explicit coords) is fully supported.
 
 ### `picked_up` semantics
 
