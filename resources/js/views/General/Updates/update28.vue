@@ -2,44 +2,62 @@
     <div class="update-content">
         <h2>Update 28: 1st TidyTowns Webinar, 1 Million Hours &amp; EU Presidency Citizen Science Deliverable</h2>
 
-        <p>A huge thank you to everyone who joined our first TidyTowns webinar — and an invitation to help shape what comes next.</p>
+        <p>On Monday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland holds the EU Presidency for six months. We're calling on TidyTowns groups — Ireland's leading volunteer network — to document their impact with our app and help co-create a citizen-led deliverable for that Presidency.</p>
+
+        <p>The idea is simple. TidyTowns groups give over a million hours a year to their communities — cleaning, planting, painting, repairing, reporting, maintaining. But most of that work disappears. It lives in WhatsApp groups, adjudication PDFs, and committee records. It's seen by neighbours but never counted nationally.</p>
+
+        <p>From July to December, Europe will be looking at Ireland. TidyTowns can help tell a better story — and OpenLitterMap can give the network something it's never had: an open, mappable record of its own impact.</p>
 
         <h3>🎥 1st TidyTowns Webinar</h3>
 
-        <p>The response has been overwhelmingly positive. More than <strong>130 people signed up</strong> and we had <strong>nearly 100 people from dozens of TidyTowns groups</strong> in attendance. Many people have reached out to me for more information, who want this story to be told.</p>
+        <p>The response was overwhelming. More than <strong>130 signed up</strong> and <strong>nearly 100 attended</strong>, from dozens of groups. Many have reached out since, wanting this story told.</p>
 
-        <p>I believe TidyTowns groups deserve a way to collect data &amp; communicate positive impact. This is not just a competition between groups, but a display of our collective action to inspire love and positivity in society. That said, the data also provides a more balanced way to determine what groups are making the biggest impact.</p>
+        <p>This isn't just a competition between groups — it's a display of collective action. Every photo becomes a record, every tag becomes evidence, and the data gives a fairer way to see which groups are making the biggest difference.</p>
 
-        <p>The webinar's reach is growing, too. <strong>Meath County Council</strong> became the first Irish local authority to publicly endorse OpenLitterMap, committing to share the webinar with <strong>950+ TidyTowns groups</strong>. It was also shared by the <strong>Department of Rural and Community Development &amp; the Gaeltacht</strong>.</p>
+        <p>The reach is growing. <strong>Meath County Council</strong> became the first Irish local authority to publicly endorse OpenLitterMap, committing to share the webinar with <strong>950+ TidyTowns groups</strong>. It was also shared by the <strong>Department of Rural and Community Development and the Gaeltacht</strong>.</p>
 
         <h3>⏱️ 1 Million Hours</h3>
 
-        <p>Here's a goal worth rallying around: <strong>one million hours</strong> of community-collected environmental data. Every photo, every tag, every clean-up logged is time invested in understanding and protecting our shared environment — and a way to show the collective impact of TidyTowns groups, schools and citizen scientists across the country. We're not there yet, but the momentum is real. In the last 30 days alone:</p>
+        <p>"1 Million Hours" isn't a slogan — it's a challenge. If TidyTowns volunteers already give over a million hours a year, Ireland should be able to show it. Not vaguely, not buried in PDFs — mapped.</p>
+
+        <p>In the last 30 days:</p>
 
         <div class="stats">
             <div class="stat"><span class="stat-num">309</span><span class="stat-label">new people</span></div>
             <div class="stat"><span class="stat-num">4,398</span><span class="stat-label">photos uploaded</span></div>
             <div class="stat"><span class="stat-num">5,960</span><span class="stat-label">tags</span></div>
         </div>
-        <p class="stats-caption">In the last 30 days — <strong>OpenLitterMap is growing!</strong></p>
+
+        <p>Early, but it proves the point: the technology works and the appetite is there. The next step is organisation.</p>
 
         <h3>🇪🇺 EU Presidency Citizen Science Deliverable</h3>
 
-        <p>I am looking for your help to guide the system and shape an EU Presidency Citizen Science Deliverable. That's why I'm inviting you to a Zoom meeting:</p>
+        <p>We have less than a month before the Presidency begins. I'm looking for <strong>Founding Members</strong> to help shape what this deliverable becomes.</p>
 
-        <p class="meeting"><strong>Thursday 11th June, 7–8pm</strong><br />TidyTowns | EU Presidency Planning Meetup</p>
+        <p class="meeting"><strong>TidyTowns | EU Presidency Planning Meetup</strong><br />Thursday 11th June, 7–8pm (Zoom)</p>
 
-        <p>I am looking for <strong>Founding Members</strong> who want to help shape what an EU Presidency Citizen Science Deliverable could look like. We have less than one month to prepare. The technology exists in abundance. The app works. We need your help to get involved, understand how the system works, and encourage members to participate.</p>
+        <p>This goes deeper than the first demo. I'll show you how to create teams, manage uploads, tag photos, download your data, and generate reports — and how the platform can map more than just litter. And I want to hear from you: what's too slow, what's confusing, and what would help you bring your members along.</p>
 
-        <p>We will dive deeper into the OpenLitterMap platform — which can be used to map anything, not just litter. I am moving towards a more generic platform in the future, but for now OpenLitterMap is the best there is. I will show you how to create teams, manage uploads, download your data, create reports and more. I want to hear from you: what parts are difficult, how can we make this faster and easier, and what new features would help you communicate your work?</p>
+        <p class="app-links">Places aren't publicised. To join, email <a href="mailto:info@openlittermap.com?subject=Founding%20Circle%20%E2%80%94%20EU%20Presidency%20Delivery">info@openlittermap.com</a> to request access.</p>
 
-        <p class="app-links">
-            Places are not publicised — if you'd like to join, email me at <a href="mailto:info@openlittermap.com?subject=Founding%20Circle%20%E2%80%94%20EU%20Presidency%20Delivery">info@openlittermap.com</a> to request access. I'm looking for <strong>TidyTowns groups for a Founding Circle</strong> interested in an EU Presidency delivery, and I look forward to talking with the first members on Thursday.
-        </p>
+        <h3>🔧 What's improved</h3>
 
-        <h3>📄 "The Democracy Gap"</h3>
+        <p>We've fixed a batch of real upload and tagging bugs, several reported directly by users:</p>
 
-        <p>Alongside the platform work, we've completed and published <strong>"The Democracy Gap"</strong> — a 71-page policy dossier, accompanied by a Minister's Brief and a short version, now available at <a href="https://litterweek.org/tdg" target="_blank">LitterWeek.org/tdg</a>. Its core asymmetry argument has been validated as analytically strong.</p>
+        <ul class="features">
+            <li><strong>iPhone photos now upload.</strong> Apple's HEIC format was being silently rejected — it's now accepted and converted automatically.</li>
+            <li><strong>The mobile "Your Photos" screen is rebuilt.</strong> You now see all your location-tagged photos, newest first, with infinite scroll, plus a "Select More" button to pull extra photos from your gallery.</li>
+            <li><strong>Failed uploads no longer get stuck in loops</strong> — including for users on older app versions.</li>
+            <li><strong>Map "picked up" status is now accurate,</strong> and tag names with special characters (like "Black &amp; Mild") no longer break a save.</li>
+        </ul>
+
+        <p>Every fix ships with test coverage so it stays fixed.</p>
+
+        <h3>📄 The Democracy Gap</h3>
+
+        <p>I've also published <strong>The Democracy Gap</strong> — a 71-page policy dossier with a Minister's Brief and a short version. It sets out the wider argument: public money, public evidence, open data, and the democratic infrastructure Ireland needs.</p>
+
+        <p>Read it at <a href="https://litterweek.org/tdg" target="_blank">LitterWeek.org/tdg</a>.</p>
 
         <p class="meta">Full changelog: <router-link to="/changelog">openlittermap.com/changelog</router-link></p>
 
@@ -50,10 +68,6 @@
             <li>📩 <a href="mailto:info@openlittermap.com">info@openlittermap.com</a></li>
             <li>💻 <a href="https://github.com/OpenLitterMap/openlittermap-web" target="_blank">GitHub</a> · <a href="https://discord.gg/NAEUBwtAhT" target="_blank">Discord</a> · <a href="https://join.slack.com/t/openlittermap/shared_invite/zt-29p12603a-MlzeSdMK~0mc1tCLV_bxUA" target="_blank">Slack</a></li>
         </ul>
-
-        <p class="closing"><strong>Thank you for mapping litter with us!</strong></p>
-
-        <p>— Sean</p>
     </div>
 </template>
 
