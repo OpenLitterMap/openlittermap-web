@@ -30,16 +30,32 @@ class MetadataAggregator
             ->selectRaw('
                 COUNT(*) as photos,
                 COUNT(DISTINCT user_id) as users,
-                COUNT(DISTINCT team_id) as teams,
-                SUM(CASE WHEN remaining = 0 THEN 1 ELSE 0 END) as picked_up,
-                SUM(CASE WHEN remaining = 1 THEN 1 ELSE 0 END) as not_picked_up
+                COUNT(DISTINCT team_id) as teams
             ')
             ->first();
 
-        // Debug: Check if we have photo_tags for these photos
-        $photoTagCount = DB::table('photo_tags')
+        // Picked-up counts come from each photo's first tag (photo_tags.picked_up),
+        // consistent with Photo::picked_up — NOT the deprecated photos.remaining.
+        // Untagged photos (and null first-tag photos) count as neither.
+        $firstTagIds = DB::table('photo_tags')
             ->whereIn('photo_id', $photoIds)
-            ->count();
+            ->groupBy('photo_id')
+            ->selectRaw('MIN(id) as id')
+            ->pluck('id');
+
+        $pickedUp = 0;
+        $notPickedUp = 0;
+        if ($firstTagIds->isNotEmpty()) {
+            $pickedStats = DB::table('photo_tags')
+                ->whereIn('id', $firstTagIds)
+                ->selectRaw('
+                    SUM(CASE WHEN picked_up = 1 THEN 1 ELSE 0 END) as picked_up,
+                    SUM(CASE WHEN picked_up = 0 THEN 1 ELSE 0 END) as not_picked_up
+                ')
+                ->first();
+            $pickedUp = (int) ($pickedStats->picked_up ?? 0);
+            $notPickedUp = (int) ($pickedStats->not_picked_up ?? 0);
+        }
 
         // Calculate total_objects from photo_tags quantity sum
         $totalObjects = DB::table('photo_tags')
@@ -69,8 +85,8 @@ class MetadataAggregator
             'teams' => (int)($photoStats->teams ?? 0),
             'total_objects' => (int)$totalObjects,
             'total_tags' => (int)$totalTags,
-            'picked_up' => (int)($photoStats->picked_up ?? 0),
-            'not_picked_up' => (int)($photoStats->not_picked_up ?? 0),
+            'picked_up' => $pickedUp,
+            'not_picked_up' => $notPickedUp,
         ];
     }
 }

@@ -3,7 +3,7 @@
         <h2>Update 28: 1st TidyTowns Webinar, 1 Million Hours &amp; EU Presidency Citizen Science Deliverable</h2>
 
         <p>
-            On Monday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland
+            On Tuesday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland
             holds the EU Presidency for six months. We're calling on TidyTowns groups — Ireland's leading volunteer
             network — to start documenting their impact with our app and help co-create a citizen-led deliverable for
             the Presidency.

@@ -45,7 +45,7 @@
                 <tr>
                     <td class="email-body" style="padding: 30px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">
 
-                        <p>On Monday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland holds the EU Presidency for six months. We're calling on TidyTowns groups &mdash; Ireland's leading volunteer network &mdash; to start documenting their impact with our app and help co-create a citizen-led deliverable for the Presidency.</p>
+                        <p>On Tuesday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland holds the EU Presidency for six months. We're calling on TidyTowns groups &mdash; Ireland's leading volunteer network &mdash; to start documenting their impact with our app and help co-create a citizen-led deliverable for the Presidency.</p>
 
                         <p>Last year, a record 949 TidyTowns groups achieved over 1 Million Hours of volunteer action &mdash; cleaning, planting, painting, repairing, reporting, maintaining. Most of it went undocumented. Some data exists on members devices and was uploaded to Facebook. But social media does not collect data on impact. Social media collects data about people. We are asking members to Change The Platform and upload to a citizen science platform like OpenLitterMap instead of social media to start mapping and quantifying our impact.</p>
 

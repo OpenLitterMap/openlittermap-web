@@ -65,9 +65,12 @@ class PhotoTagsController extends Controller
     public function update(ReplacePhotoTagsRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
-        $photo = Photo::findOrFail($validatedData['photo_id']);
 
-        $photoTags = DB::transaction(function () use ($photo, $validatedData) {
+        $photoTags = DB::transaction(function () use ($validatedData) {
+            // Lock the photo row so overlapping replace/retry requests serialize
+            // (delete + reset + re-add must not interleave).
+            $photo = Photo::whereKey($validatedData['photo_id'])->lockForUpdate()->firstOrFail();
+
             // Delete existing tags (extra_tags cascade via FK)
             $photo->photoTags()->each(function ($tag) {
                 $tag->extraTags()->delete();
