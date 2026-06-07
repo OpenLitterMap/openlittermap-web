@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-class V5AnnouncementEmailTest extends TestCase
+class EmailUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -22,7 +22,7 @@ class V5AnnouncementEmailTest extends TestCase
         $user = User::factory()->create();
         $mailable = new EmailUpdate($user);
 
-        $mailable->assertHasSubject('Update 27 - Mobile app updates & more!');
+        $mailable->assertHasSubject('Update 28 - 1st TidyTowns Webinar, 1 Million Hours & EU Presidency');
     }
 
     public function test_email_update_renders_with_user(): void
@@ -32,7 +32,7 @@ class V5AnnouncementEmailTest extends TestCase
 
         $html = $mailable->render();
 
-        $this->assertStringContainsString('New Mobile Apps', $html); // Title in HTML body
+        $this->assertStringContainsString('1st TidyTowns Webinar', $html); // Title in HTML body
         $this->assertStringContainsString($user->sub_token, $html);
         $this->assertStringContainsString('unsubscribe', $html);
     }
@@ -44,7 +44,7 @@ class V5AnnouncementEmailTest extends TestCase
 
         $html = $mailable->render();
 
-        $this->assertStringContainsString('New Mobile Apps', $html); // Title in HTML body
+        $this->assertStringContainsString('1st TidyTowns Webinar', $html); // Title in HTML body
         $this->assertStringContainsString($subscriber->sub_token, $html);
     }
 
