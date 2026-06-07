@@ -75,7 +75,7 @@ Token is created with name `mobile`: `$user->createToken('mobile')`.
 ### POST /api/auth/login — Session Login (SPA)
 
 **Auth:** None (guest)
-**Rate limit:** 5 attempts per minute (disabled on localhost)
+**Rate limit:** 7 **failed** attempts per minute, keyed by `identifier` + IP (disabled on localhost). Successful logins never count toward the limit and clear the counter. Keying on the identifier means one account's failures (or a brute-force attempt) cannot lock out other users sharing the same IP — important for schools behind a single NAT. Returns `429` once the limit is hit.
 
 **Request:**
 ```json

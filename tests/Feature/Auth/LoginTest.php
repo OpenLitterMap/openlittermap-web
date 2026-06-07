@@ -80,21 +80,62 @@ class LoginTest extends TestCase
             ->assertJsonValidationErrors(['identifier', 'password']);
     }
 
-    public function test_login_is_rate_limited()
+    public function test_login_is_rate_limited_after_repeated_failures()
     {
         User::factory()->create(['email' => 'sean@openlittermap.com']);
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 7; $i++) {
             $this->postJson('/api/auth/login', [
                 'identifier' => 'sean@openlittermap.com',
                 'password' => 'wrong',
-            ]);
+            ])->assertStatus(422);
         }
 
         $this->postJson('/api/auth/login', [
             'identifier' => 'sean@openlittermap.com',
             'password' => 'wrong',
         ])->assertStatus(429);
+    }
+
+    public function test_successful_logins_are_not_rate_limited()
+    {
+        User::factory()->create([
+            'email' => 'sean@openlittermap.com',
+            'password' => 'password123',
+        ]);
+
+        for ($i = 0; $i < 12; $i++) {
+            $this->postJson('/api/auth/login', [
+                'identifier' => 'sean@openlittermap.com',
+                'password' => 'password123',
+            ])->assertOk();
+        }
+    }
+
+    public function test_one_account_being_throttled_does_not_lock_out_another()
+    {
+        User::factory()->create(['email' => 'locked@openlittermap.com']);
+        User::factory()->create([
+            'email' => 'other@openlittermap.com',
+            'password' => 'password123',
+        ]);
+
+        for ($i = 0; $i < 8; $i++) {
+            $this->postJson('/api/auth/login', [
+                'identifier' => 'locked@openlittermap.com',
+                'password' => 'wrong',
+            ]);
+        }
+
+        $this->postJson('/api/auth/login', [
+            'identifier' => 'locked@openlittermap.com',
+            'password' => 'wrong',
+        ])->assertStatus(429);
+
+        $this->postJson('/api/auth/login', [
+            'identifier' => 'other@openlittermap.com',
+            'password' => 'password123',
+        ])->assertOk();
     }
 
     public function test_a_user_can_logout()
