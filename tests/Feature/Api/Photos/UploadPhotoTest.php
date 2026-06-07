@@ -129,7 +129,7 @@ class UploadPhotoTest extends TestCase
         $this->assertNull($photo->team_id);
     }
 
-    public function test_web_upload_rejects_duplicate_photo()
+    public function test_web_upload_duplicate_returns_existing_id_idempotently()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
@@ -144,13 +144,23 @@ class UploadPhotoTest extends TestCase
         );
 
         // First upload succeeds
-        $response = $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file]);
-        $response->assertOk();
+        $first = $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file]);
+        $first->assertOk();
+        $photoId = $first->json('photo_id');
 
-        // Second upload of same photo (same EXIF datetime) is rejected
-        $response = $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file]);
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors('photo');
+        // Second upload of same photo (same EXIF datetime) returns the existing id
+        $second = $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file]);
+        $second->assertOk();
+        $second->assertJson([
+            'success' => true,
+            'photo_id' => $photoId,
+            'already_uploaded' => true,
+            'tagged' => false,
+            'xp_awarded' => 0,
+        ]);
+
+        // Pure lookup: no second photo row created
+        $this->assertEquals(1, Photo::where('user_id', $user->id)->count());
     }
 
     // ---------------------------------------------------------------
@@ -265,16 +275,16 @@ class UploadPhotoTest extends TestCase
         $response->assertJsonValidationErrors('lat');
     }
 
-    public function test_mobile_upload_rejects_duplicate_by_explicit_date()
+    public function test_mobile_upload_duplicate_by_explicit_date_returns_existing_id()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['xp' => 0]);
         $date = '2026-03-01 15:30:00';
 
         // First upload
-        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+        $first = $this->actingAs($user)->postJson('/api/v3/upload', [
             'photo' => new UploadedFile(
                 storage_path('framework/testing/img_with_exif.JPG'),
                 'photo.jpg',
@@ -286,10 +296,12 @@ class UploadPhotoTest extends TestCase
             'lon' => -77.154,
             'date' => $date,
         ]);
-        $response->assertOk();
+        $first->assertOk();
+        $photoId = $first->json('photo_id');
+        $xpAfterFirst = $user->fresh()->xp;
 
-        // Second upload with same date
-        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+        // Second upload with same date returns the existing id, no new XP/photo
+        $second = $this->actingAs($user)->postJson('/api/v3/upload', [
             'photo' => new UploadedFile(
                 storage_path('framework/testing/img_with_exif.JPG'),
                 'photo.jpg',
@@ -301,8 +313,60 @@ class UploadPhotoTest extends TestCase
             'lon' => -77.154,
             'date' => $date,
         ]);
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors('photo');
+        $second->assertOk();
+        $second->assertJson([
+            'success' => true,
+            'photo_id' => $photoId,
+            'already_uploaded' => true,
+            'tagged' => false,
+        ]);
+
+        // Q6: duplicate awards no further XP and creates no second row
+        $this->assertEquals($xpAfterFirst, $user->fresh()->xp);
+        $this->assertEquals(1, Photo::where('user_id', $user->id)->count());
+    }
+
+    public function test_duplicate_upload_reports_tagged_true_when_photo_has_summary()
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $user = User::factory()->create(['picked_up' => true]);
+        $date = '2026-03-02 09:00:00';
+
+        $payload = [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+            'lat' => 40.053,
+            'lon' => -77.154,
+            'date' => $date,
+        ];
+
+        $first = $this->actingAs($user)->postJson('/api/v3/upload', $payload);
+        $first->assertOk();
+
+        // Simulate the photo already being tagged (summary present)
+        Photo::find($first->json('photo_id'))->update(['summary' => ['totals' => ['litter' => 1]]]);
+
+        $second = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => new UploadedFile(
+                storage_path('framework/testing/img_with_exif.JPG'),
+                'photo.jpg',
+                'image/jpeg',
+                null,
+                true
+            ),
+            'lat' => 40.053,
+            'lon' => -77.154,
+            'date' => $date,
+        ]);
+        $second->assertOk();
+        $second->assertJson(['already_uploaded' => true, 'tagged' => true]);
     }
 
     // ---------------------------------------------------------------
@@ -420,7 +484,7 @@ class UploadPhotoTest extends TestCase
         $this->assertIsString($response->json('country'));
     }
 
-    public function test_duplicate_upload_returns_typed_error()
+    public function test_duplicate_upload_response_shape()
     {
         Storage::fake('s3');
         Storage::fake('bbox');
@@ -437,10 +501,12 @@ class UploadPhotoTest extends TestCase
         // First upload succeeds
         $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file])->assertOk();
 
-        // Second upload returns typed error
+        // Second upload returns the idempotent duplicate contract
         $response = $this->actingAs($user)->postJson('/api/v3/upload', ['photo' => $file]);
-        $response->assertStatus(422);
-        $response->assertJson(['error' => 'duplicate']);
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'success', 'photo_id', 'already_uploaded', 'tagged',
+        ]);
     }
 
     // ---------------------------------------------------------------

@@ -288,7 +288,6 @@ class UsersUploadsFiltersTest extends TestCase
                     'lon',
                     'model',
                     'picked_up',
-                    'remaining',
                     'verified',
                     'country',
                     'state',
@@ -305,6 +304,8 @@ class UsersUploadsFiltersTest extends TestCase
         ]);
 
         $photoData = $response->json('photos.0');
+        // Deprecated photo-level `remaining` is fully removed from API responses — use picked_up.
+        $this->assertArrayNotHasKey('remaining', $photoData);
         $this->assertEquals($photo->id, $photoData['id']);
         $this->assertIsInt($photoData['verified']);
         $this->assertEquals('United States of America', $photoData['country']);

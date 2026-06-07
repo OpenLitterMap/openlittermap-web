@@ -48,7 +48,11 @@ All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now h
 { "success": false, "error": "no_gps", "message": "Sorry, no GPS on this one.", "errors": { ... } }
 ```
 
-`resolveErrorCode()` maps validation messages to typed `error` codes: `no_exif`, `no_gps`, `no_datetime`, `duplicate`, `invalid_coordinates`, `validation_error`. This lets mobile clients handle specific failure modes programmatically.
+`resolveErrorCode()` maps validation messages to typed `error` codes: `no_exif`, `no_gps`, `no_datetime`, `invalid_coordinates`, `validation_error`. This lets mobile clients handle specific failure modes programmatically. (Duplicates are no longer an error — see below.)
+
+### Idempotent Upload (duplicate handling)
+
+Duplicate detection (`user_id + datetime`) runs in `UploadPhotoController::__invoke()`, **not** validation. A duplicate returns the **existing** `photo_id` with `{ success: true, photo_id, already_uploaded: true, tagged: <bool>, xp_awarded: 0 }` so a lost-response retry can recover with no app update — and with no side effects (no second `Photo`, no S3 write, no XP/metrics). `tagged` reflects whether the existing photo has a `summary`. The lookup is skipped for participant uploads (students share the facilitator's `user_id`).
 
 ### EXIF Validation (web upload)
 
@@ -59,7 +63,8 @@ All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now h
 3. **GPS must exist** — `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`, `GPSLongitude` must all be non-empty
 4. **GPS conversion must succeed** — `dmsToDec()` guards against zero denominators in all 6 DMS components (degrees/minutes/seconds for lat and lon). Returns `null` on malformed data → validation rejects.
 5. **0,0 coordinates are accepted** — photos at 0,0 latitude/longitude are allowed. Future feature: manual coordinate reassignment for mislocated photos.
-6. **Duplicate check** — same user + same EXIF datetime → 422 rejection
+
+Duplicate detection happens in the controller (idempotent — see "Idempotent Upload" above), not in `after()`.
 
 ### EXIF Validation (mobile upload — explicit coordinates)
 
@@ -67,8 +72,17 @@ All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now h
 
 1. **(0, 0) coordinates rejected** — `lat == 0 && lon == 0` → 422 (Null Island guard)
 2. **Date parsed via Carbon** — Unix timestamps (seconds) or ISO 8601 strings accepted
-3. **Duplicate check** — same user + same explicit `date` → 422 rejection
+3. **Duplicate handling** — same user + same explicit `date` → idempotent: returns the existing `photo_id` (see "Idempotent Upload" above), not a 422
 4. **Platform set to `'mobile'`** — distinguishes from web (EXIF-based) uploads
+
+### HEIC / HEIF handling
+
+iPhones upload HEIC. Two things make this work:
+
+1. **Validation skip.** Laravel's `image` rule excludes HEIC and `dimensions` uses `getimagesize()` (returns `false` for HEIC), so both would reject genuine HEIC. `UploadPhotoRequest::rules()` detects HEIC via `MakeImageAction::isHeic()` (extension/MIME **and** ftyp magic bytes — catches iOS HEIC sent as `.jpg`) and **drops `image` + `dimensions` for HEIC only**. `mimes` (content-sniffed) and `max:20480` stay on. Using the same `isHeic()` the converter uses keeps the validation-skip in lockstep with conversion.
+2. **Conversion.** `MakeImageAction` shells out to **ImageMagick 6 `convert input output`** (the server has IM6 `convert`, **not** IM7 `magick` — do not reintroduce `magick`) to convert HEIC → JPEG before storage, since the Intervention GD driver can't decode HEIC.
+
+**Known limitation (follow-up ticket):** web-mode HEIC (no explicit `lat`/`lon`/`date`) still hits `after()`'s `exif_read_data()`/GPS checks, which are unreliable on HEIC. The mobile path (explicit coords) is fully supported.
 
 ### `picked_up` semantics
 
@@ -98,6 +112,8 @@ All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now h
 **Note:** PhotoTags can be object-based (with a CLO) or extra-tag-only (brand-only, material-only, custom-only with null CLO). Extra-tag-only tags earn their own XP (brand=3, material=2, custom=1) but do not count toward `totalLitter` or receive object XP. See `AddTagsToPhotoAction::createExtraTagOnly()`.
 
 **Transaction:** `AddTagsToPhotoAction::run()` wraps all tag creation + summary generation + verification update in a single `DB::transaction()`. This ensures photo tags, summary JSON, XP, and `TagsVerifiedByAdmin` dispatch are all atomic — a partial failure cannot leave the photo in an inconsistent state.
+
+**Idempotent POST guard:** `POST /api/v3/tags` **appends** tags (it does not replace). Since ordinary non-trusted users stay at `verified=0` after tagging, the `verified >= 1` authorize gate does not catch them, so a retried POST (lost response) would double-tag. `PhotoTagsController::store()` therefore checks `summary` first: if the photo is already tagged (`summary !== null`) it returns an idempotent no-op `{ success: true, already_tagged: true, photoTags }` without re-adding. To re-tag/edit an already-tagged photo, use `PUT /api/v3/tags` (replace — see Phase 2b).
 
 This is where `MetricsService::processPhoto()` runs via the `ProcessPhotoMetrics` listener:
 
@@ -161,6 +177,8 @@ PhotoTagsController::update()
 ├── AddTagsToPhotoAction::run()           → regenerates summary, XP, fires event
 └── MetricsService::processPhoto()        → doUpdate() calculates deltas vs old processed_tags
 ```
+
+`update()` also stamps `onboarding_completed_at` on the first non-empty tag submission (parity with `store()`), so the mobile auto-upload flow can tag exclusively via PUT. On a never-tagged photo, PUT's reset is a no-op and it runs the same `AddTagsToPhotoAction::run(..., skipVerification=false)` as POST — identical `verified`/XP/metrics for trusted, school, and ordinary users.
 
 Frontend: `/tag?photo=<id>` loads a specific photo. If it has tags, enters edit mode (PUT). If untagged, uses normal tagging (POST). Security: `ReplacePhotoTagsRequest` enforces ownership. `GET_SINGLE_PHOTO` calls `/api/v3/user/photos` which filters by `Auth::user()->id`.
 

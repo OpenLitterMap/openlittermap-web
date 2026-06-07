@@ -50,7 +50,6 @@ class UsersUploadsController extends Controller
                 'lon' => $photo->lon,
                 'model' => $photo->model,
                 'picked_up' => $photo->picked_up,
-                'remaining' => $photo->remaining, // @deprecated — use picked_up
                 'verified' => $photo->verified,
                 'country' => $photo->countryRelation?->country,
                 'state' => $photo->stateRelation?->state,
@@ -112,7 +111,6 @@ class UsersUploadsController extends Controller
                 'lon' => $photo->lon,
                 'model' => $photo->model,
                 'picked_up' => $photo->picked_up,
-                'remaining' => $photo->remaining, // @deprecated — use picked_up
                 'display_name' => $photo->display_name,
                 'team_id' => $photo->team_id,
                 'team' => $photo->team,

@@ -73,6 +73,28 @@ class UploadPhotoController extends Controller
                 $lon = $coordinates[1];
             }
 
+            // 2b. Idempotent upload — if this user already uploaded a photo with
+            // this datetime, return the existing id instead of creating a duplicate.
+            // Pure lookup: no S3 write, no Photo::create, no XP/metrics side effects.
+            // Skipped for participant uploads (students share the facilitator's
+            // user_id and may legitimately share a datetime).
+            if (! $request->attributes->get('participant')) {
+                $existing = Photo::where('user_id', $user->id)
+                    ->where('datetime', $dateTime)
+                    ->orderBy('id')
+                    ->first();
+
+                if ($existing) {
+                    return response()->json([
+                        'success' => true,
+                        'photo_id' => $existing->id,
+                        'already_uploaded' => true,
+                        'tagged' => $existing->summary !== null,
+                        'xp_awarded' => 0,
+                    ]);
+                }
+            }
+
             // 3. Upload full image + bbox thumbnail to S3
             $imageName = $this->uploadPhotoAction->run(
                 $image,

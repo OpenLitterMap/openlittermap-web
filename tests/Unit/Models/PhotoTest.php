@@ -122,11 +122,24 @@ class PhotoTest extends TestCase
         $this->assertFalse($photo->selected);
     }
 
-    public function test_a_photo_has_picked_up_attribute()
+    public function test_picked_up_is_derived_from_first_tag_not_remaining()
     {
-        $photo = Photo::factory()->create();
+        // Untagged (no summary) → null, regardless of the deprecated `remaining` column.
+        $untagged = Photo::factory()->create(['remaining' => true]);
+        $this->assertNull($untagged->picked_up);
 
-        $this->assertEquals(! $photo->remaining, $photo->picked_up);
+        // First tag picked up → true, even though `remaining` says "not picked up".
+        $pickedUp = Photo::factory()->create([
+            'remaining' => true,
+            'summary' => ['tags' => [['picked_up' => true]]],
+        ]);
+        $this->assertTrue($pickedUp->picked_up);
+
+        // First tag not picked up → false.
+        $notPickedUp = Photo::factory()->create([
+            'summary' => ['tags' => [['picked_up' => false]]],
+        ]);
+        $this->assertFalse($notPickedUp->picked_up);
     }
 
     public function test_a_photo_display_name_is_null_without_address_array()

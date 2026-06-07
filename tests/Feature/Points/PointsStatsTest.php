@@ -51,18 +51,20 @@ class PointsStatsTest extends TestCase
         $team = Team::factory()->create();
         $user2->teams()->attach($team);
 
-        // Create photos with tags
+        // Create photos with tags. picked_up is derived from the first tag (photo_tags.picked_up),
+        // NOT photos.remaining — note photos default to remaining=true, yet the picked-up
+        // count follows the tags. (This would fail under the old remaining-based aggregation.)
         $photo1 = $this->createPhotoWithTags($user1, 0.0, 51.5, 'smoking', 'butts', 5, [
-            'remaining' => false
+            'picked_up' => true
         ]);
 
         $photo2 = $this->createPhotoWithTags($user2, 0.1, 51.5, 'food', 'wrapper', 3, [
-            'remaining' => false,
+            'picked_up' => true,
             'team_id' => $team->id
         ]);
 
         $photo3 = $this->createPhotoWithTags($user2, 0.05, 51.5, 'alcohol', 'beer_bottle', 2, [
-            'remaining' => true
+            'picked_up' => false
         ]);
 
         // Act
@@ -633,6 +635,10 @@ class PointsStatsTest extends TestCase
 
     private function createPhotoWithTags($user, $lon, $lat, $categoryKey, $objectKey, $quantity, $attributes = [])
     {
+        // picked_up is now per-tag (photo_tags.picked_up), not a photo column.
+        $tagPickedUp = $attributes['picked_up'] ?? null;
+        unset($attributes['picked_up']);
+
         $photo = $this->createPhotoWithLocation($user, $lon, $lat, $attributes);
 
         // Get or create category and object
@@ -644,7 +650,8 @@ class PointsStatsTest extends TestCase
             'category_litter_object_id' => $this->getCloId($category->id, $object->id),
             'category_id' => $category->id,
             'litter_object_id' => $object->id,
-            'quantity' => $quantity
+            'quantity' => $quantity,
+            'picked_up' => $tagPickedUp,
         ]);
 
         return $photo;

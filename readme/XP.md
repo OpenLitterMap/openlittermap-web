@@ -97,17 +97,16 @@ XP accumulates into levels. Thresholds are flat (not exponential).
 | Level | XP Required | Title |
 |-------|-------------|-------|
 | 1 | 0 | Noob |
-| 2 | 100 | Noobish |
-| 3 | 500 | Post-Noob |
-| 4 | 1,000 | Litter Wizard |
-| 5 | 5,000 | Trash Warrior |
-| 6 | 10,000 | Early Guardian |
-| 7 | 15,000 | Trashmonster |
-| 8 | 50,000 | Force of Nature |
-| 9 | 100,000 | Planet Protector |
-| 10 | 200,000 | Galactic Garbagething |
-| 11 | 500,000 | Interplanetary |
-| 12 | 1,000,000 | SuperIntelligent LitterMaster |
+| 2 | 100 | Litter Picker |
+| 3 | 1,000 | Litter Wizard |
+| 4 | 5,000 | Trash Warrior |
+| 5 | 10,000 | Early Guardian |
+| 6 | 15,000 | Trashmonster |
+| 7 | 50,000 | Force of Nature |
+| 8 | 100,000 | Planet Protector |
+| 9 | 200,000 | Galactic Garbagething |
+| 10 | 500,000 | Interplanetary |
+| 11 | 1,000,000 | SuperIntelligent LitterMaster |
 
 `LevelService::getUserLevel($xp)` returns: `level`, `title`, `xp_into_level`, `xp_for_next`, `xp_remaining`, `progress_percent`.
 

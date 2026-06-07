@@ -153,7 +153,6 @@ class PointsController extends Controller
                 'photos.lat',
                 'photos.lon',
                 'photos.datetime',
-                'photos.remaining', // TODO: remove post-migration — use Photo::picked_up accessor
                 'photos.summary',
             ])
             ->with([
@@ -367,6 +366,8 @@ class PointsController extends Controller
                 'id' => $photo->id,
                 'datetime' => $photo->datetime,
                 'verified' => $photo->verified,
+                // picked_up is derived from the first tag via Photo::getPickedUpAttribute
+                // (per-tag, NOT photos.remaining) so the popup reflects tag edits.
                 'picked_up' => $photo->picked_up,
                 'summary' => $photo->summary,
                 'username' => $photo->user && $photo->user->show_username_maps

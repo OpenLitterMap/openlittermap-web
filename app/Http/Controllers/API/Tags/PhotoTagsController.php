@@ -27,6 +27,19 @@ class PhotoTagsController extends Controller
     {
         $validatedData = $request->validated();
 
+        // Idempotent guard: a photo that already has a summary is already tagged.
+        // POST appends, so a retried POST (e.g. a client that lost the first
+        // response) would double-count. Return the existing tags as an idempotent
+        // success instead of re-adding them.
+        $photo = Photo::find($validatedData['photo_id']);
+        if ($photo && $photo->summary !== null) {
+            return response()->json([
+                'success' => true,
+                'already_tagged' => true,
+                'photoTags' => $photo->photoTags()->get(),
+            ]);
+        }
+
         $photoTags = $this->addTagsToPhotoActionNew->run(
             Auth::id(),
             $validatedData['photo_id'],
@@ -52,9 +65,12 @@ class PhotoTagsController extends Controller
     public function update(ReplacePhotoTagsRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
-        $photo = Photo::findOrFail($validatedData['photo_id']);
 
-        $photoTags = DB::transaction(function () use ($photo, $validatedData) {
+        $photoTags = DB::transaction(function () use ($validatedData) {
+            // Lock the photo row so overlapping replace/retry requests serialize
+            // (delete + reset + re-add must not interleave).
+            $photo = Photo::whereKey($validatedData['photo_id'])->lockForUpdate()->firstOrFail();
+
             // Delete existing tags (extra_tags cascade via FK)
             $photo->photoTags()->each(function ($tag) {
                 $tag->extraTags()->delete();
@@ -83,6 +99,13 @@ class PhotoTagsController extends Controller
                 $validatedData['tags']
             );
         });
+
+        // Mark onboarding complete on first tag submission — parity with store(),
+        // so the auto-upload flow can tag exclusively via PUT (idempotent).
+        $user = Auth::user();
+        if (! empty($validatedData['tags']) && $user->onboarding_completed_at === null) {
+            $user->update(['onboarding_completed_at' => now()]);
+        }
 
         return response()->json([
             'success' => true,

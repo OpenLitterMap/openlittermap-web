@@ -360,18 +360,19 @@ class PointsTest extends TestCase
     /** @test */
     public function it_calculates_picked_up_status_correctly()
     {
+        // picked_up is derived from the first tag (summary), not photos.remaining.
         $pickedUp = Photo::factory()->create([
             'lat' => 52.145,
             'lon' => 4.420,
-            'remaining' => false,
-            'datetime' => now()
+            'datetime' => now(),
+            'summary' => ['tags' => [['picked_up' => true]]],
         ]);
 
         $notPickedUp = Photo::factory()->create([
             'lat' => 52.145,
             'lon' => 4.421,
-            'remaining' => true,
-            'datetime' => now()
+            'datetime' => now(),
+            'summary' => ['tags' => [['picked_up' => false]]],
         ]);
 
         $response = $this->getJson($this->endpoint . '?' . http_build_query([
@@ -388,6 +389,31 @@ class PointsTest extends TestCase
 
         $notPicked = $features->firstWhere('properties.id', $notPickedUp->id);
         $this->assertFalse($notPicked['properties']['picked_up']);
+    }
+
+    /** @test */
+    public function it_uses_first_tag_picked_up_not_photo_remaining()
+    {
+        // Regression: the popup must reflect the tag's picked_up, not the deprecated
+        // photo-level photos.remaining. Here the photo-level value says "not picked up"
+        // (remaining=true) but the tag says picked up — the API must return true.
+        $photo = Photo::factory()->create([
+            'lat' => 52.145,
+            'lon' => 4.420,
+            'datetime' => now(),
+            'remaining' => true, // deprecated photo-level — must be ignored
+            'summary' => ['tags' => [['picked_up' => true]]],
+        ]);
+
+        $response = $this->getJson($this->endpoint . '?' . http_build_query([
+                'zoom' => 17,
+                'bbox' => ['left' => 4.41, 'bottom' => 52.14, 'right' => 4.43, 'top' => 52.15]
+            ]));
+
+        $response->assertOk();
+
+        $feature = collect($response->json('features'))->firstWhere('properties.id', $photo->id);
+        $this->assertTrue($feature['properties']['picked_up']);
     }
 
     /** @test */
@@ -1363,26 +1389,25 @@ class PointsTest extends TestCase
     }
 
     /** @test */
-    public function it_handles_null_remaining_field_for_picked_up_status()
+    public function it_derives_picked_up_from_first_tag_and_hides_for_untagged()
     {
-        $photoWithRemaining = Photo::factory()->create([
+        $notPickedUp = Photo::factory()->create([
             'lat' => 52.14,
             'lon' => 4.42,
-            'remaining' => true
+            'summary' => ['tags' => [['picked_up' => false]]],
         ]);
 
-        $photoPickedUp = Photo::factory()->create([
+        $pickedUp = Photo::factory()->create([
             'lat' => 52.14,
             'lon' => 4.42,
-            'remaining' => false
+            'summary' => ['tags' => [['picked_up' => true]]],
         ]);
 
-        // Remove the null test - it violates NOT NULL constraint
-        // Just test the default case instead
-        $photoDefault = Photo::factory()->create([
+        // Untagged photo (no summary) → picked_up is null so the popup hides the pill.
+        $untagged = Photo::factory()->create([
             'lat' => 52.14,
-            'lon' => 4.42
-            // 'remaining' omitted - uses default value of 1 (true)
+            'lon' => 4.42,
+            'summary' => null,
         ]);
 
         $response = $this->getJson('/api/points?' . http_build_query([
@@ -1393,14 +1418,9 @@ class PointsTest extends TestCase
         $response->assertOk();
         $features = collect($response->json('features'));
 
-        $withRemaining = $features->firstWhere('properties.id', $photoWithRemaining->id);
-        $this->assertFalse($withRemaining['properties']['picked_up']);
-
-        $pickedUp = $features->firstWhere('properties.id', $photoPickedUp->id);
-        $this->assertTrue($pickedUp['properties']['picked_up']);
-
-        $default = $features->firstWhere('properties.id', $photoDefault->id);
-        $this->assertFalse($default['properties']['picked_up']); // default remaining=1 means not picked up
+        $this->assertFalse($features->firstWhere('properties.id', $notPickedUp->id)['properties']['picked_up']);
+        $this->assertTrue($features->firstWhere('properties.id', $pickedUp->id)['properties']['picked_up']);
+        $this->assertNull($features->firstWhere('properties.id', $untagged->id)['properties']['picked_up']);
     }
 
     /** @test */

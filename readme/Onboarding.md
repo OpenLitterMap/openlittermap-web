@@ -24,12 +24,13 @@ Users can **skip** from the Welcome page (`POST /api/user/onboarding/skip`), whi
 
 ## Completion Triggers
 
-`onboarding_completed_at` gets set (only if currently null) in two places:
+`onboarding_completed_at` gets set (only if currently null) in three places:
 
-1. **First tag submission** — `PhotoTagsController::store()` checks and sets `now()`
-2. **Skip endpoint** — `POST /api/user/onboarding/skip` (inline route in `api.php`, inside `auth:sanctum` group)
+1. **First tag via POST** — `PhotoTagsController::store()` checks and sets `now()`
+2. **First tag via PUT** — `PhotoTagsController::update()` does the same, guarded to a non-empty `tags` array. Added so the mobile auto-upload flow (which tags idempotently via `PUT /api/v3/tags`) still completes onboarding on the user's first tag.
+3. **Skip endpoint** — `POST /api/user/onboarding/skip` (inline route in `api.php`, inside `auth:sanctum` group)
 
-Both are idempotent — they won't overwrite an existing timestamp.
+All three are idempotent — they won't overwrite an existing timestamp.
 
 ## Database
 
@@ -55,7 +56,7 @@ The skip endpoint is an inline closure in `routes/api.php` inside the `auth:sanc
 
 ### Controllers
 
-**`PhotoTagsController::store()`** — After creating tags, checks if `$user->onboarding_completed_at === null` and sets it to `now()`. This is the "natural" completion path.
+**`PhotoTagsController::store()` / `::update()`** — After creating tags, both check if `$user->onboarding_completed_at === null` and set it to `now()`. This is the "natural" completion path: `store()` for first-time POST tagging, `update()` for the PUT (replace) path that the mobile auto-upload flow uses (`update()` guards on a non-empty `tags` array so clearing tags doesn't complete onboarding).
 
 **`LoginController`** — Uses `ResolvesUserProfile::buildFullProfileData()` instead of returning raw `$user`. This ensures the login response includes `onboarding_completed_at` so the frontend can route immediately.
 
@@ -204,6 +205,8 @@ All onboarding pages use the established dark glass theme:
 | `test_profile_refresh_returns_null_onboarding_for_new_user` | Profile includes field (null) |
 | `test_login_returns_onboarding_completed_at` | Login response includes the field |
 | `test_login_does_not_leak_sensitive_fields` | Login response excludes stripe_id, token, etc. |
+
+PUT-path onboarding completion is covered in `tests/Feature/Tags/ReplacePhotoTagsTest.php`: `test_put_first_time_marks_onboarding_complete` and `test_put_clearing_tags_does_not_mark_onboarding_complete`.
 
 ## File Map
 

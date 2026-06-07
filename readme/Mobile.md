@@ -62,9 +62,16 @@ POST /api/validate-token  →  { message: "valid" }  // Only on app resume, NOT 
 
 **Date field:** `Carbon::createFromTimestamp((int) $dateInput)` — expects **seconds**. If you have JS milliseconds, divide by 1000: `Math.floor(Date.now() / 1000)`.
 
-Rejects `(0, 0)` coordinates. Duplicate detection uses the explicit `date` field.
+Rejects `(0, 0)` coordinates. Duplicate detection (`user_id + datetime`) uses the explicit `date` field.
 
-**Response:** `{ "success": true, "photo_id": 123 }`
+**HEIC is supported.** iPhone HEIC/HEIF uploads (including HEIC bytes sent with a `.jpg` extension) are accepted — detected by magic bytes, the `image`/`dimensions` validation is skipped, and the server converts HEIC → JPEG (ImageMagick `convert`). Send the file as-is; no client-side transcoding needed.
+
+**Response (new photo):** `{ "success": true, "photo_id": 123, ... }`
+
+**Response (duplicate — idempotent, 200 not 422):**
+`{ "success": true, "photo_id": <existing>, "already_uploaded": true, "tagged": <bool>, "xp_awarded": 0 }`
+
+A re-upload of an already-uploaded photo returns the **existing** `photo_id` (no error, no second row, no extra XP) so a lost-response retry can recover. If `tagged` is `true`, skip tagging; otherwise tag via **`PUT /api/v3/tags`** (idempotent — `POST` appends and a retry would double-tag). This is the backend fix for the "photo id field must be an integer" loop.
 
 ## User Photos: Pagination & Filters
 
@@ -72,7 +79,7 @@ Rejects `(0, 0)` coordinates. Duplicate detection uses the explicit `date` field
 
 Fetch all untagged: `GET /api/v3/user/photos?tagged=false&per_page=100`
 
-Response includes `picked_up` (boolean, never null) and `remaining` (deprecated inverse). Use `picked_up`.
+Response includes `picked_up` (`true`/`false`/`null` — null for untagged photos, derived from the first tag). The deprecated `remaining` field has been **removed** from responses — use `picked_up`.
 
 ## Delete Photo
 
@@ -123,13 +130,13 @@ When uploading via `POST /api/v3/upload`, the optional `is_public` param control
 
 ---
 
-## `picked_up` vs `remaining`
+## `picked_up`
 
-**`remaining` is deprecated.** Use `picked_up` everywhere.
+**`remaining` has been removed from API responses.** Use `picked_up` everywhere.
 
-- **Photo-level** (`picked_up` in response root): boolean, never null. `true` = litter collected, `false` = left behind.
-- **Tag-level** (`new_tags[].picked_up`): nullable. `true`/`false`/`null` (not specified). Independent per tag.
-- The `remaining` field (inverse of `picked_up`) is still returned for backward compatibility but will be removed.
+- **Photo-level** (`picked_up` in response root): `true`/`false`/`null`. Derived from the **first tag** — `null` for untagged photos (status unknown). `true` = litter collected, `false` = left behind.
+- **Tag-level** (`new_tags[].picked_up`): nullable. `true`/`false`/`null` (not specified). Independent per tag, and the source of truth.
+- The deprecated photo-level `remaining` field is no longer returned in any response (the column is hidden on the model).
 
 ---
 

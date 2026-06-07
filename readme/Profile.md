@@ -150,9 +150,9 @@ Password-confirmed. Cleans up: AdminVerificationLog, cleanups, location ownershi
 
 Config-driven 12-level threshold system in `config/levels.php`.
 
-- **Thresholds:** Flat XP values (0, 100, 500, 1000, 5000, ... 1,000,000)
+- **Thresholds:** Flat XP values (0, 100, 1000, 5000, ... 1,000,000)
 - **Service:** `LevelService::getUserLevel(int $xp)` returns level info array
-- **Titles:** From "Complete Noob" (level 1) to "SuperIntelligent LitterMaster" (level 12)
+- **Titles:** From "Noob" (level 1) to "SuperIntelligent LitterMaster" (level 11)
 
 ---
 

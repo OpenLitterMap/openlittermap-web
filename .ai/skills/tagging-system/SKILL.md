@@ -200,6 +200,8 @@ Backend auto-resolves category from `object->categories()->first()`. Category ne
 ```
 `$tag['custom']` is boolean true (flag), `$tag['key']` is the actual tag name. Creates `CustomTagNew` via `$tag['key']`.
 
+**Custom tag sanitization (`AddTagsToPhotoAction::attachCustomTags`).** Custom tag keys are free text — there is **no allowlist regex**. The key is sanitized with `mb_substr(trim(strip_tags($key)), 0, 255)` (caps to the `custom_tags_new.key` varchar(255)) and accepted, including punctuation like `& . ' /` (real brand/product names, e.g. "Black & Mild"). An empty-after-sanitize key is **skipped** (`continue`) — never thrown. Do NOT reintroduce a throwing allowlist: the throw lived inside `run()`'s `DB::transaction`, so one bad custom tag would 500 the request and roll back the user's valid object tags. Same path for standalone (`createExtraTagOnly`) and object-attached (`createTagFromClo`) custom tags. (`bn:`→brand resolution is a separate deferred ticket; `bn:` currently stores as a literal custom string.)
+
 ### 3. Brand-only tag
 ```json
 { "brand_only": true, "brand": { "id": 1, "key": "coca-cola" }, "quantity": 1 }

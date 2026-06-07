@@ -41,7 +41,7 @@ class MakeImageAction
      * iOS often sends HEIC files with a .jpg extension and image/jpeg MIME,
      * so we also inspect the ftyp box in the file header.
      */
-    protected function isHeic(UploadedFile $file): bool
+    public function isHeic(UploadedFile $file): bool
     {
         $extension = strtolower($file->getClientOriginalExtension());
         $mimeType = strtolower($file->getMimeType());
@@ -153,7 +153,9 @@ class MakeImageAction
 
             $output = [];
             $returnCode = 0;
-            exec('magick convert ' . escapeshellarg($tmpFilepath) . ' ' . escapeshellarg($convertedFilepath) . ' 2>&1', $output, $returnCode);
+            // ImageMagick 6 CLI: `convert input output`. The server has IM6 (`convert`),
+            // not IM7 (`magick`), so this must stay `convert` — do not reintroduce `magick`.
+            exec('convert ' . escapeshellarg($tmpFilepath) . ' ' . escapeshellarg($convertedFilepath) . ' 2>&1', $output, $returnCode);
 
             if ($returnCode !== 0 || !file_exists($convertedFilepath)) {
                 Log::error('MakeImageAction: ImageMagick conversion failed', [

@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Photo;
+use App\Actions\Photos\MakeImageAction;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,14 +21,24 @@ class UploadPhotoRequest extends FormRequest
 
     public function rules(): array
     {
+        // HEIC files fail Laravel's `image` rule (validateImage() excludes HEIC) and the
+        // `dimensions` rule (getimagesize() returns false for HEIC), so they'd be rejected
+        // before reaching the controller, which converts HEIC → JPEG via MakeImageAction.
+        // When the file is genuinely HEIC (same isHeic() detection the converter uses —
+        // keeps validation-skip in lockstep with conversion, and catches iOS HEIC sent as
+        // .jpg via magic bytes), drop those two rules. `mimes` (content-sniffed) and `max`
+        // stay on, so non-image content still can't slip through.
+        $file = $this->file('photo');
+        $isHeic = $file instanceof UploadedFile && $file->isValid() && (new MakeImageAction)->isHeic($file);
+
         return [
-            'photo' => [
+            'photo' => array_values(array_filter([
                 'required',
-                'image',
+                $isHeic ? null : 'image',
                 'mimes:jpg,png,jpeg,heif,heic,webp',
-                'dimensions:min_width=1,min_height=1',
-                'max:20480'
-            ],
+                $isHeic ? null : 'dimensions:min_width=1,min_height=1',
+                'max:20480',
+            ])),
             'lat' => ['sometimes', 'numeric', 'between:-90,90'],
             'lon' => ['sometimes', 'numeric', 'between:-180,180'],
             'date' => ['sometimes'],
@@ -76,7 +87,6 @@ class UploadPhotoRequest extends FormRequest
         if (str_contains($message, 'EXIF')) return 'no_exif';
         if (str_contains($message, 'GPS') || str_contains($message, 'no GPS')) return 'no_gps';
         if (str_contains($message, 'date')) return 'no_datetime';
-        if (str_contains($message, 'already uploaded')) return 'duplicate';
         if (str_contains($message, 'coordinates')) return 'invalid_coordinates';
 
         return 'validation_error';
@@ -100,25 +110,10 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // When explicit coords are provided, EXIF is optional (mobile may strip it)
+                // When explicit coords are provided, EXIF is optional (mobile may strip it).
+                // Duplicate handling lives in the controller (idempotent — it returns
+                // the existing photo_id instead of a validation error).
                 if ($hasExplicit) {
-                    // Parse the explicit date for duplicate check
-                    $dateInput = $this->input('date');
-                    $dateTime = is_numeric($dateInput)
-                        ? \Carbon\Carbon::createFromTimestamp((int) $dateInput)
-                        : \Carbon\Carbon::parse($dateInput);
-
-                    if (! $this->attributes->get('participant')) {
-                        $photoExists = Photo::where([
-                            'user_id' => auth()->id(),
-                            'datetime' => $dateTime,
-                        ])->exists();
-
-                        if ($photoExists) {
-                            $validator->errors()->add('photo', 'You have already uploaded this photo');
-                        }
-                    }
-
                     return;
                 }
 
@@ -144,19 +139,8 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // Duplicate photo check (skip for participant sessions —
-                // different students may share the same EXIF datetime)
-                if (! $this->attributes->get('participant')) {
-                    $photoExists = Photo::where([
-                        'user_id' => auth()->id(),
-                        'datetime' => $dateTime,
-                    ])->exists();
-
-                    if ($photoExists) {
-                        $validator->errors()->add('photo', 'You have already uploaded this photo');
-                        return;
-                    }
-                }
+                // Duplicate handling lives in the controller (idempotent — it returns
+                // the existing photo_id instead of a validation error).
 
                 // GPS validation
                 $hasGps =
