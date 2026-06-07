@@ -253,7 +253,9 @@ const handleFileProcessed = (error, file) => {
     if (!error) {
         try {
             const data = JSON.parse(file.serverId);
-            sessionXp.value += data.xp_awarded || 5;
+            // Use ?? so a real 0 (duplicate re-upload, deferred school XP) counts as 0,
+            // not the +5 fallback. Fallback only applies when xp_awarded is absent.
+            sessionXp.value += data.xp_awarded ?? 5;
         } catch {
             sessionXp.value += 5;
         }

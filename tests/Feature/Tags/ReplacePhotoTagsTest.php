@@ -85,6 +85,67 @@ class ReplacePhotoTagsTest extends TestCase
         ])->assertOk();
     }
 
+    public function test_put_first_time_matches_post_for_trusted_user(): void
+    {
+        // Q1: PUT on a never-tagged photo must produce the same verified/XP as a
+        // first-time POST so the auto-upload flow can tag exclusively via PUT.
+        $trusted = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $trusted->id, 'verified' => 0]);
+
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $can = LitterObject::firstWhere('key', 'can');
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+
+        $this->actingAs($trusted)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['category_litter_object_id' => $cloId, 'quantity' => 2]],
+        ])->assertOk();
+
+        $photo->refresh();
+        // Trusted user → ADMIN_APPROVED, same as a first-time POST
+        $this->assertEquals(VerificationStatus::ADMIN_APPROVED->value, $photo->verified->value);
+        $this->assertGreaterThan(0, $photo->xp);
+        $this->assertNotNull($photo->summary);
+        $this->assertDatabaseCount('photo_tags', 1);
+    }
+
+    public function test_put_first_time_marks_onboarding_complete(): void
+    {
+        $user = User::factory()->create([
+            'verification_required' => false,
+            'onboarding_completed_at' => null,
+        ]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $can = LitterObject::firstWhere('key', 'can');
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['category_litter_object_id' => $cloId, 'quantity' => 1]],
+        ])->assertOk();
+
+        $this->assertNotNull($user->fresh()->onboarding_completed_at);
+    }
+
+    public function test_put_clearing_tags_does_not_mark_onboarding_complete(): void
+    {
+        $user = User::factory()->create([
+            'verification_required' => false,
+            'onboarding_completed_at' => null,
+        ]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        // Empty tags = clear; should not stamp onboarding
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [],
+        ])->assertOk();
+
+        $this->assertNull($user->fresh()->onboarding_completed_at);
+    }
+
     public function test_replace_tags_requires_ownership(): void
     {
         $owner = User::factory()->create();

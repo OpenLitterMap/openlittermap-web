@@ -267,12 +267,32 @@ Cleans up: teams, metrics, Redis leaderboards, OAuth tokens, subscriptions, role
 - **Web (default):** Only `photo` required. GPS + datetime extracted from EXIF.
 - **Mobile:** Send `lat` + `lon` + `date` alongside `photo`. All three must be present to use explicit mode. EXIF validation is skipped; coordinates come from the request fields. Platform is set to `'mobile'`.
 
-Rejects `(0, 0)` coordinates when using explicit mode. Duplicate detection uses the explicit `date` field.
+Rejects `(0, 0)` coordinates when using explicit mode.
 
-**Response (200):**
+**Idempotent upload (duplicate handling).** Duplicate detection (`user_id + datetime`)
+runs in the controller, not validation. A duplicate is **not** an error — the
+endpoint returns the **existing** `photo_id` so a lost-response retry can recover
+without an app update. The lookup is side-effect-free: no second `Photo` row, no S3
+write, no XP/metrics. (Participant uploads skip dedup — students share the
+facilitator's `user_id`.)
+
+**Response (200) — new photo:**
 ```json
-{ "success": true, "photo_id": 12345 }
+{ "success": true, "photo_id": 12345, "lat": 53.1, "lon": -7.2,
+  "city": "...", "state": "...", "country": "...", "display_name": "...",
+  "xp_awarded": 5, "user_xp_total": 1234 }
 ```
+
+**Response (200) — duplicate (already uploaded):**
+```json
+{ "success": true, "photo_id": 12345, "already_uploaded": true, "tagged": false, "xp_awarded": 0 }
+```
+- `already_uploaded`: always `true` on this branch.
+- `tagged`: `true` when the existing photo already has a `summary` (i.e. is tagged).
+  Clients should **skip tagging** when `tagged` is true; otherwise tag via
+  `PUT /api/v3/tags` (idempotent).
+- `xp_awarded`: always `0` (the original upload already awarded it) — lets clients
+  that tally session XP avoid double-counting on a re-upload.
 
 **Validation error response (422):**
 
@@ -291,7 +311,6 @@ Rejects `(0, 0)` coordinates when using explicit mode. Duplicate detection uses 
 |---|---|
 | `no_exif` | EXIF data missing or unreadable |
 | `no_datetime` | DateTime missing from EXIF |
-| `duplicate` | Same user + same datetime already uploaded |
 | `no_gps` | GPS data missing from EXIF (web mode) |
 | `invalid_coordinates` | `(0, 0)` coordinates (mobile mode) |
 | `validation_error` | Other validation failures (file type, size, etc.) |
@@ -470,9 +489,11 @@ When a user selects "wine", you submit `category_litter_object_id: 42, litter_ob
 | `tags.*.picked_up` | bool/null | optional | |
 | `tags.*.materials` | int[]\|object[] | optional | Plain IDs `[50, 51]` or objects `[{"id": 50}]`. Quantity inherits from parent tag. |
 | `tags.*.brands` | int[]\|object[] | optional | Plain IDs `[10]` (qty=1) or objects `[{"id": 10, "quantity": 3}]` for per-brand quantity. |
-| `tags.*.custom_tags` | string[] | optional | Free-text tags, max 100 chars each |
+| `tags.*.custom_tags` | string[] | optional | Free text. Sanitized server-side (`strip_tags` + `trim`), accepts any characters incl. `& . ' /`, capped to 255 chars (`custom_tags_new.key`). Empty-after-sanitize entries are silently skipped — never rejected. |
 
 **Standalone tag types** (no `category_litter_object_id`):
+
+The standalone `{ custom: true, key }` form (below) sanitizes `key` the same way — punctuation is accepted, never a 422/500 (a single bad custom tag must not abort the POST or roll back valid tags).
 
 ```json
 {
@@ -488,7 +509,17 @@ When a user selects "wine", you submit `category_litter_object_id: 42, litter_ob
 - 403 if user doesn't own photo
 - 403 if photo already verified (`verified >= 1`)
 
-**Response (200):**
+**Idempotent guard (already tagged).** POST **appends** tags, so a retried POST
+(lost response) would double-count. If the target photo already has a `summary`
+(i.e. is tagged), the endpoint returns an idempotent no-op instead of re-adding:
+```json
+{ "success": true, "already_tagged": true, "photoTags": [ /* existing tags */ ] }
+```
+This protects ordinary users (who stay `verified = 0` after tagging, so the 403
+gate above does not fire for them). To **re-tag / edit** an already-tagged photo,
+use `PUT /api/v3/tags` (replace).
+
+**Response (200) — tags added:**
 ```json
 {
   "success": true,
@@ -510,6 +541,7 @@ Same request format as POST. Key differences:
 - Resets summary, XP, and verified status to 0
 - Re-runs full tag pipeline (summary + XP + metrics delta)
 - **Accepts empty `tags: []`** to clear all tags from a photo. Validation uses `present|array` (not `required|array|min:1`). With empty tags, photo resets to untagged state (null summary, 0 XP, verified=0).
+- **Marks `onboarding_completed_at`** on first tag submission (parity with POST) when `tags` is non-empty — so clients can tag exclusively via PUT (idempotent). On a first-time, never-tagged photo, PUT produces the same `verified`/XP/metrics outcome as POST for trusted, school, and ordinary users.
 
 For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` fields in the `new_tags` response may be null.
 

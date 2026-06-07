@@ -335,10 +335,15 @@ class AddTagsToPhotoAction
                 ? ($customTagData['key'] ?? '')
                 : $customTagData;
 
-            $cleanTag = trim(strip_tags($customTagKey));
+            // Sanitize and accept — strip HTML, trim, cap to the key column length
+            // (custom_tags_new.key is varchar(255)). Punctuation like & . ' / is
+            // legitimate in brand/product names, so there is no allowlist and no throw.
+            $cleanTag = mb_substr(trim(strip_tags($customTagKey)), 0, 255);
 
-            if (! preg_match('/^[\w\s:-]+$/', $cleanTag)) {
-                throw new \Exception('Invalid custom tag.');
+            // Skip empties instead of throwing — one cosmetically-bad custom tag
+            // must never abort the whole POST or roll back the user's valid tags.
+            if ($cleanTag === '') {
+                continue;
             }
 
             $customTagModel = CustomTagNew::firstOrCreate(['key' => $cleanTag]);

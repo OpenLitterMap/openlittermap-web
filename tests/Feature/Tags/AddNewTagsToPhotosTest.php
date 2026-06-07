@@ -514,4 +514,178 @@ class AddNewTagsToPhotosTest extends TestCase
         // Event must NOT fire — teacher must approve first
         Event::assertNotDispatched(TagsVerifiedByAdmin::class);
     }
+
+    // ---------------------------------------------------------------
+    // Custom tag sanitization (no throw on punctuation; skip empties)
+    // ---------------------------------------------------------------
+
+    /**
+     * A standalone custom tag containing "&" (legit brand char, e.g. "Black & Mild")
+     * must save — not throw "Invalid custom tag." (createExtraTagOnly path).
+     */
+    public function test_standalone_custom_tag_with_ampersand_saves(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+
+        $response = $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['custom' => true, 'key' => 'bn:Black & Mild', 'quantity' => 1],
+            ],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('custom_tags_new', ['key' => 'bn:Black & Mild']);
+
+        $customTag = CustomTagNew::where('key', 'bn:Black & Mild')->first();
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'tag_type_id' => $customTag->id,
+            'tag_type' => 'custom_tag',
+        ]);
+    }
+
+    /**
+     * Custom tags attached to an object with . ' / save (createTagFromClo path).
+     */
+    public function test_object_custom_tags_with_punctuation_save(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+
+        $alcohol = Category::where('key', CategoryKey::Alcohol->value)->first();
+        $can = LitterObject::where('key', 'can')->first();
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+
+        $keys = ['St. John', "it's mine", 'a/b'];
+
+        $response = $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['category_litter_object_id' => $cloId, 'quantity' => 1, 'custom_tags' => $keys],
+            ],
+        ]);
+
+        $response->assertOk();
+        foreach ($keys as $key) {
+            $this->assertDatabaseHas('custom_tags_new', ['key' => $key]);
+        }
+    }
+
+    /**
+     * The exact failing Sentry payload: an object tag + a standalone bad custom tag
+     * in one POST must persist BOTH — the object tag must survive (no rollback).
+     */
+    public function test_object_tag_and_bad_custom_tag_both_persist_no_rollback(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+
+        $butts = LitterObject::where('key', 'butts')->first();
+
+        $response = $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['object' => ['id' => $butts->id], 'quantity' => 3],
+                ['custom' => true, 'key' => 'bn:Black & Mild', 'quantity' => 1],
+            ],
+        ]);
+
+        $response->assertOk();
+
+        // Object tag survived (was previously lost to the transaction rollback)
+        $this->assertDatabaseHas('photo_tags', [
+            'photo_id' => $photo->id,
+            'litter_object_id' => $butts->id,
+            'quantity' => 3,
+        ]);
+        // Custom tag created too
+        $this->assertDatabaseHas('custom_tags_new', ['key' => 'bn:Black & Mild']);
+        $this->assertDatabaseCount('photo_tags', 2);
+    }
+
+    /**
+     * An empty/whitespace-only custom tag is skipped (not thrown); the rest of the
+     * POST — the object tag and the valid custom tag — still saves.
+     */
+    public function test_empty_custom_tag_is_skipped_not_thrown(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+
+        $alcohol = Category::where('key', CategoryKey::Alcohol->value)->first();
+        $can = LitterObject::where('key', 'can')->first();
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+
+        $response = $this->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['category_litter_object_id' => $cloId, 'quantity' => 1, 'custom_tags' => ['   ', 'valid tag']],
+            ],
+        ]);
+
+        $response->assertOk();
+
+        // Empty tag skipped — never created
+        $this->assertDatabaseMissing('custom_tags_new', ['key' => '']);
+        // Valid tag + object tag both saved
+        $this->assertDatabaseHas('custom_tags_new', ['key' => 'valid tag']);
+        $this->assertDatabaseHas('photo_tags', [
+            'photo_id' => $photo->id,
+            'category_litter_object_id' => $cloId,
+        ]);
+    }
+
+    /**
+     * A repeated POST to an already-tagged photo must NOT append/double-count.
+     * The idempotent guard returns the existing tags instead of re-adding them.
+     */
+    public function test_post_tags_on_already_tagged_photo_is_idempotent(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+
+        // Ordinary (non-trusted) user — stays at verified=0 after tagging, so the
+        // authorize gate does NOT block a repeat POST. The summary guard must.
+        $user = User::factory()->create(['verification_required' => true]);
+        $this->actingAs($user);
+
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+        $object = LitterObject::where('key', 'butts')->first();
+
+        $payload = [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['object' => ['id' => $object->id], 'quantity' => 3],
+            ],
+        ];
+
+        // First POST tags the photo
+        $this->postJson('/api/v3/tags', $payload)->assertOk();
+        $this->assertDatabaseCount('photo_tags', 1);
+
+        $photo->refresh();
+        $xpAfterFirst = $photo->xp;
+        $this->assertNotNull($photo->summary);
+
+        // Second POST (lost-response retry) must be a no-op, not an append
+        $second = $this->postJson('/api/v3/tags', $payload);
+        $second->assertOk();
+        $second->assertJson(['success' => true, 'already_tagged' => true]);
+
+        // No double-tagging, no XP inflation
+        $this->assertDatabaseCount('photo_tags', 1);
+        $this->assertEquals($xpAfterFirst, $photo->fresh()->xp);
+    }
 }

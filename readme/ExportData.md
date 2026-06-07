@@ -304,6 +304,30 @@ Controllers (`ProfileController::download`, `TeamsController::download`, `Downlo
 
 **Joined block does not collapse materials.** A "plastic cup" still emits two columns: `cup` (joined block) and `plastic` (MATERIALS block). Joining material into the object key would produce a combinatorial explosion of columns; the MATERIALS block already gives you the per-material totals.
 
+### Cell values are verbatim — treat free-text columns as untrusted in spreadsheets
+
+Exports are **research data, consumed programmatically** (pandas / R / `csv`), so cell
+values are written **byte-exact**. We deliberately do **not** prefix or otherwise alter
+values to defend against spreadsheet "formula injection."
+
+The writer (PhpSpreadsheet via Maatwebsite/Excel) quotes every cell, which prevents
+delimiter/quote/newline breakout — the only part that would corrupt a CSV *parser*. It
+does not neutralize a value that begins with `=`, `+`, `-`, or `@`, because there is no
+in-band CSV signal for "text, not formula." Any defusing prefix (`'`, tab, space) would
+become part of the value that pandas/R read back, silently mangling the data — and a
+blanket guard would also rewrite legitimate values such as **negative longitudes**
+(`-77.154`). For a programmatically-consumed dataset that trade is not worth it.
+
+**Free-text columns to treat as untrusted** if you open an export in a spreadsheet app
+instead of parsing it: `custom_tag_*`, `model`, and `display_name` (user- or
+externally-sourced text). This is the same caution you would apply to **any** third-party
+CSV. Programmatic consumers are unaffected — they never evaluate formulas.
+
+> **Recommended path for spreadsheet users (backlog, not yet built):** an `.xlsx` export
+> that types these cells as explicit strings, so Excel will not evaluate them — safe by
+> construction, with CSV kept as the verbatim research format. See
+> [Backlog](#backlog) below.
+
 ## Wide vs Long Layout
 
 > **Naming note:** the API calls these `wide` and `long`. In the download UI, **wide** is used by both the **OLM Original Download** and **OLM 4.0 compatible** options, and **long** is used by **OLM New Download**. Saved filenames use `_number-based_` (wide) / `_full-detail_` (long) slugs. Internal code, tests, and the API/developer docs below keep `wide`/`long`.
@@ -407,3 +431,17 @@ To recover v4-style per-subtype counts you must combine the object column with t
 ## Timeout
 
 Export job timeout: 240 seconds. The `FromQuery` concern chunks automatically (1000 rows per chunk via `config/excel.php`).
+
+## Backlog
+
+**`.xlsx` export with string-typed cells (spreadsheet-safe formula-injection fix).**
+The CSV export is intentionally verbatim (see [Cell values are verbatim](#cell-values-are-verbatim--treat-free-text-columns-as-untrusted-in-spreadsheets)),
+which leaves users who open exports directly in Excel/Sheets exposed to spreadsheet
+formula injection from free-text columns (`custom_tag_*`, `model`, `display_name` — a
+tag like `=HYPERLINK(...)` or `=cmd|...`). The correct fix is **not** to mangle the CSV
+bytes (that would corrupt the data for programmatic researchers, e.g. negative
+longitudes), but to add a parallel **`.xlsx`** export that types those cells as explicit
+strings (PhpSpreadsheet `setCellValueExplicit(..., DataType::TYPE_STRING)` / a string
+column formatter), so Excel never evaluates them — safe by construction. CSV stays the
+verbatim research format; `.xlsx` becomes the recommended download for spreadsheet users.
+Not yet scheduled.

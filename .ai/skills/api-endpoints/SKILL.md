@@ -57,7 +57,7 @@ All API routes live in `routes/api.php`. The API serves two clients: the Vue 3 S
 2. **Token name is `mobile`.** `AuthTokenController` creates tokens named `mobile` and revokes previous `mobile` tokens on each login (prevents buildup).
 3. **Registration always sets `name = NULL`.** Ignores any `name` field in the request. Auto-generates username if omitted (pattern: `{adjective}-{noun}-{number}`).
 4. **`readme/API.md` is the source of truth.** Every endpoint's exact request/response contract is documented there. Always consult it before modifying an endpoint.
-5. **Error responses are inconsistent.** Some controllers return `{ "msg": "..." }`, others return `{ "message": "..." }`. This is a known legacy issue — match the existing pattern for each controller. `UploadPhotoRequest` overrides `failedValidation()` to return `{ success, error, message, errors }` with a typed `error` code field (`no_exif`, `no_gps`, `no_datetime`, `duplicate`, `invalid_coordinates`, `validation_error`). `Handler::unauthenticated()` returns `{ message: "Unauthenticated." }` without an `error` code (known inconsistency). `PhotoTagsRequest` uses Laravel's default `failedValidation()` (no custom error codes). Admin routes (`/api/admin/*`) require the `admin` middleware which already wraps `auth:sanctum` — do not add a redundant `auth:sanctum` wrapper.
+5. **Error responses are inconsistent.** Some controllers return `{ "msg": "..." }`, others return `{ "message": "..." }`. This is a known legacy issue — match the existing pattern for each controller. `UploadPhotoRequest` overrides `failedValidation()` to return `{ success, error, message, errors }` with a typed `error` code field (`no_exif`, `no_gps`, `no_datetime`, `invalid_coordinates`, `validation_error`). Duplicates are no longer a validation error — the controller returns idempotent 200 success with the existing `photo_id`. `Handler::unauthenticated()` returns `{ message: "Unauthenticated." }` without an `error` code (known inconsistency). `PhotoTagsRequest` uses Laravel's default `failedValidation()` (no custom error codes). Admin routes (`/api/admin/*`) require the `admin` middleware which already wraps `auth:sanctum` — do not add a redundant `auth:sanctum` wrapper.
 6. **Public endpoints must filter `is_public = true`.** All map/points/global/community endpoints use `Photo::public()` scope or explicit `where('is_public', true)`.
 7. **v3 is the current API version.** New endpoints go in the v3 group. All legacy v1/v2 endpoints have been removed.
 8. **Location API uses `locations`/`location_type` keys.** Not `children`/`children_type`. The `{type}` parameter accepts `country`, `state`, or `city`.
@@ -90,8 +90,11 @@ POST /api/auth/logout           →  Destroys session
 
 ```
 POST  /api/v3/upload              →  Upload photo (web: EXIF; mobile: explicit lat/lon/date)
+                                      Idempotent: a duplicate (user_id+datetime) returns 200
+                                      { success, photo_id: <existing>, already_uploaded: true,
+                                        tagged: <bool>, xp_awarded: 0 } — NOT a 422.
                                       On validation failure: { success: false, error: <code>, message, errors }
-                                      Error codes: no_exif | no_gps | no_datetime | duplicate |
+                                      Error codes: no_exif | no_gps | no_datetime |
                                                    invalid_coordinates | validation_error
 GET   /api/v3/user/photos         →  List user's photos (paginated, filterable, per_page up to 100)
                                       Response includes `is_public` (boolean) and `school_team` (boolean)

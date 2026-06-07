@@ -48,7 +48,11 @@ All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now h
 { "success": false, "error": "no_gps", "message": "Sorry, no GPS on this one.", "errors": { ... } }
 ```
 
-`resolveErrorCode()` maps validation messages to typed `error` codes: `no_exif`, `no_gps`, `no_datetime`, `duplicate`, `invalid_coordinates`, `validation_error`. This lets mobile clients handle specific failure modes programmatically.
+`resolveErrorCode()` maps validation messages to typed `error` codes: `no_exif`, `no_gps`, `no_datetime`, `invalid_coordinates`, `validation_error`. This lets mobile clients handle specific failure modes programmatically. (Duplicates are no longer an error — see below.)
+
+### Idempotent Upload (duplicate handling)
+
+Duplicate detection (`user_id + datetime`) runs in `UploadPhotoController::__invoke()`, **not** validation. A duplicate returns the **existing** `photo_id` with `{ success: true, photo_id, already_uploaded: true, tagged: <bool>, xp_awarded: 0 }` so a lost-response retry can recover with no app update — and with no side effects (no second `Photo`, no S3 write, no XP/metrics). `tagged` reflects whether the existing photo has a `summary`. The lookup is skipped for participant uploads (students share the facilitator's `user_id`).
 
 ### EXIF Validation (web upload)
 
@@ -59,7 +63,8 @@ All location listeners removed (wrote to dead Redis keys). `ImageUploaded` now h
 3. **GPS must exist** — `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`, `GPSLongitude` must all be non-empty
 4. **GPS conversion must succeed** — `dmsToDec()` guards against zero denominators in all 6 DMS components (degrees/minutes/seconds for lat and lon). Returns `null` on malformed data → validation rejects.
 5. **0,0 coordinates are accepted** — photos at 0,0 latitude/longitude are allowed. Future feature: manual coordinate reassignment for mislocated photos.
-6. **Duplicate check** — same user + same EXIF datetime → 422 rejection
+
+Duplicate detection happens in the controller (idempotent — see "Idempotent Upload" above), not in `after()`.
 
 ### EXIF Validation (mobile upload — explicit coordinates)
 

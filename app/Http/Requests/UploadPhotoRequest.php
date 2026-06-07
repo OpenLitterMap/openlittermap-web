@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Photo;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Validator;
@@ -76,7 +75,6 @@ class UploadPhotoRequest extends FormRequest
         if (str_contains($message, 'EXIF')) return 'no_exif';
         if (str_contains($message, 'GPS') || str_contains($message, 'no GPS')) return 'no_gps';
         if (str_contains($message, 'date')) return 'no_datetime';
-        if (str_contains($message, 'already uploaded')) return 'duplicate';
         if (str_contains($message, 'coordinates')) return 'invalid_coordinates';
 
         return 'validation_error';
@@ -100,25 +98,10 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // When explicit coords are provided, EXIF is optional (mobile may strip it)
+                // When explicit coords are provided, EXIF is optional (mobile may strip it).
+                // Duplicate handling lives in the controller (idempotent — it returns
+                // the existing photo_id instead of a validation error).
                 if ($hasExplicit) {
-                    // Parse the explicit date for duplicate check
-                    $dateInput = $this->input('date');
-                    $dateTime = is_numeric($dateInput)
-                        ? \Carbon\Carbon::createFromTimestamp((int) $dateInput)
-                        : \Carbon\Carbon::parse($dateInput);
-
-                    if (! $this->attributes->get('participant')) {
-                        $photoExists = Photo::where([
-                            'user_id' => auth()->id(),
-                            'datetime' => $dateTime,
-                        ])->exists();
-
-                        if ($photoExists) {
-                            $validator->errors()->add('photo', 'You have already uploaded this photo');
-                        }
-                    }
-
                     return;
                 }
 
@@ -144,19 +127,8 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
-                // Duplicate photo check (skip for participant sessions —
-                // different students may share the same EXIF datetime)
-                if (! $this->attributes->get('participant')) {
-                    $photoExists = Photo::where([
-                        'user_id' => auth()->id(),
-                        'datetime' => $dateTime,
-                    ])->exists();
-
-                    if ($photoExists) {
-                        $validator->errors()->add('photo', 'You have already uploaded this photo');
-                        return;
-                    }
-                }
+                // Duplicate handling lives in the controller (idempotent — it returns
+                // the existing photo_id instead of a validation error).
 
                 // GPS validation
                 $hasGps =

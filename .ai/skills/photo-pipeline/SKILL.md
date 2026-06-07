@@ -10,7 +10,7 @@ Photos flow through three phases: Upload (observation only) -> Tag (summary + XP
 ## Key Files
 
 - `app/Http/Controllers/Uploads/UploadPhotoController.php` — Web upload entry point
-- `app/Http/Requests/UploadPhotoRequest.php` — Web upload validation (EXIF datetime, GPS, duplicates)
+- `app/Http/Requests/UploadPhotoRequest.php` — Web upload validation (EXIF datetime, GPS). Dedup is NOT here — it's an idempotent lookup in the controller.
 - `app/Http/Controllers/API/Tags/PhotoTagsController.php` — V5 tagging endpoint (`POST /api/v3/tags` add, `PUT /api/v3/tags` replace)
 - `app/Actions/Tags/AddTagsToPhotoAction.php` — Core tagging logic (v5)
 - `app/Actions/Photos/MakeImageAction.php` — Image processing + EXIF extraction
@@ -67,7 +67,8 @@ enum VerificationStatus: int
 1. EXIF must exist and be non-empty
 2. DateTime must exist (DateTimeOriginal → DateTime → FileDateTime fallback)
 3. GPS fields must exist and `dmsToDec()` must succeed (guards zero denominators)
-4. Duplicate check (same user + same EXIF datetime). **Skipped for participant uploads** (different students may share EXIF datetime since `user_id = facilitator` for all).
+
+**Duplicate handling is NOT validation.** Dedup (`user_id + datetime`) lives in `UploadPhotoController::__invoke()`, before any S3 write / `Photo::create` / XP. A duplicate is **idempotent success**, not a 422: it returns `{ success: true, photo_id: <existing>, already_uploaded: true, tagged: <bool>, xp_awarded: 0 }` (pure lookup, zero side effects). **Skipped for participant uploads** (students share the facilitator's `user_id` and may share a datetime). `tagged` = existing photo has a non-null `summary`.
 
 **Error contract on `UploadPhotoRequest`:** `failedValidation()` returns a structured response:
 ```json
@@ -77,7 +78,6 @@ enum VerificationStatus: int
 - `no_exif` — image has no readable EXIF data
 - `no_gps` — image has no GPS coordinates
 - `no_datetime` — image has no datetime in EXIF
-- `duplicate` — same user uploaded same EXIF datetime before
 - `invalid_coordinates` — GPS coordinates failed parsing (zero denominators, etc.)
 - `validation_error` — generic Laravel validation failure (wrong file type, size, etc.)
 
@@ -92,6 +92,8 @@ Mobile clients should read the `error` field for programmatic handling. Note: `H
 6. `event(new ImageUploaded(...))` — real-time broadcast
 
 ### Phase 2: Tagging
+
+**POST is append-only + has an idempotent guard.** `store()` first checks the target photo's `summary`: if non-null (already tagged), it returns an idempotent no-op `{ success: true, already_tagged: true, photoTags: [...] }` WITHOUT re-adding — because POST appends, a retried POST would otherwise double-tag/double-count (the `verified >= 1` authorize gate does NOT catch ordinary users, who stay `verified = 0`). To re-tag/edit an already-tagged photo, use `PUT /api/v3/tags` (replace).
 
 `PhotoTagsController::store()` -> `AddTagsToPhotoAction::run()`:
 
@@ -183,6 +185,7 @@ BagsLitter => 10 // Special objects: 'bags_litter'
 2. Reset photo: `summary=null, xp=0, verified=0`
 3. Call `AddTagsToPhotoAction::run()` — regenerates summary, XP, fires `TagsVerifiedByAdmin`
 4. `MetricsService::processPhoto()` detects prior processing (has `processed_at`), calls `doUpdate()` which calculates deltas between old `processed_tags` and new summary, applies adjustments to all metrics
+5. Marks `onboarding_completed_at` on first tag submission (parity with `store()`), guarded to non-empty `tags`. **PUT-first-time == POST-first-time:** on a never-tagged photo the reset is a no-op and the same `AddTagsToPhotoAction::run(..., skipVerification=false)` runs → identical `verified`/XP/metrics for trusted/school/ordinary users. The mobile auto-upload flow tags exclusively via PUT (idempotent).
 
 **Frontend edit mode:** `/tag?photo=<id>` loads a specific photo. If it has existing tags, `isEditMode=true` → uses PUT. If untagged, uses POST. `convertExistingTags()` transforms API `new_tags` format back to frontend format (including `litter_object_type_id` for the type dimension).
 

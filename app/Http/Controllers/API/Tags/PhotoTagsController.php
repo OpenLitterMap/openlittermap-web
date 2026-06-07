@@ -27,6 +27,19 @@ class PhotoTagsController extends Controller
     {
         $validatedData = $request->validated();
 
+        // Idempotent guard: a photo that already has a summary is already tagged.
+        // POST appends, so a retried POST (e.g. a client that lost the first
+        // response) would double-count. Return the existing tags as an idempotent
+        // success instead of re-adding them.
+        $photo = Photo::find($validatedData['photo_id']);
+        if ($photo && $photo->summary !== null) {
+            return response()->json([
+                'success' => true,
+                'already_tagged' => true,
+                'photoTags' => $photo->photoTags()->get(),
+            ]);
+        }
+
         $photoTags = $this->addTagsToPhotoActionNew->run(
             Auth::id(),
             $validatedData['photo_id'],
@@ -83,6 +96,13 @@ class PhotoTagsController extends Controller
                 $validatedData['tags']
             );
         });
+
+        // Mark onboarding complete on first tag submission — parity with store(),
+        // so the auto-upload flow can tag exclusively via PUT (idempotent).
+        $user = Auth::user();
+        if (! empty($validatedData['tags']) && $user->onboarding_completed_at === null) {
+            $user->update(['onboarding_completed_at' => now()]);
+        }
 
         return response()->json([
             'success' => true,
