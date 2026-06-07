@@ -14,7 +14,7 @@ final class LevelService
      */
     public static function getUserLevel(int $xp): array
     {
-        $thresholds = config('levels.thresholds', [0 => 'Complete Noob']);
+        $thresholds = config('levels.thresholds', [0 => 'Noob']);
 
         // Ensure sorted ascending
         ksort($thresholds);

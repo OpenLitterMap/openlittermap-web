@@ -8,8 +8,7 @@ return [
      */
     'thresholds' => [
         0       => 'Noob',
-        100     => 'Noobish',
-        500     => 'Post-Noob',
+        100     => 'Litter Picker',
         1000    => 'Litter Wizard',
         5000    => 'Trash Warrior',
         10000   => 'Early Guardian',

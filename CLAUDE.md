@@ -167,7 +167,7 @@ Built by a single developer over 17 years.
 
 ## Level System
 XP-threshold based levels defined in `config/levels.php`. `LevelService::getUserLevel($xp)` returns level info.
-- Thresholds: 0 (Noob), 100 (Noobish), 500 (Post-Noob), 1000 (Litter Wizard), 5000 (Trash Warrior), 10000 (Early Guardian), 15000 (Trashmonster), 50000 (Force of Nature), 100000 (Planet Protector), 200000 (Galactic Garbagething), 500000 (Interplanetary), 1000000 (SuperIntelligent LitterMaster)
+- Thresholds (11 levels): 0 (Noob), 100 (Litter Picker), 1000 (Litter Wizard), 5000 (Trash Warrior), 10000 (Early Guardian), 15000 (Trashmonster), 50000 (Force of Nature), 100000 (Planet Protector), 200000 (Galactic Garbagething), 500000 (Interplanetary), 1000000 (SuperIntelligent LitterMaster)
 - User model `next_level` accessor calls `LevelService::getUserLevel()` — returns `level`, `title`, `xp_for_next`, `xp_into_level`, `progress_percent`
 - Frontend reads `user.next_level.title` and `user.next_level.xp_for_next` for display
 

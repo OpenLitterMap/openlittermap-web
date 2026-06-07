@@ -161,13 +161,13 @@ if ($rank !== false) {
 ### Level progression (config-driven thresholds)
 
 ```
-Level 1:  0 XP     — Complete Noob
-Level 2:  100 XP   — Less of a Noob
-Level 3:  500 XP   — Post-Noob
-Level 4:  1000 XP  — Litter Wizard
-Level 5:  5000 XP  — Trash Warrior
+Level 1:  0 XP       — Noob
+Level 2:  100 XP     — Litter Picker
+Level 3:  1000 XP    — Litter Wizard
+Level 4:  5000 XP    — Trash Warrior
+Level 5:  10000 XP   — Early Guardian
 ...
-Level 12: 1000000 XP — SuperIntelligent LitterMaster
+Level 11: 1000000 XP — SuperIntelligent LitterMaster
 ```
 
 Config: `config/levels.php`. Service: `LevelService::getUserLevel($xp)` returns level info array. User model `next_level` accessor calls LevelService.
@@ -233,7 +233,7 @@ async UPDATE_SETTING(key, value) {
 - **Using `actingAs($user, 'api')` in tests for SPA routes.** SPA routes use `auth:sanctum`. Use `actingAs($user)` with no guard argument. Using `'api'` guard in test + `auth:sanctum` on route = 401.
 - **Uploading via `/api/photos/submit` in web-guard tests.** That route uses `auth:api` (Passport). If your test uses `actingAs($user)` (web guard), the upload silently fails. Use `Photo::factory()` to create test photos instead.
 - **Not falling back to MySQL for pre-v5 users.** Redis stats hash is empty for users who uploaded before v5. Always check `$metrics['uploads'] ?: (int) $user->total_images`.
-- **Comparing level with wrong XP.** Levels are threshold-based (not cumulative): 0, 100, 500, 1000, 5000, etc. Use `LevelService::getUserLevel()`, don't calculate manually.
+- **Comparing level with wrong XP.** Levels are threshold-based (not cumulative): 0, 100, 1000, 5000, etc. Use `LevelService::getUserLevel()`, don't calculate manually.
 - **Forgetting `ZREVRANK` returns `false` not `null`.** PHP Redis returns `false` for missing members. Check `$rank !== false`.
 - **Hard-deleting photos on account deletion.** Photos are public contributions and must be preserved. Only the User record is hard-deleted.
 - **Allowing mass assignment of protected fields.** `is_admin`, `verification_required`, etc. are NOT in `ALLOWED_SETTINGS`. The whitelist check prevents privilege escalation.

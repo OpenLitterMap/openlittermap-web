@@ -1474,9 +1474,8 @@ Returns the XP threshold config for all levels. Used by mobile to render level p
 **Response (200):**
 ```json
 {
-  "0": { "title": "Complete Noob" },
-  "100": { "title": "Still A Noob" },
-  "500": { "title": "Post-Noob" },
+  "0": { "title": "Noob" },
+  "100": { "title": "Litter Picker" },
   "1000": { "title": "Litter Wizard" },
   ...
 }
@@ -2787,9 +2786,8 @@ Bbox endpoints under `/api/bbox/` require the `can_bbox` middleware. Used for bo
 
 | XP Threshold | Level | Title |
 |-------------|-------|-------|
-| 0 | 0 | Complete Noob |
-| 100 | 1 | Still A Noob |
-| 500 | 2 | Post-Noob |
+| 0 | 1 | Noob |
+| 100 | 2 | Litter Picker |
 | 1,000 | 3 | Litter Wizard |
 | 5,000 | 4 | Trash Warrior |
 | 10,000 | 5 | Early Guardian |

@@ -97,7 +97,7 @@ class ProfileIndexTest extends TestCase
         $this->assertEquals(500, $data['stats']['xp']);
         $this->assertEquals(10, $data['stats']['uploads']);
         $this->assertEquals(42, $data['stats']['tags']);
-        $this->assertEquals(3, $data['level']['level']); // 500 XP → level 3 "Post-Noob" (thresholds: 0, 100, 500)
+        $this->assertEquals(2, $data['level']['level']); // 500 XP → level 2 "Litter Picker" (thresholds: 0, 100, 1000)
         $this->assertEquals(1, $data['rank']['global_position']);
 
         // achievements and global_stats removed from response (unused by frontend)

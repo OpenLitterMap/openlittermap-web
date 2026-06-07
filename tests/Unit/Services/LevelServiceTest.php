@@ -8,7 +8,7 @@ use Tests\TestCase;
 class LevelServiceTest extends TestCase
 {
     /** @test */
-    public function zero_xp_returns_level_1_complete_noob(): void
+    public function zero_xp_returns_level_1_noob(): void
     {
         $result = LevelService::getUserLevel(0);
 
@@ -22,25 +22,27 @@ class LevelServiceTest extends TestCase
     }
 
     /** @test */
-    public function exactly_100_xp_reaches_still_a_noob(): void
+    public function exactly_100_xp_reaches_litter_picker(): void
     {
         $result = LevelService::getUserLevel(100);
 
         $this->assertEquals(2, $result['level']);
-        $this->assertEquals('Noobish', $result['title']);
+        $this->assertEquals('Litter Picker', $result['title']);
         $this->assertEquals(0, $result['xp_into_level']);
-        // Next threshold is 500, so xp_for_next = 500 - 100 = 400
-        $this->assertEquals(400, $result['xp_for_next']);
+        // Next threshold is 1000, so xp_for_next = 1000 - 100 = 900
+        $this->assertEquals(900, $result['xp_for_next']);
     }
 
     /** @test */
-    public function post_noob_at_500_xp(): void
+    public function xp_500_is_still_litter_picker(): void
     {
+        // The old 500 "Post-Noob" level was removed — 500 XP now sits inside the
+        // Litter Picker band (100–1000).
         $result = LevelService::getUserLevel(500);
 
-        $this->assertEquals(3, $result['level']);
-        $this->assertEquals('Post-Noob', $result['title']);
-        $this->assertEquals(0, $result['xp_into_level']);
+        $this->assertEquals(2, $result['level']);
+        $this->assertEquals('Litter Picker', $result['title']);
+        $this->assertEquals(400, $result['xp_into_level']);
     }
 
     /** @test */
@@ -60,7 +62,7 @@ class LevelServiceTest extends TestCase
     {
         $result = LevelService::getUserLevel(1000);
 
-        $this->assertEquals(4, $result['level']);
+        $this->assertEquals(3, $result['level']);
         $this->assertEquals('Litter Wizard', $result['title']);
         $this->assertEquals(0, $result['xp_into_level']);
         // Next threshold is 5000, so xp_for_next = 4000
@@ -72,7 +74,7 @@ class LevelServiceTest extends TestCase
     {
         $result = LevelService::getUserLevel(5000000);
 
-        $this->assertEquals(12, $result['level']);
+        $this->assertEquals(11, $result['level']);
         $this->assertEquals('SuperIntelligent LitterMaster', $result['title']);
         $this->assertEquals(100, $result['progress_percent']);
         $this->assertEquals(0, $result['xp_remaining']);
