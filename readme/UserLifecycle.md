@@ -30,15 +30,7 @@ School team students follow a separate pipeline — see **SchoolPipeline.md**.
 
 ## What Verification Controls
 
-| Behaviour | Requires verification? |
-|-----------|----------------------|
-| User XP | No — immediate at tag time |
-| Leaderboard appearance | No — immediate |
-| Location metrics (litter counts, contributor stats) | No — immediate |
-| Redis stats hashes, ZSETs, HLLs | No — immediate |
-| `metrics` table rows | No — immediate |
-| Profile stats | No — immediate |
-| **Photo + tags visible in map popups** | **Yes — requires `verified >= ADMIN_APPROVED`** |
+Everything except map-popup visibility is immediate: User XP, leaderboard appearance, location metrics, Redis stats (hashes/ZSETs/HLLs), `metrics` table rows, and profile stats all update at tag time for trusted and untrusted users alike. Only **photo + tags visible in map popups** requires `verified >= ADMIN_APPROVED`.
 
 Verification is a **spam filter** for new untrusted users, not a metrics gate. The map is the public-facing representation of the data, and unverified data should not appear there. But the user's personal stats, leaderboard position, and aggregate location totals all update in real time.
 
@@ -110,12 +102,6 @@ The upload XP is awarded at upload time by incrementing:
 4. Location-scoped leaderboard ZSETs (`{c:ID}:lb:xp`, `{s:ID}:lb:xp`, `{ci:ID}:lb:xp`)
 
 **Implementation note:** `photo.xp` contains tag XP only (not upload base). The upload base is added by `MetricsService::extractMetricsFromPhoto()` when computing effective XP for metrics. `processed_xp` = upload base + tag XP.
-
-### What upload does NOT do
-
-- No summary generated (no tags yet)
-- Photo has no tag XP (photo.xp = 0)
-- Photo is not visible on map (no tags, verified = 0)
 
 ### What upload DOES do (via `recordUploadMetrics`)
 
@@ -350,20 +336,6 @@ When a `superadmin` sets `verification_required = false` on a user, future tags 
 
 ---
 
-## Implementation Status (all complete)
-
-| Change | File | Status |
-|--------|------|--------|
-| Award upload XP | `UploadPhotoController` | Done — `user.increment('xp', 5)` + `recordUploadMetrics()` |
-| Tag XP = tag only | `GeneratePhotoSummaryService` | Done — `photo.xp` excludes upload base |
-| Upload base in metrics | `MetricsService::extractMetricsFromPhoto()` | Done — adds `XpScore::Upload->xp()` to `photo.xp` |
-| Fire TagsVerifiedByAdmin for untrusted | `AddTagsToPhotoAction::updateVerification()` | Done — fires for all non-school users |
-| Admin approve idempotent | `AdminController::verify()` | Done — fires event but MetricsService detects no change |
-| Delete reverses all XP | `MetricsService::deletePhoto()` | Done — `processed_xp` includes upload base |
-| Map popup query | Clustering, PointsController | Done — `verified >= ADMIN_APPROVED` |
-
----
-
 ## Related Docs
 
 | Document | Covers |
@@ -375,4 +347,3 @@ When a `superadmin` sets `verification_required = false` on a user, future tags 
 | **Profile.md** | Profile API, user stats sources, privacy controls |
 | **Admin.md** | Admin approval flow, verification state machine |
 | **SchoolPipeline.md** | School student flow (separate from this doc) |
-| **FeatureLifecycleTest.md** | End-to-end test suite exercising this lifecycle |

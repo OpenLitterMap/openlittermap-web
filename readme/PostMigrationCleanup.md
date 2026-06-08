@@ -4,6 +4,8 @@
 
 This documents everything that was intentionally left in place for the v5 release because it was needed by the tag migration scripts. Once the migration is complete and all photos have been re-processed through the new tagging system, these can be safely removed.
 
+> **Migration tooling** lives in `app/Console/Commands/tmp/v5/Migration/` — `MigrationScript` (`olm:v5`), `FixOrphanedTags`, `RegenerateSummaries`, `ReprocessPhotoMetrics`, `RebuildRedisCommand`, `ResetV5Migration`, plus `Brands/` and `Locations/` helpers. Deleting this `tmp/v5/` tree is the final cleanup step, once everything below is done.
+
 ---
 
 ## 1. Photo model — remove deprecated category relationships

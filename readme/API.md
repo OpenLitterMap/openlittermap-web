@@ -159,16 +159,6 @@ Returns 401 if token is invalid/expired.
 
 ---
 
-### ~~GET /api/user~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `GET /api/user/profile/index` instead. Provided user model with position/XP; the profile endpoint provides the same data plus rank, level, achievements, locations — all from Redis.
-
-### ~~GET /api/current-user~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `GET /api/user/profile/index` instead. Returned user + roles for SPA; the profile endpoint returns the same data.
-
----
-
 ### POST /api/password/email — Request Password Reset
 
 **Auth:** None
@@ -318,24 +308,6 @@ facilitator's `user_id`.)
 **Note:** `PhotoTagsRequest` (POST/PUT `/api/v3/tags`) still uses Laravel's default validation response format (`{ message, errors }`), not the structured envelope above.
 
 Side effects: S3 upload (full + bbox thumbnail), reverse geocoding via `ResolveLocationAction`, `ImageUploaded` broadcast event. No metrics/XP processing (happens at tagging time).
-
----
-
-### ~~POST /api/photos/submit~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `POST /api/v3/upload` instead. Legacy mobile upload that accepted explicit lat/lon/date params. The v3 endpoint extracts coordinates from EXIF data.
-
-### ~~POST /api/photos/submit-with-tags~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `POST /api/v3/upload` + `POST /api/v3/tags` instead. Legacy mobile upload+tag endpoint. Also removed aliases: `/api/photos/upload-with-tags`, `/api/photos/upload/with-or-without-tags`.
-
-### ~~DELETE /api/photos/delete~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `POST /api/profile/photos/delete` instead. Legacy mobile delete endpoint.
-
-### ~~GET /api/check-web-photos~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `GET /api/v3/user/photos?tagged=false` instead. Legacy endpoint to check for untagged photos.
 
 ---
 
@@ -544,12 +516,6 @@ Same request format as POST. Key differences:
 - **Marks `onboarding_completed_at`** on first tag submission (parity with POST) when `tags` is non-empty — so clients can tag exclusively via PUT (idempotent). On a first-time, never-tagged photo, PUT produces the same `verified`/XP/metrics outcome as POST for trusted, school, and ordinary users.
 
 For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` fields in the `new_tags` response may be null.
-
----
-
-### ~~POST /api/add-tags~~ — REMOVED
-
-> **Removed (2026-03-01).** Use `POST /api/v3/tags` with CLO format instead. This was the legacy mobile tagging endpoint that accepted v4 format (`{ smoking: { butts: 3 } }`). The v5 endpoint supports object types, materials, and brands.
 
 ---
 
@@ -2433,12 +2399,6 @@ Toggles the `picked_up` boolean for the user.
 
 ---
 
-### ~~POST /api/profile/photos/remaining/{id}~~ — REMOVED
-
-> Not registered (no route). `photos.remaining` is deprecated and no longer read for picked-up status — picked-up is per-tag (`photo_tags.picked_up`), set via `POST`/`PUT /api/v3/tags`. There is no photo-level remaining toggle.
-
----
-
 ### POST /api/user/profile/photos/tags/bulkTag — Bulk Tag Photos (Deprecated)
 
 **Auth:** Required (Sanctum)
@@ -2757,15 +2717,19 @@ Bbox endpoints under `/api/bbox/` require the `can_bbox` middleware. Used for bo
 
 ---
 
-## ~~Mobile Endpoints (v2)~~ — REMOVED
+## Mobile Client Integration
 
-> **All v2 mobile endpoints removed (2026-03-01).** Use v3 equivalents:
-> - Untagged photos: `GET /api/v3/user/photos?tagged=false`
-> - Upload: `POST /api/v3/upload`
-> - Tag: `POST /api/v3/tags`
-> - Delete: `POST /api/profile/photos/delete`
->
-> Removed endpoints: `GET /api/v2/photos/get-untagged-uploads`, `GET /api/v2/photos/web/index`, `GET /api/v2/photos/web/load-more`, `POST /api/v2/add-tags-to-uploaded-image`, `POST /api/upload`.
+The React Native app consumes the **same v3 API** as the web SPA — there is no separate mobile API. Authenticate with a stateless Sanctum token (`Authorization: Bearer {token}`) from `POST /api/auth/token` (token named `mobile`, revoked on each login; returns enriched profile so the app can skip a second `profile/index` call). `POST /api/register` is the mobile alias for `/api/auth/register`.
+
+**Core endpoints:** auth `/api/auth/token` · profile `GET /api/user/profile/index` · upload `POST /api/v3/upload` · tag `POST`/`PUT /api/v3/tags` (CLO format) · uploads list `GET /api/v3/user/photos` · stats `GET /api/global/stats-data` · leaderboard `GET /api/leaderboard` · tag catalog `GET /api/tags/all` · levels `GET /api/levels`.
+
+**Client notes:**
+- **Tag search index** — build it client-side from `GET /api/tags/all` (see that endpoint's "How to build a search index"). Cache `/api/tags/all` and `/api/levels` locally (~7 days).
+- **Profile map** (`GET /api/user/profile/map`) returns coordinates as `[lat, lon]` — swap before rendering on a `[lon, lat]` map.
+- **Leaderboard `xp`** is an integer — format client-side.
+- **`picked_up`** is per-tag (sent in the `/api/v3/tags` payload). Legacy settings key `items_remaining` is still accepted (remapped + inverted); new code uses `picked_up`.
+
+See `readme/Mobile.md` for mobile removed-endpoint history.
 
 ---
 
@@ -2825,3 +2789,19 @@ Both return `success: false` with the error string.
 - **Dual guard:** Most routes use `auth:sanctum` (supports both session and token)
 - Token login revokes previous tokens (prevents buildup)
 - Registration returns both session + token (immediate use from either client)
+
+### Removed Endpoints
+
+All removed 2026-03-01 (legacy v1/v2 mobile + pre-v5 web). Mobile and web now use the v3 equivalents.
+
+| Removed | Use instead |
+|---------|-------------|
+| `GET /api/user`, `GET /api/current-user` | `GET /api/user/profile/index` |
+| `POST /api/photos/submit` / `submit-with-tags` / `upload-with-tags` / `upload/with-or-without-tags` | `POST /api/v3/upload` (+ `POST /api/v3/tags`) |
+| `DELETE /api/photos/delete` | `POST /api/profile/photos/delete` |
+| `GET /api/check-web-photos` | `GET /api/v3/user/photos?tagged=false` |
+| `POST /api/add-tags` | `POST /api/v3/tags` (CLO format) |
+| `POST /api/profile/photos/remaining/{id}` | per-tag `picked_up` via `POST`/`PUT /api/v3/tags` |
+| `GET /api/v2/photos/get-untagged-uploads` / `web/index` / `web/load-more` | `GET /api/v3/user/photos?tagged=false` |
+| `POST /api/v2/add-tags-to-uploaded-image` | `POST /api/v3/tags` |
+| `POST /api/upload` (v2) | `POST /api/v3/upload` |

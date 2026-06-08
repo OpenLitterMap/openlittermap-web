@@ -1,386 +1,432 @@
 # OpenLitterMap v5 Tagging System
 
-## Overview
-
-OpenLitterMap v5 introduces a flexible, hierarchical tagging system that allows precise classification of litter items. Each photo can have multiple tags organized by categories, objects, and their properties (materials, brands, and custom attributes).
+The v5 tagging system classifies litter with a flexible, hierarchical model. Each photo can carry multiple tags organised by category, object, and type, with optional materials, brands, and custom tags as extras. This document is the operational reference for the **currently deployed** architecture.
 
 ## Core Concepts
 
-### Tag Hierarchy
+### What a tag records
+
+When a person tags litter, they record:
+
+```
+I found [QUANTITY] × [OBJECT]
+  that was a [TYPE] product          (optional)
+  made of [MATERIAL(s)]              (optional)
+  branded [BRAND(s)]                 (optional)
+  in the [CATEGORY] of litter
+  and I [PICKED IT UP / LEFT IT]     (optional)
+  with optional [CUSTOM NOTE]        (optional)
+```
+
+| Dimension | Cardinality | Stored on |
+|-----------|-------------|-----------|
+| Category | 0 or 1 | `photo_tags.category_id` (derived from CLO). Null for extra-tag-only tags |
+| LitterObject | 0 or 1 | `photo_tags.litter_object_id` (derived from CLO). Null for extra-tag-only tags |
+| LitterObjectType | 0 or 1 | `photo_tags.litter_object_type_id` |
+| Material | 0 to many (set membership, qty=1 in DB, weighted by tag qty in metrics) | `photo_tag_extra_tags` |
+| Brand | 0 to many (independent quantities) | `photo_tag_extra_tags` |
+| Custom tag | 0 to many (set membership, qty=1 in DB, weighted by tag qty in metrics) | `photo_tag_extra_tags` |
+| Quantity | exactly 1 | `photo_tags.quantity` |
+| Picked up | 0 or 1 | `photo_tags.picked_up` |
+
+**Rule:** 1:1 dimensions live on the tag row. 1:many dimensions live in the extras table.
+
+### Design principles
+
+1. **An object key represents the physical thing** — `bottle`, `can`, `cup` (not `beer_bottle`, `water_bottle`).
+2. **Product context is a separate dimension** — `beer`, `water`, `soda` via `LitterObjectType`.
+3. **Category + Object pairing is always explicit** via a `category_litter_object_id` (CLO) — no `categories()->first()` inference, which breaks when an object belongs to multiple categories.
+4. **Optional dimensions don't block data collection** — students can skip type/material/brand.
+5. **Extra-tag-only tags allow null CLO** — brand-only, material-only, and custom-only PhotoTags have nullable `category_id`, `litter_object_id`, and `category_litter_object_id`. They are not forced into `unclassified/other`.
+6. **Types are strictly "what was in it"** — beer, water, juice. Not container forms (pint, shot) or physical states (crushed, degraded).
+7. **Materials are set membership, not counted** — a bottle is glass, full stop. Only brands carry independent quantities.
+
+### Tag hierarchy
 
 ```
 Photo
-├── PhotoTag (Primary tagged item)
-│   ├── Category (e.g., "smoking", "food", "softdrinks")
-│   ├── LitterObject (e.g., "butts", "wrapper", "bottle")
-│   ├── Quantity (How many of this item)
-│   └── PhotoTagExtraTags (Additional properties)
-│       ├── Materials (e.g., "plastic", "glass", "aluminium")
-│       ├── Brands (e.g., "coca-cola", "marlboro", "mcdonalds")
-│       └── CustomTags (User-defined tags)
+└── PhotoTag (one row per tagged item)
+    ├── Category          (e.g. "alcohol", "food", "smoking")
+    ├── LitterObject      (e.g. "bottle", "wrapper", "butts")
+    ├── LitterObjectType  (optional, e.g. "beer", "water")
+    ├── Quantity          (how many of this item)
+    ├── PickedUp          (nullable boolean)
+    └── PhotoTagExtraTags (additional properties)
+        ├── Materials     (e.g. "plastic", "glass", "aluminium")
+        ├── Brands        (e.g. "coca-cola", "marlboro", "mcdonalds")
+        └── CustomTags    (user-defined notes)
 ```
 
-### Database Structure
+The category+object pairing is identified by a single `category_litter_object_id` (CLO). Each (category, object) combination is a row in the `category_litter_object` pivot with its own auto-increment ID, so `bottle` in alcohol (e.g. CLO id 42) is a different selection than `bottle` in beverages (e.g. CLO id 43). `category_id` and `litter_object_id` on `photo_tags` are denormalised from the CLO and resolved on write (see [Denormalisation](#denormalisation-integrity)).
 
+## Database Schema
+
+### Lookup tables (seeded, small)
+
+| Table | Model | Role |
+|-------|-------|------|
+| `categories` | `Category` | Category lookup (16 public + 1 hidden `unclassified`) |
+| `litter_objects` | `LitterObject` | Canonical physical objects: `bottle`, `can`, `cup`, `butts`, `wrapper`… |
+| `litter_object_types` | `LitterObjectType` | ~17 product/contents types: `beer`, `wine`, `water`, `soda`, `unknown`… |
+| `materials` | `Materials` | ~30 material rows |
+| `brandslist` | `BrandList` | Brand lookup |
+| `custom_tags_new` | `CustomTagNew` | User-generated custom tags |
+| `litter_states` | `LitterState` | Physical condition (degraded, micro, macro) — orthogonal, wired via `taggables` |
+
+### Relationship pivots
+
+```sql
+category_litter_object (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PK,
+    category_id         FK → categories NOT NULL,
+    litter_object_id    FK → litter_objects NOT NULL,
+    UNIQUE(category_id, litter_object_id)
+)
+-- Model: CategoryObject (Pivot). This IS the CLO. Each row's id is the
+-- category_litter_object_id stored on photo_tags.
+
+category_object_types (
+    category_litter_object_id   FK → category_litter_object NOT NULL,
+    litter_object_type_id       FK → litter_object_types NOT NULL,
+    UNIQUE(category_litter_object_id, litter_object_type_id)
+)
+-- Controls which type options appear per category+object combo.
+-- Dedicated pivot (not polymorphic) — types are structural, not user-generated.
 ```
-photos
-├── id
-├── user_id
-├── summary (JSON) - Cached tag structure
-├── xp (INT) - Calculated experience points
-├── total_tags (INT) - Total item count
-├── total_brands (INT) - Total brand count
-├── processed_at (TIMESTAMP) - When metrics were processed
-├── processed_fp (VARCHAR) - Fingerprint for idempotency
-├── processed_tags (TEXT) - Cached tags for metrics
-├── processed_xp (INT UNSIGNED) - XP value at last metrics processing
-└── migrated_at (TIMESTAMP) - v5 migration timestamp
 
-photo_tags
-├── id
-├── photo_id
-├── category_id (NULLABLE - null for extra-tag-only tags)
-├── litter_object_id (NULLABLE - null for extra-tag-only tags)
-├── category_litter_object_id (NULLABLE - null for extra-tag-only tags)
-├── custom_tag_primary_id (for custom-only tags)
-├── quantity
-└── picked_up (BOOLEAN)
+### Tag tables (per-photo data)
 
-photo_tag_extra_tags
-├── photo_tag_id
-├── tag_type (material|brand|custom_tag)
-├── tag_type_id
-├── quantity
-└── index
+```sql
+photo_tags (
+    id                          BIGINT UNSIGNED AUTO_INCREMENT PK,
+    photo_id                    FK → photos NOT NULL,
+    category_litter_object_id   FK → category_litter_object NULL,   -- null for extra-tag-only tags
+    category_id                 FK → categories NULL,                -- denormalised from CLO; null for extra-tag-only tags
+    litter_object_id            FK → litter_objects NULL,            -- denormalised from CLO; null for extra-tag-only tags
+    litter_object_type_id       FK → litter_object_types NULL,
+    custom_tag_primary_id       FK → custom_tags_new NULL,           -- legacy custom-only support (see PostMigrationCleanup.md)
+    quantity                    INT UNSIGNED NOT NULL DEFAULT 1,
+    picked_up                   BOOLEAN NULL                         -- true / false / null
+)
+
+photo_tag_extra_tags (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PK,
+    photo_tag_id    FK → photo_tags NOT NULL,
+    tag_type        ENUM('material', 'brand', 'custom_tag') NOT NULL,
+    tag_type_id     INT UNSIGNED NOT NULL,
+    quantity        INT UNSIGNED DEFAULT 1
+)
+-- Upsert dedup key: (photo_tag_id, tag_type, tag_type_id).
+-- Materials/custom tags: quantity always 1 in DB (set membership).
+-- Brands: independent count (e.g. 3 Heineken + 2 Coca-Cola out of 5 bottles).
 ```
 
-### Loose Tags (Extra-Tag-Only PhotoTags)
+> **Denormalisation note:** `category_id` and `litter_object_id` are derived from `category_litter_object_id` and must always match. They are resolved from the CLO on write in `AddTagsToPhotoAction`. They exist because `MetricsService` and Redis keys reference `category_id`/`object_id` directly, avoiding joins in the hottest code path. See [Denormalisation integrity](#denormalisation-integrity).
 
-PhotoTags do **not** require a category/object (CLO). The `category_id`, `litter_object_id`, and `category_litter_object_id` columns are all nullable. This allows brand-only, material-only, and custom-tag-only tags to exist independently without being forced into `unclassified/other`.
+> **Pending cleanup:** `custom_tag_primary_id` on `photo_tags` and the `brand_id` legacy column are slated for removal. See `readme/PostMigrationCleanup.md`.
 
-**How it works:**
-- `AddTagsToPhotoAction::createExtraTagOnly()` creates a PhotoTag with null CLO fields and attaches the brand, material, or custom tag as an extra tag
-- `GeneratePhotoSummaryService` only counts `totalLitter` when `objectId > 0` — extra-tag-only tags do not inflate litter counts
-- `XpCalculator::calculateFromFlatSummary()` only awards object XP when `object_id > 0` — extra-tag-only tags get no object XP but still earn their own XP (brand=3, material=2, custom=1)
-- Frontend `getTagsList()` renders extra-tag-only items directly with their tag key (no category/object prefix)
+### Loose / extra-tag-only PhotoTags
 
-## Photo Summary Structure
+A PhotoTag does **not** require a category/object (CLO). The `category_id`, `litter_object_id`, and `category_litter_object_id` columns are all nullable. This lets brand-only, material-only, and custom-tag-only tags exist independently without being forced into `unclassified/other`.
 
-Each photo maintains a `summary` JSON field with this structure:
+How it works:
+- `AddTagsToPhotoAction::createExtraTagOnly()` creates a PhotoTag with null CLO fields and attaches the brand, material, or custom tag as an extra tag.
+- `GeneratePhotoSummaryService` only counts `totals.litter` when `object_id > 0` — extra-tag-only tags do not inflate litter counts.
+- Object XP is only awarded when `object_id > 0` — extra-tag-only tags earn no object XP but still earn their own extra-tag XP (brand=3, material=2, custom=1).
+- Frontend `getTagsList()` renders extra-tag-only items directly with their tag key (no category/object prefix).
+
+## Photo Summary JSON
+
+`GeneratePhotoSummaryService::run()` builds the photo `summary` column as a **flat array**, where each entry in `tags[]` maps **1:1 to a `photo_tags` row**. (An earlier v5.0 nested-dict format — `tags.{cat_id}.{obj_id}` — collided when the same category+object appeared with different types; it has been replaced.)
 
 ```json
 {
-    "tags": {
-        "2": {
-            "15": {
-                "quantity": 5,
-                "materials": {
-                    "3": 5,
-                    "7": 5
-                },
-                "brands": {
-                    "12": 3,
-                    "18": 2
-                },
-                "custom_tags": {}
-            }
-        }
-    },
-    "totals": {
-        "total_tags": 10,
-        "total_objects": 5,
-        "by_category": {
-            "2": 5
-        },
-        "materials": 10,
-        "brands": 5,
-        "custom_tags": 0
-    },
-    "keys": {
-        "categories": {"2": "smoking"},
-        "objects": {"15": "butts"},
-        "materials": {"3": "plastic", "7": "paper"},
-        "brands": {"12": "marlboro", "18": "camel"},
-        "custom_tags": {}
+  "tags": [
+    {
+      "clo_id": 42,
+      "category_id": 1,
+      "object_id": 5,
+      "type_id": 3,
+      "quantity": 2,
+      "picked_up": true,
+      "materials": [1, 4],
+      "brands": {"7": 1},
+      "custom_tags": [45]
     }
-}
-```
-
-**Key meanings:**
-- `"2"` = Category ID (smoking)
-- `"15"` = Object ID (butts)
-- `"3"` = Material ID (plastic) with quantity 5
-- `"7"` = Material ID (paper) with quantity 5
-- `"12"` = Brand ID (marlboro) with quantity 3
-- `"18"` = Brand ID (camel) with quantity 2
-
-## XP (Experience Points) System
-
-XP rewards users for tagging litter:
-
-| Action           | XP Value    |
-|------------------|-------------|
-| Upload           | 5           |
-| Standard Object  | 1 per item  |
-| Material         | 2 per item  |
-| Brand            | 3 per item  |
-| Custom Tag       | 1 per item  |
-| Picked Up        | +5 per object (×qty) where `photo_tags.picked_up=true` |
-| Special Objects: |             |
-| - Small item     | 10 per item |
-| - Medium item    | 25 per item |
-| - Large item     | 50 per item |
-| - Bags of Litter | 10 per item |
-
-### XP Calculation Details
-
-`AddTagsToPhotoAction::calculateXp()` uses `XpScore` enum multipliers:
-
-- **Upload base:** always 5 XP per photo
-- **Object:** `quantity × objectXp` (default 1; special objects override: dumping_small=10, dumping_medium=25, dumping_large=50, bags_litter=10)
-- **Brand extra tags:** `brand.quantity × 3` (brands have their own independent quantity)
-- **Material extra tags:** `parentTag.quantity × 2` (materials use parent tag's quantity — set membership)
-- **Custom tag extra tags:** `parentTag.quantity × 1` (same as materials — set membership)
-
-### XP Calculation Example
-
-```
-Photo with:
-- 3 cigarette butts (qty=3)
-- 2 materials (plastic, paper)
-- 1 brand (marlboro, brandQty=2)
-- 1 custom tag
-
-XP = 5 (upload base)
-   + 3 × 1 (3 objects at 1 XP each)
-   + 2 × (3 × 2) (2 materials × parentQty × materialXP)
-   + 2 × 3 (brand: brandQty × brandXP)
-   + 3 × 1 (custom tag: parentQty × customXP)
-   = 5 + 3 + 12 + 6 + 3 = 29 XP
-```
-
-## Brand-Object Relationships
-
-### NOTE: Brands are deferred — doing them later.
-
-### Discovery Process
-```bash
-# Step 1: Discover 1-to-1 relationships
-php artisan olm:define-brand-relationships
-
-# Step 2: Create relationships for remaining brands (≥10% threshold)
-php artisan olm:auto-create-brand-relationships --apply
-```
-
-### How Brands Attach During Migration
-1. **Pivot lookup**: Check taggables table for existing relationships
-2. **Quantity matching**: Match brands to objects with same quantity
-3. **Fallback**: Unmatched brands create brands-only PhotoTag
-
-### Database Structure
-```
-taggables
-├── category_litter_object_id  // Links to pivot table
-├── taggable_type              // 'App\Models\Litter\Tags\BrandList'
-├── taggable_id                // Brand ID from brandslist
-└── quantity                   // Occurrence count
-```
-
-```
-brandslist table:
-├── id              // Primary key
-├── key             // Brand key/slug (e.g., "coca-cola", "marlboro")  
-├── crowdsourced    // Boolean
-└── is_custom       // Boolean
-```
-
-## Tag Migration from v4 to v5
-
-### Old Format (v4)
-```php
-[
-    'smoking' => [
-        'butts' => 5,
-        'cigaretteBox' => 1
-    ],
-    'brands' => [
-        'marlboro' => 3,
-        'camel' => 2
-    ]
-]
-```
-
-### New Format (v5)
-```php
-PhotoTag::create([
-    'photo_id' => $photo->id,
-    'category_id' => 2,  // smoking
-    'litter_object_id' => 15,  // butts
-    'quantity' => 5,
-    'picked_up' => true
-]);
-
-// Attach brands as extra tags
-$photoTag->attachExtraTags([
-    ['id' => 12, 'quantity' => 3],  // marlboro
-    ['id' => 18, 'quantity' => 2],  // camel
-], 'brand', 0);
-```
-
-## Special Cases
-
-### 1. Brands-Only Tags (Loose Tags)
-When a tag has only a brand without a specific object, it is created as an extra-tag-only PhotoTag with null CLO:
-
-```php
-// AddTagsToPhotoAction::createExtraTagOnly()
-$photoTag = PhotoTag::create([
-    'photo_id' => $photo->id,
-    'category_id' => null,
-    'litter_object_id' => null,
-    'category_litter_object_id' => null,
-    'quantity' => $quantity,
-    'picked_up' => $pickedUp,
-]);
-$photoTag->attachExtraTags([['id' => $brandId, 'quantity' => $quantity]], 'brand', 0);
-```
-
-### 2. Material-Only and Custom-Only Tags (Loose Tags)
-Same pattern — PhotoTag with null CLO, extra tag attached:
-
-```php
-// Material-only
-$photoTag = PhotoTag::create([...null CLO fields...]);
-$photoTag->attachExtraTags([['id' => $materialId, 'quantity' => 1]], 'material', 0);
-
-// Custom-only
-$photoTag = PhotoTag::create([...null CLO fields...]);
-$photoTag->attachExtraTags([['id' => $customTagId, 'quantity' => 1]], 'custom_tag', 0);
-```
-
-### 3. Deprecated Tag Mapping
-Old tags are automatically mapped to new equivalents:
-
-| Old Tag                | New Object     | Materials Added |
-|------------------------|----------------|-----------------|
-| `beerBottle`           | `beer_bottle`  | `[glass]`       |
-| `beerCan`              | `beer_can`     | `[aluminium]`   |
-| `coffeeCups`           | `cup`          | `[paper]`       |
-| `plasticFoodPackaging` | `packaging`    | `[plastic]`     |
-| `waterBottle`          | `water_bottle` | `[plastic]`     |
-
-**Note**: Materials are automatically added based on the deprecated tag mappings. For example, `beerBottle` automatically adds `glass` material to the object.
-
-Full mapping in `ClassifyTagsService::normalizeDeprecatedTag()`.
-
-### Category Aliases (CATEGORY_ALIASES)
-
-`ClassifyTagsService::CATEGORY_ALIASES` maps deprecated v4 category keys to their v5 equivalents. When a raw category key is encountered during migration or classification, `getCategory(string $rawKey)` checks aliases before querying the database:
-
-| Deprecated Key | Resolves To |
-|----------------|-------------|
-| `coastal`      | `marine`    |
-| `trashdog`     | `pets`      |
-| `dogshit`      | `pets`      |
-| `automobile`   | `vehicles`  |
-| `pathway`      | `unclassified` |
-| `drugs`        | `unclassified` |
-| `political`    | `unclassified` |
-| `stationery`   | `unclassified` |
-
-The `getCategory()` method is public and can be called directly: `$classifyTags->getCategory('coastal')` returns the `marine` Category model.
-
-### TagsConfig Categories
-
-`TagsConfig` defines 16 active categories (ordered alphabetically): alcohol, art, civic, coffee, dumping, electronics, food, industrial, marine, medical, other, pets, sanitary, smoking, softdrinks, vehicles.
-
-The `unclassified` system category is NOT in TagsConfig but is created by `GenerateTagsSeeder` for v4 alias resolution (`ClassifyTagsService` and `UpdateTagsService`).
-
-### 4. Unknown Tags
-Unknown tags are automatically created as new objects:
-
-```php
-$created = LitterObject::firstOrCreate(
-    ['key' => 'mystery_item'],
-    ['crowdsourced' => true]
-);
-```
-
-### 5. Multiple Brands per Object
-A single object can have multiple brands attached:
-- Example: `butts` object with both `marlboro` and `camel` brands
-- Stored in `photo_tag_extra_tags` with `tag_type='brand'`
-
-### 6. Multiple Objects per Brand
-Brands can validly attach to multiple objects:
-- Example: `mcdonalds` → `cup`, `packaging`, `lid`, `wrapper`
-- Relationships defined in `taggables` table
-
-## Validation Rules
-
-- Quantities must be positive integers (enforced by `max(1, ...)` — never 0)
-- IDs are always positive integers, never 0
-- Category-Object relationships must be valid (when present)
-- Materials, brands, and custom tags can exist as standalone extra-tag-only PhotoTags (null CLO) or attached to an object tag
-- XP calculation uses enum-defined values
-- Fingerprinting prevents duplicate processing
-
-## Deduplication & Uniqueness
-
-**PhotoTags:** There is no unique database constraint on `(photo_id, category_litter_object_id, litter_object_type_id)`. Duplicate CLO+type combinations are theoretically possible under a race condition (e.g., concurrent POST requests). In practice, this is prevented by the transaction wrapping in `AddTagsToPhotoAction::run()`.
-
-**PhotoTagExtraTags:** Extra tags (brands, materials, custom tags) are deduplicated within a single PhotoTag via `upsert()` on the composite key `['photo_tag_id', 'tag_type', 'tag_type_id']`. Duplicate extra tags submitted in one request are merged rather than inserted twice.
-
-## `getNewTags()` Serializer Details
-
-`UsersUploadsController::getNewTags()` builds the `new_tags` array for the uploads API response:
-
-- `category` and `object` keys are only included when **both** relations resolve (i.e., `category_id != null && litter_object_id != null`). Extra-tag-only PhotoTags omit these keys.
-- `extra_tags` key is only included when the PhotoTag has at least one extra tag. Empty extra_tags arrays are not serialized.
-- `litter_object_type_id` is always included — required for edit round-trips to restore the type dimension.
-- `quantity` is always >= 1.
-
-## API Response Format
-
-```json
-{
-  "photo_id": 12345,
-  "tags": {
-    "smoking": {
-      "butts": {
-        "quantity": 5,
-        "materials": ["plastic", "paper"],
-        "brands": ["marlboro", "camel"]
-      }
-    }
+  ],
+  "totals": {
+    "litter": 3,
+    "materials": 3,
+    "brands": 1,
+    "custom_tags": 0
   },
-  "metrics": {
-    "total_items": 5,
-    "total_brands": 2,
-    "xp_earned": 30
-  },
-  "location": {
-    "country": "Ireland",
-    "state": "Munster",
-    "city": "Cork"
+  "keys": {
+    "categories": {"1": "alcohol"},
+    "objects": {"5": "bottle"},
+    "types": {"3": "beer"},
+    "materials": {"1": "glass"},
+    "brands": {"7": "heineken"}
   }
 }
 ```
 
-## Web Frontend Replace/Edit Tags (PUT /api/v3/tags)
+### Format rules
 
-The `/tag?photo=<id>` URL loads a specific photo for editing. If the photo already has tags, AddTags.vue enters **edit mode** and uses `PUT /api/v3/tags` to replace all existing tags.
+- **`tags[]`** — one entry per `photo_tags` row (1:1). `clo_id` is the `category_litter_object_id` (null for extra-tag-only tags); `category_id`/`object_id` are the denormalised ids (`0` when absent); `type_id` is the optional `litter_object_type_id`; `picked_up` is cast to a strict boolean.
+- **`materials`** and **`custom_tags`** are **ID arrays** — set membership, no per-item quantity (the parent tag's `quantity` weights them in metrics).
+- **`brands`** is an **`{id: quantity}` map** — brands carry independent quantities. Serialised as a JSON object (empty = `{}`).
+- **`totals.litter`** = sum of object quantities across all tags (extra-tag-only tags excluded). `totals.materials`/`custom_tags` are weighted by parent tag quantity (2 glass beer bottles + 1 glass wine bottle = 3 glass items). `totals.brands` = sum of independent brand quantities.
+- **`keys`** is a reverse-lookup of id → key for human-readable display. Each sub-map (`categories`, `objects`, `types`, `materials`, `brands`, `custom_tags`) is **omitted when empty** (`array_filter`), and the entire `keys` block is omitted if all sub-maps are empty.
 
-### Flow
+### What the service writes
 
-1. **Load photo:** `GET_SINGLE_PHOTO(id)` calls `/api/v3/user/photos?id=X&id_operator==&per_page=1` — filters by authenticated user (ownership enforced server-side)
-2. **Convert existing tags:** `convertExistingTags(photo)` transforms `new_tags` API format back into the frontend's tag format (handles object, brand-only, material-only, custom-only)
-3. **User edits tags** — same UI as normal tagging (search, add, remove, quantity, materials/brands)
-4. **Submit:** `REPLACE_TAGS({ photoId, tags })` calls `PUT /api/v3/tags`
+Alongside `summary`, `GeneratePhotoSummaryService::run()` updates the photo:
+- `xp` — see [XP System](#xp-experience-points-system).
+- `total_tags` = `litter + materials + brands + custom_tags` (combined count).
+- `total_brands` = total brand quantity.
+- `result_string` — write-only legacy map-display string (`category.object qty,…`); active code reads `summary`/`total_tags`.
 
-### Backend (`PhotoTagsController::update()`)
+## XP (Experience Points) System
 
-The entire replace operation is wrapped in `DB::transaction()` to prevent data loss if any step fails (e.g., old tags deleted but new tags fail to save).
+XP is defined by the `XpScore` enum (`app/Enums/XpScore.php`) — never hardcode XP values.
+
+| Action | XP value |
+|--------|----------|
+| Upload | 5 (per photo) |
+| Standard object | 1 per item (× quantity) |
+| Brand | 3 per item (× brand's own quantity) |
+| Material | 2 per item (× parent tag quantity) |
+| Custom tag | 1 per item (× parent tag quantity) |
+| Picked up | +5 per object × quantity where `photo_tags.picked_up = true` (objects only) |
+| Special object — Small (`dumping_small` / `dumping`+`small`) | 10 per item |
+| Special object — Medium (`dumping_medium` / `dumping`+`medium`) | 25 per item |
+| Special object — Large (`dumping_large` / `dumping`+`large`) | 50 per item |
+| Special object — Bags of litter (`bags_litter`) | 10 per item |
+
+### How XP is computed
+
+- **Tag XP** is calculated inside `GeneratePhotoSummaryService::run()` via `XpCalculator::calculateFromTags()`:
+  - **Object:** `quantity × objectXp`. Default object XP is 1; special objects override via `XpScore::getObjectXp()` (supports both legacy keys like `dumping_small` and v5 `dumping` + size-type keys).
+  - **Brand:** `brand.quantity × 3` (brands have independent quantities).
+  - **Material:** `parentTag.quantity × 2` (set membership — weighted by parent tag quantity).
+  - **Custom tag:** `parentTag.quantity × 1` (same set-membership weighting).
+- **Picked-up bonus** is then added per tag: `XpScore::PickedUp->xp() × quantity` for every PhotoTag with `picked_up = true` **and** a non-null `litter_object_id` (objects only — brand/material/custom-only loose tags get no picked-up bonus).
+- **Upload base (5 XP)** is awarded separately by `UploadPhotoController` at upload time, not inside the summary service. `XpCalculator::calculateFromTags()` intentionally returns tag XP only.
+
+> `LitterObjectType` selection earns 0 XP — it is optional enrichment data, not something to incentivise guessing on.
+
+### Worked example
+
+```
+Photo with one tag:
+- 3 cigarette butts (object, quantity = 3, picked_up = true)
+- 2 materials (plastic, paper)
+- 1 brand (marlboro, brand quantity = 2)
+- 1 custom tag
+
+Tag XP = 3 × 1            (3 objects @ 1 XP)
+       + 2 × (3 × 2)      (2 materials × parentQty 3 × 2 XP each = 12)
+       + 2 × 3            (brand: brandQty 2 × 3 XP = 6)
+       + 3 × 1            (custom: parentQty 3 × 1 XP = 3)
+       = 3 + 12 + 6 + 3 = 24
+
+Picked-up bonus = 3 × 5 = 15      (object qty 3 × PickedUp 5)
+Upload base (added by UploadPhotoController) = 5
+
+Total photo XP = 24 + 15 + 5 = 44
+```
+
+XP details and level thresholds: see `readme/XP.md`.
+
+## Tagging Pipeline (`AddTagsToPhotoAction`)
+
+`AddTagsToPhotoAction::run($userId, $photoId, $tags, $skipVerification = false)` is the single entry point for adding tags. Everything runs inside a `DB::transaction()`:
+
+1. **Create rows** — `addTagsToPhoto()` iterates the payload, detecting the format per tag:
+   - `createTagFromClo()` when `category_litter_object_id` is present (resolves denormalised `category_id`/`litter_object_id` from the CLO).
+   - `createExtraTagOnly()` when the tag is brand-only / material-only / custom-only (null CLO fields).
+   - `createTagLegacy()` for the legacy `{ object: {id, key}, … }` payload (auto-resolves category from the object).
+2. **Generate summary + XP** — `$photo->generateSummary()` calls `GeneratePhotoSummaryService`, populating `summary`, `xp`, `total_tags`, `total_brands`.
+3. **Verification** — unless `skipVerification` is true, `updateVerification()` runs. For trusted/non-school users it fires `TagsVerifiedByAdmin`, which drives `ProcessPhotoMetrics → MetricsService::processPhoto()`. Admin controllers pass `skipVerification = true` because they handle verification + metrics atomically themselves.
+
+A null summary (zero tags) yields zero metrics. Summary + XP are generated regardless of trust level; metrics processing is what's gated by trust/school status (see `readme/SchoolPipeline.md`).
+
+### Validation rules
+
+1. `category_litter_object_id` must exist in the `category_litter_object` pivot (when present — null for extra-tag-only tags).
+2. If `litter_object_type_id` is present, it must exist in `category_object_types` for this CLO.
+3. `quantity` must be a positive integer (`max(1, …)` — never 0). IDs are always positive, never 0.
+4. Each material ID must exist in `materials`; each brand ID in `brandslist`.
+5. **Material extras:** quantity forced to 1 on write; metrics weight by parent tag quantity.
+6. **Brand extras:** quantity is an independent count; sum of brand quantities per tag ≤ tag quantity.
+7. **Custom tag extras:** quantity forced to 1 on write; metrics weight by parent tag quantity.
+8. **`other` object:** require at least one extra tag (brand, material, or custom_tag) to prevent empty tags.
+9. **Extra-tag-only (loose) tags:** null `category_id`/`litter_object_id`/`category_litter_object_id`, created via `createExtraTagOnly()`. No object XP, only extra-tag XP. Do not count toward `totals.litter`.
+
+### Denormalisation integrity
+
+`category_id` and `litter_object_id` on `photo_tags` must match the referenced CLO. This is enforced on write in `AddTagsToPhotoAction` (resolved from the CLO). The `olm:verify-tag-integrity` artisan command detects and repairs CLO↔denorm drift — run it after migrations, seeders, and data scripts.
+
+### Deduplication & uniqueness
+
+- **PhotoTags:** there is no DB unique constraint on `(photo_id, category_litter_object_id, litter_object_type_id)`. Duplicate CLO+type combinations are theoretically possible under a concurrent-request race, but in practice prevented by the transaction wrapping in `AddTagsToPhotoAction::run()`.
+- **PhotoTagExtraTags:** extras are deduplicated within a single PhotoTag via `upsert()` on the composite key `(photo_tag_id, tag_type, tag_type_id)`. Duplicate extras in one request are merged, not inserted twice.
+
+## Categories & Objects
+
+`TagsConfig` defines 16 active categories (ordered alphabetically): `alcohol`, `art`, `civic`, `coffee`, `dumping`, `electronics`, `food`, `industrial`, `marine`, `medical`, `other`, `pets`, `sanitary`, `smoking`, `softdrinks`, `vehicles`.
+
+The `unclassified` system category is NOT in `TagsConfig`; it is created by `GenerateTagsSeeder` and used by `ClassifyTagsService` / `UpdateTagsService` as the catch-all for legacy null-null tags. It is hidden from the UI.
+
+`TagsConfig` helper methods (use these instead of hardcoding lists): `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()`.
+
+### Shared objects (multi-category via pivot)
+
+Some objects exist under several categories; each combination is its own CLO row:
+
+| Object | Categories |
+|--------|------------|
+| bottle | alcohol, beverages, food |
+| can | alcohol, beverages, food |
+| cup | alcohol, beverages |
+| broken_glass | alcohol, beverages |
+| packaging | alcohol, beverages, food, smoking |
+| lid | beverages, food |
+| battery | vehicles, electronics |
+| other | all categories (including unclassified) |
+
+`pint_glass`, `wine_glass`, `shot_glass` are NOT shared — they exist only under alcohol. They are distinct physical objects, not types.
+
+### LitterObjectTypes
+
+Types represent **what was in the container** — product/contents only. Not container forms (pint, shot), sizes, or physical states.
+
+| Key | Name | Example use |
+|-----|------|-------------|
+| beer | Beer | alcohol: bottle, can, pint_glass |
+| wine | Wine | alcohol: bottle, wine_glass |
+| spirits | Spirits | alcohol: bottle, can, shot_glass |
+| cider | Cider | alcohol: bottle, can, pint_glass |
+| water | Water | beverages: bottle |
+| soda | Soda | beverages: bottle, can, cup |
+| juice | Juice | beverages: bottle, can, carton |
+| energy | Energy Drink | beverages: bottle, can |
+| sports | Sports Drink | beverages: bottle |
+| coffee | Coffee | beverages: cup |
+| tea | Tea | beverages: bottle, cup |
+| milk | Milk | beverages: bottle, carton |
+| smoothie | Smoothie | beverages: bottle, cup |
+| iced_tea | Iced Tea | beverages: can, carton |
+| sparkling_water | Sparkling Water | beverages: can |
+| plant_milk | Plant Milk | beverages: carton |
+| unknown | Unknown | required on every typed CLO — selected when contents are unidentifiable |
+
+**Seeding rule:** any CLO with entries in `category_object_types` must include `unknown`, so users always have a valid selection. If a category+object has no types (e.g. smoking + butts), the type step is simply not shown.
+
+Some categories need no types at all — for `food`, the object IS the specificity (`bag`, `box`, `crisps`, `cutlery`, `wrapper`…).
+
+### Naming convention & i18n
+
+All keys are `snake_case` — no exceptions. Keys are permanent, locale-independent identifiers: never rename a key after production use; add a new key and deprecate the old one.
+
+Display names are resolved client-side from translation files (`lang/{locale}/tags.json`). The `name` column on lookup tables stores the English display name as a fallback. The backend never sees locale — it only receives and stores IDs; translation is purely a display/search concern. Frontend tag search (`UnifiedTagSearch.vue`) filters locally-loaded tag data against translated names for the user's locale.
+
+## Supporting Services
+
+| Service | Responsibility |
+|---------|----------------|
+| `AddTagsToPhotoAction` | Create PhotoTag + extras, generate summary, handle verification (see pipeline above) |
+| `GeneratePhotoSummaryService` | Build the flat-array `summary`, compute `xp` / `total_tags` / `total_brands` |
+| `XpCalculator` | Centralised XP math (`calculateFromTags`, `calculateFromSummary` — supports flat-array v5.1 and legacy nested-dict) |
+| `ClassifyTagsService` | Resolve raw tag/category keys to models; normalise deprecated v4 keys and category aliases |
+
+### ClassifyTagsService — deprecated key mapping
+
+`ClassifyTagsService::normalizeDeprecatedTag()` maps legacy v4 object keys to canonical objects, auto-adding implied materials:
+
+| Old tag | New object | Materials added |
+|---------|------------|-----------------|
+| `beerBottle` | `beer_bottle` | `[glass]` |
+| `beerCan` | `beer_can` | `[aluminium]` |
+| `coffeeCups` | `cup` | `[paper]` |
+| `plasticFoodPackaging` | `packaging` | `[plastic]` |
+| `waterBottle` | `water_bottle` | `[plastic]` |
+
+`ClassifyTagsService::CATEGORY_ALIASES` maps deprecated v4 category keys to v5 equivalents. `getCategory(string $rawKey)` (public) checks aliases before querying the DB:
+
+| Deprecated key | Resolves to |
+|----------------|-------------|
+| `coastal` | `marine` |
+| `trashdog` | `pets` |
+| `dogshit` | `pets` |
+| `automobile` | `vehicles` |
+| `pathway` | `unclassified` |
+| `drugs` | `unclassified` |
+| `political` | `unclassified` |
+| `stationery` | `unclassified` |
+
+Unknown object keys are created on the fly: `LitterObject::firstOrCreate(['key' => …], ['crowdsourced' => true])`.
+
+> The v4→v5 data migration is complete. For the remaining post-migration code cleanup (dropping `custom_tag_primary_id`, the legacy `brand_id` column, orphaned prefixed `litter_object` rows, etc.), see `readme/PostMigrationCleanup.md`. The mobile v4→v5 tag shim (`ConvertV4TagsAction`) is documented in `readme/Mobile.md`.
+
+## API
+
+### Tag data loading — `GET /api/tags/all`
+
+Returns everything the frontend needs to render the tagging UI as flat arrays:
+
+```json
+{
+  "categories": [{"id": 1, "key": "alcohol", "name": "Alcohol"}],
+  "objects": [{"id": 5, "key": "bottle", "name": "Bottle"}],
+  "types": [{"id": 3, "key": "beer", "name": "Beer"}],
+  "materials": [{"id": 1, "key": "glass", "name": "Glass"}],
+  "brands": [{"id": 7, "key": "heineken", "name": "Heineken"}],
+  "category_objects": [{"id": 42, "category_id": 1, "object_id": 5}],
+  "category_object_types": [
+    {"category_litter_object_id": 42, "litter_object_type_id": 3},
+    {"category_litter_object_id": 42, "litter_object_type_id": 8}
+  ]
+}
+```
+
+Objects include their categories via eager load (`LitterObject::with(['categories:id,key'])`). `category_object_types` returns only `category_litter_object_id` and `litter_object_type_id` (no `id` column). The frontend uses `category_objects` to filter objects per selected category, and `category_object_types` to show the type options per selected category+object.
+
+### Add tags — `POST /api/v3/tags`
+
+`PhotoTagsController` → `AddTagsToPhotoAction`. The preferred (CLO-based) payload:
+
+```json
+{
+  "photo_id": 123,
+  "tags": [
+    {
+      "category_litter_object_id": 42,
+      "litter_object_type_id": 3,
+      "quantity": 2,
+      "picked_up": true,
+      "materials": [1, 4],
+      "brands": [{"id": 7, "quantity": 1}],
+      "custom_tags": ["found-near-school"]
+    }
+  ]
+}
+```
+
+Materials are sent as a flat array of IDs (set membership, quantity always 1). Brands include explicit quantities. The backend resolves denormalised `category_id`/`litter_object_id` from the CLO.
+
+The action also accepts the **legacy per-tag formats** the current Vue frontend still uses:
+
+1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. Category is auto-resolved from the object; it need not be sent.
+2. **Custom-only** — `{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }`. Creates a `CustomTagNew` from `key` and a loose PhotoTag (null CLO).
+3. **Brand-only** — `{ "brand_only": true, "brand": {"id": 1, "key": "coca-cola"}, "quantity": 1, "picked_up": null }`. Loose PhotoTag with the brand as an extra tag.
+4. **Material-only** — `{ "material_only": true, "material": {"id": 2, "key": "plastic"}, "quantity": 1, "picked_up": null }`. Same loose-PhotoTag pattern.
+
+### Replace / edit tags — `PUT /api/v3/tags`
+
+The `/tag?photo=<id>` URL loads a specific photo for editing. If it already has tags, `AddTags.vue` enters **edit mode** and uses `PUT /api/v3/tags` to replace all tags. An empty `tags: []` clears all tags from the photo.
+
+`PhotoTagsController::update()` wraps the whole operation in `DB::transaction()` so a partial failure can't lose data:
 
 ```php
 DB::transaction(function () use ($photo, $validatedData) {
@@ -393,135 +439,106 @@ DB::transaction(function () use ($photo, $validatedData) {
     // 2. Reset summary, XP, verification
     $photo->update(['summary' => null, 'xp' => 0, 'verified' => 0]);
 
-    // 3. Re-add tags (generates new summary, XP, fires TagsVerifiedByAdmin)
+    // 3. Re-add tags (regenerates summary + XP, fires TagsVerifiedByAdmin)
     $this->addTagsToPhotoAction->run(Auth::id(), $photo->id, $validatedData['tags']);
 });
 ```
 
-**MetricsService delta handling:** When `TagsVerifiedByAdmin` fires, `ProcessPhotoMetrics` → `MetricsService::processPhoto()` detects the photo was previously processed (has `processed_at`). It calls `doUpdate()` which calculates deltas between old `processed_tags` and the new summary, then applies positive/negative adjustments to all MySQL + Redis metrics.
+**Metrics delta handling:** when `TagsVerifiedByAdmin` fires, `ProcessPhotoMetrics → MetricsService::processPhoto()` detects the photo was previously processed (has `processed_at`) and calls `doUpdate()`, which diffs old `processed_tags` against the new summary and applies positive/negative adjustments to all MySQL + Redis metrics.
 
-### Security
+**Security / ownership:** both `PhotoTagsRequest` (POST) and `ReplacePhotoTagsRequest` (PUT) enforce `$photo->user_id === $this->user()->id`, returning 403 for non-owners. `GET_SINGLE_PHOTO` loads via `/api/v3/user/photos?id=X&id_operator==&per_page=1`, which is filtered by `Auth::user()->id` server-side, so a user cannot load another user's photo.
 
-- `ReplacePhotoTagsRequest` checks `$photo->user_id === $this->user()->id` — returns 403 for non-owners
-- `GET_SINGLE_PHOTO` calls `/api/v3/user/photos` which filters by `Auth::user()->id` — cannot load another user's photo
-- Both `PhotoTagsRequest` (POST) and `ReplacePhotoTagsRequest` (PUT) enforce ownership
+Tests: `tests/Feature/Tags/ReplacePhotoTagsTest.php` (replace tags, already-tagged photos, ownership, auth, extra-tag cleanup).
 
-### Frontend files
+### Uploads serializer — `getNewTags()`
 
-| File | Change for edit mode |
-|---|---|
-| `AddTags.vue` | Reads `route.query.photo`, loads specific photo, `isEditMode` ref, `convertExistingTags()`, uses `REPLACE_TAGS` on submit |
-| `TaggingHeader.vue` | `isEditMode` prop — hides Skip/Pagination, shows "Editing" badge, "Update" button |
-| `Uploads.vue` | Navigates to `/tag?photo=<id>` on photo click and "Tag this photo" link |
-| `stores/photos/requests.js` | `GET_SINGLE_PHOTO()`, `REPLACE_TAGS()` actions |
-| `stores/user/requests.js` | `REFRESH_USER()` — refreshes user XP/level after tag submission |
+`UsersUploadsController::index()` returns each photo's tags under the key `new_tags` (frontend reads `photo.new_tags`). `UsersUploadsController::getNewTags()` builds the array:
 
-### Type ID preservation on edit
+- `category` and `object` keys are included only when **both** relations resolve (`category_id != null && litter_object_id != null`). Extra-tag-only PhotoTags omit them.
+- `extra_tags` is included only when the PhotoTag has at least one extra tag (empty arrays are not serialised).
+- `litter_object_type_id` is **always** included — required for edit round-trips to restore the type dimension.
+- `quantity` is always ≥ 1.
 
-`UsersUploadsController::getNewTags()` includes `litter_object_type_id` in the `new_tags` response. `convertExistingTags()` in `AddTags.vue` reads this to populate `typeId` on each tag, so the type dimension survives edit round-trips.
+## MetricsService Impact
 
-### Frontend guards
+`MetricsService` reads the flat-array summary and aggregates counts. `MetricsService` is the single writer for all metrics (the MySQL `metrics` table + Redis) — never increment Redis or `metrics` directly.
 
-- **Double-submit prevention:** `isSubmitting` ref blocks `submitTags()` re-entry on rapid clicks or Ctrl+Enter
-- **XP bar refresh:** After successful POST or PUT, `REFRESH_USER()` is called (non-blocking) to update the nav XP bar with server-side totals
-- **Parallel store refresh:** `UPLOAD_TAGS` refreshes stats and photos via `Promise.all()` to avoid stale intermediate state
-- **Nullish coalescing:** `TaggingHeader.vue` uses `??` (not `||`) for `untaggedCount` — prevents `0` from falling through to stale `total`
-- **imageLoading guard:** `handleNavigation` only sets `imageLoading = true` when `currentPhoto` exists, preventing stuck skeleton on empty pages
+```php
+foreach ($summary['tags'] as $tag) {
+    $metrics['categories'][$tag['category_id']] += $tag['quantity'];
+    $metrics['objects'][$tag['object_id']]     += $tag['quantity'];
 
-### Test file
+    if ($tag['type_id']) {
+        $metrics['types'][$tag['type_id']] += $tag['quantity'];
+    }
 
-`tests/Feature/Tags/ReplacePhotoTagsTest.php` — 5 tests (replace tags, already-tagged photos, ownership, auth, extra tags cleanup)
-
----
-
-## Web Frontend Tagging (POST /api/v3/tags)
-
-The Vue frontend (`/tag` route → `AddTags.vue`) sends tags via `POST /api/v3/tags` to `PhotoTagsController` → `AddTagsToPhotoAction` (v5). The frontend sends 4 distinct tag types:
-
-### 1. Object tag (with optional materials/brands/custom tags)
-```json
-{
-    "object": { "id": 5, "key": "butts" },
-    "quantity": 3,
-    "picked_up": true,
-    "materials": [{ "id": 2, "key": "plastic" }],
-    "brands": [{ "id": 1, "key": "marlboro" }],
-    "custom_tags": ["dirty-bench"]
+    // Materials: set membership, WEIGHTED by parent tag quantity
+    foreach ($tag['materials'] as $materialId) {
+        $metrics['materials'][$materialId] += $tag['quantity'];
+    }
+    // Brands: independent quantities
+    foreach ($tag['brands'] as $brandId => $count) {
+        $metrics['brands'][$brandId] += $count;
+    }
+    // Custom tags: weighted by parent tag quantity (same as materials)
+    foreach ($tag['custom_tags'] as $customTagId) {
+        $metrics['custom_tags'][$customTagId] += $tag['quantity'];
+    }
 }
 ```
-**Backend:** `resolveTag()` looks up object, auto-resolves category from `object->categories()->first()`. Category need NOT be sent.
 
-### 2. Custom-only tag
-```json
-{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }
+Delta calculation fingerprints old vs new and diffs the flattened counts. Redis adds a `types` dimension following the existing pattern (`{prefix}:types`, `{prefix}:rank:types`, per-user `tags → types` sub-hash). Achievements add a `TypesChecker` following the `MaterialsChecker` pattern. See `readme/Metrics.md` and `readme/Achievements.md`.
+
+## Web Frontend Tagging
+
+The Vue tagging page (`/tag` route → `AddTags.vue`) builds a search index, lets the user select tags, and submits via `POST /api/v3/tags` (or `PUT` in edit mode).
+
+### Tagging UX flow
+
 ```
-**Backend:** `$tag['custom']` is boolean true (flag), `$tag['key']` is the actual tag name. Creates `CustomTagNew` record via `$tag['key']`.
-
-### 3. Brand-only tag
-```json
-{ "brand_only": true, "brand": { "id": 1, "key": "coca-cola" }, "quantity": 1, "picked_up": null }
+1. Pick CATEGORY     →  Alcohol              (required)
+2. Pick OBJECT       →  Bottle               (required, filtered by category)
+3. Pick TYPE         →  Beer                 (optional, filtered by category+object)
+4. Pick MATERIAL     →  Glass                (optional)
+5. Pick BRAND        →  Heineken             (optional)
+6. QUANTITY          →  1                    (required, default 1)
+7. PICKED UP?        →  Yes                  (optional)
 ```
-**Backend:** Creates PhotoTag with `category_id=null`, `litter_object_id=null`, attaches brand as extra tag.
 
-### 4. Material-only tag
-```json
-{ "material_only": true, "material": { "id": 2, "key": "plastic" }, "quantity": 1, "picked_up": null }
-```
-**Backend:** Same pattern as brand-only — PhotoTag with null FKs, material as extra tag.
+Steps 3–5 are optional chips/dropdowns on the tag card. If no types exist for a category+object pair (e.g. smoking + butts), step 3 is not shown.
 
-### Frontend files
+### Search index (category disambiguation)
 
-| File | Purpose |
-|---|---|
-| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page — search index, tag selection, submit |
-| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced tag search combobox with grouped results |
-| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with type pills, category display, formatKey |
-| `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags |
-| `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | Header: XP bar, level title, pagination, unresolved warning |
-| `resources/js/views/General/Tagging/v2/components/PhotoViewer.vue` | Photo display with zoom |
-| `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` → POST, `REPLACE_TAGS()` → PUT, `GET_SINGLE_PHOTO()` |
-| `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → GET /api/tags/all |
+`AddTags.vue` builds a `searchableTags` computed that generates **one entry per (object, category) pair** instead of one per object. This prevents corruption when the same object exists in multiple categories (e.g. "bottle" in alcohol, beverages, and food). Each entry has:
 
-### Tag data loading
-`GET /api/tags/all` returns flat arrays: `{ categories, objects, materials, brands, types, category_objects, category_object_types }`. Objects include their categories via eager load: `LitterObject::with(['categories:id,key'])`. `category_object_types` only returns `category_litter_object_id` and `litter_object_type_id` (no `id` column).
+- `id`: composite `obj-{objectId}-cat-{categoryId}` for deduplication.
+- `cloId`: pre-resolved `category_litter_object_id` from the store's `getCloId(categoryId, objectId)`.
+- `categoryId`, `categoryKey`: the specific category for this entry.
+- `lowerKey`: precomputed `key.toLowerCase()` for fast filtering.
 
-### Frontend search index (category disambiguation)
-
-`AddTags.vue` builds a `searchableTags` computed that generates **one entry per (object, category) pair** instead of one per object. This prevents data corruption when the same object exists in multiple categories (e.g., "bottle" exists in alcohol, beverages, and food).
-
-Each entry has:
-- `id`: composite `obj-{objectId}-cat-{categoryId}` for deduplication
-- `cloId`: pre-resolved `category_litter_object_id` from the store's `getCloId(categoryId, objectId)`
-- `categoryId`, `categoryKey`: the specific category for this entry
-- `lowerKey`: precomputed `key.toLowerCase()` for fast search filtering
-
-**Type entries** are also generated from `categoryObjectTypes` with composite id `type-{cloId}-{typeId}`. Type search results show the parent object and category as context.
+**Type entries** are generated from `categoryObjectTypes` with composite id `type-{cloId}-{typeId}`; results show the parent object and category as context.
 
 ### Display formatting
 
-`formatKey(key)` converts `snake_case` keys to `Title Case`: `key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())`. Used in search results, tag cards, detail badges, and recent tags.
+`formatKey(key)` converts `snake_case` to `Title Case`: `key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())`. Tag cards show `"Bottle · Alcohol"` (object + category). Type pills replace the old `<select>` — clicking an active pill deselects it.
 
-Tag cards show `"Bottle · Alcohol"` format (object + category). Type pills replace the old `<select>` dropdown — clicking an active pill deselects it.
+### Validation (frontend)
 
-### Validation
+`hasUnresolvedTags` blocks submit when any object tag lacks a pre-resolved `cloId`. Unresolved tags show a red border, the `TaggingHeader` shows a warning, and the submit button is disabled.
 
-`hasUnresolvedTags` computed blocks submit when any object tag lacks a pre-resolved `cloId`. Unresolved tags show a red border and the TaggingHeader shows a warning indicator. Submit button is disabled.
+### Edit mode
 
-### Dark Glass UI (2026-03-02)
+- `GET_SINGLE_PHOTO(id)` loads the photo (ownership enforced server-side).
+- `convertExistingTags(photo)` transforms the `new_tags` API format back into the frontend tag format (handles object, brand-only, material-only, custom-only) and reads `litter_object_type_id` to restore `typeId` — so the type dimension survives edit round-trips.
+- Submit calls `REPLACE_TAGS({ photoId, tags })` → `PUT /api/v3/tags`.
 
-The tagging frontend uses a dark glass design system with these tokens:
-- **Background:** `bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900`
-- **Glass panels:** `bg-white/5 border border-white/10 rounded-xl`
-- **Accent color:** Emerald (`text-emerald-400`, `bg-emerald-500`, `focus:border-emerald-500/50`)
-- **Text hierarchy:** `text-white`, `text-white/60`, `text-white/40`, `text-white/30`
+### Frontend guards
 
-**Layout:** Two-panel split — 55% photo (left) / 45% tags (right). On mobile, photo takes `h-[40vh]` with tags scrolling below.
-
-**Progress bar:** Thin emerald bar at top showing `taggedCount / totalPhotos` progress.
-
-**Auto-advance:** After successful tag submission, a green flash overlay appears (400ms), tags clear, and the next photo loads automatically.
-
-**Empty state:** When all photos are tagged, shows a celebratory emerald checkmark with links to Upload more or view My Photos.
+- **Double-submit prevention:** `isSubmitting` ref blocks `submitTags()` re-entry on rapid clicks / Ctrl+Enter.
+- **XP bar refresh:** after a successful POST/PUT, `REFRESH_USER()` updates the nav XP bar with server-side totals (non-blocking).
+- **Parallel store refresh:** `UPLOAD_TAGS` refreshes stats and photos via `Promise.all()` to avoid stale intermediate state.
+- **Nullish coalescing:** `TaggingHeader.vue` uses `??` (not `||`) for `untaggedCount` so `0` doesn't fall through to a stale `total`.
+- **imageLoading guard:** `handleNavigation` only sets `imageLoading = true` when `currentPhoto` exists, preventing a stuck skeleton on empty pages.
 
 ### Keyboard shortcuts
 
@@ -535,21 +552,42 @@ The tagging frontend uses a dark glass design system with these tokens:
 | `Ctrl+Enter` | Confirm tags | Yes |
 | `?` | Toggle shortcuts hint panel | No |
 
-All shortcuts except Escape and Ctrl+Enter early-return if the focused element is INPUT, SELECT, or TEXTAREA. `hasUnresolvedTags` blocks confirm shortcuts.
+All shortcuts except Escape and Ctrl+Enter early-return when the focused element is INPUT, SELECT, or TEXTAREA. `hasUnresolvedTags` blocks confirm shortcuts.
 
-### Search UX
+### Search UX & level titles
 
-`UnifiedTagSearch.vue` uses 100ms debounce on the search query. Results are grouped by type: `['object', 'type', 'material', 'brand', 'customTag']`. Category breadcrumbs are shown for object results, parent object names for type results.
+`UnifiedTagSearch.vue` uses a 100ms debounce. Results are grouped: `['object', 'type', 'material', 'brand', 'customTag']`, with category breadcrumbs for object results and parent object names for type results. `TaggingHeader.vue` displays user level titles matching `config/levels.php`.
 
-### Level titles
+### Dark Glass UI
 
-`TaggingHeader.vue` displays user level titles from a hardcoded map matching `config/levels.php` (50 entries: "Beginner" through "Founder").
+The tagging frontend uses the dark-glass design system:
+- **Background:** `bg-gradient-to-br from-slate-900 via-blue-900 to-emerald-900`
+- **Glass panels:** `bg-white/5 border border-white/10 rounded-xl`
+- **Accent:** Emerald (`text-emerald-400`, `bg-emerald-500`, `focus:border-emerald-500/50`)
+- **Text hierarchy:** `text-white`, `text-white/60`, `text-white/40`, `text-white/30`
+- **Layout:** two-panel split — 55% photo (left) / 45% tags (right); on mobile, photo is `h-[40vh]` with tags scrolling below.
+- **Progress bar:** thin emerald bar showing `taggedCount / totalPhotos`.
+- **Auto-advance:** after a successful submission, a green flash overlay (400ms) appears, tags clear, and the next photo loads. When all photos are tagged, an empty-state celebratory checkmark links to Upload / My Photos.
 
----
+### Frontend files
+
+| File | Purpose |
+|------|---------|
+| `resources/js/views/General/Tagging/v2/AddTags.vue` | Main tagging page — search index, selection, submit, edit mode |
+| `resources/js/views/General/Tagging/v2/components/UnifiedTagSearch.vue` | Debounced search combobox with grouped results |
+| `resources/js/views/General/Tagging/v2/components/TagCard.vue` | Tag card with type pills, category display, `formatKey` |
+| `resources/js/views/General/Tagging/v2/components/ActiveTagsList.vue` | Container for active tags |
+| `resources/js/views/General/Tagging/v2/components/TaggingHeader.vue` | XP bar, level title, pagination, unresolved warning, edit badge |
+| `resources/js/views/General/Tagging/v2/components/PhotoViewer.vue` | Photo display with zoom |
+| `resources/js/stores/photos/requests.js` | `UPLOAD_TAGS()` (POST), `REPLACE_TAGS()` (PUT), `GET_SINGLE_PHOTO()` |
+| `resources/js/stores/tags/requests.js` | `GET_ALL_TAGS()` → `GET /api/tags/all` |
 
 ## Related Docs
 
-- **Migration.md** — v4→v5 migration rules, brand matching logic, deprecated mappings
-- **MigrationScript.md** — how to run the `olm:v5` artisan command
-- **Upload.md** — upload/tagging architecture, metrics pipeline, Redis key alignment
-- **Mobile.md** — mobile v4 tag shim (ConvertV4TagsAction)
+- `readme/XP.md` — XP scoring, quantity rules, special objects, levels
+- `readme/Metrics.md` — metrics pipeline and aggregation
+- `readme/Achievements.md` — achievements (incl. types/materials checkers)
+- `readme/Upload.md` — upload/tagging architecture, metrics pipeline, Redis key alignment
+- `readme/Mobile.md` — mobile v4→v5 tag shim (`ConvertV4TagsAction`)
+- `readme/PostMigrationCleanup.md` — remaining post-migration code cleanup (legacy columns, orphaned rows)
+- `readme/API.md` — full API endpoint reference (source of truth for request/response contracts)

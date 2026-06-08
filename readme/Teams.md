@@ -454,6 +454,36 @@ When safeguarding is enabled, names are deterministic pseudonyms and usernames a
 
 ---
 
+## Logo Storage
+
+School logos use a **separate S3 disk** (`logos`) from photo uploads, for public direct-URL access:
+
+| Disk | Bucket env | Purpose |
+|------|-----------|---------|
+| `s3` | `AWS_BUCKET` | User photo uploads |
+| `logos` | `AWS_LOGOS_BUCKET` | School team logos (`school-logos/` prefix, `visibility: public`) |
+
+Config: `config/filesystems.php` → `disks.logos`. Local dev (MinIO): create an `openlittermap-logos` bucket or override `AWS_LOGOS_BUCKET`.
+
+---
+
+## Participant Sessions
+
+Let students participate **without real user accounts**. Facilitators pre-create numbered slots with 64-char session tokens; students authenticate by token and all photos are owned by the facilitator. (DB: `participants` table + `photos.participant_id`; routes under `/api/teams/{team}/participants` and `/api/participant/*` — see Database Schema and API Routes above.)
+
+**Flow:**
+1. Facilitator enables `participant_sessions_enabled` at creation
+2. Facilitator creates slots in bulk — each gets a unique 64-char `session_token`
+3. Student enters their code at `/session` (stored in localStorage)
+4. Requests carry `X-Participant-Token`; `ParticipantAuth` middleware resolves the facilitator and calls `Auth::setUser($facilitator)` (stateless, not `Auth::login()`)
+5. Photos created with `user_id = facilitator`, `participant_id = slot`
+
+**Key invariant:** `photos.user_id = team.leader` for ALL participant photos. `participant_id` is attribution only — MetricsService, XP, and leaderboards are untouched and accrue to the facilitator. `hasParticipantSessions()` = `participant_sessions_enabled && isSchool()` (community teams can't have sessions).
+
+**Frontend:** `ParticipantEntry.vue` (`/session`, public token entry), `ParticipantWorkspace.vue` (`/session/workspace`, upload/photos/tag tabs), `ParticipantGrid.vue` (slot management tab in the team dashboard).
+
+---
+
 ## Dashboard Stats
 
 `TeamsDataController::index()` returns live stats from the `photos` table:

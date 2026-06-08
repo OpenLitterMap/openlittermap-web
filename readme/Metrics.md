@@ -301,6 +301,4 @@ The `ProcessPhotoMetrics` listener handles the `TagsVerifiedByAdmin` event and c
 |---|---|
 | **Upload.md** | When MetricsService runs (pipeline), EventServiceProvider, Redis key alignment, location model |
 | **Tags.md** | Summary JSON structure, XP calculation, tag hierarchy |
-| **MigrationScript.md** | How the migration script calls MetricsService per photo |
 | **Leaderboards.md** | Redis ZSETs for all-time rankings, MySQL per-user metrics for time-filtered |
-| **Strategy.md** | Overall status, post-deploy monitoring |

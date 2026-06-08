@@ -112,9 +112,9 @@ tests/
 Runs on push to `master`, `staging`, `upgrade/tagging-2025` and PRs.
 Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, phpunit.
 
-## Current Branch: `upgrade/tagging-2025`
+## Current State (v5 — shipped to `master`)
 
-Teams v5 deployment, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations, lifecycle tests. 1010+ tests passing.
+Teams v5, tagging v5.1 (category disambiguation, type pills, level titles), clustering fixes, school facilitator queue (3-panel with tag editing, delete/revoke/safeguarding, member stats), user journey bug fixes, uploads page (delete/edit photos), map popup v5.1 fix, public profiles, leaderboard immediate credit, global stats, translations, lifecycle tests — all merged to `master`. 1010+ tests passing. Post-migration code cleanup pending — see `readme/PostMigrationCleanup.md`.
 
 ## OpenLitterMap Context
 UN-endorsed Digital Public Good for environmental citizen science.
@@ -194,22 +194,19 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/Leaderboards.md` — Leaderboard system (Redis ZSETs + MySQL per-user metrics)
 - `readme/Locations.md` — Location and geography system
 - `readme/Metrics.md` — Metrics pipeline and aggregation
-- `readme/Migration.md` — Database migration notes
-- `readme/PostMigrationCleanup.md` — Post-migration cleanup tasks
+- `readme/PostMigrationCleanup.md` — Post-migration cleanup tasks (pending v4 code removal; links the v5 migration tooling)
 - `readme/SchoolPipeline.md` — School approval pipeline (critical data flow)
 - `readme/Tags.md` — Tagging system and categories
 - `readme/Teams.md` — Teams architecture, permissions, safeguarding, API routes
 - `readme/Upload.md` — Photo upload pipeline
 - `readme/Admin.md` — Admin verification system, queue UI, roles/permissions
 - `readme/API.md` — Comprehensive API endpoint reference (source of truth for all request/response contracts)
-- `readme/Mobile.md` — Mobile app & v4-to-v5 tag conversion shim
+- `readme/Mobile.md` — Mobile app (v3 API surface) & removed-endpoint history
 - `readme/Profile.md` — User profile, settings, privacy, public profiles, account deletion
 - `readme/Setup.md` — Local dev setup, HTTPS with Valet, Reverb TLS configuration
 - `readme/Translations.md` — Frontend i18n setup (vue-i18n v9)
 - `readme/Onboarding.md` — New user onboarding flow (Welcome → Upload → Tag → Celebration), GPS instructions, route guards, geolink
 - `readme/XP.md` — XP scoring, quantity rules, special objects, levels, admin XP
-- `readme/Taggingarchitecturespec.md` — v5.1 tagging architecture spec (types dimension, CLO IDs)
-- `readme/TaggingAuditReport.md` — v5.1 smoke test audit report
 - `readme/Terms.md` — Terms & Conditions source content (Vue component renders this)
 - `readme/Privacy.md` — Privacy Policy source content with GDPR legal basis (Vue component renders this)
 - `readme/Twitter.md` — Automated Twitter/X commands (schedule, data sources, tweet format, Browsershot config)

@@ -8,76 +8,9 @@ The core principle: **locations tables store identity only; all aggregates live 
 
 ---
 
-## Current State (v4) — Problems
+## v5 Schema Summary
 
-### 1. Redundant data on `photos` table
-
-The photo record stores location data in two ways simultaneously:
-
-| Foreign Keys (keep) | String Columns (deprecate) |
-|---|---|
-| `country_id` | `country`, `country_code` |
-| `state_id` | `county` (actually state name) |
-| `city_id` | `city`, `display_name`, `location`, `road` |
-
-The string columns are denormalized copies of data that already exists on the location tables. They made sense before we had proper foreign keys but now they just drift and waste space.
-
-### 2. Legacy category counters on `cities` table
-
-The `cities` table has 16+ `total_*` columns:
-
-```
-total_smoking, total_cigaretteButts, total_food, total_softdrinks,
-total_plasticBottles, total_alcohol, total_coffee, total_drugs,
-total_dumping, total_industrial, total_needles, total_sanitary,
-total_other, total_coastal, total_pathways, total_art, total_dogshit
-```
-
-These are completely replaced by the `metrics` table time-series which tracks tags by category, object, material, and brand at all location levels with full time-series granularity.
-
-### 3. Legacy columns on all location tables
-
-| Column | Tables | Status |
-|---|---|---|
-| `manual_verify` | countries, states, cities | Deprecated — no longer used |
-| `littercoin_paid` | countries, states, cities | Deprecated — Littercoin tracked elsewhere |
-| `countrynameb` | countries | Deprecated — unused alternate name |
-| `statenameb` | states | Deprecated — unused alternate name |
-| `user_id_last_uploaded` | countries, states, cities | Deprecated — derivable from photos table |
-
-### 4. `UpdateLeaderboardsForLocationAction` is deprecated
-
-Already marked `@deprecated` but still called from the upload controller. It writes to old Redis key patterns:
-
-```
-xp.country.{id}                                    # old format
-leaderboard:country:{id}:total                      # old format  
-leaderboard:country:{id}:{year}:{month}:{day}       # old format
-```
-
-The `MetricsService` + `RedisMetricsCollector` now handles all of this via the unified metrics pipeline.
-
-### 5. Events overlap with MetricsService
-
-| Event | What it does | v5 status |
-|---|---|---|
-| `ImageUploaded` | Updates total_contributors_redis, broadcasts to map | **Keep** — real-time broadcast still needed |
-| `IncrementPhotoMonth` | Increments month counters per location | **Remove** — metrics table handles time-series |
-| `NewCountryAdded` | Notifies Twitter/Slack | **Keep** — notification, not metrics |
-| `NewStateAdded` | Notifies Twitter/Slack | **Keep** — notification, not metrics |
-| `NewCityAdded` | Notifies Twitter/Slack | **Keep** — notification, not metrics |
-
-### 6. UploadHelper error handling
-
-Falls back to sentinel records (`error_country`, `error_state`, `error_city`). This means:
-
-- Bad geocode results silently create photos attached to error locations
-- These pollute metrics and leaderboards
-- No way to distinguish "geocode failed" from "geocode returned unexpected format"
-
-### 7. Upload controller does too much
-
-The `__invoke` method handles: image processing → S3 upload → bbox upload → GPS extraction → reverse geocoding → location resolution → photo creation → XP/leaderboards → 5 different events. This needs to be broken into focused steps.
+Location tables (`countries`/`states`/`cities`) store **identity only**. Legacy aggregate columns (`total_litter`, `total_photos`, all `total_*` category counters, `manual_verify`, `littercoin_paid`, `countrynameb`/`statenameb`, `user_id_last_uploaded`, etc.) are dropped — all aggregate stats now live in the `metrics` table + Redis. Redundant string location columns on `photos` (`country`, `country_code`, `county`, `city`, `display_name`, `location`, `road`) are also dropped in favour of FKs (`country_id`/`state_id`/`city_id`) plus the raw `address_array` JSON. The deprecated `UpdateLeaderboardsForLocationAction` and `IncrementPhotoMonth` event are replaced by `MetricsService` + `RedisMetricsCollector`; the `UploadHelper` (with its `error_country`/`error_state`/`error_city` sentinels) is replaced by `ResolveLocationAction`.
 
 ---
 
@@ -190,99 +123,19 @@ uploads, tags, brands, materials, custom_tags, litter, xp
 
 ## v5 Location Models
 
+All three models extend the base `Location` model. They hold identity columns + relationships only; every aggregate is a Redis-backed accessor (see base model section below).
+
 ### Country model (cleaned)
 
-```php
-class Country extends Location
-{
-    protected $fillable = [
-        'country',
-        'shortcode', 
-        'created_by',
-    ];
-
-    protected $appends = [
-        'total_litter_redis',
-        'total_photos_redis', 
-        'total_contributors_redis',
-        'litter_data',
-        'brands_data',
-        'objects_data',
-        'materials_data',
-        'recent_activity',
-        'total_xp',
-        'ppm',
-        'updatedAtDiffForHumans',
-        'total_ppm',
-    ];
-
-    public function getRouteKeyName(): string
-    {
-        return 'country';
-    }
-
-    public function states()
-    {
-        return $this->hasMany(State::class);
-    }
-
-    public function cities()
-    {
-        return $this->hasMany(City::class);
-    }
-}
-```
+`app/Models/Location/Country.php` — `$fillable`: `country`, `shortcode`, `created_by`. `getRouteKeyName()` returns `'country'`. Relationships: `states()` / `cities()` (hasMany). Carries the shared `$appends` aggregate accessors (`total_litter_redis`, `total_photos_redis`, `total_contributors_redis`, `litter_data`, `brands_data`, `objects_data`, `materials_data`, `recent_activity`, `total_xp`, `ppm`, `updatedAtDiffForHumans`, `total_ppm`).
 
 ### State model (cleaned)
 
-```php
-class State extends Location
-{
-    protected $fillable = [
-        'state',
-        'country_id',
-        'created_by',
-    ];
-
-    // Same $appends as Country
-
-    public function country()
-    {
-        return $this->belongsTo(Country::class);
-    }
-
-    public function cities()
-    {
-        return $this->hasMany(City::class);
-    }
-}
-```
+`app/Models/Location/State.php` — `$fillable`: `state`, `country_id`, `created_by`. Same `$appends` as Country. Relationships: `country()` (belongsTo), `cities()` (hasMany).
 
 ### City model (cleaned)
 
-```php
-class City extends Location
-{
-    protected $fillable = [
-        'city',
-        'country_id',
-        'state_id',
-        'created_by',
-    ];
-
-    // Same $appends as Country
-
-    public function country()
-    {
-        return $this->belongsTo(Country::class);
-    }
-
-    public function state()
-    {
-        return $this->belongsTo(State::class);
-    }
-}
-```
+`app/Models/Location/City.php` — `$fillable`: `city`, `country_id`, `state_id`, `created_by`. Same `$appends` as Country. Relationships: `country()` / `state()` (belongsTo).
 
 ### Location base model `$appends`
 
@@ -363,70 +216,12 @@ city:*:user_ids
 
 ## Migrations
 
-### Migration 1: Drop deprecated columns from locations
+The deprecated-column drops have shipped. See the migration files for the exact column lists:
 
-```php
-Schema::table('countries', function (Blueprint $table) {
-    $table->dropColumn([
-        'manual_verify',
-        'littercoin_paid', 
-        'countrynameb',
-        'user_id_last_uploaded',
-    ]);
-});
+- **Drop deprecated location columns** (`manual_verify`, `littercoin_paid`, `countrynameb`/`statenameb`, `user_id_last_uploaded`, and all `cities.total_*` category counters) — `database/migrations/2026_02_21_212414_drop_deprecated_locations_columns.php`
+- **Drop deprecated photo string columns** (`country`, `country_code`, `county`, `city`, `display_name`, `location`, `road`) — `database/migrations/2026_03_14_191950_drop_phase_a_columns_from_photos_table.php`
 
-Schema::table('states', function (Blueprint $table) {
-    $table->dropColumn([
-        'statenameb',
-        'manual_verify',
-        'littercoin_paid',
-        'user_id_last_uploaded',
-    ]);
-});
-
-Schema::table('cities', function (Blueprint $table) {
-    $table->dropColumn([
-        'total_smoking',
-        'total_cigaretteButts', 
-        'total_food',
-        'total_softdrinks',
-        'total_plasticBottles',
-        'total_alcohol',
-        'total_coffee',
-        'total_drugs',
-        'total_dumping',
-        'total_industrial',
-        'total_needles',
-        'total_sanitary',
-        'total_other',
-        'total_coastal',
-        'total_pathways',
-        'total_art',
-        'total_dogshit',
-        'manual_verify',
-        'littercoin_paid',
-        'user_id_last_uploaded',
-    ]);
-});
-```
-
-### Migration 2: Drop deprecated columns from photos
-
-```php
-Schema::table('photos', function (Blueprint $table) {
-    $table->dropColumn([
-        'country',
-        'country_code',
-        'county',        // actually state name
-        'city',          // string duplicate of city_id
-        'display_name',  // derivable from address_array
-        'location',      // derivable from address_array
-        'road',          // derivable from address_array
-    ]);
-});
-```
-
-**Important:** Run Migration 2 only after confirming no code reads these columns. During transition, you can mark them as nullable/deprecated first, then drop in a follow-up migration.
+Photo-column drops were run only after confirming no code reads the string columns (display values are derived from `address_array` instead).
 
 ---
 

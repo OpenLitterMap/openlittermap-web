@@ -107,7 +107,7 @@ All team members can export. Exports only `verified >= ADMIN_APPROVED` team phot
 
 Exports only `verified >= ADMIN_APPROVED` photos for the location.
 
-## CSV Column Layout
+## CSV Structure
 
 > **⚠ Column positions are not stable across format modes.** Selecting `split`, `joined`, or `split,joined` changes which blocks appear and how many columns precede each section. Always reference columns by **header name**, not index, in downstream scripts.
 >
@@ -286,23 +286,21 @@ School team photos with `is_public = false` are excluded because teacher approva
 
 ## CSV Format
 
-> **Layout switch:** the `format` parameter only takes effect in the wide layout (`layout=wide`), used by the **OLM Original Download** and **OLM 4.0 compatible** options. See [Wide vs Long Layout](#wide-vs-long-layout) below for the row-shape switch — the **OLM New Download** option (`layout=long`) ignores `format` entirely.
-
-The download UI exposes three radio options: **OLM Original Download (many columns)** (default), **OLM New Download (fewer columns)**, and **OLM 4.0 compatible**. The first and third map to `format` values `split` and `joined` respectively; the second maps to `layout=long` and ignores `format`.
+The download UI exposes three radio options: **OLM Original Download (many columns)** (default → `format=split`), **OLM 4.0 compatible** (`format=joined`), and **OLM New Download (fewer columns)** (`layout=long`, ignores `format` — see [Wide vs Long Layout](#wide-vs-long-layout)). The `format` parameter therefore only takes effect in the wide layout.
 
 The `format` parameter is comma-separated, case-insensitive, deduped. Empty / unrecognized → `split` (OLM Original Download).
 
 Controllers (`ProfileController::download`, `TeamsController::download`, `DownloadControllerNew::index`) all parse this through `CreateCSVExport::parseFormats(?string $raw)` — the single source of truth for splitting, normalizing, and validating the param.
 
-| UI label | `format` value | What it emits | Use when |
-|----------|---------------|---------------|----------|
-| OLM Original Download (default) | `split` | v5 layout. Per-category object columns + `MATERIALS` + `TYPES` + `brands` + `custom_tag_*` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
-| OLM 4.0 compatible | `joined` | v4-style. Per-category `{type}_{object}` columns (or bare `{object}` if no type). Suppresses the per-category split block AND the `TYPES` block. `MATERIALS` + `brands` + `custom_tag_*` still emitted | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/`water_bottle`/etc. as single columns. |
-| _(API only — not exposed in UI)_ | `split,joined` | Both blocks. Separate appears first, then Combined. `MATERIALS` appears once. | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
+Block composition per mode is defined authoritatively by the block-order table under [CSV Structure](#csv-structure) above.
 
-**Joined column key generation.** For each distinct `(category_id, litter_object_id, litter_object_type_id)` triple in the export scope, the column key is `{type_key}_{object_key}` when a type is set, else the bare `{object_key}`. Examples: `spirits_bottle`, `beer_bottle`, `wine_bottle`, `bottle` (no type), `beer_can`, `water_bottle`, `soda_can`, `butts`. Per-category `ALCOHOL`/`SOFTDRINKS`/etc. sub-headers separate sections so the same key (e.g. bare `bottle` under both alcohol and softdrinks) does not collide visually.
+| UI label | `format` value | Block mode | Use when |
+|----------|---------------|------------|----------|
+| OLM Original Download (default) | `split` | v5 layout — per-category split block + `TYPES` | You want one column per dimension; downstream pivots/joins on the underlying schema. |
+| OLM 4.0 compatible | `joined` | v4-style — per-category `{type}_{object}` joined block; suppresses the split block and `TYPES` | Your pre-v5 pipeline expects `spirits_bottle`/`beer_can`/etc. as single columns. |
+| _(API only — not exposed in UI)_ | `split,joined` | Both blocks (split first, then joined); `MATERIALS` once | You want the v5 layout for new analysis but also need v4-compatible columns in the same file. |
 
-**Joined block does not collapse materials.** A "plastic cup" still emits two columns: `cup` (joined block) and `plastic` (MATERIALS block). Joining material into the object key would produce a combinatorial explosion of columns; the MATERIALS block already gives you the per-material totals.
+**Joined column key generation.** For each distinct `(category_id, litter_object_id, litter_object_type_id)` triple in the export scope, the column key is `{type_key}_{object_key}` when a type is set, else the bare `{object_key}` (e.g. `spirits_bottle`, `bottle`). Per-category `ALCOHOL`/`SOFTDRINKS`/etc. sub-headers separate sections so the same bare key under two categories does not collide visually. Materials are **not** collapsed into the object key (that would explode column count) — the MATERIALS block still carries per-material totals.
 
 ### Cell values are verbatim — treat free-text columns as untrusted in spreadsheets
 

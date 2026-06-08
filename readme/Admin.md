@@ -91,31 +91,9 @@ ADMIN_APPROVED+ ── edit tags ──→ ADMIN_APPROVED (stays, re-processed v
 
 ---
 
-## Current State — Phase 1 COMPLETE, Phase 2 (Queue) COMPLETE, Phase 3 (Users/Stats) COMPLETE
+## Current State
 
-### Phase 1: AdminController (4 methods fixed)
-
-| Method | Status |
-|--------|--------|
-| `verify()` | Atomic approve, full event constructor, null summary → 422 |
-| `destroy()` | MetricsService reversal + soft delete, no ImageDeleted event |
-| `updateDelete()` | DB::transaction tag replace via AddTagsToPhotoAction, atomic approve |
-| `getCountriesWithPhotos()` | VerificationStatus enum, is_public filter, summary not null |
-
-User-facing delete endpoints also fixed: `PhotosController@deleteImage` and `ApiPhotosController@deleteImage` — dead `ImageDeleted` event removed, `processed_at` null check before MetricsService, soft delete.
-
-### Phase 2: Admin Queue UI + Endpoint
-
-**Backend:** `AdminQueueController` (`GET /api/admin/photos`) — paginated pending photos with filters (country_id, user_id, photo_id, date_from, date_to), eager-loaded PhotoTag relationships, and `new_tags[]` transform for frontend tag editing. Response built manually (not `toArray()`) to avoid Location model accessor crash on null `updated_at`. 11 tests in `AdminQueueTest.php`.
-
-**Frontend:** `/admin/queue` route — three-panel layout reusing existing tagging components:
-- **Left:** Filter sidebar (`AdminQueueFilters.vue`) — country select, photo ID, user ID, date range
-- **Center:** Photo viewer (reuses `PhotoViewer.vue`)
-- **Right:** Tag panel with pre-loaded existing tags (reuses `UnifiedTagSearch`, `ActiveTagsList`, `TagCard`)
-- **Header:** (`AdminQueueHeader.vue`) — pending count, prev/next navigation, Approve/Save Edits/Delete buttons
-- **Store:** `admin.js` Pinia store — calls existing admin endpoints (verify, destroy, contentsupdatedelete)
-
-Tag hydration converts API `new_tags` format → `TagCard` format. Edit detection via JSON comparison enables "Save Edits" only when tags differ from loaded state.
+**Status:** Complete — atomic approve/reject, 3-panel verification queue UI (filters | photo viewer | tag editor), tag editing, hard-delete with metrics reversal, user management, username moderation, school-manager toggle, and stats dashboard. The queue reuses the tagging components (`PhotoViewer`, `UnifiedTagSearch`, `ActiveTagsList`, `TagCard`) and the `admin.js` Pinia store. 51 admin tests passing across `AdminVerificationTest`, `AdminQueueTest`, `AdminResetTagsTest`, `AdminUsersTest`, `AdminTrustTest`, `AdminUsernameModerationTest`, and `AdminStatsTest`.
 
 ---
 
@@ -389,74 +367,13 @@ The stats query groups by `country_id` — the queue index covers this. No separ
 | `ImageDeleted` event dispatch in `destroy()` | MetricsService handles reversal directly |
 | Manual `$user->total_images` decrement in `destroy()` | MetricsService handles this |
 
-## What to Delete (Post-migration cleanup)
-
-| Target | Reason |
-|--------|--------|
-| `AddTagsTrait` file | No remaining callers after Phase 1 |
-| `CalculateTagsDifferenceAction` | Dead code once `destroy()` uses MetricsService |
-| `getCountriesWithPhotos()` | Replaced by `GET /api/admin/stats` in Phase 2 |
+Post-migration cleanup (deleting `AddTagsTrait`, `CalculateTagsDifferenceAction`, etc.) is tracked in `PostMigrationCleanup.md`.
 
 ---
 
-## Migration Path
+## Future Work
 
-### Phase 1: Fix critical bugs (pre-LitterWeek) — COMPLETE
-
-All 4 methods fixed. 7 tests passing.
-
-1. ✅ **`verify()`** — null summary → 422. Atomic `WHERE is_public=true AND verified < ADMIN_APPROVED`. Full `TagsVerifiedByAdmin` constructor. `rewardXpToAdmin()` only on actual approval. Removed: S3 deletion, filename replacement, `DeletePhotoAction`.
-2. ✅ **`destroy()`** — `MetricsService::deletePhoto()` before soft delete (if `processed_at` set). `$photo->delete()` (soft delete). Littercoin detachment preserved. Removed: `CalculateTagsDifferenceAction`, `$user->total_images` decrement, `ImageDeleted` event.
-3. ✅ **`updateDelete()`** — `DB::transaction`: delete PhotoTags + `AddTagsToPhotoAction::run()` (summary + XP). Atomic approve. Full event constructor. Removed: `AddTagsTrait`, S3 deletion, filename replacement.
-4. ✅ **`getCountriesWithPhotos()`** — `verified` enum (`< ADMIN_APPROVED`), `is_public=true`, `whereNotNull('summary')`.
-5. ✅ **Constructor** — Injected `MetricsService` + `AddTagsToPhotoAction`. Removed `DeletePhotoAction`, `DeleteTagsFromPhotoAction`, `CalculateTagsDifferenceAction`, `use AddTagsTrait`.
-6. ✅ **Tests** — `tests/Feature/Admin/AdminVerificationTest.php` (7 tests, 31 assertions).
-
-### Phase 2: Admin Queue UI + Endpoint — COMPLETE
-
-Queue browsing with full tag editing, approve, and delete actions. 11 tests in `AdminQueueTest.php`.
-
-**Backend:**
-- ✅ **`AdminQueueController`** — `GET /api/admin/photos` — paginated queue with filters (country_id, user_id, photo_id, date_from, date_to), eager-loaded PhotoTag data, `new_tags[]` transform. Response built manually to avoid Location accessor crash. Replaces `GetNextImageToVerifyController` + `GoBackOnePhotoController`.
-- ✅ **Route** — Added to existing admin group in `routes/api.php`
-- ✅ **Tests** — `AdminQueueTest.php`: exclusions (approved, private, untagged, soft-deleted), filters (country, photo ID, date range), pagination, auth
-
-**Frontend:**
-- ✅ **`AdminQueue.vue`** — Three-panel layout: filters | photo viewer | tag editor. Reuses `PhotoViewer`, `UnifiedTagSearch`, `ActiveTagsList`, `TagCard` from tagging system.
-- ✅ **`AdminQueueHeader.vue`** — Pending count, photo info, prev/next nav, Approve/Save Edits/Delete buttons
-- ✅ **`AdminQueueFilters.vue`** — Country select, photo ID, user ID, date range, apply/reset
-- ✅ **`admin.js` Pinia store** — fetchPhotos, fetchCountries, approvePhoto, deletePhoto, updateTagsAndApprove (calls existing admin endpoints)
-- ✅ **Router** — `/admin/queue` route with auth middleware
-- ✅ **Nav** — "Admin - Queue" link in Menu dropdown
-
-### Phase 3: User Management, Stats, Username Moderation — COMPLETE
-
-**Backend:**
-
-- ✅ **`AdminStatsController`** — `GET /api/admin/stats` — cached 60s. Returns: `queue_total`, `queue_today`, `by_verification` (enum labels), `by_country` (top 20), `total_users`, `users_today`, `flagged_usernames`. Cache key: `admin:dashboard:stats`.
-- ✅ **`AdminUsersController@index`** — `GET /api/admin/users` — paginated user list with search (name/username/email), sort (created_at/photos_count/xp), trust filter (all/trusted/untrusted), flagged filter, per-page (max 100). Response includes: id, name, username, email, created_at, photos_count, xp, verification_required, pending_photos, roles, is_trusted, username_flagged.
-- ✅ **`AdminUsersController@trust`** — `POST /api/admin/users/{user}/trust` — superadmin only. Sets `verification_required = !trusted`. Does NOT retroactively approve existing photos.
-- ✅ **`AdminUsersController@approveAll`** — `POST /api/admin/users/{user}/approve-all` — superadmin only. Approves all pending public photos for user (max 500). Same atomic WHERE + event firing as `AdminController::verify()`.
-- ✅ **`AdminUsersController@updateUsername`** — `PATCH /api/admin/users/{user}/username` — superadmin only. Updates username and clears `username_flagged`. Validation: 3–30 chars, alphanumeric + hyphens, unique. Via `UpdateUsernameRequest` form request.
-- ✅ **`AdminUsersController@toggleSchoolManager`** — `POST /api/admin/users/{user}/school-manager` — superadmin only. Grants or revokes `school_manager` role. On grant, queues `SchoolManagerInvite` email with CTAs for uploading and creating a school team.
-- ✅ **Username flagging system** — User self-change of username sets `username_flagged = true`. Superadmin edit clears flag. `GET /api/admin/users?flagged=true` filters to flagged only. Stats include `flagged_usernames` count.
-
-**Frontend:**
-
-- ✅ **`AdminUsers.vue`** — `/admin/users` route. Stats cards (queue, users, flagged names, top country), search bar, trust/flagged filters, sortable table with inline actions.
-- ✅ **`UserRow.vue`** — Table row component. Trust toggle (superadmin), Approve All button (superadmin), inline username editor (superadmin), flagged badge.
-- ✅ **Store** — `admin.js` Pinia store extended: `fetchUsers`, `fetchStats`, `toggleTrust`, `approveAllForUser`, `updateUsername`.
-- ✅ **Nav** — "Admin - Users" link in dropdown.
-- ✅ **Tests** — 49 total admin tests across 6 files:
-  - `AdminVerificationTest.php` (8 tests)
-  - `AdminQueueTest.php` (12 tests)
-  - `AdminResetTagsTest.php` (4 tests)
-  - `AdminUsersTest.php` (9 tests)
-  - `AdminTrustTest.php` (10 tests)
-  - `AdminUsernameModerationTest.php` (13 tests — username edit, flagging, validation, auth)
-  - `AdminStatsTest.php` (5 tests — cache structure, counts, auth)
-
-### Phase 4: Future
+The admin actions, queue UI, and user management (stats, username moderation, school-manager toggle) are complete (see Current State). Not yet implemented:
 
 - AI-assisted pre-tagging (OpenLitterAI)
 - Multi-admin claim queue with TTL
@@ -466,15 +383,7 @@ Queue browsing with full tag editing, approve, and delete actions. 11 tests in `
 - Permission-granular access (`approve photos`, `delete photos`, `manage user trust` via Spatie)
 - Batch approve endpoint (`POST /api/admin/photos/batch-approve`)
 
----
-
-## Implementation Priority
-
-Phase 1 (admin actions), Phase 2 (queue UI), and Phase 3 (user management, stats, username moderation, school manager toggle) are complete. 51 admin tests passing.
-
 School photos bypass admin entirely (teacher approval via facilitator queue). Community trusted users bypass admin (auto-verify). The admin queue is for individual untrusted users uploading outside of teams.
-
-Phase 4 (AI pre-tagging, claim queue, batch approve) is not yet blocking public launch.
 
 ---
 

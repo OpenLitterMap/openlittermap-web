@@ -7,7 +7,7 @@ Hierarchical grid-based clustering for map visualization. Photos are grouped int
 - **Global (zoom 0-6):** Single query across all verified photos
 - **Per-tile (zoom 8-16):** Uses pre-computed tile keys and generated columns for performance
 
-Team clustering is unified into the same `clusters` table via a `team_id` column (`0` = global, `N` = team-specific). Incremental updates via dirty tile + dirty team tracking. API responses use ETag caching + GeoJSON format.
+Team clustering is unified into the same `clusters` table via a `team_id` column (`0` = global, `N` = team-specific). Incremental updates for global/per-tile photo tiles use dirty tile tracking; team clustering is on-demand only (manual command or nightly rebuild). API responses use ETag caching + GeoJSON format.
 
 ---
 
@@ -23,7 +23,8 @@ The new clustering infrastructure requires 4 migrations that have **not yet been
 | `2025_10_04_make_clusters_location_generated` | Converts `location` to a generated POINT column from lat/lon |
 | `2026_02_25_add_team_id_to_clusters` | Adds `team_id` (NOT NULL DEFAULT 0) to clusters PK, `idx_team_zoom` index |
 | `2026_02_25_drop_team_clusters_table` | Drops legacy `team_clusters` table |
-| `2026_02_25_create_dirty_teams_table` | `dirty_teams` table for incremental team reclustering |
+| `2026_02_25_create_dirty_teams_table` | `dirty_teams` table (later dropped — see below) |
+| `2026_03_14_drop_stale_team_columns_and_dirty_teams_table` | Drops the `dirty_teams` table and stale team counters (team reclustering is now on-demand only) |
 
 **Current state:** The `clusters` table still has the legacy schema (`id` PK, `geohash`, `point_count_abbreviated`) on production. The `ClusterController.index()` endpoint works with both schemas (reads `lat`, `lon`, `point_count`, `zoom`). The new `ClusteringService` methods require the migrations to be applied.
 
@@ -36,12 +37,10 @@ The new clustering infrastructure requires 4 migrations that have **not yet been
 ```
 Photo saved/deleted
   → PhotoObserver marks tile dirty (if verified >= ADMIN_APPROVED)
-  → PhotoObserver marks team dirty (if verified >= VERIFIED and has team_id)
     → clustering:process-dirty (scheduler or manual)
-      → ClusteringService::clusterTile()     — Reclusters one tile across tile zooms (8-16)
-      → ClusteringService::clusterTeam()     — Reclusters one team across all zooms (0-16)
+      → ClusteringService::clusterTile()   — Reclusters one tile across tile zooms (8-16)
 
-Full rebuild:
+Full rebuild / team clustering (on-demand):
   → clustering:update --populate    (backfill tile_key on photos)
   → clustering:update --all         (recluster all global zooms)
   → clustering:update --all-teams   (recluster all teams with photos)
@@ -58,7 +57,7 @@ Full rebuild:
 | `app/Services/Clustering/ClusteringService.php` | Core clustering logic |
 | `app/Http/Controllers/Clusters/ClusterController.php` | API endpoint (GeoJSON + ETag) |
 | `app/Http/Controllers/Teams/TeamsClusterController.php` | Team cluster API (GeoJSON + bbox) |
-| `app/Observers/PhotoObserver.php` | Dirty tile/team marking + school privacy |
+| `app/Observers/PhotoObserver.php` | Dirty tile marking + school privacy |
 | `app/Console/Commands/Clusters/UpdateClusters.php` | `clustering:update` command |
 | `app/Console/Commands/Clusters/ProcessDirtyTiles.php` | `clustering:process-dirty` command |
 | `app/Console/Commands/Clusters/CheckMigrationStatus.php` | `clustering:check-migration` command |
@@ -85,7 +84,7 @@ Full rebuild:
 ## Invariants
 
 1. **Global clustering includes all public-ready photos.** Global queries use `WHERE verified >= 2` (ADMIN_APPROVED+). Team queries use `WHERE verified >= 1` (tagged+, so school students see their uploads on the team map before teacher approval).
-2. **PhotoObserver uses two thresholds.** Global tile dirty: `>= ADMIN_APPROVED`. Team dirty: `>= VERIFIED` (tagged). This means team clusters update when a student tags a photo, but global clusters only update after admin/teacher approval.
+2. **PhotoObserver marks photo tiles dirty at `>= ADMIN_APPROVED`.** Global/per-tile clusters update incrementally only after a photo reaches ADMIN_APPROVED. There is no team dirty-tile tracking — team clusters are rebuilt on-demand (`clustering:update --team` / `--all-teams`), not incrementally.
 3. **`ClusteringService` uses raw SQL, not Eloquent.** All clustering queries use `DB::statement()` with `INSERT...SELECT` for performance. The Cluster model exists but is not used by the clustering pipeline.
 4. **Team clusters are in the same table as global clusters.** The `clusters` table has `team_id` (0 = global, N = team-specific). All existing global queries filter by `WHERE team_id = 0`. The old `team_clusters` table has been dropped.
 
@@ -132,13 +131,7 @@ changed_at    TIMESTAMP          -- When marked dirty
 attempts      UNSIGNED TINYINT   -- Retry counter (backoff after 3)
 ```
 
-### Dirty teams table
-
-```sql
-team_id       UNSIGNED INT PRIMARY KEY
-changed_at    TIMESTAMP          -- When marked dirty
-attempts      UNSIGNED TINYINT   -- Retry counter (backoff after 3)
-```
+> Team clustering has no dirty-tracking table. The legacy `dirty_teams` table was dropped (team reclustering is now on-demand only via `clustering:update --team` / `--all-teams`).
 
 ---
 
@@ -175,23 +168,15 @@ tileKey = latIndex * 1440 + lonIndex
 | 14 | 0.02 | 2.2 km | Per-tile | 2 |
 | 16 | 0.01 | 1.1 km | Per-tile | 1 |
 
-Cell sizes are approximate at the equator. At higher latitudes, east-west distances shrink proportionally.
+Cell sizes are approximate at the equator. At higher latitudes, east-west distances shrink proportionally. The `Strategy` and `Factor` columns above are the authoritative grid/zoom mapping; the service methods below implement each tier.
 
 ### Global clustering (zoom 0-6)
 
-`ClusteringService::clusterGlobal(int $zoom)`:
-1. Delete existing clusters for this zoom
-2. Query all verified photos (`WHERE verified >= 2`)
-3. Group by `FLOOR((lon+180)/gridSize)`, `FLOOR((lat+90)/gridSize)`
-4. Insert with `tile_key = 4294967295` (global sentinel)
+`ClusteringService::clusterGlobal(int $zoom)` deletes existing clusters for the zoom, queries all verified photos (`WHERE verified >= 2`), groups by `FLOOR((lon+180)/gridSize)` / `FLOOR((lat+90)/gridSize)`, and inserts with `tile_key = 4294967295` (global sentinel).
 
 ### Per-tile clustering (zoom 8-16)
 
-`ClusteringService::clusterAllTilesForZoom(int $zoom)`:
-1. Delete existing tile clusters for this zoom (excludes global sentinel)
-2. Uses generated columns (`cell_x`, `cell_y`) with factor division: `FLOOR(cell_x / factor)`
-3. Factor = `gridSize / smallestGrid` (e.g., zoom 8: `0.8 / 0.01 = 80`)
-4. Single SQL query groups all tiles at once: `GROUP BY tile_key, cluster_x, cluster_y`
+`ClusteringService::clusterAllTilesForZoom(int $zoom)` deletes existing tile clusters for the zoom (excluding the global sentinel), then runs a single `GROUP BY tile_key, cluster_x, cluster_y` query over the generated `cell_x`/`cell_y` columns using factor division (`FLOOR(cell_x / factor)`), where the per-zoom `Factor` comes from the table above.
 
 ### Single-tile clustering
 
@@ -231,17 +216,15 @@ Key differences from global clustering:
 | `saving` | `verified >= ADMIN_APPROVED` + coords changed | Mark old tile dirty, compute new `tile_key` |
 | `saving` | Becomes verified (`isDirty('verified')`) + no tile_key | Compute and set `tile_key` |
 | `saved` | `verified >= ADMIN_APPROVED` + coords/status/tile/`is_public` changed | Mark tile dirty |
-| `saved` | `verified >= VERIFIED` + has team_id + relevant fields changed | Mark team dirty |
 | `deleting` | `verified >= ADMIN_APPROVED` + has tile_key | Mark tile dirty |
-| `deleting` | `verified >= VERIFIED` + has team_id | Mark team dirty |
 
 `is_public` is included in the `wasChanged` check so that toggling per-photo visibility on a verified photo immediately marks its tile dirty, ensuring the cluster counts stay accurate after the photo appears or disappears from the public map.
 
-Team dirty marking also handles `team_id` changes — marks both old and new teams dirty.
+The observer does not mark teams dirty — team clusters are not tracked incrementally.
 
 ### Dirty storage with backoff
 
-Both `dirty_tiles` and `dirty_teams` use the same upsert pattern:
+`dirty_tiles` uses this upsert pattern:
 
 ```sql
 INSERT INTO dirty_tiles (tile_key, changed_at, attempts)
@@ -254,11 +237,10 @@ ON DUPLICATE KEY UPDATE
 ### Processing flow (`clustering:process-dirty`)
 
 1. **Tiles:** Fetches dirty tiles ordered by `changed_at`, limited by `--limit` (default 100). Calls `clusterTile()` for each.
-2. **Teams:** Fetches dirty teams ordered by `changed_at`, limited by `--team-limit` (default 20). Calls `clusterTeam()` for each.
-3. On success: deletes from dirty table
-4. On failure: logs error, re-marks with backoff
-5. After processing: auto-cleanup of entries with `attempts >= 3` older than TTL (24 hours)
-6. Returns exit code 1 if any tiles or teams failed
+2. On success: deletes from `dirty_tiles`
+3. On failure: logs error, re-marks with backoff
+4. After processing: auto-cleanup of entries with `attempts >= 3` older than TTL (24 hours)
+5. Returns exit code 1 if any tiles failed
 
 ---
 
@@ -329,17 +311,17 @@ php artisan clustering:update --explain     # Show query execution plans
 
 `--team=N` calls `clusterTeam(N)` — reclusters all zoom levels for that team.
 
-`--all-teams` iterates all teams with `total_images > 0` and calls `clusterTeam()` for each. **Also flushes cluster cache after completion.**
+`--all-teams` iterates all teams that have at least one photo (`whereExists` on `photos`) and calls `clusterTeam()` for each. **Also flushes cluster cache after completion.**
 
 `--stats` calls `getStats()` and runs integrity check: compares verified photo count against zoom-16 cluster point_count sum. Warns on mismatch.
 
 ### `clustering:process-dirty`
 
 ```bash
-php artisan clustering:process-dirty --limit=100 --team-limit=20
+php artisan clustering:process-dirty --limit=100
 ```
 
-Intended for scheduler/cron. Processes dirty tiles (oldest first, `--limit` default 100) then dirty teams (`--team-limit` default 20). Reports processed/failed counts. Failed entries retry with backoff.
+Intended for scheduler/cron. Processes dirty tiles (oldest first, `--limit` default 100). Reports processed/failed counts. Failed entries retry with backoff. Teams are not processed here — they are reclustered on-demand.
 
 ### `clustering:check-migration`
 
@@ -353,8 +335,7 @@ Validates migration state: checks for required columns/indexes on photos and clu
 
 ### Legacy commands (deleted)
 
-- `clusters:generate-all` — **Deleted.** Was Node.js supercluster approach. Replaced by `clustering:update --all`.
-- `clusters:generate-team-clusters` — **Deleted.** Was Node.js team clustering. Replaced by `clustering:update --all-teams`.
+The old Node.js supercluster commands (`clusters:generate-all`, `clusters:generate-team-clusters`) have been deleted. See `ArtisanCommands.md` for the full command list.
 
 ---
 
