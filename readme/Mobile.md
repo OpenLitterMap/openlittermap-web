@@ -64,7 +64,7 @@ POST /api/validate-token  →  { message: "valid" }  // Only on app resume, NOT 
 
 Rejects `(0, 0)` coordinates. Duplicate detection (`user_id + datetime`) uses the explicit `date` field.
 
-**HEIC is supported.** iPhone HEIC/HEIF uploads (including HEIC bytes sent with a `.jpg` extension) are accepted — detected by magic bytes, the `image`/`dimensions` validation is skipped, and the server converts HEIC → JPEG (ImageMagick `convert`). Send the file as-is; no client-side transcoding needed.
+**HEIC is supported.** iPhone HEIC/HEIF uploads (including HEIC bytes sent with a `.jpg` extension) are accepted — detected by magic bytes, the `image`/`dimensions` validation is skipped, and the server converts HEIC → JPEG (`heif-convert`). Send the file as-is; no client-side transcoding needed.
 
 **Response (new photo):** `{ "success": true, "photo_id": 123, ... }`
 

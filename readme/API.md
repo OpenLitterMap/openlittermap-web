@@ -246,7 +246,7 @@ Cleans up: teams, metrics, Redis leaderboards, OAuth tokens, subscriptions, role
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `photo` | file | required, jpg/png/jpeg/heif/heic/webp, max 20MB, min 1x1 (HEIC/HEIF detected by magic bytes skip the `image`/`dimensions` checks — they're server-converted to JPEG via ImageMagick `convert`) |
+| `photo` | file | required, jpg/png/jpeg/heif/heic/webp, max 20MB, min 1x1 (HEIC/HEIF detected by magic bytes skip the `image`/`dimensions` checks — they're server-converted to JPEG via `heif-convert`) |
 | `lat` | numeric | optional, -90 to 90 (mobile: explicit latitude) |
 | `lon` | numeric | optional, -180 to 180 (mobile: explicit longitude) |
 | `date` | string/int | optional, ISO 8601 string or Unix timestamp **in seconds** (NOT milliseconds) |
