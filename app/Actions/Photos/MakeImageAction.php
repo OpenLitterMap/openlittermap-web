@@ -217,8 +217,11 @@ class MakeImageAction
             if ($preservedPath === null && file_exists($tmpFilepath)) {
                 @unlink($tmpFilepath);
             }
-            if (file_exists($convertedFilepath)) {
-                @unlink($convertedFilepath);
+            // heif-convert can emit suffixed outputs ({hash}-1.jpg, …) for
+            // multi-image HEICs — remove every conversion output for this
+            // basename, not just the exact expected path.
+            foreach (File::glob(storage_path(self::TEMP_HEIC_STORAGE_DIR . $randomFilename . '*.jpg')) ?: [] as $leftover) {
+                @unlink($leftover);
             }
         }
     }

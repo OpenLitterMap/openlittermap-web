@@ -404,6 +404,71 @@ class HeicUploadTest extends TestCase
         }
     }
 
+    /**
+     * heif-convert emits suffixed outputs ({hash}-1.jpg, …) for multi-image
+     * HEICs. Cleanup must remove ALL conversion outputs for the basename, not
+     * just the exact expected path, or strays accumulate in heic_images/.
+     */
+    public function test_heic_conversion_cleans_up_suffixed_outputs(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(
+            ReverseGeocodeLocationAction::class,
+            (new FakeReverseGeocodingAction())->withAddress([
+                'country' => 'United States of America',
+                'country_code' => 'us',
+            ])
+        );
+
+        // Simulate heif-convert: write the expected output AND a stray suffixed one.
+        Process::fake([
+            '*' => function ($process) {
+                $output = $process->command[4];
+                copy(storage_path('framework/testing/1x1.jpg'), $output);
+                copy(storage_path('framework/testing/1x1.jpg'), preg_replace('/\.jpg$/', '-1.jpg', $output));
+
+                return 0;
+            },
+        ]);
+
+        $tempDir = storage_path('app/heic_images/');
+        $jpgBefore = File::isDirectory($tempDir) ? File::glob($tempDir . '*.jpg') : [];
+
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $newJpg = [];
+
+        try {
+            $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+                'photo' => $heic,
+                'lat' => 40.053,
+                'lon' => -77.154,
+                'date' => '2026-06-07 12:00:00',
+            ]);
+
+            $response->assertOk();
+
+            // No conversion output — expected or suffixed — left behind.
+            $jpgAfter = File::isDirectory($tempDir) ? File::glob($tempDir . '*.jpg') : [];
+            $newJpg = array_values(array_diff($jpgAfter, $jpgBefore));
+            $this->assertSame([], $newJpg, 'Suffixed conversion outputs must be cleaned from heic_images/');
+        } finally {
+            foreach ($newJpg as $path) {
+                @unlink($path);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
