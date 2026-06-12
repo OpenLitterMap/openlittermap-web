@@ -2,18 +2,23 @@
 
 namespace App\Actions\Photos;
 
+use App\Exceptions\HeicConversionException;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Intervention\Image\Facades\Image;
 
-/**
- * @deprecated - find another way to convert HEIC
- */
 class MakeImageAction
 {
     private const TEMP_HEIC_STORAGE_DIR = 'app/heic_images/';
+
+    private const FAILED_HEIC_STORAGE_DIR = 'app/heic_failed/';
+
+    private const HEIC_CONVERT_TIMEOUT = 60;
+
+    private const JPEG_QUALITY = 92;
 
     /**
      * Create an instance of Intervention Image using an UploadedFile
@@ -104,8 +109,8 @@ class MakeImageAction
 
                 return compact('image', 'exif');
             } catch (Exception $e) {
-                // Last resort: try ImageMagick conversion in case HEIC detection missed it
-                Log::warning('MakeImageAction: Image::make failed, attempting ImageMagick fallback', [
+                // Last resort: try heif-convert in case HEIC detection missed it
+                Log::warning('MakeImageAction: Image::make failed, attempting heif-convert fallback', [
                     'original_name' => $originalName,
                     'extension' => $extension,
                     'mime_type' => $mimeType,
@@ -114,7 +119,7 @@ class MakeImageAction
                 ]);
 
                 try {
-                    return $this->convertViaImageMagick($file->getRealPath(), $originalName, $extension, $mimeType);
+                    return $this->convertViaHeifConvert($file->getRealPath(), $originalName, $extension, $mimeType);
                 } catch (Exception $fallbackException) {
                     // Both paths failed — throw the original error
                     throw $e;
@@ -122,21 +127,32 @@ class MakeImageAction
             }
         }
 
-        Log::info('MakeImageAction: HEIC detected, converting via ImageMagick', [
+        Log::info('MakeImageAction: HEIC detected, converting via heif-convert', [
             'original_name' => $originalName,
             'extension' => $extension,
             'mime_type' => $mimeType,
         ]);
 
-        return $this->convertViaImageMagick($file->getRealPath(), $originalName, $extension, $mimeType);
+        return $this->convertViaHeifConvert($file->getRealPath(), $originalName, $extension, $mimeType);
     }
 
     /**
-     * Convert an image to JPEG via ImageMagick shell command.
+     * Convert an image to JPEG via `heif-convert` (from libheif-examples).
      *
-     * @throws Exception
+     * libheif decodes HEIC variants that the ImageMagick 6 HEIC delegate rejects
+     * (newer iOS/Xiaomi brands). `heif-convert` embeds EXIF/GPS, XMP and ICC into
+     * the output JPEG by default and bakes orientation (rewriting EXIF Orientation
+     * to 1), so the downstream `->orientate()` becomes a harmless no-op. The output
+     * path is deterministic for single-image HEICs; multi-image HEICs would not
+     * produce the expected file and are caught by the `!file_exists()` guard.
+     *
+     * On any failure (non-zero exit or missing output) the source HEIC is MOVED to
+     * storage/app/heic_failed/ as a diagnostic sample before throwing.
+     *
+     * @return array{image: \Intervention\Image\Image, exif: array|null}
+     * @throws HeicConversionException
      */
-    protected function convertViaImageMagick(string $sourcePath, string $originalName, string $extension, string $mimeType): array
+    protected function convertViaHeifConvert(string $sourcePath, string $originalName, string $extension, string $mimeType): array
     {
         $randomFilename = bin2hex(random_bytes(8));
 
@@ -147,27 +163,32 @@ class MakeImageAction
 
         $tmpFilepath = storage_path(self::TEMP_HEIC_STORAGE_DIR . $randomFilename . '.heic');
         $convertedFilepath = storage_path(self::TEMP_HEIC_STORAGE_DIR . $randomFilename . '.jpg');
+        $preservedPath = null;
 
         try {
             copy($sourcePath, $tmpFilepath);
 
-            $output = [];
-            $returnCode = 0;
-            // ImageMagick 6 CLI: `convert input output`. The server has IM6 (`convert`),
-            // not IM7 (`magick`), so this must stay `convert` — do not reintroduce `magick`.
-            exec('convert ' . escapeshellarg($tmpFilepath) . ' ' . escapeshellarg($convertedFilepath) . ' 2>&1', $output, $returnCode);
+            $result = Process::timeout(self::HEIC_CONVERT_TIMEOUT)->run([
+                'heif-convert',
+                '-q', (string) self::JPEG_QUALITY,
+                $tmpFilepath,
+                $convertedFilepath,
+            ]);
 
-            if ($returnCode !== 0 || !file_exists($convertedFilepath)) {
-                Log::error('MakeImageAction: ImageMagick conversion failed', [
+            if ($result->failed() || !file_exists($convertedFilepath)) {
+                $preservedPath = $this->preserveFailedHeic($tmpFilepath, $randomFilename);
+
+                Log::error('MakeImageAction: heif-convert conversion failed', [
                     'original_name' => $originalName,
-                    'return_code' => $returnCode,
-                    'output' => implode("\n", $output),
+                    'exit_code' => $result->exitCode(),
+                    'output' => trim($result->output() . "\n" . $result->errorOutput()),
+                    'preserved_path' => $preservedPath,
                 ]);
 
-                throw new Exception('Failed to convert image. ImageMagick returned code ' . $returnCode);
+                throw new HeicConversionException('Failed to convert image. heif-convert returned code ' . $result->exitCode());
             }
 
-            Log::info('MakeImageAction: ImageMagick conversion successful', [
+            Log::info('MakeImageAction: heif-convert conversion successful', [
                 'original_name' => $originalName,
                 'converted_size' => filesize($convertedFilepath),
             ]);
@@ -177,13 +198,30 @@ class MakeImageAction
 
             return compact('image', 'exif');
         } finally {
-            // Always clean up temp files
-            if (file_exists($tmpFilepath)) {
+            // Clean up temp files — but never delete a preserved diagnostic sample.
+            if ($preservedPath === null && file_exists($tmpFilepath)) {
                 @unlink($tmpFilepath);
             }
             if (file_exists($convertedFilepath)) {
                 @unlink($convertedFilepath);
             }
         }
+    }
+
+    /**
+     * Move an unconvertible HEIC to storage/app/heic_failed/ for diagnosis.
+     * Every file here is a sample of a HEIC variant the server could not decode.
+     */
+    protected function preserveFailedHeic(string $tmpFilepath, string $hash): string
+    {
+        $failedDir = storage_path(self::FAILED_HEIC_STORAGE_DIR);
+        if (!File::isDirectory($failedDir)) {
+            File::makeDirectory($failedDir, 0755, true);
+        }
+
+        $failedFilepath = storage_path(self::FAILED_HEIC_STORAGE_DIR . $hash . '.heic');
+        @rename($tmpFilepath, $failedFilepath);
+
+        return $failedFilepath;
     }
 }

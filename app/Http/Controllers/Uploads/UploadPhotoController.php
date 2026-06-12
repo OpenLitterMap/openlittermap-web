@@ -223,6 +223,18 @@ class UploadPhotoController extends Controller
                 'xp_awarded' => $xpAwarded,
                 'user_xp_total' => $user->xp,
             ]);
+        } catch (\App\Exceptions\HeicConversionException $e) {
+            Log::error('Upload failed: HEIC conversion error', [
+                'user_id' => $user->id,
+                'platform' => $hasExplicit ? 'mobile' : 'web',
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'heic_conversion_failed',
+                'message' => "Sorry, we couldn't process this HEIC photo. Please try again, or set your iPhone to capture JPEGs (Settings → Camera → Formats → Most Compatible).",
+            ], 422);
         } catch (\App\Exceptions\GeocodingException $e) {
             Log::error('Upload failed: geocoding error', [
                 'user_id' => $user->id,

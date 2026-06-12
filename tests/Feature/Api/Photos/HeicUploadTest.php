@@ -4,8 +4,11 @@ namespace Tests\Feature\Api\Photos;
 
 use App\Actions\Locations\ReverseGeocodeLocationAction;
 use App\Actions\Photos\MakeImageAction;
+use App\Exceptions\HeicConversionException;
 use App\Models\Users\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 use Tests\Doubles\Actions\Locations\FakeReverseGeocodingAction;
@@ -199,6 +202,134 @@ class HeicUploadTest extends TestCase
             'user_id' => $user->id,
             'platform' => 'mobile',
         ]);
+    }
+
+    /**
+     * When ImageMagick/libheif on the server cannot decode the HEIC (e.g. an
+     * iOS 18 HEIC against an outdated libheif), the conversion throws a
+     * HeicConversionException. The upload must degrade gracefully to a typed
+     * 422 the mobile client can handle — NOT a hard 500 — and create no photo.
+     */
+    public function test_heic_conversion_failure_returns_graceful_422(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(MakeImageAction::class, new class extends MakeImageAction {
+            public function run(UploadedFile $file, bool $resize = false): array
+            {
+                throw new HeicConversionException('Failed to convert image. ImageMagick returned code 1');
+            }
+        });
+
+        $user = User::factory()->create();
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => $heic,
+            'lat' => 40.053,
+            'lon' => -77.154,
+            'date' => '2026-06-07 12:00:00',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+            'error' => 'heic_conversion_failed',
+        ]);
+
+        $this->assertDatabaseMissing('photos', ['user_id' => $user->id]);
+    }
+
+    /**
+     * Drives the REAL MakeImageAction conversion path with a faked `heif-convert`
+     * process that exits non-zero. Pins the failure-preservation contract:
+     *   - the upload degrades to the typed 422 envelope (no Photo created),
+     *   - the unconvertible HEIC is MOVED to storage/app/heic_failed/ as a
+     *     diagnostic sample, and
+     *   - the temp input is gone from storage/app/heic_images/ (the finally{}
+     *     cleanup skips preserved files rather than deleting them).
+     */
+    public function test_heic_conversion_process_failure_preserves_sample_and_returns_422(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(
+            ReverseGeocodeLocationAction::class,
+            (new FakeReverseGeocodingAction())->withAddress([
+                'country' => 'United States of America',
+                'country_code' => 'us',
+            ])
+        );
+
+        // heif-convert exits 1 with the production Sentry stderr signature.
+        Process::fake([
+            '*' => Process::result(
+                output: '',
+                errorOutput: "no encode delegate for this image format 'HEIC'",
+                exitCode: 1,
+            ),
+        ]);
+
+        $tempDir = storage_path('app/heic_images/');
+        $failedDir = storage_path('app/heic_failed/');
+        $tempBefore = File::isDirectory($tempDir) ? File::glob($tempDir . '*.heic') : [];
+        $failedBefore = File::isDirectory($failedDir) ? File::glob($failedDir . '*.heic') : [];
+
+        $user = User::factory()->create();
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $newFailed = [];
+
+        try {
+            $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+                'photo' => $heic,
+                'lat' => 40.053,
+                'lon' => -77.154,
+                'date' => '2026-06-07 12:00:00',
+            ]);
+
+            $response->assertStatus(422);
+            $response->assertJson([
+                'success' => false,
+                'error' => 'heic_conversion_failed',
+            ]);
+
+            // No Photo persisted on a failed conversion.
+            $this->assertDatabaseMissing('photos', ['user_id' => $user->id]);
+
+            // The unconvertible HEIC was preserved as a diagnostic sample.
+            $failedAfter = File::isDirectory($failedDir) ? File::glob($failedDir . '*.heic') : [];
+            $newFailed = array_values(array_diff($failedAfter, $failedBefore));
+            $this->assertCount(1, $newFailed, 'Expected exactly one preserved .heic in heic_failed/');
+
+            // The temp input was MOVED out of heic_images/ — finally{} skipped it.
+            $tempAfter = File::isDirectory($tempDir) ? File::glob($tempDir . '*.heic') : [];
+            $newTemp = array_diff($tempAfter, $tempBefore);
+            $this->assertCount(0, $newTemp, 'Temp .heic must be moved to heic_failed/, not left in heic_images/');
+        } finally {
+            foreach ($newFailed as $path) {
+                @unlink($path);
+            }
+            if (File::isDirectory($failedDir) && empty(File::files($failedDir))) {
+                @rmdir($failedDir);
+            }
+        }
     }
 
     // ---------------------------------------------------------------

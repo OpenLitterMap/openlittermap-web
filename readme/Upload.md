@@ -77,12 +77,64 @@ Duplicate detection happens in the controller (idempotent — see "Idempotent Up
 
 ### HEIC / HEIF handling
 
-iPhones upload HEIC. Two things make this work:
+iPhones (and newer Android cameras) upload HEIC. Two things make this work:
 
 1. **Validation skip.** Laravel's `image` rule excludes HEIC and `dimensions` uses `getimagesize()` (returns `false` for HEIC), so both would reject genuine HEIC. `UploadPhotoRequest::rules()` detects HEIC via `MakeImageAction::isHeic()` (extension/MIME **and** ftyp magic bytes — catches iOS HEIC sent as `.jpg`) and **drops `image` + `dimensions` for HEIC only**. `mimes` (content-sniffed) and `max:20480` stay on. Using the same `isHeic()` the converter uses keeps the validation-skip in lockstep with conversion.
-2. **Conversion.** `MakeImageAction` shells out to **ImageMagick 6 `convert input output`** (the server has IM6 `convert`, **not** IM7 `magick` — do not reintroduce `magick`) to convert HEIC → JPEG before storage, since the Intervention GD driver can't decode HEIC.
+2. **Conversion.** `MakeImageAction::convertViaHeifConvert()` runs **`heif-convert -q 92 {input} {output}`** via Laravel's `Process` facade (array command, 60s timeout) to convert HEIC → JPEG before storage, since the Intervention GD driver can't decode HEIC. `heif-convert` ships in the **`libheif-examples`** package and decodes directly through libheif.
+
+**Why `heif-convert` and not ImageMagick `convert`.** The old path shelled out to ImageMagick 6 `convert`, whose HEIC delegate is unreliable across HEIC variants. Two production failure signatures (Sentry, Jun 2026):
+
+```
+# 2024-era iPhone HEIC on an outdated delegate:
+convert-im6.q16: Invalid input: Unspecified: Metadata not correctly assigned to image (2.0) ... @ error/heic.c/IsHEIFSuccess/139.
+
+# 2026 Xiaomi HEIC (brands mif1, MiHE, MiPr, miaf, MiHB, heic):
+convert: no encode delegate for this image format 'HEIC'
+```
+
+Diagnosed on production (Ubuntu 24.04, libheif 1.17.6-1ubuntu4.3, ImageMagick 6): `heif-convert` succeeds on both samples where `convert` fails. libheif's own CLI sidesteps the flaky IM HEIC delegate entirely. **Do not reintroduce `convert`/`magick`** — there is a single conversion path, no ImageMagick fallback.
+
+**Metadata & orientation (verified against libheif v1.17.6 `examples/encoder_jpeg.cc`, `examples/heif_convert.cc`):**
+- **EXIF (incl. GPS), XMP and ICC are embedded in the output JPEG by default.** (`--with-exif` only controls a *sidecar dump*, not embedding — we don't pass it.) So our downstream EXIF read still finds GPS/datetime.
+- **Orientation is baked**: pixels are rotated upright and EXIF Orientation is rewritten to `1`, so the existing `Image::make($converted)->orientate()` is a harmless no-op.
+- **Output path is deterministic** for single-image HEICs (exact filename passed, no `-1` suffix). Multi-image HEICs (bursts/Live Photos) would not produce the expected file → caught by the `!file_exists()` guard → fails safe.
+- Default `heif-convert` JPEG quality is 90; we pass `-q 92` to match the old ImageMagick output quality.
+
+**Failure preservation.** On process failure (non-zero exit) **or** a missing output file, `MakeImageAction`:
+- **moves** (not copies) the temp input to `storage/app/heic_failed/{hash}.heic` — each file there is a diagnostic sample of a HEIC variant the server could not decode,
+- `Log::error()`s with `original_name`, `exit_code`, combined stdout+stderr, and `preserved_path` (captured by Sentry),
+- throws `HeicConversionException`. The `finally{}` cleanup skips the preserved file (it deletes the leftover JPEG and only the *unpreserved* temp input).
+
+Preservation applies to **any** shell-conversion failure, including non-HEIC files that reach the converter via the GD-fallback path — acceptable noise; every file in `heic_failed/` is a sample worth keeping.
+
+**Current behaviour on failure: typed 422 (INTERIM).** `UploadPhotoController` catches `HeicConversionException` and returns `{ success: false, error: 'heic_conversion_failed', message }` with HTTP **422** (was a hard 500). Mobile clients read `error` to show a friendly message. Verified by `HeicUploadTest::test_heic_conversion_failure_returns_graceful_422` and `test_heic_conversion_process_failure_preserves_sample_and_returns_422` (the latter drives the real `heif-convert` path with `Process::fake()` and pins the `heic_failed/` preservation + `heic_images/` cleanup).
+
+> **⚠️ INTERIM — failing the upload is not the target behaviour.** The standing product decision is that **HEIC uploads must never fail**. Target: *accept-on-failure* — store the original HEIC, create the Photo record, flag it, and reprocess later via a future `olm:reprocess-failed-heic` command. The diagnostic samples in `heic_failed/` are the raw material for designing that reprocessor. The 422 above is the placeholder until accept-on-failure ships as a follow-up.
 
 **Known limitation (follow-up ticket):** web-mode HEIC (no explicit `lat`/`lon`/`date`) still hits `after()`'s `exif_read_data()`/GPS checks, which are unreliable on HEIC. The mobile path (explicit coords) is fully supported.
+
+#### Server dependencies
+
+HEIC conversion requires **`heif-convert`** on the production box. Required packages alongside the existing `imagemagick`/`libheif1` (versions at time of writing: **libheif 1.17.6-1ubuntu4.3, Ubuntu 24.04**):
+
+```bash
+sudo apt-get update
+sudo apt-get install libheif-examples   # provides heif-convert
+which heif-convert                       # confirm it's on PATH for the web/queue user
+
+# Smoke test against a real sample:
+heif-convert -q 92 /path/to/sample.heic /tmp/out.jpg && echo OK
+```
+
+`libheif-examples` is already installed on production. If it is ever missing, `heif-convert` will not be found and **every** HEIC upload fails into `heic_failed/` — treat its presence as a hard deploy/provisioning requirement.
+
+#### Ops notes — `heic_images/` and `heic_failed/`
+
+- `storage/app/heic_images/` — transient working dir for in-flight conversions (input copy + output JPEG). Files here are deleted in the `finally{}` of each conversion.
+- `storage/app/heic_failed/` — preserved unconvertible HEICs, one per failed conversion. **Each is a diagnostic sample — do not bulk-delete without inspecting first.** They are the inputs the future `olm:reprocess-failed-heic` command will replay.
+- Both dirs are **per-release local storage, not shared/persistent storage** — temp files do not survive a deploy. That's acceptable for in-flight conversions, but means `heic_failed/` samples should be pulled off the box (or the dir symlinked to shared storage) if you want them to outlive a release. They are created on demand by `File::makeDirectory()`.
+
+**Longer-term follow-up (mobile app — separate repo):** the most reliable fix removes the server's HEIC decode dependency entirely — have the iOS app export/convert HEIC → JPEG before upload (or capture in "Most Compatible" format). Tracked as a follow-up; not done here.
 
 ### `picked_up` semantics
 

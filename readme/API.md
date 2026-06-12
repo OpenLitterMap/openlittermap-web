@@ -304,6 +304,10 @@ facilitator's `user_id`.)
 | `no_gps` | GPS data missing from EXIF (web mode) |
 | `invalid_coordinates` | `(0, 0)` coordinates (mobile mode) |
 | `validation_error` | Other validation failures (file type, size, etc.) |
+| `geocoding_failed` | Reverse geocoding failed for the coordinates (controller-emitted) |
+| `heic_conversion_failed` | Server could not decode/convert the HEIC to JPEG via `heif-convert` (controller-emitted; unconvertible variant or multi-image HEIC — the source is preserved in `heic_failed/`; see Upload.md). **INTERIM:** target behaviour is accept-on-failure, not a 422 |
+
+**Note:** `geocoding_failed` and `heic_conversion_failed` are emitted by `UploadPhotoController` during processing (same envelope shape), not by `UploadPhotoRequest::failedValidation()`.
 
 **Note:** `PhotoTagsRequest` (POST/PUT `/api/v3/tags`) still uses Laravel's default validation response format (`{ message, errors }`), not the structured envelope above.
 
