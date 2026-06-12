@@ -469,6 +469,59 @@ class HeicUploadTest extends TestCase
         }
     }
 
+    /**
+     * The upload writes a full image + a bbox thumbnail. HEIC must be converted
+     * ONCE and the result reused for the bbox (resized in-memory), not converted
+     * a second time. A second conversion is wasteful and — failing after the full
+     * S3 write — can orphan the full-size object.
+     */
+    public function test_heic_is_converted_once_and_reused_for_bbox(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(
+            ReverseGeocodeLocationAction::class,
+            (new FakeReverseGeocodingAction())->withAddress([
+                'country' => 'United States of America',
+                'country_code' => 'us',
+            ])
+        );
+
+        Process::fake([
+            '*' => function ($process) {
+                copy(storage_path('framework/testing/1x1.jpg'), $process->command[4]);
+
+                return 0;
+            },
+        ]);
+
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => $heic,
+            'lat' => 40.053,
+            'lon' => -77.154,
+            'date' => '2026-06-07 12:00:00',
+        ]);
+
+        $response->assertOk();
+
+        // heif-convert must run exactly once for the whole upload (full + bbox).
+        Process::assertRanTimes(
+            fn ($process) => ($process->command[0] ?? null) === 'heif-convert',
+            1
+        );
+    }
+
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------

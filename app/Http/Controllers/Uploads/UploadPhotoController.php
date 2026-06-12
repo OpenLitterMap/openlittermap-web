@@ -95,7 +95,11 @@ class UploadPhotoController extends Controller
                 }
             }
 
-            // 3. Upload full image + bbox thumbnail to S3
+            // 3. Upload full image + bbox thumbnail to S3.
+            // Reuse the already-decoded image for the bbox (resized in-memory)
+            // rather than re-running MakeImageAction — converts HEIC only once.
+            // The full upload streams $image before the resize, so mutating it
+            // afterwards is safe.
             $imageName = $this->uploadPhotoAction->run(
                 $image,
                 $dateTime,
@@ -103,7 +107,7 @@ class UploadPhotoController extends Controller
             );
 
             $bboxImageName = $this->uploadPhotoAction->run(
-                $this->makeImageAction->run($file, true)['image'],
+                $image->resize(500, 500),
                 $dateTime,
                 $file->hashName(),
                 'bbox'
