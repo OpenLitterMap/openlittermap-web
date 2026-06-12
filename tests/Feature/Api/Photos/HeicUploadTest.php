@@ -332,6 +332,78 @@ class HeicUploadTest extends TestCase
         }
     }
 
+    /**
+     * `Process::timeout()->run()` THROWS ProcessTimedOutException rather than
+     * returning a result, so the failure block that preserves the sample is
+     * skipped. The converter must catch the timeout, preserve the HEIC, and throw
+     * HeicConversionException so the upload degrades to a 422 (not a hard 500).
+     */
+    public function test_heic_conversion_timeout_preserves_sample_and_returns_422(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        // heif-convert exceeds the timeout — Laravel wraps the Symfony timeout and
+        // throws it from run(). Returning a Throwable from a fake makes run() throw it.
+        Process::fake([
+            '*' => function () {
+                $symfonyProcess = new \Symfony\Component\Process\Process(['heif-convert']);
+
+                return new \Illuminate\Process\Exceptions\ProcessTimedOutException(
+                    new \Symfony\Component\Process\Exception\ProcessTimedOutException(
+                        $symfonyProcess,
+                        \Symfony\Component\Process\Exception\ProcessTimedOutException::TYPE_GENERAL
+                    ),
+                    new \Illuminate\Process\ProcessResult($symfonyProcess)
+                );
+            },
+        ]);
+
+        $failedDir = storage_path('app/heic_failed/');
+        $failedBefore = File::isDirectory($failedDir) ? File::glob($failedDir . '*.heic') : [];
+
+        $user = User::factory()->create();
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $newFailed = [];
+
+        try {
+            $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+                'photo' => $heic,
+                'lat' => 40.053,
+                'lon' => -77.154,
+                'date' => '2026-06-07 12:00:00',
+            ]);
+
+            $response->assertStatus(422);
+            $response->assertJson([
+                'success' => false,
+                'error' => 'heic_conversion_failed',
+            ]);
+
+            $this->assertDatabaseMissing('photos', ['user_id' => $user->id]);
+
+            // A timeout must still preserve the diagnostic sample.
+            $failedAfter = File::isDirectory($failedDir) ? File::glob($failedDir . '*.heic') : [];
+            $newFailed = array_values(array_diff($failedAfter, $failedBefore));
+            $this->assertCount(1, $newFailed, 'Timeout must preserve the HEIC sample in heic_failed/');
+        } finally {
+            foreach ($newFailed as $path) {
+                @unlink($path);
+            }
+            if (File::isDirectory($failedDir) && empty(File::files($failedDir))) {
+                @rmdir($failedDir);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------

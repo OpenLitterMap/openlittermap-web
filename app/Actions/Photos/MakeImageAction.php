@@ -5,6 +5,7 @@ namespace App\Actions\Photos;
 use App\Exceptions\HeicConversionException;
 use Exception;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Process\Exceptions\ProcessTimedOutException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -168,12 +169,26 @@ class MakeImageAction
         try {
             copy($sourcePath, $tmpFilepath);
 
-            $result = Process::timeout(self::HEIC_CONVERT_TIMEOUT)->run([
-                'heif-convert',
-                '-q', (string) self::JPEG_QUALITY,
-                $tmpFilepath,
-                $convertedFilepath,
-            ]);
+            try {
+                $result = Process::timeout(self::HEIC_CONVERT_TIMEOUT)->run([
+                    'heif-convert',
+                    '-q', (string) self::JPEG_QUALITY,
+                    $tmpFilepath,
+                    $convertedFilepath,
+                ]);
+            } catch (ProcessTimedOutException $e) {
+                // A timeout THROWS before $result exists — preserve the sample here
+                // too, otherwise the failure block below never runs and we 500.
+                $preservedPath = $this->preserveFailedHeic($tmpFilepath, $randomFilename);
+
+                Log::error('MakeImageAction: heif-convert timed out', [
+                    'original_name' => $originalName,
+                    'timeout' => self::HEIC_CONVERT_TIMEOUT,
+                    'preserved_path' => $preservedPath,
+                ]);
+
+                throw new HeicConversionException('heif-convert timed out after ' . self::HEIC_CONVERT_TIMEOUT . 's', 0, $e);
+            }
 
             if ($result->failed() || !file_exists($convertedFilepath)) {
                 $preservedPath = $this->preserveFailedHeic($tmpFilepath, $randomFilename);
