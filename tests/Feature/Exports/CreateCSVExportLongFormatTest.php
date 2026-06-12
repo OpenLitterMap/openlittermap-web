@@ -111,6 +111,35 @@ class CreateCSVExportLongFormatTest extends TestCase
         $this->assertEquals($pt->id, $rows[0][13]);
     }
 
+    /**
+     * Long format also emits the verification enum (column 6). Drive the FULL
+     * PhpSpreadsheet writer (raw()) — not map() — so the value binder is exercised.
+     * Pre-fix this 500'd with "could not be converted to string".
+     */
+    public function test_long_real_writer_pipeline_does_not_choke_on_verification_enum(): void
+    {
+        $photo = $this->makePhoto();
+        PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $this->alcohol->id,
+            'litter_object_id' => $this->bottle->id,
+            'category_litter_object_id' => $this->bottleCloId,
+            'litter_object_type_id' => $this->spirits->id,
+            'quantity' => 1,
+        ]);
+        app(GeneratePhotoSummaryService::class)->run($photo->fresh());
+
+        $csv = $this->exportLong()->raw(\Maatwebsite\Excel\Excel::CSV);
+
+        $this->assertIsString($csv);
+        $rows = array_map('str_getcsv', array_values(array_filter(
+            explode("\n", str_replace("\r", '', trim($csv)))
+        )));
+        $verificationIndex = array_search('verification', $rows[0], true);
+        // Verified enum (=2) is written as its int value, not the object.
+        $this->assertSame('2', $rows[1][$verificationIndex]);
+    }
+
     public function test_object_tag_with_one_material_emits_two_rows()
     {
         $photo = $this->makePhoto();

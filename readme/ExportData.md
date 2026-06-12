@@ -326,6 +326,26 @@ CSV. Programmatic consumers are unaffected — they never evaluate formulas.
 > construction, with CSV kept as the verbatim research format. See
 > [Backlog](#backlog) below.
 
+### Enum-safe value binder
+
+`CreateCSVExport` is its own PhpSpreadsheet value binder (`extends DefaultValueBinder
+implements WithCustomValueBinder`). PhpSpreadsheet's default binder `(string)`-casts any
+unrecognised object reaching a cell — which **fatals** on a non-`Stringable` backed enum
+and 500s the entire export. Several `Photo` attributes are enum casts (most notably
+`verified` → `App\Enums\VerificationStatus`), so the override scalarises enums before
+binding: `BackedEnum` → `->value`, `UnitEnum` → `->name`. Everything else (ints, strings,
+Carbon dates, null) passes through to the default binder unchanged.
+
+This is **belt-and-suspenders**: `map()`/`mapLong()` already emit `verified?->value`, but
+the binder guarantees that *any* column accidentally emitting an enum (now or after a
+future schema change) is written safely instead of crashing the export. The historical
+crash — `Object of class App\Enums\VerificationStatus could not be converted to string`
+at `DefaultValueBinder.php:30` — predated the `->value` map fix; the binder closes the
+class of bug for good. Guarded by `CreateCSVExportFormatTest` (real `raw()` writer
+pipeline + a direct `bindValue()` unit test) and `CreateCSVExportLongFormatTest`. Note the
+`map()`-only tests never exercise the writer, so the **real-pipeline** tests are what
+actually cover this.
+
 ## Wide vs Long Layout
 
 > **Naming note:** the API calls these `wide` and `long`. In the download UI, **wide** is used by both the **OLM Original Download** and **OLM 4.0 compatible** options, and **long** is used by **OLM New Download**. Saved filenames use `_number-based_` (wide) / `_full-detail_` (long) slugs. Internal code, tests, and the API/developer docs below keep `wide`/`long`.

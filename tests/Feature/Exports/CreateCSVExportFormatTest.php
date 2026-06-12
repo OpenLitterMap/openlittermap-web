@@ -79,6 +79,45 @@ class CreateCSVExportFormatTest extends TestCase
         app(GeneratePhotoSummaryService::class)->run($this->fireballPhoto->fresh());
     }
 
+    /**
+     * Regression (production crash): the verified column is a VerificationStatus
+     * enum (model cast). The other tests call map() directly, which never exercises
+     * PhpSpreadsheet's DefaultValueBinder. raw() runs the FULL writer pipeline — if
+     * any enum/object reaches a cell, the binder throws "could not be converted to
+     * string". This is the path that 500'd in production; map()-only tests can't see it.
+     */
+    public function test_real_writer_pipeline_does_not_choke_on_verification_enum(): void
+    {
+        $export = new CreateCSVExport(null, null, null, $this->user->id, [], [], ['split'], 'wide');
+
+        $csv = $export->raw(\Maatwebsite\Excel\Excel::CSV);
+
+        $this->assertIsString($csv);
+        $rows = array_map('str_getcsv', array_values(array_filter(
+            explode("\n", str_replace("\r", '', trim($csv)))
+        )));
+        $verificationIndex = array_search('verification', $rows[0], true);
+        $this->assertNotFalse($verificationIndex);
+        // First data row (after the heading row): the verified enum is written as its int value.
+        $this->assertSame((string) $this->fireballPhoto->id, $rows[1][0]);
+        $this->assertSame('2', $rows[1][$verificationIndex]);
+    }
+
+    /**
+     * The export is its own PhpSpreadsheet value binder (WithCustomValueBinder) so
+     * any BackedEnum reaching a cell is written as its scalar value instead of
+     * fatally `(string)`-casting the object. Guards every enum column at once.
+     */
+    public function test_value_binder_scalarises_backed_enums(): void
+    {
+        $export = new CreateCSVExport(null, null, null, $this->user->id, [], [], ['split'], 'wide');
+
+        $cell = (new \PhpOffice\PhpSpreadsheet\Spreadsheet())->getActiveSheet()->getCell('A1');
+        $export->bindValue($cell, \App\Enums\VerificationStatus::ADMIN_APPROVED);
+
+        $this->assertSame(2, $cell->getValue());
+    }
+
     public function test_split_format_emits_object_type_material_columns_and_no_joined_column()
     {
         $export = new CreateCSVExport(null, null, null, $this->user->id, [], [], ['split']);

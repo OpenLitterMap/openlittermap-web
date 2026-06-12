@@ -23,8 +23,11 @@ use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 
-class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
+class CreateCSVExport extends DefaultValueBinder implements FromQuery, WithMapping, WithHeadings, WithCustomValueBinder
 {
     use Exportable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -182,6 +185,27 @@ class CreateCSVExport implements FromQuery, WithMapping, WithHeadings
         if ($this->emitJoined) {
             $this->categoryJoinedColumns = $this->buildJoinedColumns($activeTriples);
         }
+    }
+
+    /**
+     * Custom PhpSpreadsheet value binder (WithCustomValueBinder).
+     *
+     * Photo attributes are cast to enums (e.g. `verified` → VerificationStatus). The
+     * default binder `(string)`-casts unknown objects, which fatals on a non-Stringable
+     * enum ("Object of class App\Enums\VerificationStatus could not be converted to
+     * string") and 500s the whole export. Scalarise enums here so EVERY column is
+     * safe — not just the ones map() remembers to `->value`. Scalars/dates/null fall
+     * through to the default binder unchanged.
+     */
+    public function bindValue(Cell $cell, $value): bool
+    {
+        if ($value instanceof \BackedEnum) {
+            $value = $value->value;
+        } elseif ($value instanceof \UnitEnum) {
+            $value = $value->name;
+        }
+
+        return parent::bindValue($cell, $value);
     }
 
     /**
