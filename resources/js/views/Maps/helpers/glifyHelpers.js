@@ -1,5 +1,12 @@
-import glify from 'leaflet.glify';
+import glifyModule from 'leaflet.glify';
 import { popupHelper } from './popup.js';
+
+/**
+ * leaflet.glify is a UMD module. Depending on bundler interop (Vite/esbuild dep
+ * optimization vs. Rollup) the default import is either the Glify instance itself
+ * or the module namespace ({ Glify, glify, default }). Normalize to the instance.
+ */
+const glify = glifyModule.glify ?? glifyModule.default ?? glifyModule;
 import { Category } from './Category.js';
 import { urlHelper } from './urlHelper.js';
 
@@ -57,6 +64,9 @@ class GlifyPointsManager {
     removeCurrentInstance() {
         if (!this.currentInstance) return;
 
+        // Capture the live map before glify nulls the overlay's _map reference
+        const map = this.currentInstance.layer?._map ?? this.currentMap;
+
         try {
             // Get canvas before removal for cleanup
             const canvas = this.currentInstance.canvas;
@@ -79,7 +89,43 @@ class GlifyPointsManager {
             console.error('Error removing glify instance:', error);
         } finally {
             this.currentInstance = null;
+            this.purgeDetachedOverlayListeners(map);
         }
+    }
+
+    /**
+     * Detach orphaned glify CanvasOverlay event listeners from the map.
+     *
+     * glify's CanvasOverlay subscribes to map events (moveend/resize/zoomanim) in
+     * onAdd using its shared-prototype `_reset`/`_resize` as the handler. The glify
+     * manager tracks a single `currentInstance.layer`, but the overlay actually
+     * attached to the map can be a different instance, so removing the tracked
+     * instance does not always unsubscribe the live overlay. Leaflet then nulls the
+     * detached overlay's `_map`, and on the next pan (moveend) its `_reset` throws
+     * "Cannot read properties of null (reading 'containerPointToLayerPoint')".
+     *
+     * Leaflet exposes no public listener enumeration, so we read `map._events` and
+     * call the public `map.off()` with each listener's exact `fn`/`ctx` — which
+     * reliably removes it — for any glify overlay whose `_map` is already null.
+     */
+    purgeDetachedOverlayListeners(map) {
+        if (!map?._events) return;
+
+        ['moveend', 'move', 'movestart', 'resize', 'zoom', 'zoomanim', 'zoomend', 'viewreset'].forEach((type) => {
+            const listeners = map._events[type];
+            if (!Array.isArray(listeners)) return;
+
+            // Snapshot first — map.off() mutates the underlying array
+            listeners
+                .filter(
+                    (l) =>
+                        l?.ctx &&
+                        typeof l.ctx._reset === 'function' &&
+                        '_userDrawFunc' in l.ctx &&
+                        (l.ctx._map === null || l.ctx._map === undefined)
+                )
+                .forEach((l) => map.off(type, l.fn, l.ctx));
+        });
     }
 
     /**
