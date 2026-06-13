@@ -95,7 +95,11 @@ class UploadPhotoController extends Controller
                 }
             }
 
-            // 3. Upload full image + bbox thumbnail to S3
+            // 3. Upload full image + bbox thumbnail to S3.
+            // Reuse the already-decoded image for the bbox (resized in-memory)
+            // rather than re-running MakeImageAction — converts HEIC only once.
+            // The full upload streams $image before the resize, so mutating it
+            // afterwards is safe.
             $imageName = $this->uploadPhotoAction->run(
                 $image,
                 $dateTime,
@@ -103,7 +107,7 @@ class UploadPhotoController extends Controller
             );
 
             $bboxImageName = $this->uploadPhotoAction->run(
-                $this->makeImageAction->run($file, true)['image'],
+                $image->resize(500, 500),
                 $dateTime,
                 $file->hashName(),
                 'bbox'
@@ -223,6 +227,18 @@ class UploadPhotoController extends Controller
                 'xp_awarded' => $xpAwarded,
                 'user_xp_total' => $user->xp,
             ]);
+        } catch (\App\Exceptions\HeicConversionException $e) {
+            Log::error('Upload failed: HEIC conversion error', [
+                'user_id' => $user->id,
+                'platform' => $hasExplicit ? 'mobile' : 'web',
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'heic_conversion_failed',
+                'message' => "Sorry, we couldn't process this HEIC photo. Please try again, or set your iPhone to capture JPEGs (Settings → Camera → Formats → Most Compatible).",
+            ], 422);
         } catch (\App\Exceptions\GeocodingException $e) {
             Log::error('Upload failed: geocoding error', [
                 'user_id' => $user->id,
