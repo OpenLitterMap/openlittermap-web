@@ -26,6 +26,5 @@ class SendNewUserEmail
      */
     public function handle(UserSignedUp $event)
     {
-        \Log::info("event handle - new user signed up");
     }
 }
