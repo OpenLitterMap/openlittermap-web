@@ -58,6 +58,8 @@
 
                         <p>The response was overwhelming. More than <strong>130 signed up</strong> and <strong>nearly 100 attended</strong>, representing dozens of TidyTowns groups. Many have reached out wanting this story told.</p>
 
+                        <p>&#128250; <strong>Watch the recording:</strong> <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank">youtube.com/watch?v=b8DwY3W9UEA</a></p>
+
                         <p>Collecting data on the health of our towns and environment is not just a competition between groups &mdash; it's a display of collective action. That being said, every data point becomes a record, every tag becomes evidence, and the data provides a more balanced way of determining which groups are making the biggest impact.</p>
 
                         <p><strong>Meath County Council</strong> became the first Irish local authority to publicly endorse our work, committing to share the webinar. An invite was also shared to all 950 TidyTowns groups via the <strong>Department of Rural and Community Development and the Gaeltacht</strong> who run the TidyTowns unit.</p>
@@ -99,18 +101,38 @@
                         <!-- ═══════════════════════════════════════════ -->
                         <h2 style="color: #1a1a2e; font-size: 22px; margin: 30px 0 20px 0; border-bottom: 2px solid #2ecc71; padding-bottom: 8px;">&#127466;&#127482; EU Presidency Citizen Science Deliverable</h2>
 
-                        <p>We have less than a month before the Presidency begins. I'm looking for <strong>Founding Members</strong> to help shape a citizen-led deliverable to help 30,000 TidyTowns members map their impact and tell their story. Our next meeting is Thursday 11th June at 7pm. Email <a href="mailto:info@openlittermap.com">info@openlittermap.com</a> if you are interested in joining.</p>
+                        <p>We have less than a month before the Presidency begins. I'm looking for <strong>Founding Members</strong> to help shape a citizen-led deliverable to help 30,000 TidyTowns members map their impact and tell their story. We hold regular planning calls &mdash; email <a href="mailto:info@openlittermap.com">info@openlittermap.com</a> and I'll send you the time of the next one.</p>
+
+                        <!-- ═══════════════════════════════════════════ -->
+                        <!-- Take the First Step Challenge              -->
+                        <!-- ═══════════════════════════════════════════ -->
+                        <h2 style="color: #1a1a2e; font-size: 22px; margin: 30px 0 20px 0; border-bottom: 2px solid #2ecc71; padding-bottom: 8px;">&#128099; Take the First Step Challenge</h2>
+
+                        <img src="https://openlittermap.com/assets/small-action-big-impact.png" width="540" alt="Small action, big impact - use your smartphone for real-world civic engagement" style="display: block; width: 100%; max-width: 540px; height: auto; margin: 0 auto 18px auto; border-radius: 8px;" />
+
+                        <p>The first step is the hardest. So here's our challenge to you:</p>
+
+                        <p><strong>Tag a TidyTowns group who should take this challenge</strong> to help prepare for Ireland's EU Presidency.</p>
+
+                        <p>The first step is simply learning how to upload your first data point. It gets easier with time &mdash; so we recommend getting <strong>1 data point</strong> uploaded successfully before making a bigger commitment.</p>
+
+                        <p><strong>Today's challenge:</strong> can you record 1 piece of picked-up litter, or make 1 community observation, and upload it to OpenLitterMap?</p>
+
+                        <p>Where do you get stuck? What can we make easier? Email <a href="mailto:info@openlittermap.com">info@openlittermap.com</a> &mdash; we'd love your feedback. &#128071;</p>
 
                         <!-- ═══════════════════════════════════════════ -->
                         <!-- What's improved                            -->
                         <!-- ═══════════════════════════════════════════ -->
                         <h2 style="color: #1a1a2e; font-size: 22px; margin: 30px 0 20px 0; border-bottom: 2px solid #2ecc71; padding-bottom: 8px;">&#128295; What's improved</h2>
 
-                        <p>We've fixed a bunch of real upload and tagging bugs, several reported directly by users:</p>
+                        <p>We've fixed a bunch of real bugs and shipped some improvements, several reported directly by users:</p>
 
                         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0;">
                             <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
-                                <p style="margin: 0;"><strong>iPhone photos now upload.</strong> Apple's HEIC format was being silently rejected &mdash; it's now accepted and converted automatically.</p>
+                                <p style="margin: 0;"><strong>Apple's native .HEIC should be fixed for most users.</strong> This format was being silently rejected &mdash; it's now accepted and converted automatically.</p>
+                            </td></tr>
+                            <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                                <p style="margin: 0;"><strong>Android photos now upload too.</strong> Photos from more Android phones now work, and if one can't be read you'll get a clear message instead of a silent failure.</p>
                             </td></tr>
                             <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
                                 <p style="margin: 0;"><strong>We re-built the &ldquo;Your Photos&rdquo; screen on mobile.</strong> You now see all your location-tagged photos, newest first, with infinite scroll, plus a &ldquo;Select More&rdquo; button to pull extra photos from your gallery.</p>
@@ -118,9 +140,44 @@
                             <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
                                 <p style="margin: 0;"><strong>Failed uploads no longer get stuck in loops</strong> &mdash; including for users on older app versions.</p>
                             </td></tr>
-                            <tr><td style="padding: 14px 0;">
+                            <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                                <p style="margin: 0;"><strong>Logging in is fixed for schools and groups.</strong> People sharing one internet connection (like a school or office) were sometimes getting locked out even with the right password &mdash; that's fixed.</p>
+                            </td></tr>
+                            <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
                                 <p style="margin: 0;"><strong>Map &ldquo;picked up&rdquo; status is now fixed,</strong> and we fixed upload for custom tags with special characters (like &ldquo;Black &amp; Mild&rdquo;) which was failing.</p>
                             </td></tr>
+                            <tr><td style="padding: 14px 0; border-bottom: 1px solid #eeeeee;">
+                                <p style="margin: 0;"><strong>Downloading your data works again.</strong> Data exports (CSV) were failing for some teams &mdash; now fixed.</p>
+                            </td></tr>
+                            <tr><td style="padding: 14px 0;">
+                                <p style="margin: 0;"><strong>Fresh level names</strong> &mdash; e.g. &ldquo;Litter Picker&rdquo;.</p>
+                            </td></tr>
+                        </table>
+
+                        <!-- ═══════════════════════════════════════════ -->
+                        <!-- Get the app                                -->
+                        <!-- ═══════════════════════════════════════════ -->
+                        <p style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 16px; margin: 25px 0 10px 0;"><strong>Don't have the app yet? Start mapping:</strong></p>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 10px 0;">
+                            <tr>
+                                <td align="center">
+                                    <table border="0" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td align="center" bgcolor="#2ecc71" style="border-radius: 6px;">
+                                                <a class="cta-button" href="https://apps.apple.com/ie/app/openlittermap/id1475982147" target="_blank" style="display: inline-block; padding: 14px 30px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: bold;">
+                                                    &#127822; App Store
+                                                </a>
+                                            </td>
+                                            <td width="12"></td>
+                                            <td align="center" bgcolor="#2ecc71" style="border-radius: 6px;">
+                                                <a class="cta-button" href="https://play.google.com/store/apps/details?id=com.geotech.openlittermap" target="_blank" style="display: inline-block; padding: 14px 30px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: bold;">
+                                                    &#129302; Google Play
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
                         </table>
 
                         <!-- ═══════════════════════════════════════════ -->

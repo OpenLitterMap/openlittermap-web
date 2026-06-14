@@ -35,6 +35,11 @@
         </p>
 
         <p>
+            📺 <strong>Watch the recording:</strong>
+            <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank">youtube.com/watch?v=b8DwY3W9UEA</a>
+        </p>
+
+        <p>
             Collecting data on the health of our towns and environment is not just a competition between groups — it's a
             display of collective action. That being said, every data point becomes a record, every tag becomes
             evidence, and the data provides a more balanced way of determining which groups are making the biggest
@@ -60,18 +65,51 @@
         <p>
             We have less than a month before the Presidency begins. I'm looking for <strong>Founding Members</strong> to
             help shape a citizen-led deliverable to help 30,000 TidyTowns members map their impact and tell their story.
-            Our next meeting is Thursday 11th June at 7pm. Email info@openlittermap.com if you are interested in
-            joining.
+            We hold regular planning calls — email info@openlittermap.com and I'll send you the time of the next one.
+        </p>
+
+        <h3>👣 Take the First Step Challenge</h3>
+
+        <img
+            src="/assets/small-action-big-impact.png"
+            alt="Small action, big impact - use your smartphone for real-world civic engagement"
+            class="challenge-img"
+        />
+
+        <p>The first step is the hardest. So here's our challenge to you:</p>
+
+        <p>
+            <strong>Tag a TidyTowns group who should take this challenge</strong> to help prepare for Ireland's EU
+            Presidency.
+        </p>
+
+        <p>
+            The first step is simply learning how to upload your first data point. It gets easier with time — so we
+            recommend getting <strong>1 data point</strong> uploaded successfully before making a bigger commitment.
+        </p>
+
+        <p>
+            <strong>Today's challenge:</strong> can you record 1 piece of picked-up litter, or make 1 community
+            observation, and upload it to OpenLitterMap?
+        </p>
+
+        <p>
+            Where do you get stuck? What can we make easier? Email
+            <a href="mailto:info@openlittermap.com">info@openlittermap.com</a> — we'd love your feedback. 👇
         </p>
 
         <h3>🔧 What's improved</h3>
 
-        <p>We've fixed a bunch of real upload and tagging bugs, several reported directly by users:</p>
+        <p>We've fixed a bunch of real bugs and shipped some improvements, several reported directly by users:</p>
 
         <ul class="features">
             <li>
-                <strong>iPhone photos now upload.</strong> Apple's HEIC format was being silently rejected — it's now
-                accepted and converted automatically.
+                <strong>Apple's native .HEIC should be fixed for most users.</strong> This format was being silently
+                rejected — it's now accepted and converted automatically.
+            </li>
+            <li>
+                <strong>Android photos now upload too.</strong> Photos from more Android phones now work, and if one
+                can't be read you'll get a clear message instead of a silent failure.
             </li>
             <li>
                 <strong>We re-built the "Your Photos" screen on mobile.</strong> You now see all your location-tagged
@@ -83,10 +121,28 @@
                 versions.
             </li>
             <li>
+                <strong>Logging in is fixed for schools and groups.</strong> People sharing one internet connection
+                (like a school or office) were sometimes getting locked out even with the right password — that's
+                fixed.
+            </li>
+            <li>
                 <strong>Map "picked up" status is now fixed,</strong> and we fixed upload for custom tags with special
                 characters (like "Black &amp; Mild") which was failing.
             </li>
+            <li>
+                <strong>Downloading your data works again.</strong> Data exports (CSV) were failing for some teams —
+                now fixed.
+            </li>
+            <li><strong>Fresh level names</strong> — e.g. "Litter Picker".</li>
         </ul>
+
+        <p class="app-links">
+            📲 Don't have the app yet? Get OpenLitterMap on the
+            <a href="https://apps.apple.com/ie/app/openlittermap/id1475982147" target="_blank">App Store</a> or
+            <a href="https://play.google.com/store/apps/details?id=com.geotech.openlittermap" target="_blank"
+                >Google Play</a
+            >.
+        </p>
 
         <h3>📄 The Democracy Gap</h3>
 
@@ -211,6 +267,14 @@
     text-align: center;
     font-size: 1.05rem;
     margin: 1.5rem 0;
+}
+
+.update-content .challenge-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.25rem auto;
+    border-radius: 8px;
 }
 
 .update-content a {
