@@ -108,7 +108,7 @@
                         <!-- ═══════════════════════════════════════════ -->
                         <h2 style="color: #1a1a2e; font-size: 22px; margin: 30px 0 20px 0; border-bottom: 2px solid #2ecc71; padding-bottom: 8px;">&#128099; Take the First Step Challenge</h2>
 
-                        <img src="https://openlittermap.com/assets/small-action-big-impact.png" width="540" alt="Small action, big impact - use your smartphone for real-world civic engagement" style="display: block; width: 100%; max-width: 540px; height: auto; margin: 0 auto 18px auto; border-radius: 8px;" />
+                        <img src="https://openlittermap.com/assets/small-action-big-impact.png" width="270" alt="Small action, big impact - use your smartphone for real-world civic engagement" style="display: block; width: 100%; max-width: 270px; height: auto; margin: 0 auto 18px auto; border-radius: 8px;" />
 
                         <p>The first step is the hardest. So here's our challenge to you:</p>
 

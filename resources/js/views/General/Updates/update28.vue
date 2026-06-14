@@ -71,7 +71,7 @@
         <h3>👣 Take the First Step Challenge</h3>
 
         <img
-            src="/assets/small-action-big-impact.png"
+            :src="'/assets/small-action-big-impact.png'"
             alt="Small action, big impact - use your smartphone for real-world civic engagement"
             class="challenge-img"
         />
@@ -271,7 +271,7 @@
 
 .update-content .challenge-img {
     display: block;
-    max-width: 100%;
+    max-width: 50%;
     height: auto;
     margin: 1.25rem auto;
     border-radius: 8px;
