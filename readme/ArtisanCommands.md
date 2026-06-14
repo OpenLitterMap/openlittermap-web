@@ -65,6 +65,7 @@ These live in `tmp/` and are intended for the v5 migration period only.
 |---------|---------|
 | `seed:tags` | Run GenerateTagsSeeder (required for test DB setup) |
 | `tags:verify-for-user-id {user_id}` | Verify remaining tags for a user |
+| `olm:rebuild-tag-counts` | Rebuild a committed tag-counts JSON — recorded-tag counts per (object, category, type). `--scope=total` (default/omitted) writes `resources/data/tag_usage_counts.json` (all recorded tags, embedded in `/api/tags/all`); `--scope=public` writes `resources/data/tag_counts_public.json` (scoped to `is_public AND verified >= 2` — on-map photos — served by `/api/tags/most-tagged`). Run by hand (no schedule); commit the regenerated file. |
 
 ---
 
