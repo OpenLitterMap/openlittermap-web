@@ -79,8 +79,13 @@
         <p>The first step is the hardest. So here's our challenge to you:</p>
 
         <p>
-            <strong>Tag a TidyTowns group who should take this challenge</strong> to help prepare for Ireland's EU
-            Presidency.
+            <strong>Know a TidyTowns group who should take this challenge?</strong>
+            <a
+                href="https://www.facebook.com/openlittermap/posts/pfbid0324W9khvQ1oGgTRyjyErZGXhgppNPnpVo8mE6WQEQSAaZTgDhdKRDNPvxeDeLGdnGl"
+                target="_blank"
+                >Tag them in the comments on our Facebook post</a
+            >
+            to help prepare for Ireland's EU Presidency.
         </p>
 
         <p>

@@ -112,7 +112,7 @@
 
                         <p>The first step is the hardest. So here's our challenge to you:</p>
 
-                        <p><strong>Tag a TidyTowns group who should take this challenge</strong> to help prepare for Ireland's EU Presidency.</p>
+                        <p><strong>Know a TidyTowns group who should take this challenge?</strong> <a href="https://www.facebook.com/openlittermap/posts/pfbid0324W9khvQ1oGgTRyjyErZGXhgppNPnpVo8mE6WQEQSAaZTgDhdKRDNPvxeDeLGdnGl" target="_blank">Tag them in the comments on our Facebook post</a> to help prepare for Ireland's EU Presidency.</p>
 
                         <p>The first step is simply learning how to upload your first data point. It gets easier with time &mdash; so we recommend getting <strong>1 data point</strong> uploaded successfully before making a bigger commitment.</p>
 
