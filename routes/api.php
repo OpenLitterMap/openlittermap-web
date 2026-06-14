@@ -96,6 +96,7 @@ Route::group(['prefix' => 'v3', 'middleware' => ['auth:sanctum']], function () {
 
 Route::get('/tags', [GetTagsController::class, 'index']);
 Route::get('/tags/all', [GetTagsController::class, 'getAllTags']);
+Route::get('/tags/most-tagged', [GetTagsController::class, 'getMostTagged']);
 Route::get('/points', [PointsController::class, 'index']);
 Route::get('/points/stats', [PointsStatsController::class, 'index']);
 Route::get('/points/{id}', [PointsController::class, 'show'])->where('id', '[0-9]+');
