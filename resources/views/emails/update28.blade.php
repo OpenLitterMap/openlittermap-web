@@ -45,6 +45,26 @@
                 <tr>
                     <td class="email-body" style="padding: 30px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">
 
+                        <!-- ═══════════════════════════════════════════ -->
+                        <!-- 1st TidyTowns Webinar recording (video)    -->
+                        <!-- ═══════════════════════════════════════════ -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 0 0 26px 0;">
+                            <tr>
+                                <td align="center">
+                                    <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank" style="text-decoration: none;">
+                                        <img src="https://img.youtube.com/vi/b8DwY3W9UEA/maxresdefault.jpg" width="540" alt="Watch the 1st TidyTowns Webinar recording on YouTube" style="display: block; width: 100%; max-width: 540px; height: auto; border-radius: 8px; border: 1px solid #dddddd;" />
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding-top: 14px;">
+                                    <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank" style="display: inline-block; background-color: #ff0000; color: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; text-decoration: none; padding: 13px 28px; border-radius: 6px;">
+                                        &#9654;&nbsp; Watch the 1st TidyTowns Webinar
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
                         <p>On Tuesday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland holds the EU Presidency for six months. We're calling on TidyTowns groups &mdash; Ireland's leading volunteer network &mdash; to start documenting their impact with our app and help co-create a citizen-led deliverable for the Presidency.</p>
 
                         <p>Last year, a record 949 TidyTowns groups achieved over 1 Million Hours of volunteer action &mdash; cleaning, planting, painting, repairing, reporting, maintaining. Most of it went undocumented. Some data exists on members devices and was uploaded to Facebook. But social media does not collect data on impact. Social media collects data about people. We are asking members to Change The Platform and upload to a citizen science platform like OpenLitterMap instead of social media to start mapping and quantifying our impact.</p>
@@ -56,9 +76,7 @@
                         <!-- ═══════════════════════════════════════════ -->
                         <h2 style="color: #1a1a2e; font-size: 22px; margin: 30px 0 20px 0; border-bottom: 2px solid #2ecc71; padding-bottom: 8px;">&#127909; 1st TidyTowns Webinar</h2>
 
-                        <p>The response was overwhelming. More than <strong>130 signed up</strong> and <strong>nearly 100 attended</strong>, representing dozens of TidyTowns groups. Many have reached out wanting this story told.</p>
-
-                        <p>&#128250; <strong>Watch the recording:</strong> <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank">youtube.com/watch?v=b8DwY3W9UEA</a></p>
+                        <p>The response was overwhelming. More than <strong>130 signed up</strong> and <strong>nearly 100 attended</strong>, representing dozens of TidyTowns groups. Many have reached out wanting this story told. <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank">Watch the recording above</a>.</p>
 
                         <p>Collecting data on the health of our towns and environment is not just a competition between groups &mdash; it's a display of collective action. That being said, every data point becomes a record, every tag becomes evidence, and the data provides a more balanced way of determining which groups are making the biggest impact.</p>
 

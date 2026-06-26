@@ -2,6 +2,16 @@
     <div class="update-content">
         <h2>Update 28: 1st TidyTowns Webinar, 1 Million Hours &amp; EU Presidency Citizen Science Deliverable</h2>
 
+        <div class="video-embed">
+            <iframe
+                src="https://www.youtube.com/embed/b8DwY3W9UEA"
+                title="1st TidyTowns Webinar — 1 Million Hours &amp; EU Presidency"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+            ></iframe>
+        </div>
+
         <p>
             On Tuesday 2nd June 2026, we hosted the first OpenLitterMap demo for TidyTowns groups. This year, Ireland
             holds the EU Presidency for six months. We're calling on TidyTowns groups — Ireland's leading volunteer
@@ -32,11 +42,7 @@
             The response was overwhelming. More than <strong>130 signed up</strong> and
             <strong>nearly 100 attended</strong>, representing dozens of TidyTowns groups. Many have reached out wanting
             this story told.
-        </p>
-
-        <p>
-            📺 <strong>Watch the recording:</strong>
-            <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank">youtube.com/watch?v=b8DwY3W9UEA</a>
+            <a href="https://www.youtube.com/watch?v=b8DwY3W9UEA" target="_blank">Watch the recording above</a>.
         </p>
 
         <p>
@@ -202,6 +208,26 @@
 .update-content .meta {
     font-size: 0.875rem;
     color: #888;
+}
+
+.update-content .video-embed {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%;
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+}
+
+.update-content .video-embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
 }
 
 .update-content .meeting {
