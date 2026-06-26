@@ -2,13 +2,7 @@ name: Laravel CI
 
 on:
   push:
-    branches:
-      - master
-      - upgrade/tagging-2025
   pull_request:
-    branches:
-      - master
-      - upgrade/tagging-2025
 
 jobs:
   tests:
