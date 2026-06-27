@@ -25,6 +25,7 @@ description: Writing and fixing tests, test factories, Event::fake patterns, aut
 - `tests/Feature/Tags/TaggingArchitecturePhase1Test.php` — 20 tests (seeding, relationships, API, idempotency)
 - `tests/Feature/Tags/ReplacePhotoTagsTest.php` — 5 tests (replace tags, ownership, auth, extra tags cleanup)
 - `tests/Feature/Teams/TeamPhotosTest.php` — 35 tests (new_tags format, CLO tag edits, member stats, safeguarding, delete, revoke, approval, map)
+- `tests/Feature/Email/` — email deliverability: EmailValidation, DispatchEmail, EmailSendLedger (atomic claim/resume/retry), EmailUpdate, EmailWebhook (SNS — bind a fake `Aws\Sns\MessageValidator` via `$this->app->instance()`), EmailSuppressionImport, EmailVerificationMigration
 - `tests/Feature/User/PublicProfileTest.php` — 4 tests (public profile data, private returns, privacy settings, 404)
 - `tests/Feature/Leaderboard/LeaderboardTest.php` — 18 tests (all paths: global, country, state, city scopes)
 - `tests/Feature/Auth/SanctumTokenAuthTest.php` — Mobile token auth tests

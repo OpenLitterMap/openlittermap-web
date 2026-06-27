@@ -50,6 +50,7 @@ All API routes live in `routes/api.php`. The API serves two clients: the Vue 3 S
 | `/api/admin` | `admin` | Admin queue, verify, reset |
 | `/api/bbox` | `can_bbox` | Bounding box annotation |
 | `/api/participant` | varies | School participant session endpoints |
+| `/subscribe`, `/webhooks/*` | web (CSRF-exempt for `webhooks/*`) | Mailing-list signup + AWS SES/SNS bounce-complaint webhook |
 
 ## Invariants
 
@@ -64,6 +65,7 @@ All API routes live in `routes/api.php`. The API serves two clients: the Vue 3 S
 9. **Consistent API field naming convention.** All list/leaderboard endpoints (teams, locations, global stats) use: `total_tags`, `total_photos`, `total_members`, `created_at`, `updated_at`. Never use old names like `total_litter`, `total_images`, `tags`, `photos`, `contributors`.
 9. **Points API returns `page` (not `current_page`).** Frontend normalizes to `current_page` in `pointsHelper.getPaginationData()`.
 10. **Delete account is GDPR-compliant.** Photos are preserved as anonymous contributions (`user_id` set to NULL via DB CASCADE). Redis leaderboards and per-user metrics are cleaned up.
+11. **Email deliverability lives on web routes.** `POST /subscribe` and `POST /webhooks/aws/ses/sns` are in `web.php`, not `/api`. The SNS webhook is CSRF-exempt (`webhooks/*`), verifies the SNS signature + `TopicArn` before anything, reads the raw `text/plain` body (not `$request->all()`), and writes to `email_suppressions`. Both the subscribe endpoint and the `olm:send-email-to-subscribed` dispatch guard share `App\Support\EmailAddress::isSendable()`. See `readme/API.md` → "Webhooks & Mailing List".
 
 ## Patterns
 
