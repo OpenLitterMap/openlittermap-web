@@ -114,7 +114,6 @@ class User extends Authenticatable
 
     protected $casts = [
         'verified' => 'boolean',
-        'email_verified_at' => 'datetime',
         // picked_up is nullable tri-state (true/false/null) — no boolean cast to preserve null
         'show_name' => 'boolean',
         'show_username' => 'boolean',
@@ -385,10 +384,6 @@ class User extends Authenticatable
     public function confirmEmail ()
     {
         $this->verified = true;
-        // Dual-write the Laravel-standard timestamp. `email_verified_at` is the
-        // new source of truth; `verified` is kept in sync (deprecated) for
-        // not-yet-migrated readers. Preserve an existing timestamp on re-confirm.
-        $this->email_verified_at = $this->email_verified_at ?? now();
         $this->token = null;
         $this->save();
 

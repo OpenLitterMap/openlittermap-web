@@ -187,9 +187,7 @@ Config-driven 12-level threshold system in `config/levels.php`.
 | `picked_up` | tinyint | 1 | Default "picked up" state (true = litter was picked up) |
 | `public_photos` | boolean | `true` | Default visibility for new photo uploads |
 | `previous_tags` | int | 0 | Show previous tags when tagging |
-| `emailsub` | int unsigned | 1 | Email subscription (bulk-send eligibility; includes unverified) |
-| `verified` | boolean | 0 | Legacy email-verification flag (deprecated — set by `confirmEmail()`) |
-| `email_verified_at` | timestamp | null | Email-verification timestamp (new source of truth; `confirmEmail()` dual-writes it with `verified`). Backfill: `email:backfill-verified-at` |
+| `emailsub` | int unsigned | 1 | Email subscription |
 | `global_flag` | varchar(255) | null | Country flag for leaderboard |
 | `active_team` | int unsigned | null | FK to active team |
 | `settings` | json | null | Social links JSON bag |
