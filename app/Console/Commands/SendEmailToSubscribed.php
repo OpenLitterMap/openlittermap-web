@@ -46,7 +46,7 @@ class SendEmailToSubscribed extends Command
     {
         // ─── Single untracked preview (no campaign, no ledger) ───────────
         if ($only = $this->option('only-email')) {
-            $email = $this->normalize($only);
+            $email = EmailAddress::normalize($only);
             DispatchEmail::dispatch(null, new EmailRecipient('user', 0, $email, 'preview-token'));
             $this->info("Preview email dispatched to {$email}.");
 
@@ -78,7 +78,7 @@ class SendEmailToSubscribed extends Command
         $staleThreshold = $retryStale !== null ? Carbon::now()->subSeconds((int) $retryStale) : null;
 
         $this->suppressed = EmailSuppression::query()->pluck('email')
-            ->mapWithKeys(fn ($e) => [$this->normalize($e) => true])
+            ->mapWithKeys(fn ($e) => [EmailAddress::normalize($e) => true])
             ->all();
 
         // ─── Tally (read-only) + report ──────────────────────────────────
@@ -129,14 +129,14 @@ class SendEmailToSubscribed extends Command
 
             $verdict = $this->decide($campaign, $email, $staleThreshold, $retryFailed);
 
-            if ($verdict === 'invalid') {
-                $this->logSkip($campaign, $email, $type, $id, 'skipped_invalid');
+            $skipStatus = match ($verdict) {
+                'invalid' => 'skipped_invalid',
+                'suppressed' => 'skipped_suppressed',
+                default => null,
+            };
 
-                return true;
-            }
-
-            if ($verdict === 'suppressed') {
-                $this->logSkip($campaign, $email, $type, $id, 'skipped_suppressed');
+            if ($skipStatus !== null) {
+                $this->logSkip($campaign, $email, $type, $id, $skipStatus);
 
                 return true;
             }
@@ -176,7 +176,7 @@ class SendEmailToSubscribed extends Command
         $this->userQuery()->where('emailsub', 1)->orderBy('id')->select('id', 'email', 'sub_token')
             ->chunk($chunk, function ($users) use ($cb, &$stopped) {
                 foreach ($users as $u) {
-                    if ($cb($this->normalize($u->email), 'user', $u->id, $u->sub_token) === false) {
+                    if ($cb(EmailAddress::normalize($u->email), 'user', $u->id, $u->sub_token) === false) {
                         $stopped = true;
 
                         return false;
@@ -193,7 +193,7 @@ class SendEmailToSubscribed extends Command
         Subscriber::whereNotIn('email', $userEmails)->orderBy('id')->select('id', 'email', 'sub_token')
             ->chunk($chunk, function ($subs) use ($cb) {
                 foreach ($subs as $s) {
-                    if ($cb($this->normalize($s->email), 'subscriber', $s->id, $s->sub_token) === false) {
+                    if ($cb(EmailAddress::normalize($s->email), 'subscriber', $s->id, $s->sub_token) === false) {
                         return false;
                     }
                 }
@@ -305,11 +305,6 @@ class SendEmailToSubscribed extends Command
             ['campaign' => $campaign, 'email' => $email],
             ['recipient_type' => $type, 'recipient_id' => $id, 'status' => $status, 'updated_at' => Carbon::now()],
         );
-    }
-
-    private function normalize(string $email): string
-    {
-        return strtolower(trim($email));
     }
 
     private function reportLine(string $label, int $value): string

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Webhooks;
 use App\Http\Controllers\Controller;
 use App\Models\EmailEvent;
 use App\Models\EmailSuppression;
+use App\Support\EmailAddress;
 use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
 use Illuminate\Http\Request;
@@ -92,7 +93,7 @@ class SesSnsWebhookController extends Controller
         $suppress = strtoupper((string) $subtype) === 'PERMANENT';
 
         foreach ($bounce['bouncedRecipients'] ?? [] as $recipient) {
-            $email = $this->normalize($recipient['emailAddress'] ?? '');
+            $email = EmailAddress::normalize($recipient['emailAddress'] ?? '');
 
             if ($email === '') {
                 continue;
@@ -114,7 +115,7 @@ class SesSnsWebhookController extends Controller
         $at = $this->timestamp($complaint['timestamp'] ?? null);
 
         foreach ($complaint['complainedRecipients'] ?? [] as $recipient) {
-            $email = $this->normalize($recipient['emailAddress'] ?? '');
+            $email = EmailAddress::normalize($recipient['emailAddress'] ?? '');
 
             if ($email === '') {
                 continue;
@@ -147,10 +148,5 @@ class SesSnsWebhookController extends Controller
         } catch (Throwable) {
             return null;
         }
-    }
-
-    private function normalize(string $email): string
-    {
-        return strtolower(trim($email));
     }
 }

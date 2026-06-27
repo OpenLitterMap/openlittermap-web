@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\EmailAddress;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 
@@ -38,7 +39,7 @@ class EmailSuppression extends Model
         string $source,
         ?DateTimeInterface $suppressedAt = null
     ): self {
-        $email = strtolower(trim($email));
+        $email = EmailAddress::normalize($email);
 
         $existing = static::query()->where('email', $email)->first();
 

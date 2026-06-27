@@ -5,15 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Forward-compat column for email verification. The app's legacy verification
- * state lives in `users.verified` (boolean), set via User::confirmEmail() when
- * the welcome "Verify Your Email" button is pressed. This adds the
- * Laravel-standard `email_verified_at` timestamp; from this release the verify
- * handler dual-writes both. A prod backfill (see readme/sql/) sets
- * email_verified_at = created_at for existing verified users.
- *
- * `verified` is kept (deprecated) for not-yet-migrated readers; a later pass
- * migrates remaining readers and drops it.
+ * Forward-compat Laravel-standard email-verification timestamp. From this
+ * release User::confirmEmail() dual-writes it alongside the legacy
+ * `users.verified` boolean; `email:backfill-verified-at` backfills existing
+ * verified users. `verified` is kept (deprecated) for not-yet-migrated readers.
  */
 return new class extends Migration
 {
