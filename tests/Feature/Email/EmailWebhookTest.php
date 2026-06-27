@@ -162,4 +162,22 @@ class EmailWebhookTest extends TestCase
         $this->assertDatabaseCount('email_events', 0);
         $this->assertDatabaseCount('email_suppressions', 0);
     }
+
+    public function test_subscription_confirmation_failure_returns_non_2xx_so_sns_retries(): void
+    {
+        Http::fake(['*' => Http::response('', 500)]);
+
+        $this->postJson(self::URL, [
+            'Type' => 'SubscriptionConfirmation',
+            'MessageId' => 'sub-2',
+            'Token' => 'tok-456',
+            'TopicArn' => self::TOPIC,
+            'Message' => 'You have chosen to subscribe',
+            'SubscribeURL' => 'https://sns.eu-west-1.amazonaws.com/confirm?Token=tok-456',
+            'Timestamp' => '2026-06-27T10:00:00.000Z',
+            'SignatureVersion' => '1',
+            'Signature' => 'sig',
+            'SigningCertURL' => 'https://sns.eu-west-1.amazonaws.com/cert.pem',
+        ])->assertStatus(502);
+    }
 }

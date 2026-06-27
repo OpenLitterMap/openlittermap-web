@@ -198,6 +198,17 @@ class EmailSendLedgerTest extends TestCase
             ->assertFailed();
     }
 
+    public function test_retry_stale_queued_rejects_zero_or_negative(): void
+    {
+        // A typo like =0 would make every in-flight queued row "stale" and double-send.
+        $this->artisan('olm:send-email-to-subscribed', ['--campaign' => 'update28', '--retry-stale-queued' => 0])
+            ->assertFailed();
+        $this->artisan('olm:send-email-to-subscribed', ['--campaign' => 'update28', '--retry-stale-queued' => -5])
+            ->assertFailed();
+        $this->artisan('olm:send-email-to-subscribed', ['--campaign' => 'update28', '--retry-stale-queued' => 'abc'])
+            ->assertFailed();
+    }
+
     public function test_only_email_dispatches_single_untracked_preview(): void
     {
         Bus::fake();

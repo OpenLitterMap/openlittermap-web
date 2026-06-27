@@ -78,4 +78,19 @@ class DispatchEmailTest extends TestCase
         $this->assertStringContainsString('tok-123', $html);
         $this->assertStringContainsString('unsubscribe', $html);
     }
+
+    /**
+     * RateLimited releases a throttled job back to the queue, which increments
+     * attempts — a fixed $tries would strand valid recipients as `failed`
+     * during a bulk run. Time-based attempts (retryUntil) avoid that; genuine
+     * send failures are still bounded by $maxExceptions.
+     */
+    public function test_uses_time_based_retry_window_not_fixed_tries(): void
+    {
+        $job = new DispatchEmail(null, $this->recipient());
+
+        $this->assertInstanceOf(\DateTimeInterface::class, $job->retryUntil());
+        $this->assertTrue($job->retryUntil() > now());
+        $this->assertSame(3, $job->maxExceptions);
+    }
 }

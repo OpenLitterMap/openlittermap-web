@@ -36,6 +36,9 @@ class SendEmailToSubscribed extends Command
 
     private const CONFIRM_PROMPT = 'Queue these emails now?';
 
+    /** Floor for --retry-stale-queued: a queued row must be older than this to reclaim. */
+    private const MIN_STALE_SECONDS = 60;
+
     /** @var array<string, true> normalized suppressed emails */
     private array $suppressed = [];
 
@@ -62,7 +65,16 @@ class SendEmailToSubscribed extends Command
         $dryRun = (bool) $this->option('dry-run');
         $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
         $retryFailed = (bool) $this->option('retry-failed');
+
         $retryStale = $this->option('retry-stale-queued');
+
+        if ($retryStale !== null && (! ctype_digit((string) $retryStale) || (int) $retryStale < self::MIN_STALE_SECONDS)) {
+            $this->error('--retry-stale-queued must be a positive integer of at least ' . self::MIN_STALE_SECONDS
+                . ' (seconds). A small value would reclaim genuinely in-flight rows and double-send.');
+
+            return self::FAILURE;
+        }
+
         $staleThreshold = $retryStale !== null ? Carbon::now()->subSeconds((int) $retryStale) : null;
 
         $this->suppressed = EmailSuppression::query()->pluck('email')
@@ -79,7 +91,7 @@ class SendEmailToSubscribed extends Command
         });
 
         $userEmails = User::withoutGlobalScopes()->select('email');
-        $eligibleUsers = User::where('emailsub', 1)->count();
+        $eligibleUsers = $this->userQuery()->where('emailsub', 1)->count();
         $eligibleSubscribers = Subscriber::whereNotIn('email', $userEmails)->count();
         $duplicate = Subscriber::count() - $eligibleSubscribers;
         $willDispatch = $limit !== null ? min($verdicts['dispatch'], $limit) : $verdicts['dispatch'];
@@ -161,31 +173,42 @@ class SendEmailToSubscribed extends Command
         $userEmails = User::withoutGlobalScopes()->select('email');
         $stopped = false;
 
-        User::where('emailsub', 1)->orderBy('id')->chunk($chunk, function ($users) use ($cb, &$stopped) {
-            foreach ($users as $u) {
-                if ($cb($this->normalize($u->email), 'user', $u->id, $u->sub_token) === false) {
-                    $stopped = true;
+        $this->userQuery()->where('emailsub', 1)->orderBy('id')->select('id', 'email', 'sub_token')
+            ->chunk($chunk, function ($users) use ($cb, &$stopped) {
+                foreach ($users as $u) {
+                    if ($cb($this->normalize($u->email), 'user', $u->id, $u->sub_token) === false) {
+                        $stopped = true;
 
-                    return false;
+                        return false;
+                    }
                 }
-            }
 
-            return true;
-        });
+                return true;
+            });
 
         if ($stopped) {
             return;
         }
 
-        Subscriber::whereNotIn('email', $userEmails)->orderBy('id')->chunk($chunk, function ($subs) use ($cb) {
-            foreach ($subs as $s) {
-                if ($cb($this->normalize($s->email), 'subscriber', $s->id, $s->sub_token) === false) {
-                    return false;
+        Subscriber::whereNotIn('email', $userEmails)->orderBy('id')->select('id', 'email', 'sub_token')
+            ->chunk($chunk, function ($subs) use ($cb) {
+                foreach ($subs as $s) {
+                    if ($cb($this->normalize($s->email), 'subscriber', $s->id, $s->sub_token) === false) {
+                        return false;
+                    }
                 }
-            }
 
-            return true;
-        });
+                return true;
+            });
+    }
+
+    /**
+     * Lean user query for the bulk send: drops the photosCount global scope and
+     * the model's default eager loads ($with), which are pure overhead here.
+     */
+    private function userQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return User::query()->withoutGlobalScope('photosCount')->setEagerLoads([]);
     }
 
     /**

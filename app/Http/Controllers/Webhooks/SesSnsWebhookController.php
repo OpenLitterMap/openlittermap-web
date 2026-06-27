@@ -41,7 +41,11 @@ class SesSnsWebhookController extends Controller
 
         if ($message['Type'] === 'SubscriptionConfirmation') {
             if (! empty($message['SubscribeURL'])) {
-                Http::get($message['SubscribeURL']);
+                // If confirmation fails, return non-2xx so SNS retries delivery
+                // — otherwise the subscription is left silently pending.
+                if (! Http::get($message['SubscribeURL'])->successful()) {
+                    return response('Subscription confirmation failed', 502);
+                }
             }
 
             return response('OK', 200);
