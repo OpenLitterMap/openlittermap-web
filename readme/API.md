@@ -2816,7 +2816,7 @@ All removed 2026-03-01 (legacy v1/v2 mobile + pre-v5 web). Mobile and web now us
 
 ### POST /subscribe — Mailing list signup (public)
 
-Body: `{ "email": "name@example.com" }`. Validated with `required|max:100|email`, the shared `EmailAddress::isSendable()` deliverability check (rejects RFC-valid single-label domains like `foo@8`), and `unique:subscribers`. Returns `{ "success": true }` (200) or `422` with `email` validation errors. If the email belongs to a registered user, that user is resubscribed (`emailsub = 1`) instead of creating a subscriber row — the send command excludes user-owned subscriber rows, so a standalone row would never be mailed.
+Body: `{ "email": "name@example.com" }`. A plain newsletter signup for anonymous visitors — it does not assume or touch user accounts. Validated with `required|max:100|email`, the shared `EmailAddress::isSendable()` deliverability check (rejects RFC-valid single-label domains like `foo@8`), and `unique:subscribers`. Returns `{ "success": true }` (200) or `422` with `email` validation errors.
 
 ### POST /webhooks/aws/ses/sns — SES bounce/complaint notifications (AWS SNS)
 

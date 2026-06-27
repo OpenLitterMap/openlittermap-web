@@ -167,26 +167,4 @@ class EmailSubscriptionTest extends TestCase
         $response->assertJsonValidationErrors('email');
     }
 
-    public function test_subscribing_a_registered_user_email_resubscribes_them_without_a_subscriber_row(): void
-    {
-        $user = User::factory()->create(['email' => 'member@example.com', 'emailsub' => 0]);
-
-        $response = $this->postJson('/subscribe', ['email' => 'member@example.com']);
-
-        $response->assertOk();
-        $response->assertJson(['success' => true]);
-        $this->assertEquals(1, $user->fresh()->emailsub);
-        // No orphan subscriber row — the send command would have excluded it anyway.
-        $this->assertDatabaseMissing('subscribers', ['email' => 'member@example.com']);
-    }
-
-    public function test_subscribing_a_registered_user_email_is_case_insensitive(): void
-    {
-        $user = User::factory()->create(['email' => 'Mixed@Example.com', 'emailsub' => 0]);
-
-        $this->postJson('/subscribe', ['email' => 'mixed@example.com'])->assertOk();
-
-        $this->assertEquals(1, $user->fresh()->emailsub);
-        $this->assertDatabaseMissing('subscribers', ['email' => 'mixed@example.com']);
-    }
 }
