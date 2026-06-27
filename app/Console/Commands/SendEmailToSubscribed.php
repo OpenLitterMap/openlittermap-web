@@ -71,10 +71,18 @@ class SendEmailToSubscribed extends Command
         $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
         $retryFailed = (bool) $this->option('retry-failed');
 
-        $staleThreshold = $this->staleThreshold();
+        $retryStale = $this->option('retry-stale-queued');
+        $staleThreshold = null;
 
-        if ($staleThreshold === false) {
-            return self::FAILURE;
+        if ($retryStale !== null) {
+            if (! ctype_digit((string) $retryStale) || (int) $retryStale < self::MIN_STALE_SECONDS) {
+                $this->error('--retry-stale-queued must be a positive integer of at least ' . self::MIN_STALE_SECONDS
+                    . ' (seconds). A small value would reclaim genuinely in-flight rows and double-send.');
+
+                return self::FAILURE;
+            }
+
+            $staleThreshold = Carbon::now()->subSeconds((int) $retryStale);
         }
 
         $this->suppressed = EmailSuppression::query()->pluck('email')
@@ -90,7 +98,7 @@ class SendEmailToSubscribed extends Command
         }
 
         // ─── The send: stream recipient → prepare ledger → dispatch ──────
-        $summary = ['dispatch' => 0, 'accepted' => 0, 'queued' => 0, 'failed' => 0, 'invalid' => 0, 'suppressed' => 0];
+        $summary = ['dispatch' => 0, 'invalid' => 0, 'suppressed' => 0];
         $dispatched = 0;
 
         foreach ($this->recipients($campaign, $chunk) as [$recipient, $row]) {
@@ -98,7 +106,8 @@ class SendEmailToSubscribed extends Command
                 break;
             }
 
-            $sendId = $this->prepare($campaign, $recipient, $row, $dryRun, $retryFailed, $staleThreshold, $summary);
+            [$outcome, $sendId] = $this->prepare($campaign, $recipient, $row, $dryRun, $retryFailed, $staleThreshold);
+            $summary[$outcome] = ($summary[$outcome] ?? 0) + 1;
 
             if ($sendId !== null) {
                 DispatchEmail::dispatch($sendId, $recipient);
@@ -144,16 +153,16 @@ class SendEmailToSubscribed extends Command
     private function streamPass(string $campaign, int $chunk, string $type, $query): Generator
     {
         foreach ($query->lazyById($chunk)->chunk($chunk) as $group) {
-            $emails = $group->map(fn ($r) => EmailAddress::normalize($r->email));
+            $normalized = $group->mapWithKeys(fn ($r) => [$r->id => EmailAddress::normalize($r->email)])->all();
 
             $ledger = EmailSend::query()
                 ->where('campaign', $campaign)
-                ->whereIn('email', $emails->all())
+                ->whereIn('email', array_values(array_unique($normalized)))
                 ->get(['id', 'email', 'status', 'updated_at'])
                 ->keyBy('email');
 
             foreach ($group as $r) {
-                $email = EmailAddress::normalize($r->email);
+                $email = $normalized[$r->id];
 
                 yield [
                     new EmailRecipient($type, $r->id, $email, (string) $r->sub_token),
@@ -165,38 +174,32 @@ class SendEmailToSubscribed extends Command
 
     /**
      * Decide what to do with one recipient and do it: classify against the
-     * ledger row + suppression list, then either claim a row for dispatch
-     * (returns its id), record a skip, or leave an already-handled/in-flight row
-     * alone (returns null). Tallies the outcome into $summary. Writes nothing
-     * in dry-run.
+     * ledger row + suppression list, then either claim a row for dispatch, record
+     * a skip, or leave an already-handled/in-flight row alone. Writes nothing in
+     * dry-run. Returns [outcome, ?sendId] — sendId is set only when a row was
+     * actually claimed for dispatch.
+     *
+     * @return array{0: string, 1: ?int}
      */
-    private function prepare(string $campaign, EmailRecipient $r, ?EmailSend $row, bool $dryRun, bool $retryFailed, ?Carbon $staleThreshold, array &$summary): ?int
+    private function prepare(string $campaign, EmailRecipient $r, ?EmailSend $row, bool $dryRun, bool $retryFailed, ?Carbon $staleThreshold): array
     {
         $verdict = $this->classify($row, $r->email, $staleThreshold, $retryFailed);
 
         if ($verdict !== 'dispatch') {
-            $summary[$verdict]++;
-
             if (! $dryRun && ($verdict === 'invalid' || $verdict === 'suppressed')) {
                 $this->logSkip($campaign, $r, 'skipped_' . $verdict);
             }
 
-            return null;
+            return [$verdict, null];
         }
 
         if ($dryRun) {
-            $summary['dispatch']++;
-
-            return null;
+            return ['dispatch', null];
         }
 
         $sendId = $this->claim($campaign, $r, $row, $retryFailed, $staleThreshold);
 
-        if ($sendId !== null) {
-            $summary['dispatch']++;
-        }
-
-        return $sendId;
+        return $sendId !== null ? ['dispatch', $sendId] : ['skipped', null];
     }
 
     /**
@@ -312,28 +315,6 @@ class SendEmailToSubscribed extends Command
         $this->line($this->reportLine('Eligible subscribers:', $eligibleSubscribers));
         $this->line($this->reportLine('Duplicate skipped:', Subscriber::count() - $eligibleSubscribers));
         $this->line($this->reportLine('Already accepted:', EmailSend::query()->where('campaign', $campaign)->where('status', 'accepted')->count()));
-    }
-
-    /**
-     * Parsed --retry-stale-queued threshold: null when unset, a Carbon cutoff
-     * when valid, or false (after printing an error) when the value is invalid.
-     */
-    private function staleThreshold(): Carbon|false|null
-    {
-        $value = $this->option('retry-stale-queued');
-
-        if ($value === null) {
-            return null;
-        }
-
-        if (! ctype_digit((string) $value) || (int) $value < self::MIN_STALE_SECONDS) {
-            $this->error('--retry-stale-queued must be a positive integer of at least ' . self::MIN_STALE_SECONDS
-                . ' (seconds). A small value would reclaim genuinely in-flight rows and double-send.');
-
-            return false;
-        }
-
-        return Carbon::now()->subSeconds((int) $value);
     }
 
     /**

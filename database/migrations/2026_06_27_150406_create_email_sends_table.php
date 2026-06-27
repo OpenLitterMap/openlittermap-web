@@ -6,8 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Campaign ledger. One row per (campaign, normalized email); the unique key is
- * the atomic claim lock that makes a bulk send resumable. `skipped_duplicate`
- * is intentionally not a status — duplicates are a report-only counter.
+ * the atomic claim lock that makes a bulk send resumable.
  */
 return new class extends Migration
 {

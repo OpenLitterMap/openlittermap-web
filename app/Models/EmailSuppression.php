@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use App\Support\EmailAddress;
-use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+use Throwable;
 
 /**
  * Source of truth for undeliverable addresses (one row per normalized email).
@@ -32,14 +33,18 @@ class EmailSuppression extends Model
     /**
      * Upsert a suppression by email, enforcing the precedence rule:
      * a complaint outranks a bounce and must never be downgraded.
+     *
+     * $suppressedAt is the raw event timestamp (e.g. from SES); it is parsed
+     * leniently and ignored if unparseable.
      */
     public static function suppress(
         string $email,
         string $reason,
         string $source,
-        ?DateTimeInterface $suppressedAt = null
+        ?string $suppressedAt = null
     ): self {
         $email = EmailAddress::normalize($email);
+        $at = static::parseTimestamp($suppressedAt);
 
         $existing = static::query()->where('email', $email)->first();
 
@@ -51,7 +56,7 @@ class EmailSuppression extends Model
             $existing->update([
                 'reason' => $reason,
                 'source' => $source,
-                'suppressed_at' => $suppressedAt ?? $existing->suppressed_at,
+                'suppressed_at' => $at ?? $existing->suppressed_at,
             ]);
 
             return $existing;
@@ -61,7 +66,20 @@ class EmailSuppression extends Model
             'email' => $email,
             'reason' => $reason,
             'source' => $source,
-            'suppressed_at' => $suppressedAt,
+            'suppressed_at' => $at,
         ]);
+    }
+
+    private static function parseTimestamp(?string $value): ?Carbon
+    {
+        if (! $value) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

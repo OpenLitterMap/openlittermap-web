@@ -10,7 +10,6 @@ use Aws\Sns\Message;
 use Aws\Sns\MessageValidator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -83,7 +82,7 @@ class SesSnsWebhookController extends Controller
     {
         $bounce = $ses['bounce'] ?? [];
         $subtype = $bounce['bounceType'] ?? null;
-        $at = $this->timestamp($bounce['timestamp'] ?? null);
+        $at = $bounce['timestamp'] ?? null;
 
         // Transient bounces are soft — ignore entirely.
         if (strtoupper((string) $subtype) === 'TRANSIENT') {
@@ -112,7 +111,7 @@ class SesSnsWebhookController extends Controller
     {
         $complaint = $ses['complaint'] ?? [];
         $subtype = $complaint['complaintFeedbackType'] ?? null;
-        $at = $this->timestamp($complaint['timestamp'] ?? null);
+        $at = $complaint['timestamp'] ?? null;
 
         foreach ($complaint['complainedRecipients'] ?? [] as $recipient) {
             $email = EmailAddress::normalize($recipient['emailAddress'] ?? '');
@@ -135,18 +134,5 @@ class SesSnsWebhookController extends Controller
             ['sns_id' => $snsId, 'email' => $email],
             ['type' => $type, 'subtype' => $subtype, 'payload' => $payload],
         );
-    }
-
-    private function timestamp(?string $value): ?Carbon
-    {
-        if (! $value) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($value);
-        } catch (Throwable) {
-            return null;
-        }
     }
 }

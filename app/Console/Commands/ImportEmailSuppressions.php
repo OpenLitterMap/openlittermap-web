@@ -4,8 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\EmailSuppression;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
-use Throwable;
 
 /**
  * Imports the SES account-level suppression list (region-wide hard
@@ -53,7 +51,7 @@ class ImportEmailSuppressions extends Command
                 continue;
             }
 
-            EmailSuppression::suppress($email, $reason, 'backfill', $this->parseTime($row['LastUpdateTime'] ?? null));
+            EmailSuppression::suppress($email, $reason, 'backfill', $row['LastUpdateTime'] ?? null);
             $imported++;
         }
 
@@ -69,18 +67,5 @@ class ImportEmailSuppressions extends Command
             'COMPLAINT' => 'complained',
             default => null,
         };
-    }
-
-    private function parseTime(?string $value): ?Carbon
-    {
-        if (! $value) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($value);
-        } catch (Throwable) {
-            return null;
-        }
     }
 }
