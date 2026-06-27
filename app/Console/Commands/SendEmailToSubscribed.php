@@ -84,8 +84,8 @@ class SendEmailToSubscribed extends Command
         // ─── Tally (read-only) + report ──────────────────────────────────
         $verdicts = ['accepted' => 0, 'queued' => 0, 'failed' => 0, 'invalid' => 0, 'suppressed' => 0, 'dispatch' => 0];
 
-        $this->eachCandidate($chunk, function (string $email) use ($campaign, $staleThreshold, $retryFailed, &$verdicts) {
-            $verdicts[$this->decide($campaign, $email, $staleThreshold, $retryFailed)]++;
+        $this->eachCandidate($campaign, $chunk, function (string $email, string $type, int $id, ?string $token, ?EmailSend $row) use ($staleThreshold, $retryFailed, &$verdicts) {
+            $verdicts[$this->decide($row, $email, $staleThreshold, $retryFailed)]++;
 
             return true;
         });
@@ -121,13 +121,13 @@ class SendEmailToSubscribed extends Command
         // ─── Execute: claim + dispatch ───────────────────────────────────
         $dispatched = 0;
 
-        $this->eachCandidate($chunk, function (string $email, string $type, int $id, ?string $token)
+        $this->eachCandidate($campaign, $chunk, function (string $email, string $type, int $id, ?string $token, ?EmailSend $row)
             use ($campaign, $staleThreshold, $retryFailed, $limit, &$dispatched) {
             if ($limit !== null && $dispatched >= $limit) {
                 return false;
             }
 
-            $verdict = $this->decide($campaign, $email, $staleThreshold, $retryFailed);
+            $verdict = $this->decide($row, $email, $staleThreshold, $retryFailed);
 
             $skipStatus = match ($verdict) {
                 'invalid' => 'skipped_invalid',
@@ -145,7 +145,7 @@ class SendEmailToSubscribed extends Command
                 return true; // accepted / queued (in-flight) / failed (terminal) → leave as-is
             }
 
-            $rowId = $this->claim($campaign, $email, $type, $id, $retryFailed, $staleThreshold);
+            $rowId = $this->claim($campaign, $email, $type, $id, $row, $retryFailed, $staleThreshold);
 
             if ($rowId === null) {
                 return true; // another worker won the claim
@@ -164,23 +164,22 @@ class SendEmailToSubscribed extends Command
 
     /**
      * Iterate users (emailsub=1) then subscribers deduped against ALL user
-     * emails. The callback receives (email, type, id, token); returning false
-     * stops iteration. Subscribers whose email belongs to any user are skipped
-     * here (the user pass governs them) and counted as duplicates in the report.
+     * emails. The callback receives (email, type, id, token, ?ledgerRow);
+     * returning false stops iteration. Subscribers whose email belongs to any
+     * user are skipped here (the user pass governs them) and counted as
+     * duplicates in the report. Uses chunkById (keyset) for stable, fast paging.
      */
-    private function eachCandidate(int $chunk, callable $cb): void
+    private function eachCandidate(string $campaign, int $chunk, callable $cb): void
     {
         $userEmails = User::withoutGlobalScopes()->select('email');
         $stopped = false;
 
-        $this->userQuery()->where('emailsub', 1)->orderBy('id')->select('id', 'email', 'sub_token')
-            ->chunk($chunk, function ($users) use ($cb, &$stopped) {
-                foreach ($users as $u) {
-                    if ($cb(EmailAddress::normalize($u->email), 'user', $u->id, $u->sub_token) === false) {
-                        $stopped = true;
+        $this->userQuery()->where('emailsub', 1)->select('id', 'email', 'sub_token')
+            ->chunkById($chunk, function ($users) use ($campaign, $cb, &$stopped) {
+                if ($this->runChunk($campaign, $users, 'user', $cb) === false) {
+                    $stopped = true;
 
-                        return false;
-                    }
+                    return false;
                 }
 
                 return true;
@@ -190,16 +189,36 @@ class SendEmailToSubscribed extends Command
             return;
         }
 
-        Subscriber::whereNotIn('email', $userEmails)->orderBy('id')->select('id', 'email', 'sub_token')
-            ->chunk($chunk, function ($subs) use ($cb) {
-                foreach ($subs as $s) {
-                    if ($cb(EmailAddress::normalize($s->email), 'subscriber', $s->id, $s->sub_token) === false) {
-                        return false;
-                    }
-                }
+        Subscriber::whereNotIn('email', $userEmails)->select('id', 'email', 'sub_token')
+            ->chunkById($chunk, fn ($subs) => $this->runChunk($campaign, $subs, 'subscriber', $cb));
+    }
 
-                return true;
-            });
+    /**
+     * Classify one chunk: batch-load the campaign's ledger rows for these emails
+     * in a single query (avoids an N+1 of per-candidate lookups), then invoke
+     * the callback with the matching row. Returns false to stop iteration.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\Users\User|\App\Subscriber>  $rows
+     */
+    private function runChunk(string $campaign, $rows, string $type, callable $cb): bool
+    {
+        $emails = $rows->map(fn ($r) => EmailAddress::normalize($r->email));
+
+        $ledger = EmailSend::query()
+            ->where('campaign', $campaign)
+            ->whereIn('email', $emails->all())
+            ->get(['id', 'email', 'status', 'updated_at'])
+            ->keyBy('email');
+
+        foreach ($rows as $r) {
+            $email = EmailAddress::normalize($r->email);
+
+            if ($cb($email, $type, $r->id, $r->sub_token, $ledger->get($email)) === false) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -212,16 +231,13 @@ class SendEmailToSubscribed extends Command
     }
 
     /**
-     * Classify a candidate without writing anything.
+     * Classify a candidate without writing anything, using the ledger row
+     * preloaded for this chunk (null if none).
      *
      * @return string accepted|queued|failed|invalid|suppressed|dispatch
      */
-    private function decide(string $campaign, string $email, ?Carbon $staleThreshold, bool $retryFailed): string
+    private function decide(?EmailSend $row, string $email, ?Carbon $staleThreshold, bool $retryFailed): string
     {
-        $row = EmailSend::query()
-            ->where('campaign', $campaign)->where('email', $email)
-            ->first(['status', 'updated_at']);
-
         if ($row) {
             if ($row->status === 'accepted') {
                 return 'accepted';
@@ -251,49 +267,55 @@ class SendEmailToSubscribed extends Command
     }
 
     /**
-     * Atomically claim a row for dispatch: re-claim a reclaimable existing row,
-     * else insert a fresh one. The unique key blocks concurrent double-claims.
+     * Atomically claim a row for dispatch. When no ledger row exists (the
+     * common first-run case) we go straight to insert — no wasted reclaim
+     * UPDATE. When a reclaimable row exists we re-claim it; the WHERE re-checks
+     * reclaimability so a concurrent state change can't double-dispatch.
      * Returns the ledger row id, or null if another worker already owns it.
      */
-    private function claim(string $campaign, string $email, string $type, int $id, bool $retryFailed, ?Carbon $staleThreshold): ?int
+    private function claim(string $campaign, string $email, string $type, int $id, ?EmailSend $row, bool $retryFailed, ?Carbon $staleThreshold): ?int
     {
         $now = Carbon::now();
-        $reclaimable = ['skipped_invalid', 'skipped_suppressed'];
 
-        if ($retryFailed) {
-            $reclaimable[] = 'failed';
+        if ($row) {
+            $reclaimable = ['skipped_invalid', 'skipped_suppressed'];
+
+            if ($retryFailed) {
+                $reclaimable[] = 'failed';
+            }
+
+            $updated = EmailSend::query()
+                ->where('campaign', $campaign)->where('email', $email)
+                ->where(function ($q) use ($reclaimable, $staleThreshold) {
+                    $q->whereIn('status', $reclaimable);
+
+                    if ($staleThreshold) {
+                        $q->orWhere(fn ($q2) => $q2->where('status', 'queued')->where('updated_at', '<', $staleThreshold));
+                    }
+                })
+                ->update([
+                    'status' => 'queued',
+                    'recipient_type' => $type,
+                    'recipient_id' => $id,
+                    'updated_at' => $now,
+                ]);
+
+            // Row was no longer reclaimable (e.g. it became accepted meanwhile).
+            return $updated > 0 ? $row->id : null;
         }
 
-        $updated = EmailSend::query()
-            ->where('campaign', $campaign)->where('email', $email)
-            ->where(function ($q) use ($reclaimable, $staleThreshold) {
-                $q->whereIn('status', $reclaimable);
+        $inserted = EmailSend::insertOrIgnore([
+            'campaign' => $campaign,
+            'email' => $email,
+            'recipient_type' => $type,
+            'recipient_id' => $id,
+            'status' => 'queued',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
 
-                if ($staleThreshold) {
-                    $q->orWhere(fn ($q2) => $q2->where('status', 'queued')->where('updated_at', '<', $staleThreshold));
-                }
-            })
-            ->update([
-                'status' => 'queued',
-                'recipient_type' => $type,
-                'recipient_id' => $id,
-                'updated_at' => $now,
-            ]);
-
-        if ($updated === 0) {
-            $inserted = EmailSend::insertOrIgnore([
-                'campaign' => $campaign,
-                'email' => $email,
-                'recipient_type' => $type,
-                'recipient_id' => $id,
-                'status' => 'queued',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-
-            if (! $inserted) {
-                return null; // already queued/accepted, or a concurrent worker won
-            }
+        if (! $inserted) {
+            return null; // a concurrent worker inserted it first
         }
 
         return EmailSend::query()->where('campaign', $campaign)->where('email', $email)->value('id');
