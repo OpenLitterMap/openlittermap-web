@@ -59,6 +59,7 @@
 
                         <router-link v-if="auth && !onboardingCompleted" to="/onboarding" class="nav-item text-amber-400 hover:text-amber-300" @click="closeMenu">{{ t('Onboarding') }}</router-link>
                         <router-link to="/profile" class="nav-item" @click="closeMenu">{{ t('Profile') }}</router-link>
+                        <router-link to="/uploads" class="nav-item" @click="closeMenu">{{ t('My Uploads') }}</router-link>
                         <router-link to="/teams" class="nav-item relative" @click="closeMenu">
                             {{ t('Teams') }}
                             <span
@@ -146,6 +147,12 @@
                                 class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
                                 @click="webDropdownOpen = false"
                             >{{ t('Profile') }}</router-link>
+
+                            <router-link
+                                to="/uploads"
+                                class="block px-4 py-2 text-white/70 hover:bg-white/5 hover:text-amber-400 transition-colors"
+                                @click="webDropdownOpen = false"
+                            >{{ t('My Uploads') }}</router-link>
 
                             <router-link
                                 to="/teams"

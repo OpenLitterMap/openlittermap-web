@@ -12,6 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array
      */
     protected $except = [
-        'stripe/*'
+        'stripe/*',
+        'webhooks/*', // AWS SNS posts externally with no session/CSRF token
     ];
 }

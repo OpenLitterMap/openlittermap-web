@@ -118,7 +118,27 @@ These are legacy commands that write to old Redis key patterns. May be supersede
 | `global:reset-results-string` | Reset all result_strings to null |
 | `olm:generate-daily-leaderboards` | Generate daily leaderboard snapshots |
 | `olm:check-daily-for-upload` | Check if contributing users uploaded today |
-| `olm:send-email-to-subscribed` | Send email to all subscribed users |
+| `olm:send-email-to-subscribed --campaign=<key>` | Ledger-tracked campaign send to subscribed users + subscribers (resumable) |
+| `email:import-suppressions {file}` | Import the SES account-level suppression list (backfill) |
+| `email:backfill-verified-at [--apply]` | Backfill `users.email_verified_at = created_at` for legacy verified users (dry-run by default) |
 | `olm:unify-translation-files {path}` | Copy missing translation keys from English |
 | `littercoin:reset` | Reset littercoin owed to all users |
 | `school:assign-manager {email}` | Assign school_manager role to a user |
+
+### `olm:send-email-to-subscribed` (email deliverability)
+
+Sends a campaign email to subscribed users (`emailsub=1`, includes unverified) and standalone subscribers, recording every recipient in the `email_sends` ledger so a send is resumable and a resend never re-mails accepted recipients.
+
+| Switch | Effect |
+|--------|--------|
+| `--campaign=update28` | **Required.** Ledger namespace for this send |
+| `--dry-run` | Print the report only — claims/dispatches/writes nothing |
+| `--chunk=100` | Rows loaded per batch |
+| `--limit=N` | Cap dispatches (use for the first real run) |
+| `--only-email=a@b.com` | Single untracked preview (renamed from the old `--test=`) |
+| `--retry-failed` | Re-claim rows in status `failed` |
+| `--retry-stale-queued=N` | Re-claim `queued` rows older than N seconds (crash recovery) |
+
+Per-recipient flow: skip if already `accepted` or in-flight `queued`; log `skipped_invalid` (fails `EmailAddress::isSendable()`) or `skipped_suppressed` (in `email_suppressions`); subscribers whose email belongs to a user are counted as duplicates and skipped (user wins); otherwise atomically claim (`uniq(campaign,email)` is the lock) and dispatch one `DispatchEmail` job. Ledger `accepted`/`failed` are written in the job's terminal hooks.
+
+Related: `email:import-suppressions` (SES backfill), the `POST /webhooks/aws/ses/sns` webhook (live bounces/complaints → suppressions), and `email:backfill-verified-at`.
