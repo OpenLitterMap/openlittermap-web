@@ -9,6 +9,7 @@ use App\Models\Users\User;
 use App\Subscriber;
 use App\Support\EmailAddress;
 use App\Support\EmailRecipient;
+use Generator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
@@ -20,6 +21,10 @@ use Illuminate\Support\Carbon;
  * the (campaign, email) unique key is the atomic claim lock, re-runs only
  * dispatch addresses with no accepted/queued row, and previously-skipped rows
  * are re-evaluated each run (an address can become sendable later).
+ *
+ * The flow is a single linear pass: stream each recipient, prepare its ledger
+ * row, dispatch or skip. `recipients()` hides the chunked, batch-loaded reads;
+ * `prepare()` is the one place ledger state is decided and written.
  */
 class SendEmailToSubscribed extends Command
 {
@@ -66,168 +71,132 @@ class SendEmailToSubscribed extends Command
         $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
         $retryFailed = (bool) $this->option('retry-failed');
 
-        $retryStale = $this->option('retry-stale-queued');
+        $staleThreshold = $this->staleThreshold();
 
-        if ($retryStale !== null && (! ctype_digit((string) $retryStale) || (int) $retryStale < self::MIN_STALE_SECONDS)) {
-            $this->error('--retry-stale-queued must be a positive integer of at least ' . self::MIN_STALE_SECONDS
-                . ' (seconds). A small value would reclaim genuinely in-flight rows and double-send.');
-
+        if ($staleThreshold === false) {
             return self::FAILURE;
         }
-
-        $staleThreshold = $retryStale !== null ? Carbon::now()->subSeconds((int) $retryStale) : null;
 
         $this->suppressed = EmailSuppression::query()->pluck('email')
             ->mapWithKeys(fn ($e) => [EmailAddress::normalize($e) => true])
             ->all();
 
-        // ─── Tally (read-only) + report ──────────────────────────────────
-        $verdicts = ['accepted' => 0, 'queued' => 0, 'failed' => 0, 'invalid' => 0, 'suppressed' => 0, 'dispatch' => 0];
+        $this->printPreflight($campaign);
 
-        $this->eachCandidate($campaign, $chunk, function (string $email, string $type, int $id, ?string $token, ?EmailSend $row) use ($staleThreshold, $retryFailed, &$verdicts) {
-            $verdicts[$this->decide($row, $email, $staleThreshold, $retryFailed)]++;
-
-            return true;
-        });
-
-        $userEmails = User::withoutGlobalScopes()->select('email');
-        $eligibleUsers = $this->userQuery()->where('emailsub', 1)->count();
-        $eligibleSubscribers = Subscriber::whereNotIn('email', $userEmails)->count();
-        $duplicate = Subscriber::count() - $eligibleSubscribers;
-        $willDispatch = $limit !== null ? min($verdicts['dispatch'], $limit) : $verdicts['dispatch'];
-
-        $this->info("Campaign: {$campaign}");
-        $this->line($this->reportLine('Eligible users:', $eligibleUsers));
-        $this->line($this->reportLine('Eligible subscribers:', $eligibleSubscribers));
-        $this->line($this->reportLine('Deduped total:', $eligibleUsers + $eligibleSubscribers));
-        $this->line($this->reportLine('Invalid skipped:', $verdicts['invalid']));
-        $this->line($this->reportLine('Suppressed skipped:', $verdicts['suppressed']));
-        $this->line($this->reportLine('Duplicate skipped:', $duplicate));
-        $this->line($this->reportLine('Already accepted:', $verdicts['accepted']));
-        $this->line($this->reportLine('Will dispatch now:', $willDispatch));
-
-        if ($dryRun) {
-            $this->info('Dry run — nothing claimed or dispatched.');
-
-            return self::SUCCESS;
-        }
-
-        if (! $this->confirm(self::CONFIRM_PROMPT)) {
+        if (! $dryRun && ! $this->confirm(self::CONFIRM_PROMPT)) {
             $this->info('Cancelled.');
 
             return self::SUCCESS;
         }
 
-        // ─── Execute: claim + dispatch ───────────────────────────────────
+        // ─── The send: stream recipient → prepare ledger → dispatch ──────
+        $summary = ['dispatch' => 0, 'accepted' => 0, 'queued' => 0, 'failed' => 0, 'invalid' => 0, 'suppressed' => 0];
         $dispatched = 0;
 
-        $this->eachCandidate($campaign, $chunk, function (string $email, string $type, int $id, ?string $token, ?EmailSend $row)
-            use ($campaign, $staleThreshold, $retryFailed, $limit, &$dispatched) {
+        foreach ($this->recipients($campaign, $chunk) as [$recipient, $row]) {
             if ($limit !== null && $dispatched >= $limit) {
-                return false;
+                break;
             }
 
-            $verdict = $this->decide($row, $email, $staleThreshold, $retryFailed);
+            $sendId = $this->prepare($campaign, $recipient, $row, $dryRun, $retryFailed, $staleThreshold, $summary);
 
-            $skipStatus = match ($verdict) {
-                'invalid' => 'skipped_invalid',
-                'suppressed' => 'skipped_suppressed',
-                default => null,
-            };
-
-            if ($skipStatus !== null) {
-                $this->logSkip($campaign, $email, $type, $id, $skipStatus);
-
-                return true;
+            if ($sendId !== null) {
+                DispatchEmail::dispatch($sendId, $recipient);
+                $dispatched++;
             }
+        }
 
-            if ($verdict !== 'dispatch') {
-                return true; // accepted / queued (in-flight) / failed (terminal) → leave as-is
-            }
+        $this->line($this->reportLine('Will dispatch now:', $summary['dispatch']));
+        $this->line($this->reportLine('Invalid skipped:', $summary['invalid']));
+        $this->line($this->reportLine('Suppressed skipped:', $summary['suppressed']));
 
-            $rowId = $this->claim($campaign, $email, $type, $id, $row, $retryFailed, $staleThreshold);
-
-            if ($rowId === null) {
-                return true; // another worker won the claim
-            }
-
-            DispatchEmail::dispatch($rowId, new EmailRecipient($type, $id, $email, (string) $token));
-            $dispatched++;
-
-            return true;
-        });
-
-        $this->info("Done. {$dispatched} emails dispatched to queue.");
+        $this->info($dryRun ? 'Dry run — nothing claimed or dispatched.' : "Done. {$dispatched} emails dispatched to queue.");
 
         return self::SUCCESS;
     }
 
     /**
-     * Iterate users (emailsub=1) then subscribers deduped against ALL user
-     * emails. The callback receives (email, type, id, token, ?ledgerRow);
-     * returning false stops iteration. Subscribers whose email belongs to any
-     * user are skipped here (the user pass governs them) and counted as
-     * duplicates in the report. Uses chunkById (keyset) for stable, fast paging.
+     * Stream candidates — users (emailsub=1) then subscribers deduped against
+     * ALL user emails — yielding [EmailRecipient, ?EmailSend ledger row]. Reads
+     * keyset-paged (lazyById) and batch-loads each page's ledger rows in one
+     * query, so the caller sees a simple linear stream with no N+1.
+     *
+     * @return Generator<int, array{0: EmailRecipient, 1: ?EmailSend}>
      */
-    private function eachCandidate(string $campaign, int $chunk, callable $cb): void
+    private function recipients(string $campaign, int $chunk): Generator
     {
         $userEmails = User::withoutGlobalScopes()->select('email');
-        $stopped = false;
 
-        $this->userQuery()->where('emailsub', 1)->select('id', 'email', 'sub_token')
-            ->chunkById($chunk, function ($users) use ($campaign, $cb, &$stopped) {
-                if ($this->runChunk($campaign, $users, 'user', $cb) === false) {
-                    $stopped = true;
+        yield from $this->streamPass(
+            $campaign, $chunk, 'user',
+            $this->userQuery()->where('emailsub', 1)->select('id', 'email', 'sub_token')
+        );
 
-                    return false;
-                }
-
-                return true;
-            });
-
-        if ($stopped) {
-            return;
-        }
-
-        Subscriber::whereNotIn('email', $userEmails)->select('id', 'email', 'sub_token')
-            ->chunkById($chunk, fn ($subs) => $this->runChunk($campaign, $subs, 'subscriber', $cb));
+        yield from $this->streamPass(
+            $campaign, $chunk, 'subscriber',
+            Subscriber::whereNotIn('email', $userEmails)->select('id', 'email', 'sub_token')
+        );
     }
 
     /**
-     * Classify one chunk: batch-load the campaign's ledger rows for these emails
-     * in a single query (avoids an N+1 of per-candidate lookups), then invoke
-     * the callback with the matching row. Returns false to stop iteration.
-     *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Users\User|\App\Subscriber>  $rows
+     * @return Generator<int, array{0: EmailRecipient, 1: ?EmailSend}>
      */
-    private function runChunk(string $campaign, $rows, string $type, callable $cb): bool
+    private function streamPass(string $campaign, int $chunk, string $type, $query): Generator
     {
-        $emails = $rows->map(fn ($r) => EmailAddress::normalize($r->email));
+        foreach ($query->lazyById($chunk)->chunk($chunk) as $group) {
+            $emails = $group->map(fn ($r) => EmailAddress::normalize($r->email));
 
-        $ledger = EmailSend::query()
-            ->where('campaign', $campaign)
-            ->whereIn('email', $emails->all())
-            ->get(['id', 'email', 'status', 'updated_at'])
-            ->keyBy('email');
+            $ledger = EmailSend::query()
+                ->where('campaign', $campaign)
+                ->whereIn('email', $emails->all())
+                ->get(['id', 'email', 'status', 'updated_at'])
+                ->keyBy('email');
 
-        foreach ($rows as $r) {
-            $email = EmailAddress::normalize($r->email);
+            foreach ($group as $r) {
+                $email = EmailAddress::normalize($r->email);
 
-            if ($cb($email, $type, $r->id, $r->sub_token, $ledger->get($email)) === false) {
-                return false;
+                yield [
+                    new EmailRecipient($type, $r->id, $email, (string) $r->sub_token),
+                    $ledger->get($email),
+                ];
             }
         }
-
-        return true;
     }
 
     /**
-     * Lean user query for the bulk send: drops the photosCount global scope and
-     * the model's default eager loads ($with), which are pure overhead here.
+     * Decide what to do with one recipient and do it: classify against the
+     * ledger row + suppression list, then either claim a row for dispatch
+     * (returns its id), record a skip, or leave an already-handled/in-flight row
+     * alone (returns null). Tallies the outcome into $summary. Writes nothing
+     * in dry-run.
      */
-    private function userQuery(): \Illuminate\Database\Eloquent\Builder
+    private function prepare(string $campaign, EmailRecipient $r, ?EmailSend $row, bool $dryRun, bool $retryFailed, ?Carbon $staleThreshold, array &$summary): ?int
     {
-        return User::query()->withoutGlobalScope('photosCount')->setEagerLoads([]);
+        $verdict = $this->classify($row, $r->email, $staleThreshold, $retryFailed);
+
+        if ($verdict !== 'dispatch') {
+            $summary[$verdict]++;
+
+            if (! $dryRun && ($verdict === 'invalid' || $verdict === 'suppressed')) {
+                $this->logSkip($campaign, $r, 'skipped_' . $verdict);
+            }
+
+            return null;
+        }
+
+        if ($dryRun) {
+            $summary['dispatch']++;
+
+            return null;
+        }
+
+        $sendId = $this->claim($campaign, $r, $row, $retryFailed, $staleThreshold);
+
+        if ($sendId !== null) {
+            $summary['dispatch']++;
+        }
+
+        return $sendId;
     }
 
     /**
@@ -236,7 +205,7 @@ class SendEmailToSubscribed extends Command
      *
      * @return string accepted|queued|failed|invalid|suppressed|dispatch
      */
-    private function decide(?EmailSend $row, string $email, ?Carbon $staleThreshold, bool $retryFailed): string
+    private function classify(?EmailSend $row, string $email, ?Carbon $staleThreshold, bool $retryFailed): string
     {
         if ($row) {
             if ($row->status === 'accepted') {
@@ -267,13 +236,13 @@ class SendEmailToSubscribed extends Command
     }
 
     /**
-     * Atomically claim a row for dispatch. When no ledger row exists (the
-     * common first-run case) we go straight to insert — no wasted reclaim
-     * UPDATE. When a reclaimable row exists we re-claim it; the WHERE re-checks
-     * reclaimability so a concurrent state change can't double-dispatch.
-     * Returns the ledger row id, or null if another worker already owns it.
+     * Atomically claim a row for dispatch. When no ledger row exists (the common
+     * first-run case) we go straight to insert — no wasted reclaim UPDATE. When
+     * a reclaimable row exists we re-claim it; the WHERE re-checks reclaimability
+     * so a concurrent state change can't double-dispatch. Returns the ledger row
+     * id, or null if another worker already owns it.
      */
-    private function claim(string $campaign, string $email, string $type, int $id, ?EmailSend $row, bool $retryFailed, ?Carbon $staleThreshold): ?int
+    private function claim(string $campaign, EmailRecipient $r, ?EmailSend $row, bool $retryFailed, ?Carbon $staleThreshold): ?int
     {
         $now = Carbon::now();
 
@@ -285,7 +254,7 @@ class SendEmailToSubscribed extends Command
             }
 
             $updated = EmailSend::query()
-                ->where('campaign', $campaign)->where('email', $email)
+                ->where('campaign', $campaign)->where('email', $r->email)
                 ->where(function ($q) use ($reclaimable, $staleThreshold) {
                     $q->whereIn('status', $reclaimable);
 
@@ -295,8 +264,8 @@ class SendEmailToSubscribed extends Command
                 })
                 ->update([
                     'status' => 'queued',
-                    'recipient_type' => $type,
-                    'recipient_id' => $id,
+                    'recipient_type' => $r->type,
+                    'recipient_id' => $r->id,
                     'updated_at' => $now,
                 ]);
 
@@ -306,9 +275,9 @@ class SendEmailToSubscribed extends Command
 
         $inserted = EmailSend::insertOrIgnore([
             'campaign' => $campaign,
-            'email' => $email,
-            'recipient_type' => $type,
-            'recipient_id' => $id,
+            'email' => $r->email,
+            'recipient_type' => $r->type,
+            'recipient_id' => $r->id,
             'status' => 'queued',
             'created_at' => $now,
             'updated_at' => $now,
@@ -318,15 +287,62 @@ class SendEmailToSubscribed extends Command
             return null; // a concurrent worker inserted it first
         }
 
-        return EmailSend::query()->where('campaign', $campaign)->where('email', $email)->value('id');
+        return EmailSend::query()->where('campaign', $campaign)->where('email', $r->email)->value('id');
     }
 
-    private function logSkip(string $campaign, string $email, string $type, int $id, string $status): void
+    private function logSkip(string $campaign, EmailRecipient $r, string $status): void
     {
         EmailSend::query()->updateOrInsert(
-            ['campaign' => $campaign, 'email' => $email],
-            ['recipient_type' => $type, 'recipient_id' => $id, 'status' => $status, 'updated_at' => Carbon::now()],
+            ['campaign' => $campaign, 'email' => $r->email],
+            ['recipient_type' => $r->type, 'recipient_id' => $r->id, 'status' => $status, 'updated_at' => Carbon::now()],
         );
+    }
+
+    /**
+     * Cheap aggregate counts shown before the confirm — no per-recipient
+     * classification. The run itself prints the dispatched/skipped tallies.
+     */
+    private function printPreflight(string $campaign): void
+    {
+        $userEmails = User::withoutGlobalScopes()->select('email');
+        $eligibleSubscribers = Subscriber::whereNotIn('email', $userEmails)->count();
+
+        $this->info("Campaign: {$campaign}");
+        $this->line($this->reportLine('Eligible users:', $this->userQuery()->where('emailsub', 1)->count()));
+        $this->line($this->reportLine('Eligible subscribers:', $eligibleSubscribers));
+        $this->line($this->reportLine('Duplicate skipped:', Subscriber::count() - $eligibleSubscribers));
+        $this->line($this->reportLine('Already accepted:', EmailSend::query()->where('campaign', $campaign)->where('status', 'accepted')->count()));
+    }
+
+    /**
+     * Parsed --retry-stale-queued threshold: null when unset, a Carbon cutoff
+     * when valid, or false (after printing an error) when the value is invalid.
+     */
+    private function staleThreshold(): Carbon|false|null
+    {
+        $value = $this->option('retry-stale-queued');
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (! ctype_digit((string) $value) || (int) $value < self::MIN_STALE_SECONDS) {
+            $this->error('--retry-stale-queued must be a positive integer of at least ' . self::MIN_STALE_SECONDS
+                . ' (seconds). A small value would reclaim genuinely in-flight rows and double-send.');
+
+            return false;
+        }
+
+        return Carbon::now()->subSeconds((int) $value);
+    }
+
+    /**
+     * Lean user query for the bulk send: drops the photosCount global scope and
+     * the model's default eager loads ($with), which are pure overhead here.
+     */
+    private function userQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return User::query()->withoutGlobalScope('photosCount')->setEagerLoads([]);
     }
 
     private function reportLine(string $label, int $value): string
