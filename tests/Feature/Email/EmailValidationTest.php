@@ -9,8 +9,9 @@ use Tests\TestCase;
 class EmailValidationTest extends TestCase
 {
     /**
-     * Single-label / dotless domains pass filter_var but are undeliverable.
-     * These are the exact classes of address that broke the Update 28 send.
+     * Single-label / dotless domains — the undeliverable addresses that broke
+     * the Update 28 send. Laravel's plain `email` rule accepts these; filter_var
+     * (isSendable / the `email:filter` rule) rejects them.
      */
     #[DataProvider('singleLabelDomains')]
     public function test_rejects_single_label_domain(string $email): void
