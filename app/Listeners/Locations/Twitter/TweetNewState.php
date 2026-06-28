@@ -3,7 +3,7 @@
 namespace App\Listeners\Locations\Twitter;
 
 use App\Events\NewStateAdded;
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 
 class TweetNewState
 {
@@ -17,7 +17,7 @@ class TweetNewState
     {
         if (app()->environment() === 'production')
         {
-            Twitter::sendTweet("A new state has been added. Say hello to $event->state, $event->country!");
+            Social::text("A new state has been added. Say hello to $event->state, $event->country!");
         }
     }
 }

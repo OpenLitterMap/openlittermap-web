@@ -1,12 +1,13 @@
 # OLMbot — Automated Twitter Commands
 
-OLMbot is the automated Twitter/X posting system. All commands live in `app/Console/Commands/Twitter/` and use the `App\Helpers\Twitter` helper for API calls.
+OLMbot is the automated social posting system. All commands live in `app/Console/Commands/Twitter/` and post via the `App\Helpers\Social` dispatcher, which fans out to every enabled network — `App\Helpers\Twitter` (X) and `App\Helpers\Bluesky` — each self-gated by its own `isEnabled()`. Stat-generation logic is independent of the posting layer.
 
 ## Configuration
 
 Twitter API credentials are in `config/services.php` under the `twitter` key, backed by env vars:
 
 ```
+TWITTER_ENABLED=false           # master on/off — default off; requires paid X API credits
 TWITTER_API_CONSUMER_KEY=
 TWITTER_API_CONSUMER_SECRET=
 TWITTER_API_ACCESS_TOKEN=
@@ -19,7 +20,29 @@ Browsershot Chromium path is configurable via `config/services.php`:
 BROWSERSHOT_CHROME_PATH=       # defaults to /snap/bin/chromium
 ```
 
-The `Twitter` helper has a production guard — all three methods (`sendTweet`, `sendThread`, `sendTweetWithImage`) silently no-op outside `production`. Each command also has its own production guard at the top of `handle()`.
+The `Twitter` helper has a master switch — `Twitter::isEnabled()` gates all three methods (`sendTweet`, `sendThread`, `sendTweetWithImage`) and requires `TWITTER_ENABLED=true` **and** the `production` environment **and** a configured consumer key. It **defaults off** (`TWITTER_ENABLED` defaults to `false`), so OLMbot posts nothing until explicitly enabled — a zero-code kill switch for when X API credits are unavailable. An empty/missing key can't misfire a live call. Each command/listener also has its own production guard.
+
+## Social dispatcher & Bluesky
+
+Commands/listeners call `App\Helpers\Social` (`text`, `thread`, `withImage`), which posts to every enabled network. `Social::thread` sums `sent`/`total` over **enabled networks only**, so the commands' `sent < total → FAILURE` check stays correct and a no-network environment returns `sent=0` (→ SUCCESS). Adding a network is a new helper + two lines in `Social` — deliberately no registry/plugin layer.
+
+### Bluesky (`App\Helpers\Bluesky`)
+
+AT Protocol XRPC via Laravel `Http`. Config under the `bluesky` key:
+
+```
+BLUESKY_ENABLED=false                    # master on/off — default off
+BLUESKY_IDENTIFIER=olmbot.bsky.social
+BLUESKY_APP_PASSWORD=                     # app password, never the account password
+BLUESKY_SERVICE=https://bsky.social      # optional override
+```
+
+`Bluesky::isEnabled()` = `enabled && production && app_password` (logs a warning if enabled in prod with no password). Methods mirror the Twitter helper — `post()`, `thread()`, `postWithImage()`:
+
+- **Auth:** `createSession` (identifier + app password) → `accessJwt` + `did`, once per send operation.
+- **Threads:** each post after the first carries `reply.root` + `reply.parent` strongRefs from the previous `createRecord`.
+- **Images:** recompressed under Bluesky's ~1MB blob limit (intervention/image, JPEG, quality-stepped + downscale) before `uploadBlob`; falls back to text-only if it can't get under. Embedded as `app.bsky.embed.images`.
+- **Links:** bare `https?://` URLs get `app.bsky.richtext.facet#link` facets (UTF-8 byte ranges) so they're clickable — Bluesky does not auto-link plain text. Hashtag facets are deferred (post as plain `#tags`).
 
 ## Schedule (Kernel.php)
 
@@ -30,6 +53,17 @@ The `Twitter` helper has a production guard — all three methods (`sendTweet`, 
 | `twitter:weekly-impact-report-tweet` | `weeklyOn(1, '06:30')` (Monday) | None |
 | `twitter:monthly-impact-report-tweet` | `monthlyOn(1, '06:30')` | None |
 | `twitter:annual-impact-report-tweet` | `yearlyOn(1, 1, '06:30')` (Jan 1) | None |
+
+## Event-driven posts (not scheduled)
+
+These fire from domain events on user activity, not the cron schedule — volume scales with uploads/badges, so they are the main X API *write* driver. Wired in `app/Providers/EventServiceProvider.php`; all gated by `Twitter::isEnabled()`.
+
+| Listener | Event | Fires | Posts |
+|---|---|---|---|
+| `TweetNewCity` | `NewCityAdded` | per new city uploaded | `sendTweet()` (text) |
+| `TweetNewState` | `NewStateAdded` | per new state uploaded | `sendTweet()` (text) |
+| `TweetNewCountry` | `NewCountryAdded` | per new country uploaded | `sendTweet()` (text) |
+| `TweetBadgeCreated` | `BadgeCreated` (queued) | per badge unlocked | `sendTweetWithImage()` |
 
 ## Commands
 

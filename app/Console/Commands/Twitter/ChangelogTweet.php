@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Twitter;
 
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -48,7 +48,7 @@ class ChangelogTweet extends Command
             $this->line("[" . ($i + 1) . "/" . count($tweets) . "] " . $tweet);
         }
 
-        $result = Twitter::sendThread($tweets);
+        $result = Social::thread($tweets);
 
         if ($result['sent'] === 0) {
             $this->info('Thread not sent (non-production or dry run).');
