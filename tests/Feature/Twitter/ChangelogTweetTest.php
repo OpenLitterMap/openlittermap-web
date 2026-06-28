@@ -3,390 +3,284 @@
 namespace Tests\Feature\Twitter;
 
 use App\Console\Commands\Twitter\ChangelogTweet;
-use App\Helpers\Twitter;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ChangelogTweetTest extends TestCase
 {
-    private string $summaryDir;
+    private string $changelogDir;
     private ChangelogTweet $command;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->summaryDir = base_path('readme/changelog');
+        $this->changelogDir = base_path('readme/changelog');
         $this->command = new ChangelogTweet();
     }
 
-    // ─── Overview tweet counts ───────────────────────────────────────
+    /** A mobile changelog body carrying a `## Public` block in the house style. */
+    private function mobilePublicBody(string $text): string
+    {
+        return implode("\n", ['# Mobile Changes', '', '## Public', $text, '', '## Internal', '- did a thing']);
+    }
 
-    public function test_overview_counts_web_and_mobile_correctly(): void
+    // ─── parsePublicBlock (web file lines) ───────────────────────────
+
+    public function test_parses_public_block_as_prose(): void
     {
         $date = '2099-01-01';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
         File::put($path, implode("\n", [
             '# Changes',
             '',
-            '- [Web] Fix admin permissions',
-            '- [Web] Restore scheduler',
-            '- [Web] Add clustering config',
-            '- [Mobile] Camera orientation fix',
-            '- [Mobile] Upload retry',
+            '## Public',
+            'OpenLitterMap update 🔒 We fixed a privacy issue and exports are faster. #openlittermap',
+            '',
+            '## Session: internal notes',
+            '- `v5.0.1` — refactored MetricsService internals',
         ]));
 
         try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            $overview = $tweets[0];
-            $this->assertStringContainsString('3 web improvements', $overview);
-            $this->assertStringContainsString('2 mobile improvements', $overview);
-            $this->assertStringContainsString('🧵 Thread ↓', $overview);
+            $this->assertEquals(
+                'OpenLitterMap update 🔒 We fixed a privacy issue and exports are faster. #openlittermap',
+                $this->command->parsePublicBlock(File::lines($path))
+            );
         } finally {
             File::delete($path);
         }
     }
 
-    // ─── Prefix parsing ─────────────────────────────────────────────
-
-    public function test_entries_without_prefix_default_to_web(): void
+    public function test_absent_public_block_returns_empty_string(): void
     {
         $date = '2099-01-02';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
         File::put($path, implode("\n", [
             '# Changes',
             '',
-            '- `v5.0.1` — Fix something',
-            '- `v5.0.2` — Another fix',
+            '## Session: internal only',
+            '- `v5.0.2` — tweaked a query',
         ]));
 
         try {
-            $parsed = $this->command->parseEntries($path);
-
-            $this->assertCount(2, $parsed['web']);
-            $this->assertCount(0, $parsed['mobile']);
-            $this->assertEquals('Fix something', $parsed['web'][0]);
+            $this->assertSame('', $this->command->parsePublicBlock(File::lines($path)));
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_web_prefix_stripped_correctly(): void
+    public function test_empty_public_block_returns_empty_string(): void
     {
         $date = '2099-01-03';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
-        File::put($path, "# Changes\n\n- [Web] Fix admin permissions\n");
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '## Public',
+            '',
+            '## Session: internal',
+            '- did a thing',
+        ]));
 
         try {
-            $parsed = $this->command->parseEntries($path);
-
-            $this->assertCount(1, $parsed['web']);
-            $this->assertEquals('Fix admin permissions', $parsed['web'][0]);
+            $this->assertSame('', $this->command->parsePublicBlock(File::lines($path)));
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_mobile_prefix_stripped_correctly(): void
+    public function test_strips_leading_bullet_markers_and_joins_lines(): void
     {
         $date = '2099-01-04';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
-        File::put($path, "# Changes\n\n- [Mobile] Camera orientation fix\n");
+        File::put($path, implode("\n", [
+            '# Changes',
+            '',
+            '## Public',
+            '- Newsletter sign-up works again.',
+            '- The map loads faster.',
+        ]));
 
         try {
-            $parsed = $this->command->parseEntries($path);
-
-            $this->assertCount(0, $parsed['web']);
-            $this->assertCount(1, $parsed['mobile']);
-            $this->assertEquals('Camera orientation fix', $parsed['mobile'][0]);
+            $this->assertEquals(
+                'Newsletter sign-up works again. The map loads faster.',
+                $this->command->parsePublicBlock(File::lines($path))
+            );
         } finally {
             File::delete($path);
         }
     }
 
-    // ─── GitHub calls only to raw.githubusercontent.com ────────────────
-
-    public function test_only_github_raw_content_calls_made(): void
+    public function test_block_stops_at_next_heading(): void
     {
-        Http::fake([
-            'raw.githubusercontent.com/*' => Http::response('', 404),
-            '*' => Http::response('', 200),
-        ]);
-
         $date = '2099-01-05';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        File::put($path, "# Changes\n\n- [Web] Fix something\n");
-
-        try {
-            $this->artisan("twitter:changelog {$date}")
-                ->assertSuccessful();
-
-            Http::assertSentCount(1);
-            Http::assertSent(fn ($request) => str_contains($request->url(), 'raw.githubusercontent.com'));
-        } finally {
-            File::delete($path);
-        }
-    }
-
-    // ─── Web only ────────────────────────────────────────────────────
-
-    public function test_web_only_overview_shows_web_count_no_mobile(): void
-    {
-        $date = '2099-01-06';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
         File::put($path, implode("\n", [
             '# Changes',
             '',
-            '- [Web] Fix admin permissions',
-            '- [Web] Restore scheduler',
+            '## Public',
+            'Public line.',
+            '## Session: internal',
+            '- Internal bullet that must never be posted',
         ]));
 
         try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
+            $public = $this->command->parsePublicBlock(File::lines($path));
 
-            $overview = $tweets[0];
-            $this->assertStringContainsString('2 web improvements', $overview);
-            $this->assertStringNotContainsString('mobile', $overview);
+            $this->assertEquals('Public line.', $public);
+            $this->assertStringNotContainsString('Internal bullet', $public);
         } finally {
             File::delete($path);
         }
     }
 
-    // ─── Mobile only ─────────────────────────────────────────────────
-
-    public function test_mobile_only_overview_shows_mobile_count_no_web(): void
+    public function test_parses_public_block_from_array_of_lines(): void
     {
-        $date = '2099-01-07';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $body = $this->mobilePublicBody('OpenLitterMap app update 📱 Camera orientation is saved correctly now. #openlittermap');
 
-        File::put($path, implode("\n", [
-            '# Changes',
-            '',
-            '- [Mobile] Camera fix',
-            '- [Mobile] Upload retry',
-            '- [Mobile] Haptic feedback',
-        ]));
-
-        try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            $overview = $tweets[0];
-            $this->assertStringContainsString('3 mobile improvements', $overview);
-            $this->assertStringNotContainsString('web', $overview);
-        } finally {
-            File::delete($path);
-        }
+        $this->assertEquals(
+            'OpenLitterMap app update 📱 Camera orientation is saved correctly now. #openlittermap',
+            $this->command->parsePublicBlock(explode("\n", $body))
+        );
     }
 
-    // ─── Long changelog splits ───────────────────────────────────────
+    // ─── buildPosts ──────────────────────────────────────────────────
 
-    public function test_long_changelog_splits_across_tweets(): void
+    public function test_empty_text_builds_no_posts(): void
     {
-        $date = '2099-01-08';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        $lines = "# Changes\n\n";
-        for ($i = 1; $i <= 15; $i++) {
-            $lines .= "- [Web] Implemented a fairly verbose description of change number {$i} that pushes tweet length limits\n";
-        }
-
-        File::put($path, $lines);
-
-        try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            $this->assertGreaterThan(2, count($tweets), 'Should split into 3+ tweets');
-
-            // Every tweet must be within 280 chars
-            foreach ($tweets as $i => $tweet) {
-                $this->assertLessThanOrEqual(
-                    280,
-                    mb_strlen($tweet),
-                    "Tweet " . ($i + 1) . " exceeds 280 chars (" . mb_strlen($tweet) . ")"
-                );
-            }
-        } finally {
-            File::delete($path);
-        }
+        $this->assertSame([], $this->command->buildPosts(''));
     }
 
-    public function test_oversized_single_line_truncated_within_280(): void
+    public function test_short_text_is_a_single_post(): void
     {
-        $date = '2099-01-20';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $text = 'OpenLitterMap update 🦋 We now post to Bluesky too. #openlittermap';
 
-        // A single line that is 300+ chars
-        $longLine = '- [Web] ' . str_repeat('A very long description that keeps going ', 8);
+        $posts = $this->command->buildPosts($text);
 
-        File::put($path, "# Changes\n\n{$longLine}\n");
-
-        try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            foreach ($tweets as $i => $tweet) {
-                $this->assertLessThanOrEqual(
-                    280,
-                    mb_strlen($tweet),
-                    "Tweet " . ($i + 1) . " exceeds 280 chars (" . mb_strlen($tweet) . ")"
-                );
-            }
-        } finally {
-            File::delete($path);
-        }
+        $this->assertCount(1, $posts);
+        $this->assertEquals($text, $posts[0]);
     }
 
-    // ─── No file: skip silently ──────────────────────────────────────
+    public function test_text_exactly_at_limit_is_a_single_post(): void
+    {
+        $text = str_repeat('a', 300);
+
+        $this->assertCount(1, $this->command->buildPosts($text));
+    }
+
+    public function test_long_text_threads_with_every_post_within_limit(): void
+    {
+        $text = trim(str_repeat('word ', 120)); // 600 chars, word boundaries
+
+        $posts = $this->command->buildPosts($text);
+
+        $this->assertGreaterThan(1, count($posts), 'Over-limit text should thread');
+
+        foreach ($posts as $i => $post) {
+            $this->assertLessThanOrEqual(
+                300,
+                mb_strlen($post),
+                'Post ' . ($i + 1) . ' exceeds 300 chars (' . mb_strlen($post) . ')'
+            );
+        }
+
+        // No content lost in the split.
+        $this->assertEquals($text, implode(' ', $posts));
+    }
+
+    // ─── handle ──────────────────────────────────────────────────────
 
     public function test_no_file_skips_silently(): void
     {
+        Http::fake();
+
         $this->artisan('twitter:changelog 2099-12-31')
             ->expectsOutputToContain('No changelog found')
             ->assertSuccessful();
+
+        // Returns before any mobile fetch.
+        Http::assertNothingSent();
     }
 
-    public function test_empty_file_skips_silently(): void
+    public function test_absent_public_block_on_both_sources_posts_nothing(): void
     {
-        $date = '2099-01-09';
-        $path = "{$this->summaryDir}/{$date}.md";
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
 
-        File::put($path, "# Changes\n\nNo bullet points here.\n");
+        $date = '2099-01-10';
+        $path = "{$this->changelogDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n## Session: internal\n- refactored something\n");
 
         try {
             $this->artisan("twitter:changelog {$date}")
-                ->expectsOutputToContain('No changelog found')
+                ->expectsOutputToContain('No public changelog')
                 ->assertSuccessful();
         } finally {
             File::delete($path);
         }
     }
 
-    // ─── Thread structure ────────────────────────────────────────────
-
-    public function test_first_tweet_is_always_overview(): void
+    public function test_web_public_block_is_posted(): void
     {
-        $date = '2099-01-10';
-        $path = "{$this->summaryDir}/{$date}.md";
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
 
-        File::put($path, implode("\n", [
-            '# Changes',
-            '',
-            '- [Web] Fix something',
-            '- [Mobile] Camera fix',
-        ]));
-
-        try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            $this->assertStringContainsString('🔧 OpenLitterMap — Changes for', $tweets[0]);
-            $this->assertStringContainsString('🧵 Thread ↓', $tweets[0]);
-
-            // Second tweet has actual changes
-            $this->assertStringContainsString('🌐 Web', $tweets[1]);
-        } finally {
-            File::delete($path);
-        }
-    }
-
-    public function test_last_tweet_has_hashtags(): void
-    {
         $date = '2099-01-11';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
         File::put($path, implode("\n", [
             '# Changes',
             '',
-            '- [Web] Fix something',
-            '- [Mobile] Camera fix',
+            '## Public',
+            'OpenLitterMap update 🦋 We now post to Bluesky. #openlittermap',
+            '',
+            '## Session: internal',
+            '- changed an internal thing',
         ]));
 
         try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            $lastTweet = end($tweets);
-            $this->assertStringContainsString('#openlittermap #changelog', $lastTweet);
+            // Non-production test env → Social posts nothing (sent === 0 → SUCCESS),
+            // but the command must reach the post path, not the silence path.
+            $this->artisan("twitter:changelog {$date}")
+                ->expectsOutputToContain('We now post to Bluesky')
+                ->doesntExpectOutputToContain('No public changelog')
+                ->assertSuccessful();
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_grouped_sections_in_correct_order(): void
+    public function test_fetches_mobile_changelog_from_github(): void
     {
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
+
         $date = '2099-01-12';
-        $path = "{$this->summaryDir}/{$date}.md";
 
-        File::put($path, implode("\n", [
-            '# Changes',
-            '',
-            '- [Mobile] Camera fix',
-            '- [Web] Fix something',
-        ]));
+        $this->command->fetchMobileChangelog($date);
 
-        try {
-            $parsed = $this->command->parseEntries($path);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            // Changes tweet should have Web before Mobile
-            $changesTweet = $tweets[1];
-            $webPos = mb_strpos($changesTweet, '🌐 Web');
-            $mobilePos = mb_strpos($changesTweet, '📱 Mobile');
-
-            $this->assertNotFalse($webPos);
-            $this->assertNotFalse($mobilePos);
-            $this->assertLessThan($mobilePos, $webPos, 'Web section should come before Mobile');
-        } finally {
-            File::delete($path);
-        }
+        Http::assertSent(fn ($request) => $request->url()
+            === "https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{$date}.md");
     }
-
-    // ─── cleanChange ─────────────────────────────────────────────────
-
-    public function test_strips_backticks_and_version_prefix(): void
-    {
-        $this->assertEquals(
-            'Added __APP_VERSION__ define in vite.config.js',
-            $this->command->cleanChange('`v5.0.3` — Added `__APP_VERSION__` define in `vite.config.js`')
-        );
-    }
-
-    public function test_strips_bold_version_prefix(): void
-    {
-        $this->assertEquals(
-            'Fix admin permissions',
-            $this->command->cleanChange('**v5.0.13** — Fix admin permissions')
-        );
-    }
-
-    // ─── Defaults to yesterday ───────────────────────────────────────
 
     public function test_defaults_to_yesterday_when_no_date_provided(): void
     {
         Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
 
         $yesterday = now()->subDay()->toDateString();
-        $path = "{$this->summaryDir}/{$yesterday}.md";
+        $path = "{$this->changelogDir}/{$yesterday}.md";
         $existed = File::exists($path);
 
         if (! $existed) {
-            File::put($path, "# Changes\n\n- `v1.0.0` — Test change\n");
+            File::put($path, "# Changes\n\n## Session: internal\n- internal only\n");
         }
 
         try {
-            $this->artisan('twitter:changelog')
-                ->assertSuccessful();
+            $this->artisan('twitter:changelog')->assertSuccessful();
         } finally {
             if (! $existed) {
                 File::delete($path);
@@ -394,172 +288,118 @@ class ChangelogTweetTest extends TestCase
         }
     }
 
-    // ─── sendThread return shape ─────────────────────────────────────
+    // ─── Mobile (curated `## Public` from the react-native repo) ──────
 
-    public function test_send_thread_returns_correct_shape_in_non_production(): void
-    {
-        $result = Twitter::sendThread(['Tweet 1', 'Tweet 2']);
-
-        $this->assertArrayHasKey('first_id', $result);
-        $this->assertArrayHasKey('sent', $result);
-        $this->assertArrayHasKey('total', $result);
-        $this->assertNull($result['first_id']);
-        $this->assertEquals(0, $result['sent']);
-        $this->assertEquals(2, $result['total']);
-    }
-
-    public function test_send_thread_with_empty_array_returns_zero_counts(): void
-    {
-        $result = Twitter::sendThread([]);
-
-        $this->assertNull($result['first_id']);
-        $this->assertEquals(0, $result['sent']);
-        $this->assertEquals(0, $result['total']);
-    }
-
-    // ─── Singular/plural ─────────────────────────────────────────────
-
-    public function test_singular_improvement_for_single_entry(): void
-    {
-        $tweets = $this->command->buildThread('2099-01-13', ['Fix something'], []);
-
-        $this->assertStringContainsString('1 web improvement', $tweets[0]);
-        $this->assertStringNotContainsString('improvements', $tweets[0]);
-    }
-
-    // ─── Mobile changelog from GitHub ────────────────────────────────
-
-    public function test_fetches_mobile_entries_from_github(): void
+    public function test_mobile_public_block_is_posted_after_web(): void
     {
         Http::fake([
-            'raw.githubusercontent.com/*' => Http::response(implode("\n", [
-                '# Mobile Changes',
-                '',
-                '- Camera orientation saved correctly',
-                '- Upload retry on weak connections',
-            ]), 200),
+            'raw.githubusercontent.com/*' => Http::response(
+                $this->mobilePublicBody('OpenLitterMap app update 📱 Camera orientation is fixed. #openlittermap'),
+                200
+            ),
+        ]);
+
+        $date = '2099-01-13';
+        $path = "{$this->changelogDir}/{$date}.md";
+
+        File::put($path, "# Changes\n\n## Public\nWeb public note here. #openlittermap\n");
+
+        try {
+            $this->artisan("twitter:changelog {$date}")
+                ->expectsOutputToContain('[1/2] Web public note here.')
+                ->expectsOutputToContain('[2/2] OpenLitterMap app update 📱 Camera orientation is fixed.')
+                ->assertSuccessful();
+        } finally {
+            File::delete($path);
+        }
+    }
+
+    public function test_mobile_only_public_block_posts_when_web_is_silent(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response(
+                $this->mobilePublicBody('OpenLitterMap app update 📱 Upload retry on weak connections. #openlittermap'),
+                200
+            ),
         ]);
 
         $date = '2099-01-14';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
-        File::put($path, "# Changes\n\n- [Web] Fix admin permissions\n");
+        // Web file exists but has no `## Public` block — mobile is the only source.
+        File::put($path, "# Changes\n\n## Session: internal\n- internal only\n");
 
         try {
-            $parsed = $this->command->parseEntries($path, $date);
-
-            $this->assertCount(1, $parsed['web']);
-            $this->assertCount(2, $parsed['mobile']);
-            $this->assertEquals('Camera orientation saved correctly', $parsed['mobile'][0]);
-            $this->assertEquals('Upload retry on weak connections', $parsed['mobile'][1]);
+            $this->artisan("twitter:changelog {$date}")
+                ->expectsOutputToContain('[1/1] OpenLitterMap app update 📱 Upload retry on weak connections.')
+                ->doesntExpectOutputToContain('No public changelog')
+                ->assertSuccessful();
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_mobile_fetch_failure_falls_back_to_web_only(): void
+    public function test_both_sources_combine_into_a_thread_each_within_limit(): void
     {
+        $mobileText = 'OpenLitterMap app update 📱 ' . str_repeat('mobile detail ', 30) . '#openlittermap';
+
         Http::fake([
-            'raw.githubusercontent.com/*' => Http::response('', 500),
+            'raw.githubusercontent.com/*' => Http::response($this->mobilePublicBody($mobileText), 200),
         ]);
 
         $date = '2099-01-15';
-        $path = "{$this->summaryDir}/{$date}.md";
+        $path = "{$this->changelogDir}/{$date}.md";
 
-        File::put($path, "# Changes\n\n- [Web] Fix something\n");
+        File::put($path, "# Changes\n\n## Public\nWeb public note. #openlittermap\n");
 
         try {
-            $parsed = $this->command->parseEntries($path, $date);
+            $webPublic = $this->command->parsePublicBlock(File::lines($path));
+            $mobilePublic = $this->command->mobilePublicBlock($date);
+            $posts = array_merge($this->command->buildPosts($webPublic), $this->command->buildPosts($mobilePublic));
 
-            $this->assertCount(1, $parsed['web']);
-            $this->assertCount(0, $parsed['mobile']);
+            $this->assertGreaterThan(1, count($posts), 'Web + long mobile should thread');
+            $this->assertStringContainsString('Web public note', $posts[0]);
+
+            foreach ($posts as $i => $post) {
+                $this->assertLessThanOrEqual(
+                    300,
+                    mb_strlen($post),
+                    'Post ' . ($i + 1) . ' exceeds 300 chars (' . mb_strlen($post) . ')'
+                );
+            }
         } finally {
             File::delete($path);
         }
     }
 
-    public function test_mobile_fetch_404_returns_no_mobile_entries(): void
+    public function test_mobile_fetch_404_falls_back_to_web_only(): void
     {
-        Http::fake([
-            'raw.githubusercontent.com/*' => Http::response('', 404),
-        ]);
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
 
-        $date = '2099-01-16';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        File::put($path, "# Changes\n\n- [Web] Fix something\n");
-
-        try {
-            $parsed = $this->command->parseEntries($path, $date);
-
-            $this->assertCount(1, $parsed['web']);
-            $this->assertCount(0, $parsed['mobile']);
-        } finally {
-            File::delete($path);
-        }
+        $this->assertSame('', $this->command->mobilePublicBlock('2099-01-16'));
     }
 
-    public function test_mobile_entries_merge_with_local_mobile_entries(): void
+    public function test_mobile_fetch_500_falls_back_to_web_only(): void
     {
-        Http::fake([
-            'raw.githubusercontent.com/*' => Http::response("- Camera fix from GitHub\n", 200),
-        ]);
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 500)]);
 
-        $date = '2099-01-17';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        File::put($path, "# Changes\n\n- [Web] Web fix\n- [Mobile] Local mobile fix\n");
-
-        try {
-            $parsed = $this->command->parseEntries($path, $date);
-
-            $this->assertCount(1, $parsed['web']);
-            $this->assertCount(2, $parsed['mobile']);
-            $this->assertEquals('Local mobile fix', $parsed['mobile'][0]);
-            $this->assertEquals('Camera fix from GitHub', $parsed['mobile'][1]);
-        } finally {
-            File::delete($path);
-        }
+        $this->assertSame('', $this->command->mobilePublicBlock('2099-01-17'));
     }
 
-    public function test_mobile_fetch_hits_correct_github_url(): void
+    public function test_mobile_fetch_exception_is_swallowed(): void
     {
-        Http::fake([
-            'raw.githubusercontent.com/*' => Http::response('', 404),
-        ]);
+        Http::fake(['raw.githubusercontent.com/*' => fn () => throw new ConnectionException('timeout')]);
 
-        $date = '2099-01-18';
-        $this->command->fetchMobileChangelog($date);
-
-        Http::assertSent(function ($request) use ($date) {
-            return $request->url() === "https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{$date}.md";
-        });
+        // No exception bubbles up; web-only fallback.
+        $this->assertSame('', $this->command->mobilePublicBlock('2099-01-18'));
     }
 
-    public function test_mobile_entries_appear_in_tweet_thread(): void
+    public function test_mobile_without_public_block_contributes_nothing(): void
     {
         Http::fake([
-            'raw.githubusercontent.com/*' => Http::response("- Haptic feedback added\n", 200),
+            'raw.githubusercontent.com/*' => Http::response("# Mobile Changes\n\n- internal only\n", 200),
         ]);
 
-        $date = '2099-01-19';
-        $path = "{$this->summaryDir}/{$date}.md";
-
-        File::put($path, "# Changes\n\n- [Web] Fix admin permissions\n");
-
-        try {
-            $parsed = $this->command->parseEntries($path, $date);
-            $tweets = $this->command->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-            $overview = $tweets[0];
-            $this->assertStringContainsString('1 web improvement', $overview);
-            $this->assertStringContainsString('1 mobile improvement', $overview);
-
-            $changesTweet = $tweets[1];
-            $this->assertStringContainsString('📱 Mobile', $changesTweet);
-            $this->assertStringContainsString('Haptic feedback added', $changesTweet);
-        } finally {
-            File::delete($path);
-        }
+        $this->assertSame('', $this->command->mobilePublicBlock('2099-01-19'));
     }
 }
