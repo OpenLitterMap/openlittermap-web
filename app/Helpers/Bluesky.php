@@ -30,8 +30,8 @@ class Bluesky
             return false;
         }
 
-        if (config('services.bluesky.app_password') === null) {
-            Log::warning('Bluesky enabled but BLUESKY_APP_PASSWORD is not set — posting disabled.');
+        if (blank(config('services.bluesky.identifier')) || blank(config('services.bluesky.app_password'))) {
+            Log::warning('Bluesky enabled but BLUESKY_IDENTIFIER / BLUESKY_APP_PASSWORD is missing — posting disabled.');
 
             return false;
         }
@@ -185,7 +185,7 @@ class Bluesky
         $record = [
             '$type' => 'app.bsky.feed.post',
             'text' => $text,
-            'createdAt' => now()->toIso8601String(),
+            'createdAt' => now()->utc()->format('Y-m-d\TH:i:s.v\Z'),
         ];
 
         if ($facets = self::linkFacets($text)) {

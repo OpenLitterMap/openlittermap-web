@@ -40,6 +40,18 @@ class BlueskyTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_blank_credentials_stay_disabled(): void
+    {
+        $this->app['env'] = 'production';
+        config([
+            'services.bluesky.enabled' => true,
+            'services.bluesky.identifier' => 'olmbot.bsky.social',
+            'services.bluesky.app_password' => '',   // blank, not null — must still count as disabled
+        ]);
+
+        $this->assertFalse(Bluesky::isEnabled());
+    }
+
     public function test_post_creates_session_then_record(): void
     {
         $this->enableBluesky();
@@ -59,7 +71,7 @@ class BlueskyTest extends TestCase
             && $r['repo'] === 'did:plc:abc'
             && $r['collection'] === 'app.bsky.feed.post'
             && $r['record']['text'] === 'Hello Bluesky'
-            && isset($r['record']['createdAt']));
+            && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/', $r['record']['createdAt'] ?? '') === 1);
     }
 
     public function test_thread_chains_reply_refs(): void

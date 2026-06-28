@@ -31,15 +31,34 @@ class TwitterHelperTest extends TestCase
         $this->app['env'] = 'testing';
     }
 
-    public function test_enabled_only_with_flag_on_in_production_with_key(): void
+    public function test_enabled_only_with_flag_on_in_production_and_full_credentials(): void
     {
         $this->app['env'] = 'production';
         config([
             'services.twitter.enabled' => true,
             'services.twitter.consumer_key' => 'a-key',
+            'services.twitter.consumer_secret' => 'a-secret',
+            'services.twitter.access_token' => 'a-token',
+            'services.twitter.access_secret' => 'a-token-secret',
         ]);
 
         $this->assertTrue(Twitter::isEnabled());
+
+        $this->app['env'] = 'testing';
+    }
+
+    public function test_blank_or_partial_credentials_stay_disabled(): void
+    {
+        $this->app['env'] = 'production';
+        config([
+            'services.twitter.enabled' => true,
+            'services.twitter.consumer_key' => 'a-key',
+            'services.twitter.consumer_secret' => '',     // blank resolves like an empty env var
+            'services.twitter.access_token' => null,
+            'services.twitter.access_secret' => '',
+        ]);
+
+        $this->assertFalse(Twitter::isEnabled());
 
         $this->app['env'] = 'testing';
     }

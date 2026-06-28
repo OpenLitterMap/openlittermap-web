@@ -17,7 +17,10 @@ class Twitter
     {
         return (bool) config('services.twitter.enabled')
             && app()->environment('production')
-            && config('services.twitter.consumer_key') !== null;
+            && filled(config('services.twitter.consumer_key'))
+            && filled(config('services.twitter.consumer_secret'))
+            && filled(config('services.twitter.access_token'))
+            && filled(config('services.twitter.access_secret'));
     }
 
     public static function sendTweet (string $message): void
