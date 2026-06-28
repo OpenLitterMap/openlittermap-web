@@ -210,6 +210,7 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/Terms.md` — Terms & Conditions source content (Vue component renders this)
 - `readme/Privacy.md` — Privacy Policy source content with GDPR legal basis (Vue component renders this)
 - `readme/Twitter.md` — Automated Twitter/X commands (schedule, data sources, tweet format, Browsershot config)
+- `readme/Email.md` — Email subsystem (campaign send + ledger, SNS bounce/complaint suppression loop, backfill import, subscribe/unsubscribe, resend runbook)
 - `readme/TagSuggestions.md` — Quick tags sync API (mobile presets, bulk-replace, cross-device sync)
 - `readme/ExportData.md` — CSV data export system (user/team/location exports, column layout, date filters, S3 pipeline)
 - `readme/ViteUpgradePlan.md` — Vite 8 / Rolldown upgrade plan (why the 6→8 bump was reverted, CJS/UMD interop root cause, at-risk deps, fix options, de-risk path, readiness checklist)

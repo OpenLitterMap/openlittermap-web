@@ -409,3 +409,4 @@ Read the relevant file before working in that area:
 | `readme/Locations.md` | Location and geography system |
 | `readme/Mobile.md` | Mobile app & v4-to-v5 tag conversion shim |
 | `readme/Profile.md` | User profile, settings, privacy, public profiles |
+| `readme/Email.md` | Email subsystem — campaign send + ledger, SNS suppression feedback loop, subscribe/unsubscribe |

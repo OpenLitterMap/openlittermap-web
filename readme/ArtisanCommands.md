@@ -141,3 +141,16 @@ Sends a campaign email to subscribed users (`emailsub=1`, includes unverified) a
 Per-recipient flow: skip if already `accepted` or in-flight `queued`; log `skipped_invalid` (fails `EmailAddress::isSendable()`) or `skipped_suppressed` (in `email_suppressions`); subscribers whose email belongs to a user are counted as duplicates and skipped (user wins); otherwise atomically claim (`uniq(campaign,email)` is the lock) and dispatch one `DispatchEmail` job. Ledger `accepted`/`failed` are written in the job's terminal hooks.
 
 Related: `email:import-suppressions` (SES backfill) and the `POST /webhooks/aws/ses/sns` webhook (live bounces/complaints → suppressions).
+
+#### Production resend runbook (Phase 1)
+
+Run in order:
+
+1. `php artisan migrate` — creates `email_suppressions`, `email_events`, `email_sends`.
+2. `aws sesv2 list-suppressed-destinations --region eu-west-1 --page-size 1000 --output json > ses-suppressed.json` then `php artisan email:import-suppressions ses-suppressed.json` — load the SES account-level suppression list **before** any send.
+3. `php artisan olm:send-email-to-subscribed --campaign=update28 --dry-run` — preflight report; writes/dispatches nothing.
+4. `php artisan olm:send-email-to-subscribed --campaign=update28 --limit=N` — the real send. Resumable: rerun (drop `--limit`, or raise it) to continue; `accepted`/in-flight `queued` rows are never re-mailed.
+
+Prerequisite: set `SES_SNS_TOPIC_ARN` in prod (`eu-west-1`) — the SNS webhook rejects any message whose `TopicArn` differs, and `.env.example` ships it empty.
+
+**Not in Phase 1:** email verification (`users.email_verified_at` + an `email:backfill-verified-at` command) was split out as Phase-2-adjacent — it is **not** part of this deploy. Do not include a `backfill-verified-at` step in this runbook.
