@@ -2809,3 +2809,25 @@ All removed 2026-03-01 (legacy v1/v2 mobile + pre-v5 web). Mobile and web now us
 | `GET /api/v2/photos/get-untagged-uploads` / `web/index` / `web/load-more` | `GET /api/v3/user/photos?tagged=false` |
 | `POST /api/v2/add-tags-to-uploaded-image` | `POST /api/v3/tags` |
 | `POST /api/upload` (v2) | `POST /api/v3/upload` |
+
+---
+
+## Webhooks & Mailing List (non-`/api` web routes)
+
+### POST /subscribe — Mailing list signup (public)
+
+Body: `{ "email": "name@example.com" }`. A plain newsletter signup for anonymous visitors — it does not assume or touch user accounts. Validated with `required|max:100|email`, the shared `EmailAddress::isSendable()` deliverability check (rejects RFC-valid single-label domains like `foo@8`), and `unique:subscribers`. Returns `{ "success": true }` (200) or `422` with `email` validation errors.
+
+### POST /webhooks/aws/ses/sns — SES bounce/complaint notifications (AWS SNS)
+
+CSRF-exempt, no auth. Verifies the SNS signature (`aws/aws-php-sns-message-validator`) and asserts `TopicArn === config('services.ses.topic_arn')` **before** any processing — either check failing returns `403`. Reads the raw `text/plain` body (so `$request->all()` is not used).
+
+| SNS / SES type | Action |
+|----------------|--------|
+| `SubscriptionConfirmation` | Confirm (GET the `SubscribeURL`), `200`, not stored |
+| Bounce / Permanent | Log `email_events` + suppress recipient (`reason=bounced`) |
+| Bounce / Transient | Ignore |
+| Bounce / Undetermined | Log `email_events` only, no suppression |
+| Complaint | Log `email_events` + suppress recipient (`reason=complained`) |
+
+Idempotent on `(sns_id, email)` — duplicate SNS deliveries are harmless. Always returns `200` for handled/ignored events so SNS stops retrying. Suppressions are the source of truth for the `olm:send-email-to-subscribed` dispatch guard; complaint outranks bounce and is never downgraded.

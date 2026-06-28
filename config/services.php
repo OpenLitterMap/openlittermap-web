@@ -32,6 +32,9 @@ return [
         'key' => env('AWS_ACCESS_KEY_ID', env('AWS_KEY')),
         'secret' => env('AWS_SECRET_ACCESS_KEY', env('AWS_SECRET')),
         'region' => env('AWS_DEFAULT_REGION', env('AWS_REGION', 'us-east-1')),
+        // SNS topic that SES publishes bounce/complaint notifications to.
+        // The webhook rejects any message whose TopicArn does not match.
+        'topic_arn' => env('SES_SNS_TOPIC_ARN'),
     ],
 
     'slack' => [

@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Reports\GenerateImpactReportController;
+use App\Http\Controllers\SubscribersController;
+use App\Http\Controllers\Webhooks\SesSnsWebhookController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +20,12 @@ Route::get('impact/{period?}/{year?}/{monthOrWeek?}', GenerateImpactReportContro
 Route::get('register/confirm/{token}', 'Auth\RegisterController@confirmEmail');
 Route::get('confirm/email/{token}', 'Auth\RegisterController@confirmEmail')
     ->name('confirm-email-token');
+
+// Mailing list subscribe (unauthenticated) — validates dotted-domain emails before insert
+Route::post('subscribe', SubscribersController::class);
+
+// AWS SES bounce/complaint notifications via SNS (CSRF-exempt, signature-verified)
+Route::post('webhooks/aws/ses/sns', SesSnsWebhookController::class);
 
 // Email unsubscribe (unauthenticated, token-based)
 Route::get('/emails/unsubscribe/{token}', 'EmailSubController@unsubEmail');

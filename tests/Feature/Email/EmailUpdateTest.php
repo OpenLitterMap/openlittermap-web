@@ -4,23 +4,29 @@ namespace Tests\Feature\Email;
 
 use App\Jobs\Emails\DispatchEmail;
 use App\Mail\EmailUpdate;
+use App\Models\EmailSend;
 use App\Models\Users\User;
 use App\Subscriber;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Support\EmailRecipient;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class EmailUpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    private const PROMPT = 'Queue these emails now?';
+
+    private function runSend(array $opts = [], string $confirm = 'yes')
+    {
+        return $this->artisan('olm:send-email-to-subscribed', array_merge(['--campaign' => 'update28'], $opts))
+            ->expectsConfirmation(self::PROMPT, $confirm);
+    }
 
     // ─── Mailable ────────────────────────────────────────────────────
 
     public function test_email_update_has_correct_subject(): void
     {
-        $user = User::factory()->create();
-        $mailable = new EmailUpdate($user);
+        $mailable = new EmailUpdate(User::factory()->create());
 
         $mailable->assertHasSubject('Update 28 - 1st TidyTowns Webinar, 1 Million Hours & EU Presidency');
     }
@@ -28,11 +34,10 @@ class EmailUpdateTest extends TestCase
     public function test_email_update_renders_with_user(): void
     {
         $user = User::factory()->create();
-        $mailable = new EmailUpdate($user);
 
-        $html = $mailable->render();
+        $html = (new EmailUpdate($user))->render();
 
-        $this->assertStringContainsString('1st TidyTowns Webinar', $html); // Title in HTML body
+        $this->assertStringContainsString('1st TidyTowns Webinar', $html);
         $this->assertStringContainsString($user->sub_token, $html);
         $this->assertStringContainsString('unsubscribe', $html);
     }
@@ -40,77 +45,29 @@ class EmailUpdateTest extends TestCase
     public function test_email_update_renders_with_subscriber(): void
     {
         $subscriber = Subscriber::create(['email' => 'test@example.com']);
-        $mailable = new EmailUpdate($subscriber);
 
-        $html = $mailable->render();
+        $html = (new EmailUpdate($subscriber))->render();
 
-        $this->assertStringContainsString('1st TidyTowns Webinar', $html); // Title in HTML body
+        $this->assertStringContainsString('1st TidyTowns Webinar', $html);
         $this->assertStringContainsString($subscriber->sub_token, $html);
     }
 
-    // ─── Command: dry run ────────────────────────────────────────────
+    // ─── Command: report + dedup ─────────────────────────────────────
 
-    public function test_dry_run_counts_recipients_without_dispatching(): void
+    public function test_dry_run_reports_eligible_count_without_dispatching(): void
     {
         Bus::fake();
 
-        User::factory()->count(3)->create(['emailsub' => 1]);
+        User::factory()->count(2)->create(['emailsub' => 1]);
         User::factory()->create(['emailsub' => 0]);
 
-        $this->artisan('olm:send-email-to-subscribed --dry-run')
-            ->expectsOutputToContain('Users (emailsub=1): 3')
-            ->expectsOutputToContain('no emails dispatched')
+        $this->artisan('olm:send-email-to-subscribed', ['--campaign' => 'update28', '--dry-run' => true])
+            ->expectsOutputToContain('Will dispatch now:      2')
             ->assertSuccessful();
 
         Bus::assertNothingDispatched();
+        $this->assertSame(0, EmailSend::count());
     }
-
-    // ─── Command: test mode ──────────────────────────────────────────
-
-    public function test_test_flag_dispatches_single_email(): void
-    {
-        Bus::fake();
-
-        $this->artisan('olm:send-email-to-subscribed --test=sean@test.com')
-            ->expectsOutputToContain('Test email dispatched')
-            ->assertSuccessful();
-
-        Bus::assertDispatched(DispatchEmail::class, 1);
-    }
-
-    // ─── Command: deduplication ──────────────────────────────────────
-
-    public function test_subscribers_overlapping_with_users_are_excluded(): void
-    {
-        Bus::fake();
-
-        $user = User::factory()->create(['emailsub' => 1, 'email' => 'overlap@test.com']);
-        Subscriber::create(['email' => 'overlap@test.com']);
-        Subscriber::create(['email' => 'unique@test.com']);
-
-        $this->artisan('olm:send-email-to-subscribed --dry-run')
-            ->expectsOutputToContain('Users (emailsub=1): 1')
-            ->expectsOutputToContain('Subscribers (unique): 1')
-            ->expectsOutputToContain('Total: 2')
-            ->assertSuccessful();
-    }
-
-    public function test_unsubscribed_user_with_subscriber_row_is_fully_excluded(): void
-    {
-        Bus::fake();
-
-        // User opted out (emailsub=0) but also has a row in subscribers table
-        $user = User::factory()->create(['emailsub' => 0, 'email' => 'optout@test.com']);
-        Subscriber::create(['email' => 'optout@test.com']);
-
-        $this->artisan('olm:send-email-to-subscribed --dry-run')
-            ->expectsOutputToContain('Users (emailsub=1): 0')
-            ->expectsOutputToContain('Subscribers (unique): 0')
-            ->expectsOutputToContain('Total: 0')
-            ->assertSuccessful();
-    }
-
-    // ─── Command: respects unsubscribe ───────────────────────────────
 
     public function test_unsubscribed_users_are_excluded(): void
     {
@@ -119,9 +76,47 @@ class EmailUpdateTest extends TestCase
         User::factory()->count(2)->create(['emailsub' => 1]);
         User::factory()->create(['emailsub' => 0]);
 
-        $this->artisan('olm:send-email-to-subscribed --dry-run')
-            ->expectsOutputToContain('Users (emailsub=1): 2')
+        $this->runSend()->assertSuccessful();
+
+        Bus::assertDispatched(DispatchEmail::class, 2);
+    }
+
+    public function test_unsubscribed_user_with_subscriber_row_is_fully_excluded(): void
+    {
+        Bus::fake();
+
+        User::factory()->create(['emailsub' => 0, 'email' => 'optout@test.com']);
+        Subscriber::create(['email' => 'optout@test.com']);
+
+        $this->runSend()->assertSuccessful();
+
+        Bus::assertNotDispatched(DispatchEmail::class);
+    }
+
+    public function test_overlapping_subscriber_excluded_unique_subscriber_sent(): void
+    {
+        Bus::fake();
+
+        User::factory()->create(['emailsub' => 1, 'email' => 'overlap@test.com']);
+        Subscriber::create(['email' => 'overlap@test.com']);
+        Subscriber::create(['email' => 'unique@test.com']);
+
+        $this->runSend()->assertSuccessful();
+
+        // user (overlap) + unique subscriber = 2; the overlapping subscriber is a duplicate.
+        Bus::assertDispatched(DispatchEmail::class, 2);
+        $this->assertSame('subscriber', EmailSend::where('email', 'unique@test.com')->value('recipient_type'));
+        $this->assertSame('user', EmailSend::where('email', 'overlap@test.com')->value('recipient_type'));
+    }
+
+    public function test_only_email_dispatches_single_preview(): void
+    {
+        Bus::fake();
+
+        $this->artisan('olm:send-email-to-subscribed', ['--only-email' => 'sean@test.com'])
             ->assertSuccessful();
+
+        Bus::assertDispatched(DispatchEmail::class, 1);
     }
 
     // ─── Job dispatches mail ─────────────────────────────────────────
@@ -130,12 +125,9 @@ class EmailUpdateTest extends TestCase
     {
         Mail::fake();
 
-        $user = User::factory()->create();
-        $job = new DispatchEmail($user);
-        $job->handle();
+        $recipient = new EmailRecipient('user', 1, 'recipient@test.com', 'tok');
+        (new DispatchEmail(null, $recipient))->handle();
 
-        Mail::assertSent(EmailUpdate::class, function ($mail) use ($user) {
-            return $mail->hasTo($user->email);
-        });
+        Mail::assertSent(EmailUpdate::class, fn ($mail) => $mail->hasTo('recipient@test.com'));
     }
 }

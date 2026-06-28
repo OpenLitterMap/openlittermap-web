@@ -12,6 +12,7 @@
         "abraham/twitteroauth": "^3.1",
         "ahmedsaoud31/laravel-permission-to-vuejs": "dev-master",
         "anhskohbo/no-captcha": "^3.3",
+        "aws/aws-php-sns-message-validator": "^1.10",
         "benjamincrozat/laravel-dropbox-driver": "^3.0",
         "doctrine/dbal": "^3.0",
         "guzzlehttp/guzzle": "^7.2.1",
