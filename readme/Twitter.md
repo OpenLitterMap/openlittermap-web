@@ -146,14 +146,14 @@ These fire from domain events on user activity, not the cron schedule — volume
 
 The command posts the curated **`## Public`** block from `readme/changelog/{date}.md` — plain-language release notes written for OLM users, educators, the citizen-science community, and funders. It does **not** post the raw internal session bullets (those stay as the team's internal record). The `## Public` convention is documented in `CLAUDE.md` → "Daily Changelog".
 
-**Two sources, combined:**
-- **Web:** the `## Public` block in the local `readme/changelog/{date}.md`.
+**Two sources, decoupled and combined:**
+- **Web:** the `## Public` block in the local `readme/changelog/{date}.md` (or empty if no file exists for the date — `File::exists($path) ? parsePublicBlock(...) : ''`).
 - **Mobile:** the `## Public` block in the react-native repo's changelog, fetched from `https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{date}.md`. Mobile posts require the **mobile repo to adopt the same `## Public` convention**; until it does (or if the fetch fails), mobile is silently skipped. Mobile blocks self-label in the same house style (e.g. "OpenLitterMap app update 📱…").
+- The two repos run on **separate cadences**, so the mobile fetch always runs — even when there's no local web file. A mobile-only app release on a date with no web changelog still posts its mobile `## Public` block.
 - Each source builds its own post(s): `array_merge(buildPosts(webPublic), buildPosts(mobilePublic))`. A day where both have content becomes a short thread — web post, then mobile post; most days only one or neither.
 
 **Behaviour:**
-- No local changelog file for the date → logs "No changelog found", exits SUCCESS (no mobile fetch).
-- Neither source has a `## Public` block (or both empty) → logs "No public changelog", **posts nothing**, exits SUCCESS. The common, correct outcome — most days are internal-only.
+- Neither source has a `## Public` block (no web file / no block, and no mobile block) → logs "No public changelog", **posts nothing**, exits SUCCESS. The common, correct outcome — most days are internal-only.
 - One or both blocks present → each is posted as **one Bluesky post** when ≤300 chars, else threaded on word boundaries (every post ≤300).
 - **Mobile fetch is best-effort:** any failure (non-200, network error, timeout, exception) is logged and the bot continues web-only — a mobile failure never breaks the command.
 
@@ -170,7 +170,7 @@ The command posts the curated **`## Public`** block from `readme/changelog/{date
 OpenLitterMap update 🔒 Data exports now require a free account, and we fixed a privacy issue that could have exposed school students' names. Exports are also faster, with simpler format options. #openlittermap
 ```
 
-**No data:** No file → "No changelog found"; no `## Public` block on either source → "No public changelog". Both skip silently.
+**No data:** No `## Public` block on either source (including no web file at all) → "No public changelog", skips silently.
 
 **External dependencies:** GitHub raw content (mobile `## Public` block; graceful web-only fallback on failure).
 
@@ -276,7 +276,7 @@ All three methods guard on `app()->environment('production')` and `$consumer_key
 ## Tests
 
 - `tests/Feature/Twitter/DailyReportTweetTest.php` — 28 tests: streak (0/1/5/gap), milestone boundaries (100K/1M), season labels (all 6 tiers), lead line (same/new/no-data), mission frames (3), conditional skipping (littercoin/streak/cities), thread output, no-data skip, formatMilestone (k/M), tweet length enforcement
-- `tests/Feature/Twitter/ChangelogTweetTest.php` — 22 tests: `parsePublicBlock` (present prose / absent / empty / bullet-marker stripping / stops at next heading / from an array of lines), `buildPosts` (empty → none / short → one post / exactly-at-limit / over-limit threads with every post ≤300 and no content lost), `handle` (no file → "No changelog found", absent block both sources → "No public changelog" + posts nothing, web block → posted, mobile fetch hits the GitHub URL, defaults to yesterday), and mobile (mobile `## Public` posted after web, mobile-only when web silent, both combine into a ≤300 thread, fetch 404/500/exception → web-only, mobile without a `## Public` block contributes nothing)
+- `tests/Feature/Twitter/ChangelogTweetTest.php` — 23 tests: `parsePublicBlock` (present prose / absent / empty / bullet-marker stripping / stops at next heading / from an array of lines), `buildPosts` (empty → none / short → one post / exactly-at-limit / over-limit threads with every post ≤300 and no content lost), `handle` (no web file + no mobile block → "No public changelog" + posts nothing, absent block both sources → "No public changelog", web block → posted, mobile fetch hits the GitHub URL, defaults to yesterday), and mobile (mobile `## Public` posted after web, mobile-only when web silent, mobile-only release with no web file → still posted, both combine into a ≤300 thread, fetch 404/500/exception → web-only, mobile without a `## Public` block contributes nothing)
 
 No tests exist for `WeeklyImpactReportTweet`, `MonthlyImpactReportTweet`, or `AnnualImpactReportTweet` (Browsershot dependency). The `GenerateImpactReportController` is tested in `tests/Feature/Reports/GenerateImpactReportTest.php` (8 tests: weekly/monthly/annual rendering, future date, invalid period, v5 brands query, zero data).
 

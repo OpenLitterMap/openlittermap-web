@@ -65,12 +65,13 @@ logged, never thrown.
 | Nothing user-facing | still posted the overview + whatever bullets existed | posts nothing, logs "No public changelog", exits SUCCESS |
 | Mobile | raw bullets | curated `## Public` only; graceful web-only fallback on fetch failure |
 
-`handle()`: env guard → resolve date/path → file missing ⇒ "No changelog found",
-SUCCESS → `webPublic = parsePublicBlock(File::lines($path))`,
-`mobilePublic = mobilePublicBlock($date)` →
+`handle()`: env guard → resolve date/path →
+`webPublic = File::exists($path) ? parsePublicBlock(File::lines($path)) : ''` (no early
+return — web and mobile are decoupled), `mobilePublic = mobilePublicBlock($date)` →
 `posts = array_merge(buildPosts(webPublic), buildPosts(mobilePublic))` → empty ⇒ "No
 public changelog … nothing to post", SUCCESS → else `Social::thread($posts)` with the
-existing `sent === 0` / `sent < total` result handling.
+existing `sent === 0` / `sent < total` result handling. The mobile fetch always runs, so
+a mobile-only release on a date with no local web file still posts.
 
 Public methods (directly testable): `parsePublicBlock(iterable $lines): string`,
 `buildPosts(string $text): array`, `mobilePublicBlock(string $date): string`,
@@ -107,13 +108,14 @@ helpers.
 
 ## Testing
 
-`tests/Feature/Twitter/ChangelogTweetTest.php` to the new contract:
+`tests/Feature/Twitter/ChangelogTweetTest.php` (23 tests) to the new contract:
 `parsePublicBlock` present/absent/empty/bullet-stripping/stops-at-next-heading/from an
 array of lines; `buildPosts` one-post-≤300 / threads->each-≤300 / empty->[]; `handle`
-posts present web block, posts nothing + "No public changelog" when both sources absent,
-"No changelog found" when no file, defaults to yesterday, mobile fetch hits the GitHub
-URL; mobile combine (mobile post after web), mobile-only when web silent, both->thread
-each ≤300, fetch 404/500/exception->web-only, mobile without `## Public`->nothing. Whole
+posts present web block, posts nothing + "No public changelog" when both sources absent
+(incl. no web file at all), defaults to yesterday, mobile fetch hits the GitHub URL;
+mobile combine (mobile post after web), mobile-only when web silent, mobile-only release
+with **no web file** -> still posted, both->thread each ≤300, fetch
+404/500/exception->web-only, mobile without `## Public`->nothing. Whole
 `tests/Feature/Twitter/` dir stays green.
 
 ## Out of scope

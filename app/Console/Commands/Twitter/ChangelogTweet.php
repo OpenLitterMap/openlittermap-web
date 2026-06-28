@@ -32,13 +32,10 @@ class ChangelogTweet extends Command
         $date = $this->argument('date') ?? now()->subDay()->toDateString();
         $path = base_path("readme/changelog/{$date}.md");
 
-        if (! File::exists($path)) {
-            $this->info("No changelog found for {$date} — skipping.");
-
-            return self::SUCCESS;
-        }
-
-        $webPublic = $this->parsePublicBlock(File::lines($path));
+        // Web and mobile are separate repos on separate cadences — read each
+        // independently so a mobile-only release still posts when there's no local
+        // web changelog file for the date.
+        $webPublic = File::exists($path) ? $this->parsePublicBlock(File::lines($path)) : '';
         $mobilePublic = $this->mobilePublicBlock($date);
 
         $posts = array_merge($this->buildPosts($webPublic), $this->buildPosts($mobilePublic));

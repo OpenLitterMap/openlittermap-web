@@ -196,16 +196,32 @@ class ChangelogTweetTest extends TestCase
 
     // ─── handle ──────────────────────────────────────────────────────
 
-    public function test_no_file_skips_silently(): void
+    public function test_no_web_file_and_no_mobile_block_skips_silently(): void
     {
-        Http::fake();
+        // No local web file for the date, and the mobile fetch 404s → both sources
+        // empty → silent. Web and mobile are decoupled, so the mobile fetch still runs.
+        Http::fake(['raw.githubusercontent.com/*' => Http::response('', 404)]);
 
         $this->artisan('twitter:changelog 2099-12-31')
-            ->expectsOutputToContain('No changelog found')
+            ->expectsOutputToContain('No public changelog')
             ->assertSuccessful();
+    }
 
-        // Returns before any mobile fetch.
-        Http::assertNothingSent();
+    public function test_mobile_only_release_posts_when_no_web_file(): void
+    {
+        // The decoupling gap: a mobile app release on a date with no local web
+        // changelog file must still post the mobile `## Public` block.
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response(
+                $this->mobilePublicBody('OpenLitterMap app update 📱 New offline mode in the app. #openlittermap'),
+                200
+            ),
+        ]);
+
+        $this->artisan('twitter:changelog 2099-12-30')
+            ->expectsOutputToContain('[1/1] OpenLitterMap app update 📱 New offline mode in the app.')
+            ->doesntExpectOutputToContain('No public changelog')
+            ->assertSuccessful();
     }
 
     public function test_absent_public_block_on_both_sources_posts_nothing(): void
