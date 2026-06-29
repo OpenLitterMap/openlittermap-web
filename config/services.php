@@ -66,10 +66,18 @@ return [
     ],
 
     'twitter' => [
+        'enabled' => env('TWITTER_ENABLED', false),
         'consumer_key' => env('TWITTER_API_CONSUMER_KEY'),
         'consumer_secret' => env('TWITTER_API_CONSUMER_SECRET'),
         'access_token' => env('TWITTER_API_ACCESS_TOKEN'),
         'access_secret' => env('TWITTER_API_ACCESS_SECRET'),
+    ],
+
+    'bluesky' => [
+        'enabled' => env('BLUESKY_ENABLED', false),
+        'identifier' => env('BLUESKY_IDENTIFIER'),
+        'app_password' => env('BLUESKY_APP_PASSWORD'),
+        'service' => env('BLUESKY_SERVICE', 'https://bsky.social'),
     ],
 
     'browsershot' => [

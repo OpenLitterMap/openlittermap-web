@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Twitter;
 
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Spatie\Browsershot\Browsershot;
@@ -49,7 +49,7 @@ class WeeklyImpactReportTweet extends Command
         $msg = "Weekly Impact Report for week {$isoWeek} of {$isoYear}."
             . " Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
-        Twitter::sendTweetWithImage($msg, $path);
+        Social::withImage($msg, $path);
 
         $this->info('Tweet sent');
 

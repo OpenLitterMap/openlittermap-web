@@ -6,7 +6,7 @@ namespace App\Console\Commands\Twitter;
 
 use Carbon\Carbon;
 use App\Enums\LocationType;
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 use App\Models\Users\User;
 use App\Models\Littercoin;
 use Illuminate\Console\Command;
@@ -146,7 +146,7 @@ class DailyReportTweet extends Command
 
         // ─── Send ────────────────────────────────────────────────────
 
-        $result = Twitter::sendThread([$tweet1, $tweet2]);
+        $result = Social::thread([$tweet1, $tweet2]);
 
         $this->line("Tweet 1:\n{$tweet1}");
         $this->line("Tweet 2:\n{$tweet2}");

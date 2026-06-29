@@ -218,6 +218,17 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 ## Daily Changelog
 After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries by session. This is the running record of all work done each day.
 
+### `## Public` block (what OLMbot posts)
+A changelog file MAY include a single `## Public` block — curated, plain-language release notes that the `twitter:changelog` bot posts to the social feeds (Bluesky; X gated off). Rules:
+- **Audience:** OLM users, educators/schools, the citizen-science community, funders. NOT contributors — they read the PR. No file paths, class/function names, route/throttle internals. If a teacher couldn't follow it, rewrite it.
+- **0–3 plain-language points written as tight prose** (not a bullet list). The whole post must fit ONE Bluesky post (300 chars) — write to that ceiling. If it genuinely needs more it threads, but one post under 300 is the default unit.
+- **Lead with what matters most to an observer:** privacy/safeguarding and access changes first, usability/speed after.
+- **One `## Public` per release, on the day the release lands.** A multi-day feature gets a single public post on its completion day — do NOT fragment it across each day the work spanned (that re-buries the headline change). When the release day arrives, consolidate the user-facing story into one block and leave the earlier days' blocks absent.
+- **Silence is correct and expected.** Most days are internal-only — leave the block absent and the bot posts nothing. Only add it when something is genuinely user-facing. The detailed session entries above stay as the internal record regardless.
+- The block runs from the `## Public` heading to the next heading; place it directly under the `# YYYY-MM-DD` title. See `readme/changelog/2026-06-27.md`, `2026-06-28.md`, `2026-05-04.md` for worked examples.
+
+The mobile app (react-native) repo follows the same `## Public` convention in its own changelog; the bot fetches that file and adds a second post on days both have content (mobile after web). Mobile blocks self-label (e.g. "OpenLitterMap app update 📱…").
+
 ## Versioning
 - The single source of truth for the app version is `package.json` `"version"` field
 - Vite exposes it as `__APP_VERSION__` (defined in `vite.config.js`) — Footer.vue reads it from there
@@ -232,7 +243,7 @@ After every change in a session, append a one-line entry to `readme/changelog/YY
 When the user says "BOOP", perform all of the following:
 1. Determine if the change is a new feature (minor bump) or a fix/improvement (patch bump). Ask if unsure
 2. Bump the appropriate version in `package.json`
-3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date)
+3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date). If the work is user-facing, also add/extend the day's `## Public` block (see Daily Changelog) — otherwise leave it absent
 4. Update any readme docs (`readme/*.md`) affected by the changes
 5. Update any skills files affected by the changes
 4. Update any skills files affected by the changes

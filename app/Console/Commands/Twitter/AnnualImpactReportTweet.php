@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Twitter;
 
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 use Illuminate\Console\Command;
 use Spatie\Browsershot\Browsershot;
 
@@ -47,7 +47,7 @@ class AnnualImpactReportTweet extends Command
         $msg = "Annual Impact Report for {$lastYear}."
             . " Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
-        Twitter::sendTweetWithImage($msg, $path);
+        Social::withImage($msg, $path);
 
         $this->info('Tweet sent');
 
