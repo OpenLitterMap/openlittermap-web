@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Twitter;
 
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ChangelogTweet extends Command
 {
     protected $signature = 'twitter:changelog {date? : Date in YYYY-MM-DD format, defaults to yesterday}';
 
-    protected $description = 'Tweet a threaded changelog from the daily changelog file';
+    protected $description = 'Post the curated ## Public changelog block(s) to OLMbot social feeds';
 
-    private const MAX_TWEET_LENGTH = 280;
+    private const MAX_POST_LENGTH = 300;
 
     private const MOBILE_CHANGELOG_URL = 'https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/';
 
@@ -24,215 +25,160 @@ class ChangelogTweet extends Command
     {
         if (! app()->environment('production') && ! app()->runningUnitTests()) {
             $this->info('Skipping — not production environment.');
+
             return self::SUCCESS;
         }
 
         $date = $this->argument('date') ?? now()->subDay()->toDateString();
         $path = base_path("readme/changelog/{$date}.md");
 
-        if (! File::exists($path)) {
-            $this->info("No changelog found for {$date} — skipping.");
+        // Web and mobile are separate repos on separate cadences — read each
+        // independently so a mobile-only release still posts when there's no local
+        // web changelog file for the date.
+        $webPublic = File::exists($path) ? $this->parsePublicBlock(File::lines($path)) : '';
+        $mobilePublic = $this->mobilePublicBlock($date);
+
+        $posts = array_merge($this->buildPosts($webPublic), $this->buildPosts($mobilePublic));
+
+        if (empty($posts)) {
+            $this->info("No public changelog for {$date} — nothing to post.");
+
             return self::SUCCESS;
         }
 
-        $parsed = $this->parseEntries($path, $date);
-
-        if (empty($parsed['web']) && empty($parsed['mobile'])) {
-            $this->info("No changelog found for {$date} — skipping.");
-            return self::SUCCESS;
+        foreach ($posts as $i => $post) {
+            $this->line('[' . ($i + 1) . '/' . count($posts) . '] ' . $post);
         }
 
-        $tweets = $this->buildThread($date, $parsed['web'], $parsed['mobile']);
-
-        foreach ($tweets as $i => $tweet) {
-            $this->line("[" . ($i + 1) . "/" . count($tweets) . "] " . $tweet);
-        }
-
-        $result = Twitter::sendThread($tweets);
+        $result = Social::thread($posts);
 
         if ($result['sent'] === 0) {
-            $this->info('Thread not sent (non-production or dry run).');
+            $this->info('Changelog not sent (non-production or dry run).');
+
             return self::SUCCESS;
         }
 
         if ($result['sent'] < $result['total']) {
-            $this->error("Partial thread failure: {$result['sent']}/{$result['total']} tweets posted. First ID: {$result['first_id']}");
+            $this->error("Partial post failure: {$result['sent']}/{$result['total']} posts published. First ID: {$result['first_id']}");
+
             return self::FAILURE;
         }
 
-        $this->info("Thread posted ({$result['sent']} tweets). First tweet ID: {$result['first_id']}");
+        $this->info("Changelog posted ({$result['sent']} posts). First post ID: {$result['first_id']}");
+
         return self::SUCCESS;
     }
 
     /**
-     * Parse changelog entries into web and mobile arrays.
+     * Parse the curated `## Public` block from an iterable of changelog lines and
+     * return it as a single plain-language post body. Returns '' when the block is
+     * absent or empty — the silence case, where that source posts nothing.
      *
-     * - Lines starting with `- [Web] ` → web (prefix stripped)
-     * - Lines starting with `- [Mobile] ` → mobile (prefix stripped)
-     * - Lines starting with `- ` with no prefix → default to web
+     * Works on both the local web file (`File::lines($path)`) and the fetched
+     * mobile body (`explode("\n", $body)`). The block runs from the `## Public`
+     * heading to the next markdown heading (or EOF). Blank lines are dropped and a
+     * leading bullet marker is tolerated and stripped; the remaining lines are
+     * joined into one prose string (the house standard is tight prose under 300
+     * chars, not a bullet list).
      *
-     * Also fetches mobile changelog from the react-native repo on GitHub.
-     * All entries from the mobile repo are treated as mobile entries.
-     *
-     * Version prefixes and backticks are cleaned from all entries.
-     *
-     * @return array{web: string[], mobile: string[]}
+     * @param  iterable<int, string>  $lines
      */
-    public function parseEntries(string $path, ?string $date = null): array
+    public function parsePublicBlock(iterable $lines): string
     {
-        $web = [];
-        $mobile = [];
+        $inBlock = false;
+        $collected = [];
 
-        foreach (File::lines($path) as $line) {
-            $line = trim($line);
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
 
-            if (! str_starts_with($line, '- ')) {
+            if (! $inBlock) {
+                if ($trimmed === '## Public') {
+                    $inBlock = true;
+                }
+
                 continue;
             }
 
-            $content = substr($line, 2); // strip "- "
-
-            if (str_starts_with($content, '[Mobile] ')) {
-                $mobile[] = $this->cleanChange(substr($content, 9));
-            } elseif (str_starts_with($content, '[Web] ')) {
-                $web[] = $this->cleanChange(substr($content, 6));
-            } else {
-                // No prefix → default to web
-                $web[] = $this->cleanChange($content);
+            if (preg_match('/^#{1,6}\s/', $trimmed)) {
+                break;
             }
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $collected[] = preg_replace('/^[-*]\s+/', '', $trimmed);
         }
 
-        // Fetch mobile changelog from react-native repo
-        if ($date) {
-            $mobileEntries = $this->fetchMobileChangelog($date);
-            $mobile = array_merge($mobile, $mobileEntries);
-        }
-
-        return ['web' => $web, 'mobile' => $mobile];
+        return trim(preg_replace('/\s+/', ' ', implode(' ', $collected)));
     }
 
     /**
-     * Fetch mobile changelog entries from the react-native GitHub repo.
-     *
-     * @return string[]
+     * Fetch the mobile (react-native) changelog for the date and return its
+     * `## Public` block. Mobile posts require the mobile repo to adopt the same
+     * `## Public` convention; until it does — or if the fetch fails (non-200,
+     * network error, timeout, exception) — this returns '' and the bot posts
+     * web-only. A mobile failure never breaks the command.
      */
-    public function fetchMobileChangelog(string $date): array
+    public function mobilePublicBlock(string $date): string
+    {
+        $body = $this->fetchMobileChangelog($date);
+
+        return $body === '' ? '' : $this->parsePublicBlock(explode("\n", $body));
+    }
+
+    /**
+     * Fetch the raw mobile changelog body from the react-native GitHub repo, or ''
+     * on any failure (logged, never thrown).
+     */
+    public function fetchMobileChangelog(string $date): string
     {
         try {
-            $url = self::MOBILE_CHANGELOG_URL . "{$date}.md";
-            $response = Http::timeout(10)->get($url);
+            $response = Http::timeout(10)->get(self::MOBILE_CHANGELOG_URL . "{$date}.md");
 
-            if (! $response->successful()) {
-                return [];
-            }
-
-            $entries = [];
-
-            foreach (explode("\n", $response->body()) as $line) {
-                $line = trim($line);
-
-                if (! str_starts_with($line, '- ')) {
-                    continue;
-                }
-
-                $entries[] = $this->cleanChange(substr($line, 2));
-            }
-
-            return $entries;
-        } catch (\Exception $e) {
+            return $response->successful() ? $response->body() : '';
+        } catch (Throwable $e) {
             Log::warning("Failed to fetch mobile changelog for {$date}: {$e->getMessage()}");
 
-            return [];
+            return '';
         }
     }
 
     /**
-     * Build the tweet thread: overview tweet + grouped change tweets.
+     * Build the post(s) for one public block: one post when it fits a single
+     * Bluesky post (300 chars), otherwise a thread split on word boundaries with
+     * every post within the limit. An empty block contributes no posts.
      *
-     * @param  string[]  $web
-     * @param  string[]  $mobile
      * @return string[]
      */
-    public function buildThread(string $date, array $web, array $mobile): array
+    public function buildPosts(string $text): array
     {
-        $tweets = [];
-
-        // ─── Tweet 1: Overview ───────────────────────────────────────
-
-        $overview = "🔧 OpenLitterMap — Changes for {$date}\n\n";
-
-        $counts = [];
-        if (! empty($web)) {
-            $counts[] = count($web) . " web improvement" . (count($web) !== 1 ? 's' : '');
-        }
-        if (! empty($mobile)) {
-            $counts[] = count($mobile) . " mobile improvement" . (count($mobile) !== 1 ? 's' : '');
+        if ($text === '') {
+            return [];
         }
 
-        $overview .= implode(' · ', $counts);
-        $overview .= "\n\n🧵 Thread ↓";
-
-        $tweets[] = $overview;
-
-        // ─── Tweet 2+: Grouped changes ───────────────────────────────
-
-        $footer = "\n\n#openlittermap #changelog";
-        $changeLines = [];
-
-        if (! empty($web)) {
-            $changeLines[] = "🌐 Web";
-            foreach ($web as $entry) {
-                $changeLines[] = "- {$entry}";
-            }
+        if (mb_strlen($text) <= self::MAX_POST_LENGTH) {
+            return [$text];
         }
 
-        if (! empty($web) && ! empty($mobile)) {
-            $changeLines[] = '';
-        }
-
-        if (! empty($mobile)) {
-            $changeLines[] = "📱 Mobile";
-            foreach ($mobile as $entry) {
-                $changeLines[] = "- {$entry}";
-            }
-        }
-
-        // Pack change lines into tweets respecting 280 char limit
+        $posts = [];
         $current = '';
 
-        foreach ($changeLines as $changeLine) {
-            // Truncate individual lines that are too long for a single tweet
-            $maxLineLen = self::MAX_TWEET_LENGTH - mb_strlen($footer) - 2;
-            if (mb_strlen($changeLine) > $maxLineLen) {
-                $changeLine = mb_substr($changeLine, 0, $maxLineLen - 1) . '…';
-            }
+        foreach (explode(' ', $text) as $word) {
+            $candidate = $current === '' ? $word : $current . ' ' . $word;
 
-            $candidate = $current === '' ? $changeLine : $current . "\n" . $changeLine;
-
-            // Reserve space for footer on the last tweet (worst case)
-            if (mb_strlen($candidate . $footer) > self::MAX_TWEET_LENGTH && $current !== '') {
-                $tweets[] = trim($current);
-                $current = $changeLine;
+            if (mb_strlen($candidate) > self::MAX_POST_LENGTH && $current !== '') {
+                $posts[] = $current;
+                $current = $word;
             } else {
                 $current = $candidate;
             }
         }
 
         if ($current !== '') {
-            $tweets[] = trim($current) . $footer;
+            $posts[] = $current;
         }
 
-        return $tweets;
-    }
-
-    /**
-     * Strip version prefix like "`v5.0.3` — " and backticks from a change line.
-     */
-    public function cleanChange(string $change): string
-    {
-        $clean = preg_replace('/^\*\*`?v?\d+\.\d+\.\d+`?\*\*\s*[—–-]\s*/u', '', $change);
-        $clean = preg_replace('/^`?v?\d+\.\d+\.\d+`?\s*[—–-]\s*/u', '', $clean);
-
-        return str_replace('`', '', $clean);
+        return $posts;
     }
 }

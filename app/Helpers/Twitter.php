@@ -7,6 +7,22 @@ use Abraham\TwitterOAuth\TwitterOAuth;
 
 class Twitter
 {
+    /**
+     * Master on/off switch for all X/Twitter posting. Every send method funnels
+     * through this. Posting requires TWITTER_ENABLED (default false), the
+     * production environment, and a configured consumer key — so an unset or
+     * empty key can never misfire a live call.
+     */
+    public static function isEnabled(): bool
+    {
+        return (bool) config('services.twitter.enabled')
+            && app()->environment('production')
+            && filled(config('services.twitter.consumer_key'))
+            && filled(config('services.twitter.consumer_secret'))
+            && filled(config('services.twitter.access_token'))
+            && filled(config('services.twitter.access_secret'));
+    }
+
     public static function sendTweet (string $message): void
     {
         $consumer_key = config('services.twitter.consumer_key');
@@ -14,7 +30,7 @@ class Twitter
         $access_token = config('services.twitter.access_token');
         $access_token_secret = config('services.twitter.access_secret');
 
-        if (app()->environment() === 'production' && $consumer_key !== null)
+        if (self::isEnabled())
         {
             $connection = new TwitterOAuth(
                 $consumer_key,
@@ -59,8 +75,8 @@ class Twitter
         $access_token = config('services.twitter.access_token');
         $access_token_secret = config('services.twitter.access_secret');
 
-        if (! app()->environment('production') || $consumer_key === null) {
-            Log::info('Twitter thread skipped (not production or missing keys)', ['count' => count($messages)]);
+        if (! self::isEnabled()) {
+            Log::info('Twitter thread skipped (disabled, not production, or missing keys)', ['count' => count($messages)]);
             return $result;
         }
 
@@ -105,7 +121,7 @@ class Twitter
         $access_token = config('services.twitter.access_token');
         $access_token_secret = config('services.twitter.access_secret');
 
-        if (app()->environment() === 'production' && $consumer_key !== null) {
+        if (self::isEnabled()) {
             $connection = new TwitterOAuth(
                 $consumer_key,
                 $consumer_secret,

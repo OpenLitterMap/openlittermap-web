@@ -3,7 +3,7 @@
 namespace App\Listeners\Locations\Twitter;
 
 use App\Events\NewCityAdded;
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 
 class TweetNewCity
 {
@@ -32,7 +32,7 @@ class TweetNewCity
 
         if (app()->environment() === 'production')
         {
-            Twitter::sendTweet(
+            Social::text(
                 "A new city has been added. Say hello to $event->city, $event->state, $event->country! "
                 . $link ?: ''
             );

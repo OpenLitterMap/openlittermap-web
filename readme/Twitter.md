@@ -1,12 +1,13 @@
 # OLMbot — Automated Twitter Commands
 
-OLMbot is the automated Twitter/X posting system. All commands live in `app/Console/Commands/Twitter/` and use the `App\Helpers\Twitter` helper for API calls.
+OLMbot is the automated social posting system. All commands live in `app/Console/Commands/Twitter/` and post via the `App\Helpers\Social` dispatcher, which fans out to every enabled network — `App\Helpers\Twitter` (X) and `App\Helpers\Bluesky` — each self-gated by its own `isEnabled()`. Stat-generation logic is independent of the posting layer.
 
 ## Configuration
 
 Twitter API credentials are in `config/services.php` under the `twitter` key, backed by env vars:
 
 ```
+TWITTER_ENABLED=false           # master on/off — default off; requires paid X API credits
 TWITTER_API_CONSUMER_KEY=
 TWITTER_API_CONSUMER_SECRET=
 TWITTER_API_ACCESS_TOKEN=
@@ -19,7 +20,29 @@ Browsershot Chromium path is configurable via `config/services.php`:
 BROWSERSHOT_CHROME_PATH=       # defaults to /snap/bin/chromium
 ```
 
-The `Twitter` helper has a production guard — all three methods (`sendTweet`, `sendThread`, `sendTweetWithImage`) silently no-op outside `production`. Each command also has its own production guard at the top of `handle()`.
+The `Twitter` helper has a master switch — `Twitter::isEnabled()` gates all three methods (`sendTweet`, `sendThread`, `sendTweetWithImage`) and requires `TWITTER_ENABLED=true` **and** the `production` environment **and** a configured consumer key. It **defaults off** (`TWITTER_ENABLED` defaults to `false`), so OLMbot posts nothing until explicitly enabled — a zero-code kill switch for when X API credits are unavailable. An empty/missing key can't misfire a live call. Each command/listener also has its own production guard.
+
+## Social dispatcher & Bluesky
+
+Commands/listeners call `App\Helpers\Social` (`text`, `thread`, `withImage`), which posts to every enabled network. `Social::thread` sums `sent`/`total` over **enabled networks only**, so the commands' `sent < total → FAILURE` check stays correct and a no-network environment returns `sent=0` (→ SUCCESS). Adding a network is a new helper + two lines in `Social` — deliberately no registry/plugin layer.
+
+### Bluesky (`App\Helpers\Bluesky`)
+
+AT Protocol XRPC via Laravel `Http`. Config under the `bluesky` key:
+
+```
+BLUESKY_ENABLED=false                    # master on/off — default off
+BLUESKY_IDENTIFIER=olmbot.bsky.social
+BLUESKY_APP_PASSWORD=                     # app password, never the account password
+BLUESKY_SERVICE=https://bsky.social      # optional override
+```
+
+`Bluesky::isEnabled()` = `enabled && production && app_password` (logs a warning if enabled in prod with no password). Methods mirror the Twitter helper — `post()`, `thread()`, `postWithImage()`:
+
+- **Auth:** `createSession` (identifier + app password) → `accessJwt` + `did`, once per send operation.
+- **Threads:** each post after the first carries `reply.root` + `reply.parent` strongRefs from the previous `createRecord`.
+- **Images:** recompressed under Bluesky's ~1MB blob limit (intervention/image, JPEG, quality-stepped + downscale) before `uploadBlob`; falls back to text-only if it can't get under. Embedded as `app.bsky.embed.images`.
+- **Links:** bare `https?://` URLs get `app.bsky.richtext.facet#link` facets (UTF-8 byte ranges) so they're clickable — Bluesky does not auto-link plain text. Hashtag facets are deferred (post as plain `#tags`).
 
 ## Schedule (Kernel.php)
 
@@ -30,6 +53,17 @@ The `Twitter` helper has a production guard — all three methods (`sendTweet`, 
 | `twitter:weekly-impact-report-tweet` | `weeklyOn(1, '06:30')` (Monday) | None |
 | `twitter:monthly-impact-report-tweet` | `monthlyOn(1, '06:30')` | None |
 | `twitter:annual-impact-report-tweet` | `yearlyOn(1, 1, '06:30')` (Jan 1) | None |
+
+## Event-driven posts (not scheduled)
+
+These fire from domain events on user activity, not the cron schedule — volume scales with uploads/badges, so they are the main X API *write* driver. Wired in `app/Providers/EventServiceProvider.php`; all gated by `Twitter::isEnabled()`.
+
+| Listener | Event | Fires | Posts |
+|---|---|---|---|
+| `TweetNewCity` | `NewCityAdded` | per new city uploaded | `sendTweet()` (text) |
+| `TweetNewState` | `NewStateAdded` | per new state uploaded | `sendTweet()` (text) |
+| `TweetNewCountry` | `NewCountryAdded` | per new country uploaded | `sendTweet()` (text) |
+| `TweetBadgeCreated` | `BadgeCreated` (queued) | per badge unlocked | `sendTweetWithImage()` |
 
 ## Commands
 
@@ -107,51 +141,38 @@ The `Twitter` helper has a production guard — all three methods (`sendTweet`, 
 
 **Class:** `App\Console\Commands\Twitter\ChangelogTweet`
 **Signature:** `twitter:changelog {date?}` — defaults to yesterday
-**Send method:** `Twitter::sendThread()` (overview tweet + grouped change tweets)
+**Send method:** `Social::thread()` (one post when ≤300 chars, otherwise a thread)
 **Image:** No
 
-**Data sources:**
-- **Web:** `readme/changelog/{date}.md` (local file). Entries default to web unless prefixed with `[Mobile]`
-- **Mobile:** Fetched from `https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{date}.md` via HTTP. All entries from this file are treated as mobile. Falls back to web-only if fetch fails (404, network error, timeout)
+The command posts the curated **`## Public`** block from `readme/changelog/{date}.md` — plain-language release notes written for OLM users, educators, the citizen-science community, and funders. It does **not** post the raw internal session bullets (those stay as the team's internal record). The `## Public` convention is documented in `CLAUDE.md` → "Daily Changelog".
 
-**Entry prefixes (local file only):**
-- `- [Web] description` → web entry (prefix stripped)
-- `- [Mobile] description` → mobile entry (prefix stripped)
-- `- description` (no prefix) → defaults to web
-- Version prefixes (`v5.0.3 —`) and backticks are cleaned from all entries
-- Mobile entries from both local `[Mobile]` prefixes and the GitHub fetch are merged
+**Two sources, decoupled and combined:**
+- **Web:** the `## Public` block in the local `readme/changelog/{date}.md` (or empty if no file exists for the date — `File::exists($path) ? parsePublicBlock(...) : ''`).
+- **Mobile:** the `## Public` block in the react-native repo's changelog, fetched from `https://raw.githubusercontent.com/OpenLitterMap/react-native/openlittermap/v7/readme/changelog/{date}.md`. Mobile posts require the **mobile repo to adopt the same `## Public` convention**; until it does (or if the fetch fails), mobile is silently skipped. Mobile blocks self-label in the same house style (e.g. "OpenLitterMap app update 📱…").
+- The two repos run on **separate cadences**, so the mobile fetch always runs — even when there's no local web file. A mobile-only app release on a date with no web changelog still posts its mobile `## Public` block.
+- Each source builds its own post(s): `array_merge(buildPosts(webPublic), buildPosts(mobilePublic))`. A day where both have content becomes a short thread — web post, then mobile post; most days only one or neither.
 
-**Thread structure:**
-- **Tweet 1 (overview):** Date, entry counts by platform, thread indicator
-- **Tweet 2+ (grouped changes):** Web section first (`🌐 Web`), then mobile (`📱 Mobile`), split across tweets if > 280 chars
-- Hashtags on final tweet only
+**Behaviour:**
+- Neither source has a `## Public` block (no web file / no block, and no mobile block) → logs "No public changelog", **posts nothing**, exits SUCCESS. The common, correct outcome — most days are internal-only.
+- One or both blocks present → each is posted as **one Bluesky post** when ≤300 chars, else threaded on word boundaries (every post ≤300).
+- **Mobile fetch is best-effort:** any failure (non-200, network error, timeout, exception) is logged and the bot continues web-only — a mobile failure never breaks the command.
 
-**Example Tweet 1 (Overview):**
+**Cadence — event-driven, not daily.** The command is still scheduled `dailyAt('07:00')`, but it self-silences on internal-only days, so it effectively fires only per release/milestone that ships a non-empty `## Public` block.
+
+**`## Public` block format** (see `CLAUDE.md` → "Daily Changelog" for authoring rules):
+- Runs from the `## Public` heading to the next markdown heading (or EOF). Parsed identically for web (`File::lines`) and mobile (`explode` of the fetched body).
+- 0–3 plain-language points written as tight prose; a leading `- ` bullet marker is tolerated and stripped, then lines are joined into one prose string.
+- No internals (file paths, class names, routes). Lead with privacy/safeguarding/access, then usability/speed.
+- **One `## Public` per release, on the release-completion day** — a multi-day feature consolidates to a single block, not one per day it spanned.
+
+**Example post (single Bluesky post, ≤300 chars):**
 ```
-🔧 OpenLitterMap — Changes for 2026-03-22
-
-3 web improvements · 2 mobile improvements
-
-🧵 Thread ↓
-```
-
-**Example Tweet 2 (Changes):**
-```
-🌐 Web
-- Fix admin permissions for superadmin role
-- Scheduler restored for automated tweets
-- Faster cluster rendering at high zoom
-
-📱 Mobile
-- Camera orientation saved correctly
-- Upload retry on weak connections
-
-#openlittermap #changelog
+OpenLitterMap update 🔒 Data exports now require a free account, and we fixed a privacy issue that could have exposed school students' names. Exports are also faster, with simpler format options. #openlittermap
 ```
 
-**No data:** If no changelog file or empty file, logs "No changelog found" and skips.
+**No data:** No `## Public` block on either source (including no web file at all) → "No public changelog", skips silently.
 
-**External dependencies:** GitHub raw content (for mobile changelog fetch, graceful fallback on failure)
+**External dependencies:** GitHub raw content (mobile `## Public` block; graceful web-only fallback on failure).
 
 ---
 
@@ -255,7 +276,7 @@ All three methods guard on `app()->environment('production')` and `$consumer_key
 ## Tests
 
 - `tests/Feature/Twitter/DailyReportTweetTest.php` — 28 tests: streak (0/1/5/gap), milestone boundaries (100K/1M), season labels (all 6 tiers), lead line (same/new/no-data), mission frames (3), conditional skipping (littercoin/streak/cities), thread output, no-data skip, formatMilestone (k/M), tweet length enforcement
-- `tests/Feature/Twitter/ChangelogTweetTest.php` — 26 tests: overview counts, prefix parsing ([Web]/[Mobile]/default), GitHub raw content call verification, web-only/mobile-only, long changelog splits, oversized single line truncation, no-file skip, thread structure, cleanChange, singular/plural, sendThread return shape, mobile fetch from GitHub (success/404/500/merge/URL/thread integration)
+- `tests/Feature/Twitter/ChangelogTweetTest.php` — 23 tests: `parsePublicBlock` (present prose / absent / empty / bullet-marker stripping / stops at next heading / from an array of lines), `buildPosts` (empty → none / short → one post / exactly-at-limit / over-limit threads with every post ≤300 and no content lost), `handle` (no web file + no mobile block → "No public changelog" + posts nothing, absent block both sources → "No public changelog", web block → posted, mobile fetch hits the GitHub URL, defaults to yesterday), and mobile (mobile `## Public` posted after web, mobile-only when web silent, mobile-only release with no web file → still posted, both combine into a ≤300 thread, fetch 404/500/exception → web-only, mobile without a `## Public` block contributes nothing)
 
 No tests exist for `WeeklyImpactReportTweet`, `MonthlyImpactReportTweet`, or `AnnualImpactReportTweet` (Browsershot dependency). The `GenerateImpactReportController` is tested in `tests/Feature/Reports/GenerateImpactReportTest.php` (8 tests: weekly/monthly/annual rendering, future date, invalid period, v5 brands query, zero data).
 
@@ -264,7 +285,7 @@ No tests exist for `WeeklyImpactReportTweet`, `MonthlyImpactReportTweet`, or `An
 | Command | Tables | Send Method | Image | No-Data | External Deps |
 |---|---|---|---|---|---|
 | `daily-report` | `metrics`, `users`, `countries`, `cities`, `littercoin` | `sendThread()` (2 tweets) | No | Skips | None |
-| `changelog` | None (reads local + GitHub changelog files) | `sendThread()` (overview + grouped) | No | Skips | GitHub raw content |
+| `changelog` | None (web `## Public` block + mobile `## Public` from GitHub) | `Social::thread()` (one post per source, else thread) | No | Skips (no file / no `## Public` block) | GitHub raw content (mobile, graceful web-only fallback) |
 | `weekly-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 | Always tweets | Browsershot, Chromium, network |
 | `monthly-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 fullPage | Always tweets | Browsershot, Chromium, network |
 | `annual-impact-report` | None | `sendTweetWithImage()` | Browsershot 1200x800 fullPage | Always tweets | Browsershot, Chromium, network |

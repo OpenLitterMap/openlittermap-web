@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Twitter;
 
-use App\Helpers\Twitter;
+use App\Helpers\Social;
 use Illuminate\Console\Command;
 use Spatie\Browsershot\Browsershot;
 
@@ -49,7 +49,7 @@ class MonthlyImpactReportTweet extends Command
         $time = $lastMonth->format('F Y');
         $msg = "Monthly Impact Report for {$time}. Join us at openlittermap.com #litter #citizenscience #impact #openlittermap";
 
-        Twitter::sendTweetWithImage($msg, $path);
+        Social::withImage($msg, $path);
 
         $this->info('Tweet sent');
 
