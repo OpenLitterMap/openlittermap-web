@@ -18,6 +18,17 @@ return [
         'secret' => env('LOCATE_API_KEY')
     ],
 
+    /*
+    | Path to the `heif-convert` binary (from libheif) used to convert HEIC/HEIF
+    | uploads to JPEG. Defaults to the bare name, resolved via PATH — correct for
+    | production and CI. Override with an absolute path locally when the web
+    | server's PATH excludes it (e.g. Valet's php-fpm runs under launchd with a
+    | restricted PATH that omits /opt/homebrew/bin).
+    */
+    'heif_convert' => [
+        'path' => env('HEIF_CONVERT_PATH', 'heif-convert'),
+    ],
+
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),
