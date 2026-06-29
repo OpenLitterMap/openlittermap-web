@@ -6,6 +6,24 @@
 - Node v20.20.0, npm v10.8.2
 - MySQL 5.7+, Redis 7+
 - Laravel Valet (macOS)
+- `heif-convert` (for HEIC/HEIF uploads — see below)
+
+### HEIC uploads (heif-convert)
+
+iPhone HEIC uploads are converted to JPEG server-side via `heif-convert` (from libheif):
+
+```bash
+brew install libheif    # provides /opt/homebrew/bin/heif-convert
+which heif-convert       # confirm
+```
+
+**Valet gotcha:** Valet's php-fpm runs under launchd with a restricted PATH that excludes `/opt/homebrew/bin`, so the web process can't find `heif-convert` by name (HEIC uploads fail with `heic_conversion_failed`, exit 127). Point the app at the absolute path in your local `.env` (not `.env.testing`):
+
+```dotenv
+HEIF_CONVERT_PATH=/opt/homebrew/bin/heif-convert
+```
+
+Then `php artisan config:clear`. Production needs no override — `heif-convert` is on the web user's PATH (`/usr/bin`). See `readme/Upload.md` → "Server dependencies".
 
 ## Quick Start
 
