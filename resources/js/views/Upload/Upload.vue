@@ -62,6 +62,7 @@
                     class="custom-filepond"
                     :server="server"
                     :acceptedFileTypes="acceptedFileTypes"
+                    :fileValidateTypeDetectType="detectFileType"
                     :dropOnPage="true"
                     :dropOnElement="false"
                     @processfile="handleFileProcessed"
@@ -107,6 +108,11 @@
                     This photo doesn't have location data. Make sure GPS is enabled on your camera:
                 </p>
                 <GpsInstructions compact />
+            </div>
+
+            <!-- Upload error (non-GPS, e.g. HEIC conversion failure) -->
+            <div v-if="uploadError" class="mt-4 max-w-lg mx-auto">
+                <p class="text-sm text-red-400/80 break-words">{{ uploadError }}</p>
             </div>
         </div>
     </div>
@@ -166,12 +172,37 @@ const sessionXp = ref(0);
 const successCount = ref(0);
 const allDone = ref(false);
 const hasGpsError = ref(false);
+const uploadError = ref(null);
 
 const activeTeam = computed(() => userStore.user?.team || null);
 const userLevel = computed(() => userStore.user?.next_level || null);
 
 // ── FilePond Config ──────────────────────────────────────────────
-const acceptedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', '.heic', '.heif'];
+const acceptedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
+// FilePond's validate-type plugin matches a selected File against its browser-supplied
+// `file.type` (it only guesses from the extension for remote URLs). Chrome/Firefox report
+// an empty `file.type` for .heic/.heif (they don't know the format), so without this
+// resolver HEIC files are rejected client-side and the upload request never fires.
+// Resolve an empty/unknown type to a MIME by extension so HEIC passes validation.
+const detectFileType = (source, type) =>
+    new Promise((resolve) => {
+        if (type) {
+            return resolve(type);
+        }
+
+        const ext = source.name?.split('.').pop()?.toLowerCase();
+
+        if (ext === 'heic') {
+            return resolve('image/heic');
+        }
+
+        if (ext === 'heif') {
+            return resolve('image/heif');
+        }
+
+        resolve(type);
+    });
 
 const pondLabel = computed(
     () =>
@@ -190,6 +221,10 @@ function getXsrfToken() {
 const server = {
     url: '.',
     process: (fieldName, file, metadata, load, error, progress, abort) => {
+        // Clear any stale error from a previous attempt
+        uploadError.value = null;
+        hasGpsError.value = false;
+
         const formData = new FormData();
         formData.append(fieldName, file, file.name);
 
@@ -214,11 +249,16 @@ const server = {
                     const parsed = JSON.parse(xhr.responseText);
                     if (parsed.error === 'no_gps' || parsed.error === 'invalid_coordinates') {
                         hasGpsError.value = true;
+                    } else {
+                        // Surface the full message in a contained banner — FilePond's
+                        // inline file-status label is too narrow and runs off screen.
+                        uploadError.value = parsed.message || parsed.error || 'Upload failed';
                     }
-                    error(parsed.message || parsed.error || 'Upload failed');
                 } catch {
-                    error('Upload failed');
+                    uploadError.value = 'Upload failed';
                 }
+                // Keep FilePond's inline label short so it never overflows the component.
+                error('Upload failed');
             }
         };
 
@@ -243,6 +283,7 @@ function resetUpload() {
     successCount.value = 0;
     sessionXp.value = 0;
     hasGpsError.value = false;
+    uploadError.value = null;
     if (pond.value) {
         pond.value.removeFiles();
     }

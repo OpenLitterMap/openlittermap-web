@@ -117,6 +117,14 @@ class UploadPhotoRequest extends FormRequest
                     return;
                 }
 
+                // HEIC EXIF is unreadable before conversion — PHP's exif_read_data()
+                // returns false for HEIC — so GPS/datetime validation is deferred to
+                // the controller, which reads the converted JPEG's EXIF. rules()
+                // already special-cases HEIC the same way (drops image/dimensions).
+                if ((new MakeImageAction)->isHeic($photo)) {
+                    return;
+                }
+
                 // --- EXIF-based validation (web uploads) ---
 
                 try {

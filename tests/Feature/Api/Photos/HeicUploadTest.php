@@ -523,6 +523,122 @@ class HeicUploadTest extends TestCase
     }
 
     // ---------------------------------------------------------------
+    // Web path: HEIC with no explicit coords — GPS comes from EXIF
+    // ---------------------------------------------------------------
+
+    /**
+     * A web upload (no explicit lat/lon/date) of a genuine HEIC must succeed.
+     *
+     * PHP's exif_read_data() returns false for HEIC, so UploadPhotoRequest can't
+     * validate GPS/datetime against the raw file — that validation is deferred to
+     * the controller, which reads the CONVERTED JPEG's EXIF (heif-convert embeds
+     * GPS/datetime). Before the fix this 422'd with `no_exif` at the request layer.
+     *
+     * MakeImageAction is swapped for a double returning an EXIF array with GPS —
+     * simulating the post-conversion EXIF — so the test doesn't need the
+     * `heif-convert` binary (absent locally/CI).
+     */
+    public function test_web_heic_upload_extracts_gps_from_exif_and_succeeds(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(
+            ReverseGeocodeLocationAction::class,
+            (new FakeReverseGeocodingAction())->withAddress([
+                'city' => 'Latimore Township',
+                'state' => 'Pennsylvania',
+                'country' => 'United States of America',
+                'country_code' => 'us',
+            ])
+        );
+
+        // Post-conversion EXIF: heif-convert embeds GPS + datetime into the JPEG.
+        $this->swap(MakeImageAction::class, new class extends MakeImageAction {
+            public function run(UploadedFile $file, bool $resize = false): array
+            {
+                return [
+                    'image' => Image::make(storage_path('framework/testing/1x1.jpg')),
+                    'exif' => [
+                        'DateTimeOriginal' => '2026:06:07 12:00:00',
+                        'GPSLatitudeRef' => 'N',
+                        'GPSLatitude' => ['40/1', '3/1', '10/1'],
+                        'GPSLongitudeRef' => 'W',
+                        'GPSLongitude' => ['77/1', '9/1', '16/1'],
+                    ],
+                ];
+            }
+        });
+
+        $user = User::factory()->create(['picked_up' => true]);
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        // Web path: NO lat/lon/date — coordinates must come from the EXIF.
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => $heic,
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('photos', [
+            'id' => $response->json('photo_id'),
+            'user_id' => $user->id,
+            'platform' => 'web',
+        ]);
+    }
+
+    /**
+     * A web HEIC upload whose converted EXIF carries no GPS must still be rejected
+     * with the typed `no_gps` 422 — and create no Photo. Deferring HEIC validation
+     * to the controller must not weaken the GPS-required guarantee.
+     */
+    public function test_web_heic_upload_without_gps_returns_no_gps(): void
+    {
+        Storage::fake('s3');
+        Storage::fake('bbox');
+
+        $this->swap(MakeImageAction::class, new class extends MakeImageAction {
+            public function run(UploadedFile $file, bool $resize = false): array
+            {
+                return [
+                    'image' => Image::make(storage_path('framework/testing/1x1.jpg')),
+                    'exif' => ['DateTimeOriginal' => '2026:06:07 12:00:00'], // no GPS
+                ];
+            }
+        });
+
+        $user = User::factory()->create();
+
+        $heic = new UploadedFile(
+            storage_path('framework/testing/sample.heic'),
+            'photo.heic',
+            'image/heic',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($user)->postJson('/api/v3/upload', [
+            'photo' => $heic,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+            'error' => 'no_gps',
+        ]);
+
+        $this->assertDatabaseMissing('photos', ['user_id' => $user->id]);
+    }
+
+    // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
 

@@ -171,7 +171,7 @@ class MakeImageAction
 
             try {
                 $result = Process::timeout(self::HEIC_CONVERT_TIMEOUT)->run([
-                    'heif-convert',
+                    config('services.heif_convert.path'),
                     '-q', (string) self::JPEG_QUALITY,
                     $tmpFilepath,
                     $convertedFilepath,

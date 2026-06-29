@@ -53,7 +53,7 @@ class UploadPhotoController extends Controller
             // 1. Process image & extract EXIF
             $imageAndExif = $this->makeImageAction->run($file);
             $image = $imageAndExif['image'];
-            $exif = $imageAndExif['exif'];
+            $exif = $imageAndExif['exif'] ?? [];
 
             // 2. Resolve coordinates and datetime
             if ($hasExplicit) {
@@ -66,9 +66,28 @@ class UploadPhotoController extends Controller
                     ? Carbon::createFromTimestamp((int) $dateInput)
                     : Carbon::parse($dateInput);
             } else {
-                // Web: extract from EXIF
+                // Web: extract datetime + GPS from EXIF. For HEIC this is the converted
+                // JPEG's EXIF (heif-convert embeds GPS/datetime) — the raw HEIC can't be
+                // read by exif_read_data, so HEIC GPS validation happens here rather than
+                // in UploadPhotoRequest. Defensive for all web uploads.
                 $dateTime = getDateTimeForPhoto($exif) ?? Carbon::now();
-                $coordinates = getCoordinatesFromPhoto($exif);
+
+                $hasGps = ! empty($exif['GPSLatitudeRef'])
+                    && ! empty($exif['GPSLatitude'])
+                    && ! empty($exif['GPSLongitudeRef'])
+                    && ! empty($exif['GPSLongitude']);
+
+                $coordinates = $hasGps ? getCoordinatesFromPhoto($exif) : null;
+
+                if ($coordinates === null) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'no_gps',
+                        'message' => 'Sorry, no GPS on this one.',
+                        'errors' => [],
+                    ], 422);
+                }
+
                 $lat = $coordinates[0];
                 $lon = $coordinates[1];
             }

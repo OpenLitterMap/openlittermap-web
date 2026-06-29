@@ -79,7 +79,7 @@ Duplicate detection happens in the controller (idempotent — see "Idempotent Up
 
 iPhones (and newer Android cameras) upload HEIC. Two things make this work:
 
-1. **Validation skip.** Laravel's `image` rule excludes HEIC and `dimensions` uses `getimagesize()` (returns `false` for HEIC), so both would reject genuine HEIC. `UploadPhotoRequest::rules()` detects HEIC via `MakeImageAction::isHeic()` (extension/MIME **and** ftyp magic bytes — catches iOS HEIC sent as `.jpg`) and **drops `image` + `dimensions` for HEIC only**. `mimes` (content-sniffed) and `max:20480` stay on. Using the same `isHeic()` the converter uses keeps the validation-skip in lockstep with conversion.
+1. **Validation skip.** Laravel's `image` rule excludes HEIC and `dimensions` uses `getimagesize()` (returns `false` for HEIC), so both would reject genuine HEIC. `UploadPhotoRequest::rules()` detects HEIC via `MakeImageAction::isHeic()` (extension/MIME **and** ftyp magic bytes — catches iOS HEIC sent as `.jpg`) and **drops `image` + `dimensions` for HEIC only**. `mimes` (content-sniffed) and `max:20480` stay on. `UploadPhotoRequest::after()` **also skips the raw `exif_read_data()` GPS/datetime checks for HEIC** — PHP can't read HEIC EXIF pre-conversion (returns `false`), so for web HEIC that validation is deferred to the controller (see "web-mode HEIC" below). Using the same `isHeic()` the converter uses keeps the validation-skip in lockstep with conversion.
 2. **Conversion.** `MakeImageAction::convertViaHeifConvert()` runs **`heif-convert -q 92 {input} {output}`** via Laravel's `Process` facade (array command, 60s timeout) to convert HEIC → JPEG before storage, since the Intervention GD driver can't decode HEIC. `heif-convert` ships in the **`libheif-examples`** package and decodes directly through libheif.
 
 **Why `heif-convert` and not ImageMagick `convert`.** The old path shelled out to ImageMagick 6 `convert`, whose HEIC delegate is unreliable across HEIC variants. Two production failure signatures (Sentry, Jun 2026):
@@ -111,22 +111,28 @@ Preservation applies to **any** shell-conversion failure, including non-HEIC fil
 
 > **⚠️ INTERIM — failing the upload is not the target behaviour.** The standing product decision is that **HEIC uploads must never fail**. Target: *accept-on-failure* — store the original HEIC, create the Photo record, flag it, and reprocess later via a future `olm:reprocess-failed-heic` command. The diagnostic samples in `heic_failed/` are the raw material for designing that reprocessor. The 422 above is the placeholder until accept-on-failure ships as a follow-up.
 
-**Known limitation (follow-up ticket):** web-mode HEIC (no explicit `lat`/`lon`/`date`) still hits `after()`'s `exif_read_data()`/GPS checks, which are unreliable on HEIC. The mobile path (explicit coords) is fully supported.
+**Web-mode HEIC (resolved 2026-06-29, v5.12.13).** Web HEIC (no explicit `lat`/`lon`/`date`) previously failed: `after()` ran `exif_read_data()`/GPS checks on the raw HEIC, which PHP can't read (returns `false`) → false `no_exif` 422 even on a photo with valid GPS. Now `after()` skips those for HEIC, and `UploadPhotoController`'s web branch extracts GPS/datetime from the **post-conversion** EXIF (`heif-convert` embeds GPS/datetime into the JPEG), returning a typed `no_gps` 422 only if coordinates are genuinely missing. The client-side `FilePond` gate was also fixed (`acceptedFileTypes` MIME entries + a `fileValidateTypeDetectType` resolver for the empty `file.type` browsers report for HEIC) — previously HEIC was rejected before any request fired. **Both web and mobile HEIC paths are now supported.**
 
 #### Server dependencies
 
-HEIC conversion requires **`heif-convert`** on the production box. Required packages alongside the existing `imagemagick`/`libheif1` (versions at time of writing: **libheif 1.17.6-1ubuntu4.3, Ubuntu 24.04**):
+HEIC conversion requires **`heif-convert`** (from `libheif-examples`). **Verified on production (2026-06-29):** Ubuntu **24.04.4 LTS**, libheif **1.17.6-1ubuntu4.4**, binary at **`/usr/bin/heif-convert`** (on the web/queue user's PATH). Laravel's `Process` facade — the exact mechanism `MakeImageAction` uses — runs it successfully from the app (`Process::run('heif-convert --version')` → OK).
+
+**Ubuntu 24.04 uses libheif's plugin architecture** — `heif-convert` decodes nothing on its own; codec plugins must be installed too. iPhone HEICs are **HEVC**, so **`libheif-plugin-libde265` is required** (without it: `no decoding plugin installed for this compression format`). Production has it, plus the AOM (AVIF) plugins:
 
 ```bash
 sudo apt-get update
-sudo apt-get install libheif-examples   # provides heif-convert
-which heif-convert                       # confirm it's on PATH for the web/queue user
+sudo apt-get install libheif-examples            # provides /usr/bin/heif-convert
+sudo apt-get install libheif-plugin-libde265     # HEVC decode — REQUIRED for iPhone HEIC
+sudo apt-get install libheif-plugin-aomdec       # AVIF/AV1 decode (newer Android)
+which heif-convert                               # confirm it's on PATH for the web/queue user
 
-# Smoke test against a real sample:
-heif-convert -q 92 /path/to/sample.heic /tmp/out.jpg && echo OK
+# Smoke test against a real preserved sample:
+heif-convert -q 92 storage/app/heic_failed/<hash>.heic /tmp/out.jpg && file /tmp/out.jpg
 ```
 
-`libheif-examples` is already installed on production. If it is ever missing, `heif-convert` will not be found and **every** HEIC upload fails into `heic_failed/` — treat its presence as a hard deploy/provisioning requirement.
+If `heif-convert` (or the libde265 plugin) is ever missing, conversion fails and HEIC uploads land in `heic_failed/` — treat their presence as a hard deploy/provisioning requirement.
+
+**Binary path is configurable** via `config('services.heif_convert.path')` (env `HEIF_CONVERT_PATH`, default `heif-convert` resolved via PATH). **Production needs no override** — `/usr/bin` is on php-fpm's PATH. **Local Valet does**: its php-fpm runs under launchd with a restricted PATH that omits `/opt/homebrew/bin`, so after `brew install libheif` set `HEIF_CONVERT_PATH=/opt/homebrew/bin/heif-convert` in local `.env` (not `.env.testing`).
 
 #### Ops notes — `heic_images/` and `heic_failed/`
 
