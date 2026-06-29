@@ -62,6 +62,7 @@
                     class="custom-filepond"
                     :server="server"
                     :acceptedFileTypes="acceptedFileTypes"
+                    :fileValidateTypeDetectType="detectFileType"
                     :dropOnPage="true"
                     :dropOnElement="false"
                     @processfile="handleFileProcessed"
@@ -171,7 +172,31 @@ const activeTeam = computed(() => userStore.user?.team || null);
 const userLevel = computed(() => userStore.user?.next_level || null);
 
 // ── FilePond Config ──────────────────────────────────────────────
-const acceptedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', '.heic', '.heif'];
+const acceptedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
+// FilePond's validate-type plugin matches a selected File against its browser-supplied
+// `file.type` (it only guesses from the extension for remote URLs). Chrome/Firefox report
+// an empty `file.type` for .heic/.heif (they don't know the format), so without this
+// resolver HEIC files are rejected client-side and the upload request never fires.
+// Resolve an empty/unknown type to a MIME by extension so HEIC passes validation.
+const detectFileType = (source, type) =>
+    new Promise((resolve) => {
+        if (type) {
+            return resolve(type);
+        }
+
+        const ext = source.name?.split('.').pop()?.toLowerCase();
+
+        if (ext === 'heic') {
+            return resolve('image/heic');
+        }
+
+        if (ext === 'heif') {
+            return resolve('image/heif');
+        }
+
+        resolve(type);
+    });
 
 const pondLabel = computed(
     () =>
