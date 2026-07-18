@@ -24,6 +24,7 @@ import Terms from '../views/General/Terms.vue';
 import Privacy from '../views/General/Privacy.vue';
 import Uploads from '../views/User/Uploads/Uploads.vue';
 import Changelog from '../views/General/Changelog.vue';
+import Timeline from '../views/General/Timeline.vue';
 import AddTags from '../views/General/Tagging/v2/AddTags.vue';
 import Locations from '../views/Locations/Locations.vue';
 import TeamsHub from '../views/Teams/TeamsHub.vue';
@@ -46,6 +47,11 @@ const routes = [
         path: '/changelog',
         name: 'Changelog',
         component: Changelog,
+    },
+    {
+        path: '/timeline',
+        name: 'Timeline',
+        component: Timeline,
     },
     {
         path: '/terms',

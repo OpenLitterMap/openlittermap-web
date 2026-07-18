@@ -1,0 +1,259 @@
+[
+    {
+        "date": "2008-10",
+        "impact": "The research begins pre-iPhone at UCC in Cork City, Ireland. 1st year undergradate geography undergraduate Seán Lynch is challenged with coming up with a dissertation, pairs a handheld GPS with a digital camera to map litter and empower others in the community to tell their story.",
+        "url": "/about",
+        "highlight": "The story begins",
+        "category": "Academic"
+    },
+    {
+        "date": "2013-09",
+        "impact": "During a Masters in Science in GIS & Remote Sensing, Seán is introduced to OpenStreetMap. Inspired by its open values, he goes looking for its real-time data collection layer which didn't exist. The idea for OpenLitterMap was born later that day.",
+        "url": "",
+        "category": "Milestone"
+    },
+    {
+        "date": "2014-09",
+        "impact": "Lynch completes a second MSc in Geographic Science where he reviewed all the available litter mapping, plastic pollution and citizen science literature which informed the development of OpenLitterMap",
+        "url": "",
+        "category": "Milestone"
+    },
+    {
+        "date": "2015-07-27",
+        "impact": "OpenLitterMap.com is registered.",
+        "url": "",
+        "category": "Milestone"
+    },
+    {
+        "date": "2017-04-15",
+        "impact": "OpenLitterMap launches to the public — an open, interactive map of the world's litter.",
+        "url": "/changelog",
+        "highlight": "OpenLitterMap goes live",
+        "category": "Milestone"
+    },
+    {
+        "date": "2017-10",
+        "impact": "Seán Lynch shares the OpenLitterMap vision at TEDxTallaght.",
+        "url": "https://www.youtube.com/watch?v=my7Cx-kZhT4",
+        "category": "Media"
+    },
+    {
+        "date": "2018",
+        "impact": "The founding peer-reviewed paper is published — Lynch, S. (2018), 'OpenLitterMap.com – Open Data on Plastic Pollution with Blockchain Rewards (Littercoin)', Open Geospatial Data, Software and Standards 3:6.",
+        "url": "https://opengeospatialdata.springeropen.com/articles/10.1186/s40965-018-0050-y",
+        "category": "Academic"
+    },
+    {
+        "date": "2018-08-02",
+        "impact": "The platform launches in Spanish — the first of many translations.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2019",
+        "impact": "OpenLitterMap is featured at State of the Map, the global OpenStreetMap conference.",
+        "url": "https://www.youtube.com/watch?v=E_qhEhHwUGM",
+        "category": "Media"
+    },
+    {
+        "date": "2019",
+        "impact": "First application to Ireland's Discover Programme — filed through a company only days old — is ignored.",
+        "url": "",
+        "category": "Funding"
+    },
+    {
+        "date": "2019-09-03",
+        "impact": "The native iOS app arrives on the App Store.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2019-10-26",
+        "impact": "The native Android app launches on Google Play.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2020-04-25",
+        "impact": "Mobile App v2 launches with a redesigned tagging experience and a new introduction video.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2020",
+        "impact": "The project is presented at the European Space Agency's Φ-week Earth-observation summit.",
+        "url": "https://www.youtube.com/watch?v=5HuaQNeHuZ8",
+        "category": "Media"
+    },
+    {
+        "date": "2020-10-23",
+        "impact": "OpenLitterMap v2.0 goes live, a major rebuild of the web platform.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2020-10-25",
+        "impact": "OpenLitterMap v2 becomes fully open source.",
+        "url": "https://github.com/openlittermap",
+        "highlight": "Fully open source",
+        "category": "Milestone"
+    },
+    {
+        "date": "2020-12-12",
+        "impact": "Teams launch letting groups map and compete together.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2021-04-05",
+        "impact": "A major upgrade transforms the real-time global map of every recorded piece of litter.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2021-08-04",
+        "impact": "OpenLitterMap is awarded $50,000 by the Cardano community, it's first source of funding",
+        "url": "https://www.youtube.com/watch?v=2pt7_BOreKc",
+        "category": "Funding"
+    },
+    {
+        "date": "2022",
+        "impact": "OpenLitterMap is recognised as a Digital Public Good by the UN-endorsed Digital Public Goods Alliance.",
+        "url": "",
+        "highlight": "Ireland's only UN Digital Public Good",
+        "category": "Milestone"
+    },
+    {
+        "date": "2023-02",
+        "impact": "The Amazon Sustainability Data Initiative (ASDI) features OpenLitterMap for building open citizen-science infrastructure on AWS.",
+        "url": "https://aws.amazon.com/blogs/publicsector/mapping-litter-plastic-pollution-citizen-science/",
+        "category": "Media"
+    },
+    {
+        "date": "2024",
+        "impact": "Second application to the Discover Programme — pairing OpenLitterMap with LitterWeek digital-skills training — is rejected.",
+        "url": "",
+        "category": "Funding"
+    },
+    {
+        "date": "2025-03",
+        "impact": "The UN Statistical Commission endorses the Copenhagen Framework on Citizen Data, recognising citizen-generated data within national data ecosystems.",
+        "url": "https://sdg.iisd.org/commentary/guest-articles/the-copenhagen-framework-on-citizen-data-for-a-more-inclusive-data-ecosystem/",
+        "category": "Policy"
+    },
+    {
+        "date": "2025-04",
+        "impact": "The OECD publishes 'Embedding Citizen Science into Research Policy' (STI Policy Paper No. 175), setting out ten recommendations for governments.",
+        "url": "https://www.oecd.org/en/publications/embedding-citizen-science-into-research-policy_a1cfb1a8-en.html",
+        "category": "Policy"
+    },
+    {
+        "date": "2026-01-01",
+        "impact": "'The Democracy Gap', a 71-page submission, is hand-delivered to UNESCO and OECD headquarters in Paris.",
+        "url": "https://litterweek.org/tdg",
+        "category": "Policy"
+    },
+    {
+        "date": "2026-03-07",
+        "impact": "MAPS — the Mapping Audit of Public Science — begins: a Freedom of Information campaign seeking transparency on national litter data and its public funding.",
+        "url": "",
+        "category": "Policy"
+    },
+    {
+        "date": "2026-03",
+        "impact": "The Department of Climate, Energy and the Environment refuses the first MAPS request in full; a redesigned request is filed.",
+        "url": "",
+        "category": "Policy"
+    },
+    {
+        "date": "2026-03-20",
+        "impact": "LitterWeek.org launches — a five-day digital-skills programme for schools — with its first pilots running in Cork.",
+        "url": "https://litterweek.org",
+        "category": "Community"
+    },
+    {
+        "date": "2026-03-22",
+        "impact": "OpenLitterMap v5 launches — the biggest rebuild in the project's history: 521,000 photos migrated to a unified tagging system, with a new time-series metrics database powering every stat.",
+        "url": "/changelog",
+        "category": "Product"
+    },
+    {
+        "date": "2026-04",
+        "impact": "OpenLitterMap clears Level 1 of re-certification under the Digital Public Goods Alliance's updated standard.",
+        "url": "",
+        "category": "Milestone"
+    },
+    {
+        "date": "2026-06-03",
+        "impact": "An OpenLitterMap TidyTowns webinar draws 130+ registrations across dozens of committees; participating committees begin daily structured collection.",
+        "url": "/changelog",
+        "category": "Community"
+    },
+    {
+        "date": "2026-06-10",
+        "impact": "The Taoiseach tells the Dáil that cigarette litter outside State institutions is unacceptable, and orders a re-examination.",
+        "url": "https://fb.watch/IrlygwFTmo/",
+        "category": "Policy"
+    },
+    {
+        "date": "2026-07-01",
+        "impact": "Ireland assumes the Presidency of the Council of the European Union for July–December 2026.",
+        "url": "https://irish-presidency.consilium.europa.eu/en/",
+        "highlight": "1st Day of Ireland's EU Presidency",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-01",
+        "impact": "Day One of the Presidency: parliamentary questions on citizen science and national litter data are tabled across three Government departments, and The Democracy Gap is formally submitted to the Oireachtas FHERIS Committee.",
+        "url": "",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-01",
+        "impact": "Among the Day One questions, OpenLitterMap — Ireland's only UN Digital Public Good, in the Taoiseach's own constituency — is named directly. The reply engages none of it: no assessment of the Copenhagen Framework, and none of the OECD's ten recommendations implemented. The first of two unacknowledged namings on the Oireachtas record.",
+        "url": "https://www.oireachtas.ie/en/debates/question/2026-07-01/94/",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-03",
+        "impact": "The Department of Enterprise cites LitterWeek as a Case Study for Digital Inclusion.",
+        "url": "",
+        "category": "Award"
+    },
+    {
+        "date": "2026-07-07",
+        "impact": "The remaining Day One questions are answered: the Minister with responsibility for research cannot name a funding instrument under which a citizen-led organisation may apply as lead applicant; the records sought on citizen-science funding and past Discover projects are promised 'in a follow-up communication' — still outstanding; and litter.ie, the national litter-monitoring website for over twenty years, is confirmed decommissioned in June for failing the Government's own publication standards.",
+        "url": "",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-07",
+        "impact": "A reply on the Taoiseach's cigarette-butt re-examination does not address whether it will weigh citizen-generated evidence such as OpenLitterMap (named a second time). It places €1m of 2026 litter funding on the record — €750k in awareness grants and a €250k fund — with nothing allocated to citizen science.",
+        "url": "",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-09",
+        "impact": "The Oireachtas FHERIS Committee notes The Democracy Gap correspondence.",
+        "url": "",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-14",
+        "impact": "Four Freedom of Information requests filed with Research Ireland — covering the 2019 and 2024 Discover applications and the agency's citizen science policy record — are acknowledged the same day.",
+        "url": "",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-15",
+        "impact": "Fifteen new parliamentary questions across six departments are sent to five supporting TDs.",
+        "url": "https://x.com/OpenLitterMap/status/2076237360937758840",
+        "category": "EU Presidency 2026"
+    },
+    {
+        "date": "2026-07-18",
+        "impact": "Timeline Created",
+        "url": "/timeline",
+        "category": "Milestone"
+    }
+]
