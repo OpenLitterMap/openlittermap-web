@@ -119,9 +119,9 @@ const timeline = [
     },
     {
         year: '2026',
-        title: 'Earn Littercoin',
-        description: 'The worlds first climate currency',
-        icon: '🪙',
+        title: 'First LitterWeek Pilots',
+        description: "During Ireland's EU Presidency",
+        icon: '🏫',
         color: 'from-green-500 to-orange-500',
     },
 ];
