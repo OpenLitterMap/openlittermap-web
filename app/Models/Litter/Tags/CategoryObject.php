@@ -22,41 +22,6 @@ class CategoryObject extends Pivot
     protected $guarded = [];
 
     /**
-     * IDs of the (category, object) pairs that may be offered in the tag picker.
-     *
-     * Selectability is defined by `TagsConfig` — the canonical taxonomy — NOT by whether a
-     * pivot row happens to exist. Repairing orphaned tags creates pivots for pairs that are
-     * valid historically but are not part of the current taxonomy (e.g. `other/plasticBags`,
-     * and canonical-object pairs like `marine/bag`). Those must stay unselectable until a
-     * taxonomy review promotes them, or users could tag new photos with retiring pairs.
-     *
-     * @return array<int, int>
-     */
-    public static function selectableIds(): array
-    {
-        $allowed = [];
-
-        foreach (\App\Tags\TagsConfig::get() as $categoryKey => $objects) {
-            foreach (array_keys($objects) as $objectKey) {
-                $allowed["{$categoryKey}|{$objectKey}"] = true;
-            }
-        }
-
-        return static::query()
-            ->join('categories', 'categories.id', '=', 'category_litter_object.category_id')
-            ->join('litter_objects', 'litter_objects.id', '=', 'category_litter_object.litter_object_id')
-            ->select([
-                'category_litter_object.id',
-                'categories.key as category_key',
-                'litter_objects.key as object_key',
-            ])
-            ->get()
-            ->filter(fn ($row) => isset($allowed["{$row->category_key}|{$row->object_key}"]))
-            ->pluck('id')
-            ->all();
-    }
-
-    /**
      * Get the category that this pivot belongs to
      */
     public function category(): BelongsTo

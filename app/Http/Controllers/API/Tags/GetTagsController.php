@@ -53,35 +53,13 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        // Only objects reachable through a SELECTABLE pair — see CategoryObject::selectableIds().
-        $selectableCloIds = CategoryObject::selectableIds();
-
-        $selectablePairs = CategoryObject::select('id', 'category_id', 'litter_object_id')
-            ->whereIn('id', $selectableCloIds)
-            ->get();
-
-        // category ids per object, restricted to selectable pairs. The tagging UI builds one
-        // searchable entry per (object, category) in obj.categories, so an unfiltered
-        // relation would surface a repaired pair (e.g. marine/bag) even though the object
-        // itself is only canonical elsewhere (food/bag).
-        $allowedCategoryIds = $selectablePairs
-            ->groupBy('litter_object_id')
-            ->map(fn ($rows) => $rows->pluck('category_id')->all());
-
         $litterObjects = LitterObject::with(['categories:id,key'])
-            ->whereIn('id', $selectablePairs->pluck('litter_object_id')->unique())
+            ->whereHas('categories')
             ->select('id', 'key')
             ->orderBy('key')
             ->get()
-            ->map(function (LitterObject $obj) use ($objectTypesMap, $objectMaterialsMap, $allowedCategoryIds) {
+            ->map(function (LitterObject $obj) use ($objectTypesMap, $objectMaterialsMap) {
                 $data = $obj->toArray();
-                $allowed = $allowedCategoryIds[$obj->id] ?? [];
-
-                $data['categories'] = collect($data['categories'] ?? [])
-                    ->filter(fn ($cat) => in_array($cat['id'], $allowed, true))
-                    ->values()
-                    ->all();
-
                 $data['types'] = $objectTypesMap[$obj->key] ?? [];
                 $data['suggested_materials'] = $objectMaterialsMap[$obj->key] ?? [];
 
@@ -94,10 +72,9 @@ class GetTagsController extends Controller
 
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
-        $categoryObjects = $selectablePairs;
+        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')->get();
 
         $categoryObjectTypes = DB::table('category_object_types')
-            ->whereIn('category_litter_object_id', $selectableCloIds)
             ->select('category_litter_object_id', 'litter_object_type_id')
             ->get();
 
@@ -122,10 +99,7 @@ class GetTagsController extends Controller
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        // Selectability is defined by TagsConfig, not by pivot existence. Repairing orphaned
-        // tags (olm:repair-tag-pivot) creates pivots for historical pairs — including ones on
-        // canonical objects such as marine/bag — which must NOT become taggable.
-        $query = CategoryObject::query()->whereIn('id', CategoryObject::selectableIds());
+        $query = CategoryObject::query();
 
         if ($categoryKey) {
             $query->whereHas('category', function($q) use ($categoryKey) {
