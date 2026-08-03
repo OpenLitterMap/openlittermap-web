@@ -113,6 +113,8 @@ Exports only `verified >= ADMIN_APPROVED` photos for the location.
 >
 > Categories, objects, materials, and types are sorted **A-Z by key** (deterministic) so column positions within a single format mode are stable when the underlying tag set doesn't change.
 
+> **Column derivation:** object columns come from `photo_tags` (via a `LitterObject` key lookup), **not** from the `category_litter_object` pivot. Deriving them from the pivot silently dropped any tagged object without a pivot row — see `readme/PostMigration-2026-08.md` for the v5 migration incident this caused. Any object with tags must always get a column.
+
 **Block order (per mode):**
 
 | Block | `split` | `joined` | `split,joined` |

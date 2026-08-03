@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Enums\VerificationStatus;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
@@ -150,18 +151,26 @@ class CreateCSVExport extends DefaultValueBinder implements FromQuery, WithMappi
         $this->hasBrands = $extraTagTypes->where('tag_type', 'brand')->isNotEmpty();
         $this->hasCustomTags = $extraTagTypes->where('tag_type', 'custom_tag')->isNotEmpty();
 
-        // Load and filter category/object columns to only those with data.
+        // Load category/object columns from the tags themselves, NOT from the
+        // category_litter_object pivot. Deriving them from the pivot silently dropped any
+        // tagged object lacking a pivot row — the v5 migration left ~190k tag rows on
+        // pivotless migrated objects (e.g. `plasticBags`), and every one of those
+        // quantities disappeared from exports with no column and no error.
         // Sorting by `key` (a-z) for stable, reader-friendly column order.
-        $this->categoryObjects = Category::with(['litterObjects' => fn ($q) => $q->orderBy('litter_objects.key')])
-            ->whereIn('id', $activeCatIds)
+        $activeObjectIdList = $activeObjectIds->pluck('litter_object_id')->unique()->values()->all();
+
+        $objectKeys = LitterObject::whereIn('id', $activeObjectIdList)->pluck('key', 'id');
+
+        $this->categoryObjects = Category::whereIn('id', $activeCatIds)
             ->orderBy('key')
             ->get()
             ->map(fn ($cat) => [
                 'id' => $cat->id,
                 'key' => $cat->key,
-                'objects' => $cat->litterObjects
-                    ->filter(fn ($obj) => in_array($obj->id, $activeObjMap[$cat->id] ?? []))
-                    ->map(fn ($obj) => ['id' => $obj->id, 'key' => $obj->key])
+                'objects' => collect($activeObjMap[$cat->id] ?? [])
+                    ->filter(fn ($objId) => isset($objectKeys[$objId]))
+                    ->map(fn ($objId) => ['id' => $objId, 'key' => $objectKeys[$objId]])
+                    ->sortBy('key')
                     ->values()
                     ->toArray(),
             ])
@@ -319,10 +328,67 @@ class CreateCSVExport extends DefaultValueBinder implements FromQuery, WithMappi
                 continue;
             }
 
+            // Tie-break equal synthesized keys on object/type id so column order can never
+            // fall back to unspecified database order.
             $columns = collect($byCat[$catId])
-                ->sortBy('key')
+                ->sortBy(fn ($c) => [$c['key'], $c['object_id'], $c['type_id'] ?? -1])
                 ->values()
                 ->all();
+
+            // Joined headers are synthesized as "{type}_{object}", so a pivotless migrated
+            // object keyed `beer_can` collides with canonical `can` + type `beer`. Duplicate
+            // headers make associative CSV readers silently drop one column — the same
+            // undercount the pivot fix removed.
+            //
+            // Rename only the legacy bare-object side. The canonical typed column keeps its
+            // established header because consumers read it today; renaming both would break
+            // every one of them.
+            $keyCounts = array_count_values(array_column($columns, 'key'));
+
+            // Reserve every header that is NOT in a colliding group first, so a generated
+            // legacy name can never displace a real column that already owns that name.
+            $reserved = [];
+
+            foreach ($columns as $col) {
+                if (($keyCounts[$col['key']] ?? 0) < 2) {
+                    $reserved[$col['key']] = true;
+                }
+            }
+
+            foreach ($keyCounts as $duplicateKey => $occurrences) {
+                if ($occurrences < 2) {
+                    continue;
+                }
+
+                $group = array_keys(array_filter($columns, fn ($c) => $c['key'] === $duplicateKey));
+                $typed = array_values(array_filter($group, fn ($i) => $columns[$i]['type_id'] !== null));
+
+                // Exactly one typed member means its header is the canonical synthesized one,
+                // so keep it. Anything else is ambiguous — rename every member deterministically
+                // rather than crown an arbitrary winner.
+                $keeper = count($typed) === 1 ? $typed[0] : null;
+
+                if ($keeper !== null) {
+                    $reserved[$duplicateKey] = true;
+                }
+
+                foreach ($group as $i) {
+                    if ($i === $keeper) {
+                        continue;
+                    }
+
+                    $base = 'legacy__' . $duplicateKey . '__' . $columns[$i]['object_id'];
+                    $candidate = $base;
+                    $suffix = 2;
+
+                    while (isset($reserved[$candidate])) {
+                        $candidate = $base . '_' . $suffix++;
+                    }
+
+                    $reserved[$candidate] = true;
+                    $columns[$i]['key'] = $candidate;
+                }
+            }
 
             $result[] = [
                 'category_id' => $catId,
