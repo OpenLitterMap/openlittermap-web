@@ -1,54 +1,64 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands\tmp\v5\PostMigAug2026;
 
+use App\Models\Litter\Tags\LitterObject;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
+use App\Services\Redis\RedisKeys;
 use App\Services\Tags\GeneratePhotoSummaryService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
- * Migrates ONE approved (category, object) pair from an old tag to a new one.
+ * Retires ONE approved litter object key in favour of another.
  *
- * Driven entirely by an approved row in readme/audit/TagMigrationQueue-2026-08.csv — the
- * command never infers a mapping. One entry, one transformation, one run. There is
- * deliberately no bulk apply.
+ * Direction is a per-row product decision (D-4), not inferred: the surviving key may be the
+ * legacy one. For entry 1 the canonical `plastic_bag` is retired and the migration-minted
+ * `plasticBags` survives, because it holds 10,051 of the 10,304 rows.
+ *
+ * ORDERING IS LOAD-BEARING. `retired_at` is set and the picker closed BEFORE any data moves.
+ * The snapshot is immutable, so a tag created mid-run would not be in it, would survive the
+ * retirement, and would fail verification with no remediation short of starting over.
  *
  * Automated (deterministic):
- *   - repoints an IMMUTABLE, pre-snapshotted set of photo_tags rows to the target
- *     object + CLO, preserving category, type, quantity, extras and physical rows
- *   - regenerates photos.summary for exactly those photos
- *   - re-runs MetricsService for processed photos, moving per-object counts from the old
- *     object id to the new one (totals and XP must not move)
- *   - repoints user_quick_tags.clo_id
+ *   - marks the retired object with retired_at + merged_into_id, closing the tag picker
+ *   - creates the surviving object's pivot if it has none
+ *   - repoints an immutable, pre-snapshotted set of photo_tags rows
+ *   - repoints user_quick_tags off the retired pivot
+ *   - regenerates photos.summary and re-runs metrics for processed, non-deleted photos
+ *   - deletes the now-dangling retired pivot
  *
  * Manual per tag (gated by status, never automated):
- *   TagsConfig, BrandsConfig, alias normalisation, translations, API compatibility,
- *   export regression test, docs/changelog.
+ *   TagsConfig, BrandsConfig, translations, docs/changelog.
  *
- * The source litter_objects row is left in place as an unselectable tombstone. Deleting
- * retired objects is a later garbage-collection pass, once references are proven zero.
+ * ClassifyTagsService is never touched — it is the historical record of the v5 migration.
+ *
+ * @see readme/PostTagMigrationClean.md
  */
 class MigrateTag extends Command
 {
     protected $signature = 'olm:migrate-tag
-        {--list : show the migration queue}
-        {--entry= : queue entry_id to operate on}
+        {--list : show the retirement list}
+        {--entry= : entry_id to operate on}
         {--apply : execute (dry-run by default)}
+        {--verify : assert every surface for an applied retirement}
         {--advance= : record a manual status transition}
         {--by= : who performed the transition (required with --advance)}
         {--evidence= : verification evidence (required for *_VERIFIED transitions)}
         {--batch=2000 : rows per transaction}
-        {--queue= : override the queue file (relative to base_path); for rehearsals and tests}';
+        {--queue= : override the list file (relative to base_path); for rehearsals and tests}';
 
-    protected $description = 'Migrate one approved old→new tag pair. Queue-driven, one entry at a time.';
+    protected $description = 'Retire one approved litter object key in favour of another. One entry at a time.';
 
-    private const QUEUE = 'readme/audit/TagMigrationQueue-2026-08.csv';
+    private const QUEUE = 'readme/audit/TagRetirements-2026-08.csv';
     private const STATE_DIR = 'migrate-tag';
-    private const STATE_VERSION = 1;
+    private const STATE_VERSION = 3;
 
     /** Ordered lifecycle. A step may only advance to the next one. */
     public const STATUSES = [
@@ -63,8 +73,7 @@ class MigrateTag extends Command
         'COMPLETE',
     ];
 
-    /** Data may only be written once the manual code changes are recorded as done. */
-    private const APPLY_REQUIRES = 'CODE_UPDATED';
+    private const APPLY_REQUIRES = 'DRY_RUN_VERIFIED';
 
     public function handle(GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
     {
@@ -73,11 +82,10 @@ class MigrateTag extends Command
         }
 
         $rows = $this->loadQueue();
-        $entryId = $this->option('entry');
-        $entry = collect($rows)->firstWhere('entry_id', $entryId);
+        $entry = collect($rows)->firstWhere('entry_id', $this->option('entry'));
 
         if (!$entry) {
-            $this->error("Unknown queue entry: {$entryId}");
+            $this->error('Unknown entry: ' . $this->option('entry'));
 
             return self::FAILURE;
         }
@@ -86,32 +94,35 @@ class MigrateTag extends Command
             return $this->advance($rows, $entry);
         }
 
+        if ($this->option('verify')) {
+            return $this->verify($entry) ? self::SUCCESS : self::FAILURE;
+        }
+
         return $this->option('apply')
             ? $this->apply($entry, $summaries, $metrics)
             : $this->dryRun($entry);
     }
 
-    // ── Queue ────────────────────────────────────────────────────────────────
+    // ── List ─────────────────────────────────────────────────────────────────
 
     private function listQueue(): int
     {
         $rows = $this->loadQueue();
 
         $this->table(
-            ['entry', 'status', 'transformation', 'rows', 'items'],
+            ['entry', 'status', 'class', 'retire', 'keep', 'rows'],
             array_map(fn ($r) => [
                 $r['entry_id'],
                 $r['status'],
-                "{$r['source_category_key']}/{$r['source_object_key']} → {$r['target_category_key']}/{$r['target_object_key']}",
-                number_format((int) $r['expected_rows']),
-                number_format((int) $r['expected_items']),
+                $r['class'],
+                "{$r['category_key']}/{$r['retired_key']}",
+                "{$r['category_key']}/{$r['desired_key']}",
+                number_format((int) $r['retired_rows']),
             ], $rows)
         );
 
         $done = count(array_filter($rows, fn ($r) => $r['status'] === 'COMPLETE'));
         $this->line('  ' . $done . '/' . count($rows) . ' complete');
-        $this->newLine();
-        $this->line('Next step for an entry: php artisan olm:migrate-tag --entry=<id>');
 
         return self::SUCCESS;
     }
@@ -148,6 +159,13 @@ class MigrateTag extends Command
             return self::FAILURE;
         }
 
+        // COMPLETE is the one transition the tool can check for itself.
+        if ($to === 'COMPLETE' && !$this->verify($entry)) {
+            $this->error('  Verification failed — refusing to mark COMPLETE.');
+
+            return self::FAILURE;
+        }
+
         foreach ($rows as &$row) {
             if ($row['entry_id'] === $entry['entry_id']) {
                 $row['status'] = $to;
@@ -173,12 +191,16 @@ class MigrateTag extends Command
     {
         $this->describe($entry);
 
+        if (!$this->supportedScope($entry)) {
+            return self::FAILURE;
+        }
+
         $actual = $this->measure($entry);
 
         $this->line('  Measured now:');
-        $this->line("    rows   {$actual['rows']}   (expected {$entry['expected_rows']})");
-        $this->line("    items  {$actual['items']}   (expected {$entry['expected_items']})");
-        $this->line("    photos {$actual['photos']}  (expected {$entry['expected_photos']})");
+        $this->line("    rows   {$actual['rows']}   (expected {$entry['retired_rows']})");
+        $this->line("    items  {$actual['items']}   (expected {$entry['retired_items']})");
+        $this->line("    photos {$actual['photos']}  (expected {$entry['retired_photos']})");
         $this->newLine();
 
         if (!$this->expectationsMatch($entry, $actual)) {
@@ -186,17 +208,101 @@ class MigrateTag extends Command
         }
 
         $this->info('Expectations match.');
-        $this->newLine();
-        $this->line('Manual work required before --apply:');
-        foreach (explode(';', $entry['affected_code']) as $item) {
-            if (trim($item) !== '') {
-                $this->line('    ☐ ' . trim($item));
-            }
-        }
-        $this->newLine();
-        $this->line("When done: php artisan olm:migrate-tag --entry={$entry['entry_id']} --advance=CODE_UPDATED --by=\"you\"");
+        $this->line('Next transition: ' . $this->nextStepFor($entry));
 
         return self::SUCCESS;
+    }
+
+    private function nextStepFor(array $entry): string
+    {
+        $idx = array_search($entry['status'], self::STATUSES, true);
+        $next = self::STATUSES[$idx + 1] ?? null;
+
+        if ($next === null) {
+            return 'none — entry is COMPLETE';
+        }
+
+        $evidence = str_ends_with($next, '_VERIFIED') ? ' --evidence="what you checked"' : '';
+
+        return "php artisan olm:migrate-tag --entry={$entry['entry_id']} --advance={$next} --by=\"you\"{$evidence}";
+    }
+
+    /**
+     * Version one retires a key in favour of another in the SAME category, with no type
+     * dimension on either side. Category moves and type expansions are refused rather than
+     * half-applied, because the update below rewrites only litter_object_id and
+     * category_litter_object_id.
+     *
+     * Note the boundary is asserted against DATA, not against CSV fields, and it is the
+     * inverse of the pre-D-4 assumption: the retired side is the one that may hold a pivot and
+     * quick tags, and the surviving side is the one that may lack a pivot.
+     */
+    private function supportedScope(array $entry): bool
+    {
+        if ((int) $entry['retired_id'] === (int) $entry['desired_id']) {
+            $this->error('  Retired and surviving objects are identical — nothing to do.');
+
+            return false;
+        }
+
+        $typed = (clone $this->retiredRowQuery($entry))->whereNotNull('litter_object_type_id')->count();
+
+        if ($typed > 0) {
+            $this->error("  {$typed} retired rows carry a type. Type expansions are not implemented.");
+
+            return false;
+        }
+
+        // Both objects must sit in exactly the one category this entry names. A key tagged in
+        // several categories is a different, unimplemented transformation.
+        foreach (['retired_id', 'desired_id'] as $field) {
+            $categories = DB::table('photo_tags')
+                ->where('litter_object_id', (int) $entry[$field])
+                ->distinct()
+                ->pluck('category_id')
+                ->filter()
+                ->values();
+
+            if ($categories->count() > 1 || ($categories->count() === 1 && (int) $categories[0] !== (int) $entry['category_id'])) {
+                $this->error("  Object {$entry[$field]} is tagged across categories [{$categories->implode(', ')}];"
+                    . " this entry only covers category {$entry['category_id']}.");
+
+                return false;
+            }
+        }
+
+        if (!$this->xpEquivalent($entry)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * XP is weighted by object KEY (XpCalculator resolves summary['keys']['objects'] through
+     * XpScore::getObjectXp), so a retirement between keys of differing weight silently moves
+     * user scores. Refuse unless the CSV records that the product owner accepted it.
+     */
+    private function xpEquivalent(array $entry): bool
+    {
+        $retiredXp = \App\Enums\XpScore::getObjectXp((string) $entry['retired_key']);
+        $desiredXp = \App\Enums\XpScore::getObjectXp((string) $entry['desired_key']);
+
+        if ($retiredXp === $desiredXp) {
+            return true;
+        }
+
+        if (strtolower(trim($entry['xp_equivalent'] ?? '')) === 'accepted') {
+            $this->warn("  XP moves {$retiredXp} → {$desiredXp} per item — accepted in the retirement list.");
+
+            return true;
+        }
+
+        $this->error("  XP weighting differs: {$entry['retired_key']}={$retiredXp}, {$entry['desired_key']}={$desiredXp} per item.");
+        $this->line('  A retirement must not silently move user scores. Set xp_equivalent=accepted');
+        $this->line('  in the retirement list once the product owner has signed off the change.');
+
+        return false;
     }
 
     // ── Apply ────────────────────────────────────────────────────────────────
@@ -208,118 +314,176 @@ class MigrateTag extends Command
 
         if ($statusIdx < $requiredIdx) {
             $this->error("Entry is {$entry['status']}; --apply requires at least " . self::APPLY_REQUIRES . '.');
-            $this->line('  The manual code/config changes must be recorded before data is written.');
 
             return self::FAILURE;
         }
 
-        $lock = self::STATE_DIR . "/{$entry['entry_id']}.lock";
+        if (!$this->supportedScope($entry)) {
+            return self::FAILURE;
+        }
 
-        if (Storage::disk('local')->exists($lock)) {
-            $this->error('Another run holds the lock for this entry: storage/app/' . $lock);
-            $this->line('  Delete it only if you are certain no run is in progress.');
+        $lockHandle = $this->acquireLock($entry);
+
+        if ($lockHandle === null) {
+            $this->error('Another run holds the lock for this entry.');
 
             return self::FAILURE;
         }
 
+        try {
+            return $this->applyLocked($entry, $summaries, $metrics);
+        } finally {
+            flock($lockHandle, LOCK_UN);
+            fclose($lockHandle);
+        }
+    }
+
+    /** @return resource|null */
+    private function acquireLock(array $entry)
+    {
+        $dir = Storage::disk('local')->path(self::STATE_DIR);
+
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $handle = fopen($dir . "/{$entry['entry_id']}.lock", 'c');
+
+        if ($handle === false) {
+            return null;
+        }
+
+        if (!flock($handle, LOCK_EX | LOCK_NB)) {
+            fclose($handle);
+
+            return null;
+        }
+
+        return $handle;
+    }
+
+    private function applyLocked(array $entry, GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
+    {
         $this->describe($entry);
+
+        // ── Step 0: close the door BEFORE anything moves ──
+        $this->closePicker($entry);
 
         $state = $this->loadState($entry);
 
-        // Snapshot the EXACT rows once. Later runs reuse the snapshot, so a row inserted
-        // after approval is never silently swept into this migration.
         if ($state === null) {
-            $actual = $this->measure($entry);
+            $rows = $this->retiredRowQuery($entry)
+                ->select('id', 'photo_id', 'quantity')
+                ->orderBy('id')
+                ->get();
+
+            $actual = [
+                'rows' => $rows->count(),
+                'items' => (int) $rows->sum('quantity'),
+                'photos' => $rows->pluck('photo_id')->unique()->count(),
+            ];
 
             if (!$this->expectationsMatch($entry, $actual)) {
                 return self::FAILURE;
             }
 
-            $tagIds = $this->sourceRowQuery($entry)->pluck('id')->map('intval')->all();
-            $photoIds = $this->sourceRowQuery($entry)->distinct()->pluck('photo_id')->map('intval')->all();
+            $photoIds = $rows->pluck('photo_id')->unique()->values()->map('intval')->all();
 
             $state = [
                 'version' => self::STATE_VERSION,
                 'entry_id' => $entry['entry_id'],
-                'baseline_rows' => (int) $entry['expected_rows'],
-                'baseline_items' => (int) $entry['expected_items'],
-                'tag_ids' => $tagIds,
-                'photo_ids' => $photoIds,
-                'rows_done' => false,
+                'mapping_fingerprint' => $this->mappingFingerprint($entry),
+                'baseline_rows' => $actual['rows'],
+                'baseline_items' => $actual['items'],
+                'baseline_xp' => (int) DB::table('photos')->whereIn('id', $photoIds)->sum('xp'),
+                'retired_object_id' => (int) $entry['retired_id'],
+                'category_id' => (int) $entry['category_id'],
+                'desired_clo_id' => null,
+                'tag_ids' => $rows->pluck('id')->map('intval')->all(),
+                'all_photo_ids' => $photoIds,
+                'pending_photo_ids' => $photoIds,
             ];
 
             $this->saveState($entry, $state);
-            $this->line('  snapshot: ' . count($tagIds) . ' tag ids, ' . count($photoIds) . ' photos');
+            $this->line('  snapshot: ' . count($state['tag_ids']) . ' tag ids, ' . count($photoIds) . ' photos');
         } else {
-            $this->warn('  resuming from snapshot: ' . count($state['tag_ids']) . ' tag ids');
+            if ($state['mapping_fingerprint'] !== $this->mappingFingerprint($entry)) {
+                $this->error('  The entry changed since this snapshot was taken. Refusing to resume.');
+
+                return self::FAILURE;
+            }
+
+            $this->warn('  resuming from snapshot: ' . count($state['tag_ids']) . ' tag ids, '
+                . count($state['pending_photo_ids']) . ' summaries outstanding');
         }
 
-        Storage::disk('local')->put($lock, (string) now());
-
-        try {
-            $ok = $this->runMigration($entry, $state, $summaries, $metrics);
-        } finally {
-            Storage::disk('local')->delete($lock);
-        }
-
-        return $ok ? self::SUCCESS : self::FAILURE;
+        return $this->runRetirement($entry, $state, $summaries, $metrics) ? self::SUCCESS : self::FAILURE;
     }
 
-    private function runMigration(array $entry, array $state, GeneratePhotoSummaryService $summaries, MetricsService $metrics): bool
+    /**
+     * Sets retired_at + merged_into_id. The picker filters on retired_at (LitterObject::active),
+     * and AddTagsToPhotoAction refuses to tag a retired object, so from this point live traffic
+     * cannot add rows the snapshot would miss.
+     */
+    private function closePicker(array $entry): void
     {
-        $targetObjectId = (int) $entry['target_object_id'];
-        $targetCloId = (int) $entry['target_clo_id'];
-        $targetCategoryId = (int) $entry['target_category_id'];
+        $updated = DB::table('litter_objects')
+            ->where('id', (int) $entry['retired_id'])
+            ->whereNull('retired_at')
+            ->update([
+                'retired_at' => now(),
+                'merged_into_id' => (int) $entry['desired_id'],
+                'updated_at' => now(),
+            ]);
 
-        // The target pivot must already exist and match. Never invent one here.
-        $pivot = DB::table('category_litter_object')
-            ->where('id', $targetCloId)
-            ->where('category_id', $targetCategoryId)
-            ->where('litter_object_id', $targetObjectId)
-            ->exists();
+        $this->line($updated > 0
+            ? "  picker closed: object {$entry['retired_id']} marked retired → {$entry['desired_id']}"
+            : "  picker already closed for object {$entry['retired_id']}");
+    }
 
-        if (!$pivot) {
-            $this->error("Target CLO {$targetCloId} is not ({$targetCategoryId}, {$targetObjectId}). Refusing to continue.");
+    private function mappingFingerprint(array $e): string
+    {
+        return hash('sha256', implode('|', [
+            $e['entry_id'],
+            (int) $e['category_id'], (int) $e['retired_id'], (int) $e['desired_id'],
+            (int) $e['retired_rows'], (int) $e['retired_items'],
+        ]));
+    }
 
+    private function runRetirement(array $entry, array $state, GeneratePhotoSummaryService $summaries, MetricsService $metrics): bool
+    {
+        $desiredObjectId = (int) $entry['desired_id'];
+        $categoryId = (int) $entry['category_id'];
+
+        $desiredCloId = $this->ensureDesiredPivot($categoryId, $desiredObjectId);
+
+        if ($desiredCloId === null) {
             return false;
         }
 
-        $itemsBefore = $this->itemsFor($state['tag_ids']);
-        $xpBefore = (int) DB::table('photos')->whereIn('id', $state['photo_ids'])->sum('xp');
+        $state['desired_clo_id'] = $desiredCloId;
+        $this->saveState($entry, $state);
 
-        // 1. Repoint the immutable snapshot only.
-        if (!$state['rows_done']) {
-            $moved = 0;
+        $itemsBefore = (int) $state['baseline_items'];
+        $xpBefore = (int) $state['baseline_xp'];
 
-            foreach (array_chunk($state['tag_ids'], (int) $this->option('batch')) as $chunk) {
-                DB::transaction(function () use ($chunk, $targetObjectId, $targetCloId, &$moved) {
-                    $moved += DB::table('photo_tags')
-                        ->whereIn('id', $chunk)
-                        ->update([
-                            'litter_object_id' => $targetObjectId,
-                            'category_litter_object_id' => $targetCloId,
-                        ]);
-                });
-            }
-
-            $this->line("  repointed {$moved} rows → object {$targetObjectId}, CLO {$targetCloId}");
-
-            $state['rows_done'] = true;
-            $this->saveState($entry, $state);
-        } else {
-            $this->line('  rows already repointed — resuming at summaries');
+        if (!$this->repointRows($state, $desiredObjectId, $desiredCloId)) {
+            return false;
         }
 
-        // 2. Summaries, then 3. metrics delta (moves per-object counts, leaves totals/XP).
+        $this->repointQuickTags($entry, $desiredCloId);
+
         $failed = [];
         $processed = 0;
 
-        foreach (array_chunk($state['photo_ids'], 200) as $chunk) {
+        foreach (array_chunk($state['pending_photo_ids'], 200) as $chunk) {
             foreach (Photo::withTrashed()->whereIn('id', $chunk)->get() as $photo) {
                 try {
                     $summaries->run($photo);
 
-                    if ($photo->processed_at !== null) {
+                    // deletePhoto() already reversed metrics for a soft-deleted photo;
+                    // reprocessing one would re-add them.
+                    if ($photo->processed_at !== null && $photo->deleted_at === null) {
                         $metrics->processPhoto($photo->fresh());
                     }
 
@@ -333,22 +497,13 @@ class MigrateTag extends Command
 
         $this->line("  summaries + metrics: {$processed} photos");
 
-        // 4. Stored CLO consumers.
-        $quickTags = DB::table('user_quick_tags')
-            ->whereIn('clo_id', DB::table('category_litter_object')
-                ->where('litter_object_id', (int) $entry['source_object_id'])
-                ->pluck('id'))
-            ->update(['clo_id' => $targetCloId]);
+        $state['pending_photo_ids'] = $failed;
+        $this->saveState($entry, $state);
 
-        if ($quickTags > 0) {
-            $this->line("  user_quick_tags repointed: {$quickTags}");
-        }
-
-        // ── Verification ──
         $ok = true;
 
-        $itemsAfter = $this->itemsFor($state['tag_ids']);
-        $xpAfter = (int) DB::table('photos')->whereIn('id', $state['photo_ids'])->sum('xp');
+        $itemsAfter = (int) DB::table('photo_tags')->whereIn('id', $state['tag_ids'])->sum('quantity');
+        $xpAfter = (int) DB::table('photos')->whereIn('id', $state['all_photo_ids'])->sum('xp');
 
         if ($itemsBefore !== $itemsAfter) {
             $this->error("  ITEMS CHANGED {$itemsBefore} → {$itemsAfter}");
@@ -358,36 +513,282 @@ class MigrateTag extends Command
         }
 
         if ($xpBefore !== $xpAfter) {
-            $this->error("  XP CHANGED {$xpBefore} → {$xpAfter} — a rename must not move XP");
+            $this->error("  XP CHANGED {$xpBefore} → {$xpAfter} — a retirement must not move XP");
             $ok = false;
         } else {
             $this->line("  xp unchanged ✓ ({$xpAfter})");
         }
 
-        $remaining = $this->sourceRowQuery($entry)->count();
+        $remaining = $this->retiredRowQuery($entry)->count();
 
         if ($remaining > 0) {
-            $this->error("  {$remaining} source rows remain");
+            $this->error("  {$remaining} rows remain on the retired object");
             $ok = false;
         } else {
-            $this->line('  source pair drained ✓');
+            $this->line('  retired object drained ✓');
         }
 
         if ($failed) {
-            $state['photo_ids'] = $failed;
-            $this->saveState($entry, $state);
             $this->error('  ' . count($failed) . ' photos failed — retained in state, re-run to retry');
 
             return false;
         }
 
         if ($ok) {
+            $this->dropRetiredPivot($entry);
             $this->clearState($entry);
             $this->newLine();
-            $this->info('Applied. Next: verify exports/APIs, then --advance=LOCAL_VERIFIED --by="you" --evidence="..."');
+            $this->info('Applied. Next: ' . $this->nextStepFor($entry));
         }
 
         return $ok;
+    }
+
+    /**
+     * The surviving object needs a pivot in this category to be selectable. Creating one is
+     * safe precisely because the retired object is already excluded by retired_at.
+     */
+    private function ensureDesiredPivot(int $categoryId, int $desiredObjectId): ?int
+    {
+        $existing = DB::table('category_litter_object')
+            ->where('category_id', $categoryId)
+            ->where('litter_object_id', $desiredObjectId)
+            ->value('id');
+
+        if ($existing !== null) {
+            $this->line("  surviving pivot exists ✓ (CLO {$existing})");
+
+            return (int) $existing;
+        }
+
+        $id = DB::table('category_litter_object')->insertGetId([
+            'category_id' => $categoryId,
+            'litter_object_id' => $desiredObjectId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->line("  created pivot CLO {$id} for ({$categoryId}, {$desiredObjectId})");
+
+        return $id;
+    }
+
+    /**
+     * Move every snapshotted row to the exact target, tolerating a partially completed run.
+     *
+     * @param  array<string, mixed>  $state
+     */
+    private function repointRows(array $state, int $desiredObjectId, int $desiredCloId): bool
+    {
+        $done = 0;
+
+        foreach (array_chunk($state['tag_ids'], (int) $this->option('batch')) as $chunk) {
+            DB::transaction(function () use ($chunk, $state, $desiredObjectId, $desiredCloId, &$done) {
+                DB::table('photo_tags')
+                    ->whereIn('id', $chunk)
+                    ->where('litter_object_id', $state['retired_object_id'])
+                    ->where('category_id', $state['category_id'])
+                    ->update([
+                        'litter_object_id' => $desiredObjectId,
+                        'category_litter_object_id' => $desiredCloId,
+                    ]);
+
+                $done += DB::table('photo_tags')
+                    ->whereIn('id', $chunk)
+                    ->where('litter_object_id', $desiredObjectId)
+                    ->where('category_litter_object_id', $desiredCloId)
+                    ->count();
+            });
+        }
+
+        $expected = count($state['tag_ids']);
+
+        if ($done !== $expected) {
+            $this->error("  {$done} of {$expected} snapshotted rows are at the target.");
+            $this->line('  Rows in neither the approved source nor target state were NOT overwritten.');
+
+            return false;
+        }
+
+        $this->line("  {$done} rows at object {$desiredObjectId}, CLO {$desiredCloId}");
+
+        return true;
+    }
+
+    /**
+     * Saved presets point at a CLO. The retired pivot is about to be deleted, so anything
+     * referencing it must move or those presets break.
+     */
+    private function repointQuickTags(array $entry, int $desiredCloId): void
+    {
+        $retiredCloId = $this->retiredCloId($entry);
+
+        if ($retiredCloId === null) {
+            $this->line('  quick tags: retired object has no pivot, nothing to move');
+
+            return;
+        }
+
+        // A user may already hold a preset on the surviving CLO. The table is unique per
+        // (user, clo, type), so those rows are dropped rather than repointed into a collision.
+        $collisions = DB::table('user_quick_tags as a')
+            ->join('user_quick_tags as b', function ($join) use ($desiredCloId) {
+                $join->on('a.user_id', '=', 'b.user_id')
+                    ->where('b.clo_id', '=', $desiredCloId)
+                    ->whereRaw('(a.type_id <=> b.type_id)');
+            })
+            ->where('a.clo_id', $retiredCloId)
+            ->pluck('a.id');
+
+        if ($collisions->isNotEmpty()) {
+            DB::table('user_quick_tags')->whereIn('id', $collisions)->delete();
+            $this->warn('  quick tags: dropped ' . $collisions->count() . ' that would collide with an existing preset');
+        }
+
+        $moved = DB::table('user_quick_tags')
+            ->where('clo_id', $retiredCloId)
+            ->update(['clo_id' => $desiredCloId, 'updated_at' => now()]);
+
+        $this->line("  quick tags: moved {$moved} from CLO {$retiredCloId} to {$desiredCloId}");
+    }
+
+    private function dropRetiredPivot(array $entry): void
+    {
+        $retiredCloId = $this->retiredCloId($entry);
+
+        if ($retiredCloId === null) {
+            return;
+        }
+
+        $stillReferenced = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count()
+            + DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
+
+        if ($stillReferenced > 0) {
+            $this->warn("  retired pivot CLO {$retiredCloId} still has {$stillReferenced} references — left in place");
+
+            return;
+        }
+
+        DB::table('category_litter_object')->where('id', $retiredCloId)->delete();
+        $this->line("  removed dangling pivot CLO {$retiredCloId}");
+    }
+
+    private function retiredCloId(array $entry): ?int
+    {
+        $id = DB::table('category_litter_object')
+            ->where('category_id', (int) $entry['category_id'])
+            ->where('litter_object_id', (int) $entry['retired_id'])
+            ->value('id');
+
+        return $id === null ? null : (int) $id;
+    }
+
+    // ── Verify ───────────────────────────────────────────────────────────────
+
+    /**
+     * Asserts every surface in §6 of the design doc. Required before COMPLETE.
+     */
+    private function verify(array $entry): bool
+    {
+        $this->newLine();
+        $this->line("<options=bold>verify {$entry['entry_id']}</>");
+
+        $retiredId = (int) $entry['retired_id'];
+        $desiredId = (int) $entry['desired_id'];
+        $ok = true;
+
+        $checks = [];
+
+        $checks['photo_tags drained'] = DB::table('photo_tags')->where('litter_object_id', $retiredId)->count() === 0;
+
+        $retiredCloId = $this->retiredCloId($entry);
+        $checks['retired pivot removed'] = $retiredCloId === null;
+
+        $checks['surviving pivot exists'] = DB::table('category_litter_object')
+            ->where('category_id', (int) $entry['category_id'])
+            ->where('litter_object_id', $desiredId)
+            ->exists();
+
+        $object = LitterObject::find($retiredId);
+        $checks['retired_at set'] = $object !== null && $object->retired_at !== null;
+        $checks['merged_into_id set'] = $object !== null && (int) $object->merged_into_id === $desiredId;
+
+        $checks['quick tags moved'] = $retiredCloId === null
+            || DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count() === 0;
+
+        $checks['retired key absent from picker'] = !$this->pickerOffers($retiredId);
+        $checks['surviving key offered'] = $this->pickerOffers($desiredId);
+
+        $checks['no summary references retired object'] = $this->summariesReferencing($retiredId) === 0;
+
+        $checks['redis reconciles'] = $this->redisReconciles($retiredId) && $this->redisReconciles($desiredId);
+
+        foreach ($checks as $label => $passed) {
+            $this->line(sprintf('    %-38s %s', $label, $passed ? '✓' : '✗ FAILED'));
+            $ok = $ok && $passed;
+        }
+
+        $this->newLine();
+        $ok ? $this->info('  All surfaces verified.') : $this->error('  Verification FAILED.');
+
+        return $ok;
+    }
+
+    private function pickerOffers(int $objectId): bool
+    {
+        return LitterObject::whereKey($objectId)->active()->whereHas('categories')->exists();
+    }
+
+    private function summariesReferencing(int $objectId): int
+    {
+        $count = 0;
+
+        DB::table('photos')
+            ->whereNotNull('summary')
+            ->select('id', 'summary')
+            ->orderBy('id')
+            ->chunk(2000, function ($photos) use ($objectId, &$count) {
+                foreach ($photos as $photo) {
+                    $summary = json_decode($photo->summary, true);
+
+                    if (is_array($summary) && isset($summary['keys']['objects'][$objectId])) {
+                        $count++;
+                    }
+                }
+            });
+
+        return $count;
+    }
+
+    /**
+     * Absolute reconciliation at global scope. A before/after delta cannot survive a retry;
+     * comparing absolute values means a rerun passes as soon as Redis is correct.
+     */
+    private function redisReconciles(int $objectId): bool
+    {
+        $mysql = (int) DB::table('photo_tags as pt')
+            ->join('photos as p', 'p.id', '=', 'pt.photo_id')
+            ->where('pt.litter_object_id', $objectId)
+            ->whereNotNull('p.processed_at')
+            ->whereNull('p.deleted_at')
+            ->sum('pt.quantity');
+
+        try {
+            $redis = (int) (Redis::hget(RedisKeys::objects(RedisKeys::global()), (string) $objectId) ?? 0);
+        } catch (Throwable $e) {
+            $this->error('  Redis unreadable: ' . $e->getMessage());
+
+            return false;
+        }
+
+        if ($mysql !== $redis) {
+            $this->error("    object {$objectId}: MySQL {$mysql} vs Redis {$redis}");
+            $this->line('    Rebuild with: php artisan olm:redis:rebuild (flushes by default)');
+
+            return false;
+        }
+
+        return true;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -395,39 +796,33 @@ class MigrateTag extends Command
     private function describe(array $e): void
     {
         $this->newLine();
-        $this->line("<options=bold>{$e['entry_id']}</>   status: {$e['status']}");
-        $this->line("  {$e['source_category_key']}/{$e['source_object_key']} (object {$e['source_object_id']})");
-        $this->line("    → {$e['target_category_key']}/{$e['target_object_key']} (object {$e['target_object_id']}, CLO {$e['target_clo_id']})");
+        $this->line("<options=bold>{$e['entry_id']}</>   status: {$e['status']}   class: {$e['class']}");
+        $this->line("  retire {$e['category_key']}/{$e['retired_key']} (object {$e['retired_id']})");
+        $this->line("  keep   {$e['category_key']}/{$e['desired_key']} (object {$e['desired_id']})");
         $this->newLine();
     }
 
-    private function sourceRowQuery(array $e)
+    private function retiredRowQuery(array $e)
     {
         return DB::table('photo_tags')
-            ->where('category_id', (int) $e['source_category_id'])
-            ->where('litter_object_id', (int) $e['source_object_id']);
+            ->where('category_id', (int) $e['category_id'])
+            ->where('litter_object_id', (int) $e['retired_id']);
     }
 
     /** @return array{rows:int, items:int, photos:int} */
     private function measure(array $e): array
     {
         return [
-            'rows' => (int) $this->sourceRowQuery($e)->count(),
-            'items' => (int) $this->sourceRowQuery($e)->sum('quantity'),
-            'photos' => (int) $this->sourceRowQuery($e)->distinct()->count('photo_id'),
+            'rows' => (int) $this->retiredRowQuery($e)->count(),
+            'items' => (int) $this->retiredRowQuery($e)->sum('quantity'),
+            'photos' => (int) $this->retiredRowQuery($e)->distinct()->count('photo_id'),
         ];
-    }
-
-    /** @param array<int, int> $ids */
-    private function itemsFor(array $ids): int
-    {
-        return (int) DB::table('photo_tags')->whereIn('id', $ids)->sum('quantity');
     }
 
     private function expectationsMatch(array $entry, array $actual): bool
     {
-        foreach (['rows', 'items', 'photos'] as $field) {
-            $expected = (int) $entry["expected_{$field}"];
+        foreach (['rows' => 'retired_rows', 'items' => 'retired_items', 'photos' => 'retired_photos'] as $field => $column) {
+            $expected = (int) $entry[$column];
 
             if ($expected !== $actual[$field]) {
                 $this->error("  {$field}: expected {$expected}, found {$actual[$field]} — data moved since approval. Aborting.");
@@ -461,7 +856,8 @@ class MigrateTag extends Command
             throw new \RuntimeException("Corrupt migration state at {$path}: {$ex->getMessage()}");
         }
 
-        foreach (['version', 'entry_id', 'tag_ids', 'photo_ids', 'baseline_rows', 'baseline_items', 'rows_done'] as $f) {
+        foreach (['version', 'entry_id', 'mapping_fingerprint', 'tag_ids', 'all_photo_ids', 'pending_photo_ids',
+            'baseline_rows', 'baseline_items', 'baseline_xp', 'retired_object_id', 'category_id'] as $f) {
             if (!array_key_exists($f, $state)) {
                 throw new \RuntimeException("Migration state at {$path} is missing '{$f}'.");
             }
@@ -476,13 +872,19 @@ class MigrateTag extends Command
 
     private function saveState(array $e, array $state): void
     {
-        // Atomic: write beside, then move into place.
         $disk = Storage::disk('local');
         $tmp = $this->statePath($e) . '.tmp';
 
         $disk->put($tmp, json_encode($state, JSON_THROW_ON_ERROR));
-        $disk->delete($this->statePath($e));
-        $disk->move($tmp, $this->statePath($e));
+
+        $from = $disk->path($tmp);
+        $to = $disk->path($this->statePath($e));
+
+        if (!@rename($from, $to)) {
+            @unlink($from);
+
+            throw new \RuntimeException("Could not atomically write migration state to {$to}");
+        }
     }
 
     private function clearState(array $e): void

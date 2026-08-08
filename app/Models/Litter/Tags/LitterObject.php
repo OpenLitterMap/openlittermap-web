@@ -2,8 +2,10 @@
 
 namespace App\Models\Litter\Tags;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class LitterObject extends Model
@@ -16,9 +18,33 @@ class LitterObject extends Model
 
     protected $hidden = ['pivot'];
 
+    protected function casts(): array
+    {
+        return ['retired_at' => 'datetime'];
+    }
+
     public function getRouteKeyName(): string
     {
         return 'key';
+    }
+
+    /**
+     * Objects still offered to users. Retirement is an explicit fact, not an accident of a
+     * missing pivot row — the retirement process creates pivots deliberately.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('retired_at');
+    }
+
+    public function isRetired(): bool
+    {
+        return $this->retired_at !== null;
+    }
+
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'merged_into_id');
     }
 
     public function categories(): BelongsToMany

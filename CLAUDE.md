@@ -524,3 +524,43 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
 
 </laravel-boost-guidelines>
+
+
+### GOODNIGHT — end of session
+Always the final action of a session — finish all outstanding instructions first. If a background agent is still running, record it as mid-flight (scope + base commit) so it can be re-dispatched tomorrow; it will not survive the session.
+1. Run `git status --porcelain` and `git log --oneline -1` — facts, not memory. Do NOT run suites, builds, or anything slow; use the last-run numbers already in context. Anything not verified this session is written as "unknown".
+2. Overwrite `docs/GOODMORNING.md` entirely with the template below, every section filled ("none" where empty). One file, nothing else touched, no commit — uncommitted work stays uncommitted; the owner decides.
+3. Delete any unnecessary docs in docs/sdd and elsewhere.
+3. Reply in chat with only: the Start-here list, "<N> files uncommitted", the day's accumulated commit block from the running daily-commit file (explicit pathspec `git add` + subject/body, ready to run verbatim) if the tree is dirty, and — if anything in the tree exists nowhere else — one warning line saying so. **This is the ONLY point in the day a commit block is produced.**
+   Content rules: state, never aspiration; unverified = "unknown". This file is context, not authority — shipped truth is the spec, the per-phase docs and the code; code wins. Tomorrow's session must be able to act without reading today's chat. Never include secrets, tokens, or credentials.
+
+Template:
+
+# GOODMORNING — session handoff
+**Written:** <date time> · **Branch:** <branch> · **HEAD:** <short sha> · **Tree:** <N> uncommitted files
+**Gates at last run:** BE tests <x> passed (<y> assertions) · phpstan <errors> · vue-tsc <clean|errors> · lint/format <clean|issues> · build <ok|failed> · anything not run this session: "not run"
+
+## Start here tomorrow
+1–3 exact actions. These are PROPOSALS for the product owner — do not self-start any of them; execution waits for a dispatch.
+
+## Where we are
+2–5 bullets: mid-flight work (including any agent still running at GOODNIGHT: scope + base commit), and any STOP conditions hit (what stopped, why, what decision it waits on).
+
+## Dispatch ledger
+Every dispatch this session: ID → one-line scope → status (executed / partially executed / received-not-started / referenced-by-owner-but-never-received). Name that last category explicitly — it is how work gets silently lost between chat and agent.
+
+## Done this session
+Only what actually happened, with commit shas where they exist.
+
+## Uncommitted changes (the only copy)
+git-status manifest, one-line purpose per file. Separate files already dirty at session start from this session's edits.
+
+## Open questions for the product owner
+Each tagged [blocking] or [non-blocking].
+
+### GOODMORNING — start of session
+1. Read `docs/GOODMORNING.md`. If missing or clearly stale, say so and reconstruct from `git log --oneline -10`, the spec's Current State, and the per-phase docs — do not guess.
+2. Reconcile against reality before trusting it: `git status --porcelain`, `git log --oneline -3`, current branch. If HEAD, branch, or the dirty-file set differ from the handoff — or commits exist after the Written timestamp — report the drift explicitly; reality wins over the file.
+3. Reply with: a 3–5 line summary of where we are, any drift found, the open [blocking] questions, and the Start-here list presented as PROPOSALS.
+4. Then stop. Do not start any work — not even Start-here item 1 — until the product owner dispatches it.
+

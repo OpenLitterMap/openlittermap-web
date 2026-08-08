@@ -99,9 +99,12 @@ final class MetricsService
                 'processed_xp' => null,
             ]);
 
-            // Reverse users.xp — processed_xp includes upload base + tag XP
-            User::where('id', $photo->user_id)
-                ->update(['xp' => DB::raw("GREATEST(CAST(xp AS SIGNED) - {$oldXp}, 0)")]);
+            // Reverse users.xp — processed_xp includes upload base + tag XP.
+            // An ownerless photo never credited a user, so there is nothing to reverse.
+            if ($photo->user_id !== null) {
+                User::where('id', $photo->user_id)
+                    ->update(['xp' => DB::raw("GREATEST(CAST(xp AS SIGNED) - {$oldXp}, 0)")]);
+            }
 
             // FIX #3: Use unified Redis update (pass positive values, collector will negate)
             $this->updateRedis($photo, [
@@ -182,7 +185,7 @@ final class MetricsService
         // Sync users.xp — doCreate runs when no prior metrics exist
         // (e.g., school photos deferred until teacher approval, or revoke+reapprove).
         $xp = (int) $metrics['xp'];
-        if ($xp > 0) {
+        if ($xp > 0 && $photo->user_id !== null) {
             User::where('id', $photo->user_id)
                 ->update(['xp' => DB::raw("xp + {$xp}")]);
         }
@@ -239,7 +242,7 @@ final class MetricsService
 
         // Sync users.xp with tag XP delta (upload XP cancels out in delta).
         // Use GREATEST to prevent unsigned underflow on users.xp column.
-        if ($xpDelta !== 0) {
+        if ($xpDelta !== 0 && $photo->user_id !== null) {
             User::where('id', $photo->user_id)
                 ->update(['xp' => DB::raw("GREATEST(CAST(xp AS SIGNED) + {$xpDelta}, 0)")]);
         }
@@ -451,8 +454,12 @@ final class MetricsService
                 // Aggregate row (user_id=0)
                 $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta);
 
-                // Per-user row (user_id>0) for leaderboard queries
-                $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta, $photo->user_id);
+                // Per-user row (user_id>0) for leaderboard queries. An ownerless photo
+                // contributes to the aggregate row only — metrics.user_id is NOT NULL and part
+                // of the primary key, so there is no per-user row to write.
+                if ($photo->user_id !== null) {
+                    $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta, (int) $photo->user_id);
+                }
             }
         }
 

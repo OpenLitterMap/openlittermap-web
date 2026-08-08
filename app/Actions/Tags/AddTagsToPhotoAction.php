@@ -152,6 +152,19 @@ class AddTagsToPhotoAction
             ]);
         }
 
+        // A retired object may still hold a pivot row mid-retirement. The tag picker filters
+        // retired objects out, but a client holding a stale CLO id could otherwise keep
+        // writing new tags onto a key that is being drained.
+        $retiredObject = LitterObject::whereKey($clo->litter_object_id)
+            ->whereNotNull('retired_at')
+            ->first(['id', 'key', 'merged_into_id']);
+
+        if ($retiredObject) {
+            throw ValidationException::withMessages([
+                'tags' => ["Litter object '{$retiredObject->key}' is retired and can no longer be tagged."],
+            ]);
+        }
+
         $quantity = max(1, (int) ($tag['quantity'] ?? 1));
         $pickedUp = $tag['picked_up'] ?? null;
 

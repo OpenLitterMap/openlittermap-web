@@ -22,11 +22,20 @@ final class RedisMetricsCollector
     /**
      * Process a photo into Redis (called by MetricsService after MySQL update)
      */
+    /**
+     * A photo may have no owner (photos.user_id is nullable — 151 processed rows on the
+     * production snapshot). Location and global metrics still count that litter; anything
+     * user-scoped is skipped, because there is no user to attribute, rank or de-duplicate.
+     *
+     * Casting a null user id to string yields "", which would add a phantom member to the
+     * contributor HLL and the XP leaderboard ZSET. Every user-scoped write is therefore
+     * guarded, not just the one that used to raise a TypeError.
+     */
     public static function processPhoto(Photo $photo, array $metrics, string $operation): void
     {
         try {
             $scopes = RedisKeys::getPhotoScopes($photo);
-            $userId = $photo->user_id;
+            $userId = $photo->user_id === null ? null : (int) $photo->user_id;
 
             Redis::pipeline(function($pipe) use ($scopes, $userId, $metrics, $operation, $photo) {
                 foreach ($scopes as $scope) {
@@ -36,14 +45,16 @@ final class RedisMetricsCollector
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', $metrics['litter']);
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', $metrics['xp']);
 
-                        // Track unique contributors (append-only)
-                        $pipe->pfAdd(RedisKeys::hll($scope), [(string)$userId]);
+                        if ($userId !== null) {
+                            // Track unique contributors (append-only)
+                            $pipe->pfAdd(RedisKeys::hll($scope), [(string)$userId]);
 
-                        // Contributor ranking
-                        $pipe->zIncrBy(RedisKeys::contributorRanking($scope), 1, (string)$userId);
+                            // Contributor ranking
+                            $pipe->zIncrBy(RedisKeys::contributorRanking($scope), 1, (string)$userId);
 
-                        // XP leaderboard ranking
-                        $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
+                            // XP leaderboard ranking
+                            $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
+                        }
 
                     } elseif ($operation === 'update') {
                         // Apply deltas only
@@ -52,7 +63,10 @@ final class RedisMetricsCollector
                         }
                         if (isset($metrics['xp']) && $metrics['xp'] !== 0) {
                             $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', $metrics['xp']);
-                            $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
+
+                            if ($userId !== null) {
+                                $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
+                            }
                         }
 
                     } elseif ($operation === 'delete') {
@@ -61,13 +75,15 @@ final class RedisMetricsCollector
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', -abs($metrics['litter']));
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', -abs($metrics['xp']));
 
-                        // Decrement contributor ranking (HLL cannot be decremented)
-                        $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, (string)$userId);
+                        if ($userId !== null) {
+                            // Decrement contributor ranking (HLL cannot be decremented)
+                            $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, (string)$userId);
 
-                        // XP leaderboard ranking — decrement then prune members at ≤ 0
-                        // to keep Redis consistent with MySQL (which filters xp > 0)
-                        $pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), (string)$userId);
-                        $pipe->zRemRangeByScore(RedisKeys::xpRanking($scope), '-inf', '0');
+                            // XP leaderboard ranking — decrement then prune members at ≤ 0
+                            // to keep Redis consistent with MySQL (which filters xp > 0)
+                            $pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), (string)$userId);
+                            $pipe->zRemRangeByScore(RedisKeys::xpRanking($scope), '-inf', '0');
+                        }
                     }
 
                     // Update tag counts and rankings
@@ -78,7 +94,7 @@ final class RedisMetricsCollector
                 self::updateUserMetrics($pipe, $userId, $metrics, $operation, $photo);
             });
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Redis update failed', [
                 'photo_id' => $photo->id,
                 'operation' => $operation,
@@ -121,8 +137,12 @@ final class RedisMetricsCollector
     /**
      * Update user-specific metrics
      */
-    private static function updateUserMetrics($pipe, int $userId, array $metrics, string $operation, Photo $photo): void
+    private static function updateUserMetrics($pipe, ?int $userId, array $metrics, string $operation, Photo $photo): void
     {
+        if ($userId === null) {
+            return;
+        }
+
         $userScope = RedisKeys::user($userId);
 
         if ($operation === 'create') {
@@ -195,7 +215,7 @@ final class RedisMetricsCollector
                 $pipe->hGetAll(RedisKeys::stats($userScope));
                 $pipe->hGetAll("{$userScope}:tags");
             });
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Failed to get user metrics', [
                 'user_id' => $userId,
                 'error' => $e->getMessage()

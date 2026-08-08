@@ -55,6 +55,7 @@ class GetTagsController extends Controller
 
         $litterObjects = LitterObject::with(['categories:id,key'])
             ->whereHas('categories')
+            ->active()
             ->select('id', 'key')
             ->orderBy('key')
             ->get()

@@ -6,7 +6,7 @@
 | Deliverable | Rows | sha256 (first 16) |
 |---|---:|---|
 | `LitterObjectInventory-2026-08.csv` | 198 | `1b0fc5ab0b5090e4` |
-| `LitterObjectDecisions-2026-08.csv` | 198 | `4aca73cc21b18418` |
+| `LitterObjectBacklog-2026-08.csv` | 198 | `4aca73cc21b18418` |
 | `TagPairMigrationManifest-2026-08.csv` | 74 | `a5c6a4c7dc5a4d44` |
 
 Deterministic ordering: inventory/decisions by `object_key`, manifest by
@@ -112,7 +112,7 @@ note for downstream consumers.
 
 ## How to review
 
-1. Work `LitterObjectDecisions-2026-08.csv` — 71 rows are not `keep`; those are the decisions.
+1. Work `LitterObjectBacklog-2026-08.csv` — 71 rows are not `keep`; those are the decisions.
    Fill `review_status`, `approved_by`, `approved_date`.
 2. Then `TagPairMigrationManifest-2026-08.csv` — confirm each of the 74 pairs, especially the
    15 marked `op_to_generic_other = yes` and the 17 with `op_category_move = yes`.
