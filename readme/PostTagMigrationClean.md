@@ -2,8 +2,13 @@
 
 **Created:** 2026-08-08
 **Status:** Design, for review. Nothing implemented, no data changed.
-**Supersedes for this workstream:** the queue/backlog/manifest split described in
-`readme/PostMigration-2026-08.md` and `readme/audit/TagCleanupSummary-2026-08.md`.
+**Supersedes for this workstream:** the queue/backlog/manifest split. This document is now the
+sole record of it — `readme/audit/TagCleanupSummary-2026-08.md`,
+`readme/audit/LitterObjectBacklog-2026-08.csv` and `readme/audit/TagMigrationQueue-2026-08.csv`
+were deleted on 2026-08-09 rather than left sitting beside their replacement.
+`readme/audit/LitterObjectInventory-2026-08.csv` and
+`readme/audit/TagPairMigrationManifest-2026-08.csv` remain — they are measured evidence, not
+superseded process.
 
 > **Scope.** This document defines *what a problematic tag is*, *the list of them*, and *the
 > process for cleaning them one at a time*. It does not authorise any specific retirement —
@@ -134,6 +139,14 @@ direction the existing `TagMigrationQueue` row assumed. Consequences in §8.
 source-of-truth dump. (`PostMigration-2026-08.md` previously called for an untouched baseline
 plus a clone; the dump makes the database itself disposable.)
 
+**D-6 (2026-08-09) — XP equivalence is a hard refusal, with no override.** `supportedScope()`
+refuses any entry whose two keys carry different `XpScore` weights. The earlier design had an
+`xp_equivalent=accepted` escape hatch in the list; it was removed because entry 1 is 1→1 and the
+mechanism was dead code that deferred a real decision to memory. It returns when a
+non-equivalent entry is actually scheduled — `bags_litter` (10) → `bagsLitter` (1) is the first
+one, and it needs its own product decision about whether XP moves with the tag or the surviving
+key inherits the weighting. The `xp_equivalent` column stays in the list as the record.
+
 ---
 
 ## 4. The process
@@ -215,6 +228,14 @@ run after.
 6. `resources/js/langs/*/litter.json` — all locales, not just `en`.
 7. Resurrection guard — `firstOrCreate` paths refuse a retired key.
 
+> **Known limitation (2026-08-09).** The tag-write guard sits in
+> `AddTagsToPhotoAction::createTagFromClo()` only. The legacy path, `createTagLegacy()` via
+> `resolveTag()`, resolves the object by id or key with no retirement check, so a legacy-format
+> POST can still write onto a retired object during the drain window. Accepted for entry 1 —
+> the window is minutes and the picker is already closed — and recorded here rather than fixed,
+> because the durable fix is a `PhotoTag::saving` guard covering both paths and every future
+> one, which is its own change.
+
 `ClassifyTagsService` is **never edited.** It is the historical record of what the v5 migration
 did. Under D-4's direction, line 228 (`'plastic_bags' => ['object' => 'plasticBags']`) is
 already correct, so no override map is needed for this entry at all.
@@ -263,8 +284,8 @@ the audit found **21 retired objects referenced by `BrandsConfig`**.
 
 ## 6. Verification surfaces
 
-`--verify` must assert all of the following. This is the substantive gap in the current
-command, which checks one Redis key.
+The surfaces a retirement touches. This is the design intent; what `--verify` asserts **today**
+is the five-check subset recorded directly below the table.
 
 | Surface | Assertion |
 |---|---|
@@ -282,6 +303,33 @@ command, which checks one Redis key.
 | `GET /api/user/top-tags` | retired CLO absent from Quick Tags suggestions |
 | CSV export | retired column gone; desired column carries the combined total |
 | Code references | zero in `TagsConfig`, `BrandsConfig`, `langs/*/litter.json`, rest of `app/` |
+
+### What `--verify` asserts today (2026-08-09)
+
+Five checks, chosen because each can fail independently. An earlier ten-check version restated
+itself — "retired key absent from picker" is implied by `retired_at` being set plus the pivot
+being dropped, and both of those were self-checks on work the command had just done in the same
+run.
+
+1. `photo_tags` drained — zero rows on the retired object id, including tags on soft-deleted photos
+2. surviving pivot exists — (category, desired object) is present, so the key is selectable
+3. quick tags survived the repoint — count on the **surviving** CLO ≥ `quick_tags_on_retired_clo`
+4. no `photos.summary` references the retired object id
+5. Redis reconciles **absolutely** — MySQL vs Redis for both objects at global, every affected
+   country / state / city, and every contributing user's `{u:ID}:tags` hash
+
+Check 3 is deliberately an assertion of survival, not of absence. `user_quick_tags.clo_id`
+cascades on delete and the retired pivot is dropped at the end of a run, so "zero rows on the
+retired CLO" is true whether the presets were repointed or silently destroyed.
+
+Check 5 is what the deleted `olm:tag-retirement-snapshot` harness used to do. Folding it into
+`--verify` means the rehearsal instrument and the production gate are the same tool; the
+previous global-only check covered a small fraction of what a retirement moves.
+
+Not asserted by the command, and checked by hand or by test instead: the retirement state
+columns (covered by `MigrateTagTest::test_picker_is_closed_before_data_moves`), the picker
+endpoints (covered by `test_retired_object_is_excluded_from_the_tag_picker`), the locations
+API, the CSV export, and every code/translation surface in §4 B.4–B.6.
 
 Neither `/api/tags` nor `/api/tags/all` is cached — `GetTagsController` holds no `Cache::` call
 and no tag cache key exists in `app/`, `routes/`, `config/` or `resources/js/`. Both read live
@@ -312,25 +360,31 @@ each `--verify` assertion failing when it should. These run on every change.
 **Rehearsal** against `olm_postmig_2` covers what factories cannot — 10,051 real rows across
 real countries and users, real Redis fan-out, a real CSV export.
 
-The loop, scripted as one command so repeatability is cheap:
+The loop, scripted as `rehearse-entry1.sh` so repeatability is cheap:
 
 ```
 restore olm_postmig_2 from the .sql source of truth
-capture before-state
+migrate, flush + rebuild Redis
+globals()  →  before
 php artisan olm:migrate-tag --entry=other--plastic_bag --apply
 php artisan olm:migrate-tag --entry=other--plastic_bag --verify
-diff before/after → artefact file
+globals()  →  after
 restore, repeat
 ```
 
-Beyond what `--verify` asserts, the before/after diff must cover: **global** item and XP totals
-(not only the affected photos), the full `/api/tags` response, a real CSV export for team 211
-and for a heavy user, and the Redis object hashes at every affected scope. Anything that changes
-and is not the retirement is a bug.
+**There is no separate measurement harness.** `olm:tag-retirement-snapshot` — 965 lines
+producing JSON artefacts — was deleted on 2026-08-09 and its all-scope MySQL↔Redis
+reconciliation folded into `--verify` (§6). The rehearsal instrument and the production gate are
+now the same tool, so rehearsal cannot pass against assertions the real run does not make.
 
-**Readiness bar: determinism.** Same restore, same entry, identical verify output and identical
-diff artefact, three runs in a row. Until that holds it does not go near production — the
-standard the incident doc set, and the one `fix-orphaned-tags` never met.
+`globals()` is the one thing `--verify` cannot know: that nothing OUTSIDE the retirement moved.
+Six SELECTs either side — total `photo_tags` rows and quantity, total live photos and XP, the
+two objects' rows/items/photos, their pivots, their `retired_at`/`merged_into_id` state, and
+quick-tag counts on both CLOs. Anything that changes and is not the retirement is a bug.
+
+**Readiness bar: determinism.** Same restore, same entry, identical before-globals,
+after-globals and verify output, three runs in a row. Until that holds it does not go near
+production — the standard the incident doc set, and the one `fix-orphaned-tags` never met.
 
 Reviews: one between implementation and the first `--apply` on the rehearsal database, and a
 second after rehearsal before production.
@@ -355,8 +409,8 @@ source cannot hold a stored CLO reference" — true in the old direction, false 
 **`MigrateTagTest`** — 25 tests today. The three boundary tests now assert the inverse, the
 deleted quick-tags test returns, and the verify-surface tests are new. Roughly a third rewrites.
 
-**`TagMigrationQueue-2026-08.csv`** — its single row encodes the pre-D-4 direction and is
-replaced by the new list.
+**`TagMigrationQueue-2026-08.csv`** — its single row encoded the pre-D-4 direction. Replaced by
+the new list and deleted.
 
 **`olm:fix-orphaned-tags`** — unchanged, unapproved, still **do not run**.
 

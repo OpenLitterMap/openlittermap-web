@@ -121,6 +121,27 @@ class MigrateTagTest extends TestCase
         $this->writeQueue('DRY_RUN_VERIFIED');
     }
 
+    /** Bring the entry to the apply gate and run a successful apply. */
+    private function applyOk(): void
+    {
+        $this->applyReady();
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+    }
+
+    private function insertQuickTag(int $cloId): void
+    {
+        DB::table('user_quick_tags')->insert([
+            'user_id' => User::factory()->create()->id,
+            'clo_id' => $cloId,
+            'quantity' => 1,
+            'materials' => '[]',
+            'brands' => '[]',
+            'sort_order' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     // ── Gating ───────────────────────────────────────────────────────────────
 
     public function test_apply_is_blocked_until_dry_run_verified(): void
@@ -224,7 +245,7 @@ class MigrateTagTest extends TestCase
      * XP is weighted by object key. bags_litter is worth 10 and bagsLitter 1, so retiring one
      * for the other silently moves user scores unless the owner has accepted it.
      */
-    public function test_xp_weight_change_is_refused_unless_accepted(): void
+    public function test_xp_weight_change_is_refused(): void
     {
         $bagsLitter = LitterObject::firstOrCreate(['key' => 'bags_litter']);
         $camel = LitterObject::firstOrCreate(['key' => 'bagsLitter'], ['crowdsourced' => true]);
@@ -236,21 +257,19 @@ class MigrateTagTest extends TestCase
 
         $this->tag->update(['litter_object_id' => $bagsLitter->id, 'category_litter_object_id' => null]);
 
-        $this->writeQueue('DRY_RUN_VERIFIED', [
-            'retired_key' => 'bags_litter', 'retired_id' => $bagsLitter->id,
-            'desired_key' => 'bagsLitter', 'desired_id' => $camel->id,
-            'xp_equivalent' => 'no',
-        ]);
-
-        $this->migrate(['--apply' => true])->assertExitCode(1);
-
+        // 'accepted' was the old override. It no longer exists — the refusal is unconditional.
         $this->writeQueue('DRY_RUN_VERIFIED', [
             'retired_key' => 'bags_litter', 'retired_id' => $bagsLitter->id,
             'desired_key' => 'bagsLitter', 'desired_id' => $camel->id,
             'xp_equivalent' => 'accepted',
         ]);
 
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $bagsLitter->id,
+        ]);
     }
 
     // ── Apply ────────────────────────────────────────────────────────────────
@@ -276,8 +295,7 @@ class MigrateTagTest extends TestCase
             'litter_object_id' => $this->desired->id,
         ]);
 
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->assertDatabaseHas('category_litter_object', [
             'category_id' => $this->category->id,
@@ -287,8 +305,7 @@ class MigrateTagTest extends TestCase
 
     public function test_picker_is_closed_before_data_moves(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->retired->refresh();
 
@@ -298,8 +315,7 @@ class MigrateTagTest extends TestCase
 
     public function test_retired_object_is_excluded_from_the_tag_picker(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $response = $this->getJson('/api/tags/all')->assertOk();
         $keys = collect($response->json('objects') ?? $response->json('litterObjects') ?? [])->pluck('key');
@@ -328,16 +344,14 @@ class MigrateTagTest extends TestCase
 
     public function test_retired_pivot_is_removed_once_drained(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->assertDatabaseMissing('category_litter_object', ['id' => $this->retiredClo->id]);
     }
 
     public function test_summary_reflects_the_surviving_object(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $summary = $this->photo->fresh()->summary;
         $summary = is_string($summary) ? json_decode($summary, true) : $summary;
@@ -351,8 +365,7 @@ class MigrateTagTest extends TestCase
     {
         $before = (int) $this->photo->fresh()->xp;
 
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->assertSame($before, (int) $this->photo->fresh()->xp);
     }
@@ -371,8 +384,7 @@ class MigrateTagTest extends TestCase
         $this->photo->generateSummary();
         $this->photo->refresh();
 
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->assertSame(2, DB::table('photo_tags')
             ->where('photo_id', $this->photo->id)
@@ -392,21 +404,9 @@ class MigrateTagTest extends TestCase
      */
     public function test_quick_tags_are_repointed_off_the_retired_pivot(): void
     {
-        $user = User::factory()->create();
+        $this->insertQuickTag($this->retiredClo->id);
 
-        DB::table('user_quick_tags')->insert([
-            'user_id' => $user->id,
-            'clo_id' => $this->retiredClo->id,
-            'quantity' => 1,
-            'materials' => '[]',
-            'brands' => '[]',
-            'sort_order' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $newClo = DB::table('category_litter_object')
             ->where('category_id', $this->category->id)
@@ -419,22 +419,11 @@ class MigrateTagTest extends TestCase
 
     public function test_quick_tags_in_other_categories_are_untouched(): void
     {
-        $user = User::factory()->create();
         $otherClo = CategoryObject::where('litter_object_id', '!=', $this->retired->id)->firstOrFail();
 
-        DB::table('user_quick_tags')->insert([
-            'user_id' => $user->id,
-            'clo_id' => $otherClo->id,
-            'quantity' => 1,
-            'materials' => '[]',
-            'brands' => '[]',
-            'sort_order' => 0,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->insertQuickTag($otherClo->id);
 
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->assertSame(1, DB::table('user_quick_tags')->where('clo_id', $otherClo->id)->count());
     }
@@ -443,16 +432,14 @@ class MigrateTagTest extends TestCase
 
     public function test_verify_passes_after_a_clean_apply(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         $this->migrate(['--verify' => true])->assertExitCode(0);
     }
 
     public function test_verify_fails_when_a_row_remains_on_the_retired_object(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         PhotoTag::create([
             'photo_id' => $this->photo->id,
@@ -464,15 +451,19 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--verify' => true])->assertExitCode(1);
     }
 
-    public function test_verify_fails_when_the_retired_object_is_not_marked(): void
+    /**
+     * Dropping the retired pivot cascades to user_quick_tags, so a run that forgot to repoint
+     * would silently destroy saved presets rather than leave them behind. Verification has to
+     * assert survival on the surviving pivot, not absence on the retired one.
+     */
+    public function test_verify_fails_when_quick_tags_did_not_survive_the_repoint(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->insertQuickTag($this->retiredClo->id);
 
-        DB::table('litter_objects')->where('id', $this->retired->id)
-            ->update(['retired_at' => null, 'merged_into_id' => null]);
+        $this->applyOk();
 
-        $this->assertNull(DB::table('litter_objects')->where('id', $this->retired->id)->value('retired_at'));
+        DB::table('user_quick_tags')->delete();
+        $this->writeQueue('LOCAL_APPLIED', ['quick_tags_on_retired_clo' => 1]);
 
         $this->migrate(['--verify' => true])->assertExitCode(1);
     }
@@ -491,8 +482,7 @@ class MigrateTagTest extends TestCase
 
     public function test_rerun_after_completion_is_a_clean_no_op(): void
     {
-        $this->applyReady();
-        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->applyOk();
 
         // The retired object is drained, so the expectation check no longer matches.
         $this->migrate(['--apply' => true])->assertExitCode(1);

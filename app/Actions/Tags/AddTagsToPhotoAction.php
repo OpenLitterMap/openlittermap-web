@@ -144,7 +144,7 @@ class AddTagsToPhotoAction
     protected function createTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
     {
         $cloId = $tag['category_litter_object_id'];
-        $clo = CategoryObject::find($cloId);
+        $clo = CategoryObject::with('litterObject:id,key,retired_at')->find($cloId);
 
         if (! $clo) {
             throw ValidationException::withMessages([
@@ -155,13 +155,9 @@ class AddTagsToPhotoAction
         // A retired object may still hold a pivot row mid-retirement. The tag picker filters
         // retired objects out, but a client holding a stale CLO id could otherwise keep
         // writing new tags onto a key that is being drained.
-        $retiredObject = LitterObject::whereKey($clo->litter_object_id)
-            ->whereNotNull('retired_at')
-            ->first(['id', 'key', 'merged_into_id']);
-
-        if ($retiredObject) {
+        if ($clo->litterObject?->isRetired()) {
             throw ValidationException::withMessages([
-                'tags' => ["Litter object '{$retiredObject->key}' is retired and can no longer be tagged."],
+                'tags' => ["Litter object '{$clo->litterObject->key}' is retired and can no longer be tagged."],
             ]);
         }
 

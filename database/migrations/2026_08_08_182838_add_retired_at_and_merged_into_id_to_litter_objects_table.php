@@ -23,7 +23,6 @@ return new class extends Migration
             $table->timestamp('retired_at')->nullable()->after('crowdsourced');
             $table->unsignedBigInteger('merged_into_id')->nullable()->after('retired_at');
 
-            $table->index('retired_at');
             $table->foreign('merged_into_id')->references('id')->on('litter_objects')->nullOnDelete();
         });
     }
@@ -32,7 +31,6 @@ return new class extends Migration
     {
         Schema::table('litter_objects', function (Blueprint $table) {
             $table->dropForeign(['merged_into_id']);
-            $table->dropIndex(['retired_at']);
             $table->dropColumn(['retired_at', 'merged_into_id']);
         });
     }

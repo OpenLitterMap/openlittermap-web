@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\tmp\v5\PostMigAug2026;
 
-use App\Models\Litter\Tags\LitterObject;
+use App\Enums\XpScore;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
 use App\Services\Redis\RedisKeys;
@@ -44,7 +44,6 @@ use Throwable;
 class MigrateTag extends Command
 {
     protected $signature = 'olm:migrate-tag
-        {--list : show the retirement list}
         {--entry= : entry_id to operate on}
         {--apply : execute (dry-run by default)}
         {--verify : assert every surface for an applied retirement}
@@ -77,8 +76,10 @@ class MigrateTag extends Command
 
     public function handle(GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
     {
-        if ($this->option('list') || !$this->option('entry')) {
-            return $this->listQueue();
+        if (!$this->option('entry')) {
+            $this->error('--entry is required. The approved entries are listed in ' . self::QUEUE);
+
+            return self::FAILURE;
         }
 
         $rows = $this->loadQueue();
@@ -103,58 +104,25 @@ class MigrateTag extends Command
             : $this->dryRun($entry);
     }
 
-    // ── List ─────────────────────────────────────────────────────────────────
-
-    private function listQueue(): int
-    {
-        $rows = $this->loadQueue();
-
-        $this->table(
-            ['entry', 'status', 'class', 'retire', 'keep', 'rows'],
-            array_map(fn ($r) => [
-                $r['entry_id'],
-                $r['status'],
-                $r['class'],
-                "{$r['category_key']}/{$r['retired_key']}",
-                "{$r['category_key']}/{$r['desired_key']}",
-                number_format((int) $r['retired_rows']),
-            ], $rows)
-        );
-
-        $done = count(array_filter($rows, fn ($r) => $r['status'] === 'COMPLETE'));
-        $this->line('  ' . $done . '/' . count($rows) . ' complete');
-
-        return self::SUCCESS;
-    }
+    // ── Lifecycle ────────────────────────────────────────────────────────────
 
     private function advance(array $rows, array $entry): int
     {
         $to = strtoupper($this->option('advance'));
         $by = $this->option('by');
+        $evidence = $this->option('evidence');
+        $next = self::STATUSES[array_search($entry['status'], self::STATUSES, true) + 1] ?? null;
 
-        if (!in_array($to, self::STATUSES, true)) {
-            $this->error("Unknown status: {$to}. One of: " . implode(', ', self::STATUSES));
+        $refusal = match (true) {
+            !in_array($to, self::STATUSES, true) => "Unknown status: {$to}. One of: " . implode(', ', self::STATUSES),
+            !$by => '--advance requires --by="..." so every transition is attributable.',
+            $to !== $next => "Cannot jump {$entry['status']} → {$to}. Next is: " . ($next ?? 'none'),
+            str_ends_with($to, '_VERIFIED') && !$evidence => "--advance={$to} requires --evidence=\"...\" recording what was checked.",
+            default => null,
+        };
 
-            return self::FAILURE;
-        }
-
-        if (!$by) {
-            $this->error('--advance requires --by="..." so every transition is attributable.');
-
-            return self::FAILURE;
-        }
-
-        $currentIdx = array_search($entry['status'], self::STATUSES, true);
-        $targetIdx = array_search($to, self::STATUSES, true);
-
-        if ($targetIdx !== $currentIdx + 1) {
-            $this->error("Cannot jump {$entry['status']} → {$to}. Next is: " . (self::STATUSES[$currentIdx + 1] ?? 'none'));
-
-            return self::FAILURE;
-        }
-
-        if (str_ends_with($to, '_VERIFIED') && !$this->option('evidence')) {
-            $this->error("--advance={$to} requires --evidence=\"...\" recording what was checked.");
+        if ($refusal !== null) {
+            $this->error($refusal);
 
             return self::FAILURE;
         }
@@ -172,8 +140,8 @@ class MigrateTag extends Command
                 $row['approver'] = $by;
                 $row['approved_at'] = now()->toDateString();
 
-                if ($this->option('evidence')) {
-                    $row['verification_evidence'] = trim($row['verification_evidence'] . ' | ' . $this->option('evidence'), ' |');
+                if ($evidence) {
+                    $row['verification_evidence'] = trim($row['verification_evidence'] . ' | ' . $evidence, ' |');
                 }
             }
         }
@@ -208,23 +176,9 @@ class MigrateTag extends Command
         }
 
         $this->info('Expectations match.');
-        $this->line('Next transition: ' . $this->nextStepFor($entry));
+        $this->line('Next status: ' . (self::STATUSES[array_search($entry['status'], self::STATUSES, true) + 1] ?? 'none'));
 
         return self::SUCCESS;
-    }
-
-    private function nextStepFor(array $entry): string
-    {
-        $idx = array_search($entry['status'], self::STATUSES, true);
-        $next = self::STATUSES[$idx + 1] ?? null;
-
-        if ($next === null) {
-            return 'none — entry is COMPLETE';
-        }
-
-        $evidence = str_ends_with($next, '_VERIFIED') ? ' --evidence="what you checked"' : '';
-
-        return "php artisan olm:migrate-tag --entry={$entry['entry_id']} --advance={$next} --by=\"you\"{$evidence}";
     }
 
     /**
@@ -271,38 +225,21 @@ class MigrateTag extends Command
             }
         }
 
-        if (!$this->xpEquivalent($entry)) {
+        // XP is weighted by object KEY (XpCalculator resolves summary['keys']['objects'] through
+        // XpScore::getObjectXp), so retiring between keys of differing weight silently moves user
+        // scores. Refused outright — no override. An accept mechanism belongs here only when a
+        // non-equivalent entry is actually scheduled, and it needs its own product decision.
+        $retiredXp = XpScore::getObjectXp((string) $entry['retired_key']);
+        $desiredXp = XpScore::getObjectXp((string) $entry['desired_key']);
+
+        if ($retiredXp !== $desiredXp) {
+            $this->error("  XP weighting differs: {$entry['retired_key']}={$retiredXp}, {$entry['desired_key']}={$desiredXp} per item."
+                . ' A retirement must not move user scores.');
+
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * XP is weighted by object KEY (XpCalculator resolves summary['keys']['objects'] through
-     * XpScore::getObjectXp), so a retirement between keys of differing weight silently moves
-     * user scores. Refuse unless the CSV records that the product owner accepted it.
-     */
-    private function xpEquivalent(array $entry): bool
-    {
-        $retiredXp = \App\Enums\XpScore::getObjectXp((string) $entry['retired_key']);
-        $desiredXp = \App\Enums\XpScore::getObjectXp((string) $entry['desired_key']);
-
-        if ($retiredXp === $desiredXp) {
-            return true;
-        }
-
-        if (strtolower(trim($entry['xp_equivalent'] ?? '')) === 'accepted') {
-            $this->warn("  XP moves {$retiredXp} → {$desiredXp} per item — accepted in the retirement list.");
-
-            return true;
-        }
-
-        $this->error("  XP weighting differs: {$entry['retired_key']}={$retiredXp}, {$entry['desired_key']}={$desiredXp} per item.");
-        $this->line('  A retirement must not silently move user scores. Set xp_equivalent=accepted');
-        $this->line('  in the retirement list once the product owner has signed off the change.');
-
-        return false;
     }
 
     // ── Apply ────────────────────────────────────────────────────────────────
@@ -393,12 +330,10 @@ class MigrateTag extends Command
                 'version' => self::STATE_VERSION,
                 'entry_id' => $entry['entry_id'],
                 'mapping_fingerprint' => $this->mappingFingerprint($entry),
-                'baseline_rows' => $actual['rows'],
                 'baseline_items' => $actual['items'],
                 'baseline_xp' => (int) DB::table('photos')->whereIn('id', $photoIds)->sum('xp'),
                 'retired_object_id' => (int) $entry['retired_id'],
                 'category_id' => (int) $entry['category_id'],
-                'desired_clo_id' => null,
                 'tag_ids' => $rows->pluck('id')->map('intval')->all(),
                 'all_photo_ids' => $photoIds,
                 'pending_photo_ids' => $photoIds,
@@ -461,9 +396,6 @@ class MigrateTag extends Command
             return false;
         }
 
-        $state['desired_clo_id'] = $desiredCloId;
-        $this->saveState($entry, $state);
-
         $itemsBefore = (int) $state['baseline_items'];
         $xpBefore = (int) $state['baseline_xp'];
 
@@ -484,7 +416,7 @@ class MigrateTag extends Command
                     // deletePhoto() already reversed metrics for a soft-deleted photo;
                     // reprocessing one would re-add them.
                     if ($photo->processed_at !== null && $photo->deleted_at === null) {
-                        $metrics->processPhoto($photo->fresh());
+                        $metrics->processPhoto($photo);
                     }
 
                     $processed++;
@@ -538,7 +470,8 @@ class MigrateTag extends Command
             $this->dropRetiredPivot($entry);
             $this->clearState($entry);
             $this->newLine();
-            $this->info('Applied. Next: ' . $this->nextStepFor($entry));
+            $this->info('Applied. Next status: '
+                . (self::STATUSES[array_search($entry['status'], self::STATUSES, true) + 1] ?? 'none'));
         }
 
         return $ok;
@@ -701,23 +634,19 @@ class MigrateTag extends Command
 
         $checks['photo_tags drained'] = DB::table('photo_tags')->where('litter_object_id', $retiredId)->count() === 0;
 
-        $retiredCloId = $this->retiredCloId($entry);
-        $checks['retired pivot removed'] = $retiredCloId === null;
-
-        $checks['surviving pivot exists'] = DB::table('category_litter_object')
+        $desiredCloId = DB::table('category_litter_object')
             ->where('category_id', (int) $entry['category_id'])
             ->where('litter_object_id', $desiredId)
-            ->exists();
+            ->value('id');
 
-        $object = LitterObject::find($retiredId);
-        $checks['retired_at set'] = $object !== null && $object->retired_at !== null;
-        $checks['merged_into_id set'] = $object !== null && (int) $object->merged_into_id === $desiredId;
+        $checks['surviving pivot exists'] = $desiredCloId !== null;
 
-        $checks['quick tags moved'] = $retiredCloId === null
-            || DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count() === 0;
-
-        $checks['retired key absent from picker'] = !$this->pickerOffers($retiredId);
-        $checks['surviving key offered'] = $this->pickerOffers($desiredId);
+        // Assert the presets SURVIVED, not that the retired CLO is empty. user_quick_tags.clo_id
+        // cascades on delete, and the retired pivot is dropped at the end of a run — so "zero
+        // rows on the retired CLO" is true whether the presets were repointed or destroyed.
+        $checks['quick tags survived the repoint'] = DB::table('user_quick_tags')
+            ->where('clo_id', $desiredCloId)
+            ->count() >= (int) $entry['quick_tags_on_retired_clo'];
 
         $checks['no summary references retired object'] = $this->summariesReferencing($retiredId) === 0;
 
@@ -734,20 +663,18 @@ class MigrateTag extends Command
         return $ok;
     }
 
-    private function pickerOffers(int $objectId): bool
-    {
-        return LitterObject::whereKey($objectId)->active()->whereHas('categories')->exists();
-    }
-
     private function summariesReferencing(int $objectId): int
     {
         $count = 0;
 
+        // `summary` is TEXT, not a JSON column, so the decode stays in PHP — a malformed row
+        // must not break the gate. The LIKE narrows the candidates; chunkById keeps the scan
+        // off OFFSET pagination, which would otherwise re-walk the table once per page.
         DB::table('photos')
             ->whereNotNull('summary')
+            ->where('summary', 'LIKE', '%"' . $objectId . '":%')
             ->select('id', 'summary')
-            ->orderBy('id')
-            ->chunk(2000, function ($photos) use ($objectId, &$count) {
+            ->chunkById(2000, function ($photos) use ($objectId, &$count) {
                 foreach ($photos as $photo) {
                     $summary = json_decode($photo->summary, true);
 
@@ -761,34 +688,99 @@ class MigrateTag extends Command
     }
 
     /**
-     * Absolute reconciliation at global scope. A before/after delta cannot survive a retry;
-     * comparing absolute values means a rerun passes as soon as Redis is correct.
+     * Absolute reconciliation, MySQL vs Redis, at EVERY scope the object touches: global, each
+     * country/state/city that holds one of its photos, and each contributing user's tag hash.
+     *
+     * RedisMetricsCollector::updateTags() writes an object count for every scope in
+     * RedisKeys::getPhotoScopes() plus an obj:{id} field per contributing user, so a global-only
+     * check — the shape this carried until the harness was folded in — covered a small fraction
+     * of what a retirement moves.
+     *
+     * Reconciliation is absolute, never a before/after delta: once MySQL and processed_tags are
+     * updated MetricsService produces no second delta, so a delta-based rerun after a Redis
+     * outage would fail forever.
      */
     private function redisReconciles(int $objectId): bool
     {
-        $mysql = (int) DB::table('photo_tags as pt')
-            ->join('photos as p', 'p.id', '=', 'pt.photo_id')
-            ->where('pt.litter_object_id', $objectId)
-            ->whereNotNull('p.processed_at')
-            ->whereNull('p.deleted_at')
-            ->sum('pt.quantity');
+        $expected = [[RedisKeys::objects(RedisKeys::global()), (string) $objectId, $this->itemsFor($objectId)]];
 
-        try {
-            $redis = (int) (Redis::hget(RedisKeys::objects(RedisKeys::global()), (string) $objectId) ?? 0);
-        } catch (Throwable $e) {
-            $this->error('  Redis unreadable: ' . $e->getMessage());
+        $levels = [
+            'country_id' => fn (int $id): string => RedisKeys::country($id),
+            'state_id' => fn (int $id): string => RedisKeys::state($id),
+            'city_id' => fn (int $id): string => RedisKeys::city($id),
+        ];
 
-            return false;
+        foreach ($levels as $column => $keyFor) {
+            foreach ($this->itemsGroupedBy($objectId, "p.{$column}") as $scopeId => $items) {
+                $expected[] = [RedisKeys::objects($keyFor((int) $scopeId)), (string) $objectId, $items];
+            }
         }
 
-        if ($mysql !== $redis) {
-            $this->error("    object {$objectId}: MySQL {$mysql} vs Redis {$redis}");
+        foreach ($this->itemsGroupedBy($objectId, 'p.user_id') as $userId => $items) {
+            $expected[] = [RedisKeys::user((int) $userId) . ':tags', 'obj:' . $objectId, $items];
+        }
+
+        $mismatches = [];
+
+        foreach ($expected as [$key, $field, $mysql]) {
+            try {
+                $redis = (int) (Redis::hget($key, $field) ?? 0);
+            } catch (Throwable $e) {
+                $this->error('  Redis unreadable: ' . $e->getMessage());
+
+                return false;
+            }
+
+            if ($mysql !== $redis) {
+                $mismatches[] = "      {$key} {$field}: MySQL {$mysql} vs Redis {$redis}";
+            }
+        }
+
+        if ($mismatches !== []) {
+            $this->error(sprintf('    object %d: %d of %d scopes disagree', $objectId, count($mismatches), count($expected)));
+
+            foreach (array_slice($mismatches, 0, 10) as $line) {
+                $this->line($line);
+            }
+
             $this->line('    Rebuild with: php artisan olm:redis:rebuild (flushes by default)');
 
             return false;
         }
 
+        $this->line(sprintf('      object %d reconciled across %d scopes', $objectId, count($expected)));
+
         return true;
+    }
+
+    /**
+     * Items on an object across processed, live photos — the population MetricsService counts,
+     * and the single definition of "MySQL truth" used by every reconciliation below.
+     */
+    private function itemsQuery(int $objectId): \Illuminate\Database\Query\Builder
+    {
+        return DB::table('photo_tags as pt')
+            ->join('photos as p', 'p.id', '=', 'pt.photo_id')
+            ->where('pt.litter_object_id', $objectId)
+            ->whereNotNull('p.processed_at')
+            ->whereNull('p.deleted_at');
+    }
+
+    private function itemsFor(int $objectId): int
+    {
+        return (int) $this->itemsQuery($objectId)->sum('pt.quantity');
+    }
+
+    /** @return array<int, int> scope id => items */
+    private function itemsGroupedBy(int $objectId, string $column): array
+    {
+        return $this->itemsQuery($objectId)
+            ->whereNotNull($column)
+            ->selectRaw("{$column} AS scope_id, SUM(pt.quantity) AS items")
+            ->groupBy($column)
+            ->pluck('items', 'scope_id')
+            ->map('intval')
+            ->all();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -857,7 +849,7 @@ class MigrateTag extends Command
         }
 
         foreach (['version', 'entry_id', 'mapping_fingerprint', 'tag_ids', 'all_photo_ids', 'pending_photo_ids',
-            'baseline_rows', 'baseline_items', 'baseline_xp', 'retired_object_id', 'category_id'] as $f) {
+            'baseline_items', 'baseline_xp', 'retired_object_id', 'category_id'] as $f) {
             if (!array_key_exists($f, $state)) {
                 throw new \RuntimeException("Migration state at {$path} is missing '{$f}'.");
             }

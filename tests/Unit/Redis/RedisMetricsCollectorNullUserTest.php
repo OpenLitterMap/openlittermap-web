@@ -9,7 +9,6 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Redis\RedisKeys;
 use App\Services\Redis\RedisMetricsCollector;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
@@ -23,20 +22,6 @@ use Tests\TestCase;
  */
 class RedisMetricsCollectorNullUserTest extends TestCase
 {
-    use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        Redis::flushall();
-    }
-
-    protected function tearDown(): void
-    {
-        Redis::flushall();
-        parent::tearDown();
-    }
-
     /** @return array<string, mixed> */
     private function metrics(): array
     {
