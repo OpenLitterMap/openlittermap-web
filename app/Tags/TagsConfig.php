@@ -329,7 +329,7 @@ class TagsConfig
                 'plastic' => [],
                 'traffic_cone' => [],
                 'metal' => [],
-                'plastic_bag' => [],
+                'plasticBags' => [],
                 'paper' => [
                     'materials' => ['paper'],
                 ],

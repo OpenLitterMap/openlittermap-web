@@ -108,7 +108,10 @@ class CreateCSVExportTest extends TestCase
         $category = Category::orderBy('id')->first();
 
         // A pivotless migrated object: exists, is tagged, but has NO category_litter_object row.
+        // `plasticBags` is seeded with a pivot since Step B.4 put it in TagsConfig, so drop it —
+        // the regression under test is about objects the v5 migration left pivotless.
         $shadow = LitterObject::firstOrCreate(['key' => 'plasticBags'], ['crowdsourced' => true]);
+        CategoryObject::where('litter_object_id', $shadow->id)->delete();
         $this->assertSame(
             0,
             CategoryObject::where('litter_object_id', $shadow->id)->count(),

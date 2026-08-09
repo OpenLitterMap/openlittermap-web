@@ -42,14 +42,19 @@ class MigrateTagTest extends TestCase
 
         $this->category = Category::where('key', 'other')->firstOrFail();
 
-        // The key being retired: canonical, in TagsConfig, and it HAS a pivot.
-        $this->retired = LitterObject::where('key', 'plastic_bag')->firstOrFail();
-        $this->retiredClo = CategoryObject::where('category_id', $this->category->id)
-            ->where('litter_object_id', $this->retired->id)
-            ->firstOrFail();
+        // The key being retired. Step B.4 took it out of TagsConfig, so the seeder no longer
+        // creates it — but the production row still exists and still holds its pivot, which is
+        // exactly the state a run starts from. Build that here rather than lean on the config.
+        $this->retired = LitterObject::firstOrCreate(['key' => 'plastic_bag'], ['crowdsourced' => false]);
+        $this->retiredClo = CategoryObject::firstOrCreate([
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
 
-        // The surviving key: migration-minted, holds the data, has NO pivot yet.
+        // The surviving key is now IN TagsConfig, so the seeder hands it a pivot. Production has
+        // none yet — the run creates it (A.2) — so drop the seeded one to restore that premise.
         $this->desired = LitterObject::firstOrCreate(['key' => 'plasticBags'], ['crowdsourced' => true]);
+        CategoryObject::where('litter_object_id', $this->desired->id)->delete();
 
         $user = User::factory()->create();
         $this->photo = Photo::factory()->create(['verified' => 2, 'user_id' => $user->id]);

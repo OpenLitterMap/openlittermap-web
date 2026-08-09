@@ -48,7 +48,10 @@ SELECT 'obj', litter_object_id, COUNT(*), SUM(quantity), COUNT(DISTINCT photo_id
   WHERE litter_object_id IN (${RETIRED_ID},${DESIRED_ID}) GROUP BY litter_object_id ORDER BY litter_object_id;
 SELECT 'pivot', id, category_id, litter_object_id FROM category_litter_object
   WHERE litter_object_id IN (${RETIRED_ID},${DESIRED_ID}) ORDER BY id;
-SELECT 'state', id, \`key\`, crowdsourced, retired_at, merged_into_id FROM litter_objects
+-- retired_at as a 0/1 flag, never the timestamp: it is the wall-clock moment the picker
+-- closed, so hashing it literally makes every run diverge by construction. The assertion
+-- that matters is that the column was set.
+SELECT 'state', id, \`key\`, crowdsourced, retired_at IS NOT NULL, merged_into_id FROM litter_objects
   WHERE id IN (${RETIRED_ID},${DESIRED_ID}) ORDER BY id;
 SELECT 'quick', clo_id, COUNT(*) FROM user_quick_tags WHERE clo_id IN
   (SELECT id FROM category_litter_object WHERE litter_object_id IN (${RETIRED_ID},${DESIRED_ID}))
