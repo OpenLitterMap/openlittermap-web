@@ -771,16 +771,28 @@ class MigrateTag extends Command
         return (int) $this->itemsQuery($objectId)->sum('pt.quantity');
     }
 
-    /** @return array<int, int> scope id => items */
+    /**
+     * @return array<int, int> scope id => items
+     *
+     * Built from get(), not pluck(). Query\Builder::pluck() re-selects only the two columns it
+     * is handed, discarding the selectRaw aliases above, and on a grouped query that returns
+     * wrong numbers rather than an error — measured 0 where the real value was 951.
+     */
     private function itemsGroupedBy(int $objectId, string $column): array
     {
-        return $this->itemsQuery($objectId)
+        $rows = $this->itemsQuery($objectId)
             ->whereNotNull($column)
             ->selectRaw("{$column} AS scope_id, SUM(pt.quantity) AS items")
             ->groupBy($column)
-            ->pluck('items', 'scope_id')
-            ->map('intval')
-            ->all();
+            ->get();
+
+        $map = [];
+
+        foreach ($rows as $row) {
+            $map[(int) $row->scope_id] = (int) $row->items;
+        }
+
+        return $map;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

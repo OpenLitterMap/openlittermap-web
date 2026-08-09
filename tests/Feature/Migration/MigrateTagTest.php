@@ -6,10 +6,13 @@ use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Location\Country;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Services\Redis\RedisKeys;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -464,6 +467,31 @@ class MigrateTagTest extends TestCase
 
         DB::table('user_quick_tags')->delete();
         $this->writeQueue('LOCAL_APPLIED', ['quick_tags_on_retired_clo' => 1]);
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    /**
+     * Reconciliation must actually READ the per-country and per-user hashes, not just the global
+     * one. Caught on the rehearsal database: a grouped `pluck()` re-selects only the columns it
+     * is handed, discarding the selectRaw aliases, and returned 0 where the real figure was 951.
+     * Every test passed through that bug because no fixture photo carried a country.
+     */
+    public function test_verify_reconciles_country_and_user_scopes(): void
+    {
+        $country = Country::factory()->create();
+        $this->photo->update(['country_id' => $country->id, 'processed_at' => now()]);
+
+        $this->applyOk();
+
+        $this->migrate(['--verify' => true])->assertExitCode(0);
+
+        // Corrupt ONLY the country hash. A global-scope check would not notice this.
+        Redis::hset(
+            RedisKeys::objects(RedisKeys::country($country->id)),
+            (string) $this->desired->id,
+            9999
+        );
 
         $this->migrate(['--verify' => true])->assertExitCode(1);
     }
