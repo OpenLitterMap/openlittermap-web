@@ -137,12 +137,23 @@ class MigrateTag extends Command
         foreach ($rows as &$row) {
             if ($row['entry_id'] === $entry['entry_id']) {
                 $row['status'] = $to;
-                $row['approver'] = $by;
-                $row['approved_at'] = now()->toDateString();
+
+                // approver/approved_at record the MAPPING APPROVAL — the one decision that
+                // authorised the entry — so they are written once and never overwritten.
+                // Every later rung is attributed in the evidence trail instead; overwriting
+                // them here destroyed the approval record on the next advance.
+                if (($row['approver'] ?? '') === '') {
+                    $row['approver'] = $by;
+                    $row['approved_at'] = now()->toDateString();
+                }
+
+                $transition = "{$to} by {$by} at " . now()->toDateTimeString();
 
                 if ($evidence) {
-                    $row['verification_evidence'] = trim($row['verification_evidence'] . ' | ' . $evidence, ' |');
+                    $transition .= ": {$evidence}";
                 }
+
+                $row['verification_evidence'] = trim($row['verification_evidence'] . ' | ' . $transition, ' |');
             }
         }
         unset($row);

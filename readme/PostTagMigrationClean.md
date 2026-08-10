@@ -216,6 +216,12 @@ Row-level deduplication is a separate later operation.
 Seven concrete actions, gated by lifecycle status. **B.1 runs before A** (see Step 0); the rest
 run after.
 
+> **Ordering caveat (2026-08-10).** The lifecycle inverts this — `CODE_UPDATED` precedes the
+> apply, so B.4–B.7 are committed before the data moves — which is safe only where the config
+> edit is inert until the retirement runs (verified for entry 1: `TagsConfig` object keys feed
+> only the suggested types and materials in `getAllTags()`, while the picker itself reads the
+> database), and must be re-checked for any entry where it is not.
+
 1. Set `litter_objects.retired_at` and `merged_into_id` on the retired row (see §5), and filter
    retired objects out of `GetTagsController::getAllTags()`. **This is Step 0 — it precedes A.**
 2. Delete the retired CLO row — **cleanup, not load-bearing.** After A.3 and A.4, both of which
@@ -248,6 +254,35 @@ Asserted mechanically by `--verify`. See §6 for the full surface table.
 
 `--verify` must pass before `--advance=COMPLETE` is permitted, and the evidence string is
 populated from the verify output rather than typed by hand.
+
+`--advance` writes `approver`/`approved_at` **once** — they record the mapping approval and are
+never overwritten. Every rung after that is attributed in `verification_evidence` as
+`STATUS by <who> at <when>`, so the full transition history survives to `COMPLETE`.
+
+### E — the production run
+
+A checklist for the console, in order. Entry 1 is rehearsed and `CODE_UPDATED`; everything below
+is the remaining path.
+
+1. **Confirm the database before anything runs.** The dry run measures whatever `.env` points
+   at, and a rehearsal leaves it on a post-apply database where the retired object reads zero
+   rows and `expectationsMatch` refuses. Confirm the target is production first.
+2. **Confirm production is running this branch.** The `--verify` gate reconciles MySQL against
+   Redis at every scope the objects touch, and that reconciliation was wrong before `99502335`
+   (`pluck()` discarding `selectRaw` aliases, reporting false divergence). A verify run on older
+   code cannot be trusted. Separately, per §8a, **do not rebuild production Redis** — the litter
+   gap there is unresolved and is not part of this run.
+3. **Run the entry in one sitting**, in this order: dry run → `--advance=DRY_RUN_VERIFIED`
+   → `--apply` → `--verify` → advance the remaining rungs. `--advance=COMPLETE` re-runs verify
+   itself and refuses on failure.
+4. **Expect the counts to have drifted.** `retired_rows`/`retired_items`/`retired_photos` were
+   measured 2026-08-08 and the picker has been open since, so the dry run may abort with
+   "data moved since approval". That is the guard working. Re-measure from the dry run's
+   "Measured now" line, update the list, and re-approve before continuing — do not advance past
+   a refusal.
+5. **B.3 is accepted-cosmetic.** The survivor still reads `crowdsourced=1` after a complete,
+   verified retirement. Nothing reads `litter_objects.crowdsourced`. It is not a defect to chase
+   mid-run.
 
 ---
 

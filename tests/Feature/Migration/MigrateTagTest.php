@@ -116,6 +116,21 @@ class MigrateTagTest extends TestCase
         fclose($fh);
     }
 
+    /**
+     * Read the single entry back out of the queue file.
+     *
+     * @return array<string, string>
+     */
+    private function queueRow(): array
+    {
+        $fh = fopen(base_path(self::QUEUE), 'r');
+        $header = fgetcsv($fh);
+        $row = fgetcsv($fh);
+        fclose($fh);
+
+        return array_combine($header, $row);
+    }
+
     private function migrate(array $opts = []): \Illuminate\Testing\PendingCommand
     {
         return $this->artisan('olm:migrate-tag', array_merge([
@@ -189,6 +204,33 @@ class MigrateTagTest extends TestCase
         $this->writeQueue('CODE_UPDATED');
 
         $this->migrate(['--advance' => 'DRY_RUN_VERIFIED', '--by' => 'sean'])->assertExitCode(1);
+    }
+
+    public function test_advancing_preserves_the_original_approval_and_records_every_transition(): void
+    {
+        $this->writeQueue('MAPPING_APPROVED', [
+            'approver' => 'product-owner',
+            'approved_at' => '2026-08-08',
+            'verification_evidence' => 'REHEARSED 3x on olm_postmig_3',
+        ]);
+
+        $this->migrate(['--advance' => 'CODE_UPDATED', '--by' => 'sean'])->assertExitCode(0);
+        $this->migrate([
+            '--advance' => 'DRY_RUN_VERIFIED',
+            '--by' => 'sean',
+            '--evidence' => 'dry run counts matched',
+        ])->assertExitCode(0);
+
+        $row = $this->queueRow();
+
+        $this->assertSame('DRY_RUN_VERIFIED', $row['status']);
+        $this->assertSame('product-owner', $row['approver'], 'The mapping approval must survive later rungs.');
+        $this->assertSame('2026-08-08', $row['approved_at']);
+
+        $this->assertStringContainsString('REHEARSED 3x on olm_postmig_3', $row['verification_evidence']);
+        $this->assertStringContainsString('CODE_UPDATED by sean', $row['verification_evidence']);
+        $this->assertStringContainsString('DRY_RUN_VERIFIED by sean', $row['verification_evidence']);
+        $this->assertStringContainsString('dry run counts matched', $row['verification_evidence']);
     }
 
     public function test_unknown_entry_fails(): void
