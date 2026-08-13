@@ -5,6 +5,7 @@ namespace App\Actions\QuickTags;
 use App\Models\Users\User;
 use App\Models\Users\UserQuickTag;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SyncQuickTagsAction
 {
@@ -19,6 +20,8 @@ class SyncQuickTagsAction
     public function run(User $user, array $tags)
     {
         return DB::transaction(function () use ($user, $tags) {
+            $this->rejectRetiredObjects($tags);
+
             UserQuickTag::where('user_id', $user->id)->delete();
 
             $now = now();
@@ -46,5 +49,39 @@ class SyncQuickTagsAction
 
             return $user->quickTags()->get();
         });
+    }
+
+    /**
+     * A retired object is being drained by a retirement run. `clo_id` validation only proves the
+     * pivot exists — the pivot outlives the picker — so the check runs here, inside the same
+     * transaction as the bulk replace and ahead of the delete, and a refusal rolls the whole
+     * sync back rather than leaving the user with no presets at all.
+     *
+     * @param array<int, array{clo_id: int}> $tags
+     *
+     * @throws ValidationException
+     */
+    private function rejectRetiredObjects(array $tags): void
+    {
+        $cloIds = array_unique(array_map(static fn (array $tag): int => (int) $tag['clo_id'], $tags));
+
+        if (empty($cloIds)) {
+            return;
+        }
+
+        $retired = DB::table('category_litter_object')
+            ->join('litter_objects', 'litter_objects.id', '=', 'category_litter_object.litter_object_id')
+            ->whereIn('category_litter_object.id', $cloIds)
+            ->whereNotNull('litter_objects.retired_at')
+            ->pluck('litter_objects.key')
+            ->all();
+
+        if (empty($retired)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'tags' => ['Retired and can no longer be saved as a quick tag: ' . implode(', ', $retired) . '.'],
+        ]);
     }
 }

@@ -330,6 +330,8 @@ Side effects: S3 upload (full + bbox thumbnail), reverse geocoding via `ResolveL
 | `materials` | string | Comma-separated material keys |
 | `search` | string | Prefix search across all keys |
 
+Retired litter objects (`litter_objects.retired_at` set) are excluded, matching `/api/tags/all`. A retired object keeps its pivot row until a retirement run drains it, so pivot existence alone does not mean an object is still offerable.
+
 **Response (200):**
 ```json
 {

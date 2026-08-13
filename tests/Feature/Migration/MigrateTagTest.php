@@ -153,8 +153,13 @@ class MigrateTagTest extends TestCase
 
     private function insertQuickTag(int $cloId): void
     {
-        DB::table('user_quick_tags')->insert([
-            'user_id' => User::factory()->create()->id,
+        $this->insertQuickTagFor(User::factory()->create()->id, $cloId);
+    }
+
+    private function insertQuickTagFor(int $userId, int $cloId, array $overrides = []): int
+    {
+        return DB::table('user_quick_tags')->insertGetId(array_merge([
+            'user_id' => $userId,
             'clo_id' => $cloId,
             'quantity' => 1,
             'materials' => '[]',
@@ -162,7 +167,17 @@ class MigrateTagTest extends TestCase
             'sort_order' => 0,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ], $overrides));
+    }
+
+    /** The command's own resume fingerprint, so a hand-written snapshot is accepted. */
+    private function mappingFingerprint(): string
+    {
+        $method = (new \ReflectionClass(\App\Console\Commands\tmp\v5\PostMigAug2026\MigrateTag::class))
+            ->getMethod('mappingFingerprint');
+        $method->setAccessible(true);
+
+        return $method->invoke(new \App\Console\Commands\tmp\v5\PostMigAug2026\MigrateTag(), $this->queueRow());
     }
 
     // ── Gating ───────────────────────────────────────────────────────────────
@@ -245,6 +260,74 @@ class MigrateTagTest extends TestCase
 
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+    }
+
+    // ── Failed apply leaves no half-retired object ──────────────────────────
+
+    public function test_expectation_mismatch_leaves_the_object_active(): void
+    {
+        $this->writeQueue('DRY_RUN_VERIFIED', ['retired_items' => 999]);
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->retired->refresh();
+
+        $this->assertNull($this->retired->retired_at);
+        $this->assertNull($this->retired->merged_into_id);
+    }
+
+    public function test_a_failed_apply_does_not_undo_a_prior_runs_retirement(): void
+    {
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+
+        $this->writeQueue('DRY_RUN_VERIFIED', ['retired_items' => 999]);
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertNotNull($this->retired->fresh()->retired_at);
+    }
+
+    public function test_a_retirement_pointing_somewhere_else_is_refused_without_mutation(): void
+    {
+        $elsewhere = LitterObject::firstOrCreate(['key' => 'somewhere_else'], ['crowdsourced' => false]);
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $elsewhere->id]);
+
+        $this->applyReady();
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertSame($elsewhere->id, (int) $this->retired->fresh()->merged_into_id);
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+    }
+
+    public function test_a_snapshot_that_cannot_be_persisted_reopens_the_picker(): void
+    {
+        // Make the state directory unwritable so the snapshot cannot be persisted. The lock file
+        // is pre-created because acquiring the lock must still succeed — the failure under test
+        // is the state write, not the lock.
+        $dir = Storage::disk('local')->path('migrate-tag');
+        @mkdir($dir, 0777, true);
+        touch($dir . '/other--plastic_bag.lock');
+        chmod($dir, 0555);
+
+        $this->applyReady();
+
+        try {
+            $this->migrate(['--apply' => true])->assertExitCode(1);
+        } finally {
+            chmod($dir, 0777);
+        }
+
+        $this->retired->refresh();
+
+        $this->assertNull($this->retired->retired_at);
         $this->assertDatabaseHas('photo_tags', [
             'id' => $this->tag->id,
             'litter_object_id' => $this->retired->id,
@@ -392,6 +475,40 @@ class MigrateTagTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_legacy_payload_cannot_tag_a_retired_object(): void
+    {
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->postJson('/api/v3/tags', [
+                'photo_id' => $photo->id,
+                'tags' => [[
+                    'category' => 'other',
+                    'object' => 'plastic_bag',
+                    'quantity' => 1,
+                ]],
+            ])
+            ->assertStatus(422);
+
+        $this->assertSame(0, DB::table('photo_tags')->where('photo_id', $photo->id)->count());
+    }
+
+    public function test_retired_object_is_excluded_from_the_grouped_tag_endpoint(): void
+    {
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+
+        $response = $this->getJson('/api/tags')->assertOk();
+
+        $keys = collect($response->json('tags'))
+            ->flatMap(fn ($category) => collect($category['litter_objects'] ?? [])->pluck('key'))
+            ->all();
+
+        $this->assertNotContains('plastic_bag', $keys);
+    }
+
     public function test_retired_pivot_is_removed_once_drained(): void
     {
         $this->applyOk();
@@ -478,6 +595,80 @@ class MigrateTagTest extends TestCase
         $this->assertSame(1, DB::table('user_quick_tags')->where('clo_id', $otherClo->id)->count());
     }
 
+    /**
+     * There is no unique constraint on (user, clo, type) — the old collision-delete protected a
+     * constraint that does not exist, and destroyed presets that differ only in quantity,
+     * pickup state, materials, brands, custom name or sort order.
+     */
+    public function test_presets_on_both_sides_of_the_move_all_survive(): void
+    {
+        $desiredClo = CategoryObject::create([
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
+
+        $user = User::factory()->create();
+        $onTarget = $this->insertQuickTagFor($user->id, $desiredClo->id, ['quantity' => 4]);
+        $onRetired = $this->insertQuickTagFor($user->id, $this->retiredClo->id, ['quantity' => 9]);
+
+        $this->applyOk();
+
+        $this->assertSame($desiredClo->id, (int) DB::table('user_quick_tags')->where('id', $onTarget)->value('clo_id'));
+        $this->assertSame($desiredClo->id, (int) DB::table('user_quick_tags')->where('id', $onRetired)->value('clo_id'));
+        $this->assertSame(9, (int) DB::table('user_quick_tags')->where('id', $onRetired)->value('quantity'));
+    }
+
+    public function test_identical_duplicate_presets_both_survive(): void
+    {
+        $user = User::factory()->create();
+        $first = $this->insertQuickTagFor($user->id, $this->retiredClo->id);
+        $second = $this->insertQuickTagFor($user->id, $this->retiredClo->id);
+
+        $this->applyOk();
+
+        $newClo = (int) DB::table('category_litter_object')
+            ->where('category_id', $this->category->id)
+            ->where('litter_object_id', $this->desired->id)
+            ->value('id');
+
+        $this->assertSame($newClo, (int) DB::table('user_quick_tags')->where('id', $first)->value('clo_id'));
+        $this->assertSame($newClo, (int) DB::table('user_quick_tags')->where('id', $second)->value('clo_id'));
+    }
+
+    /**
+     * A row that appears on the retired CLO after the snapshot was taken is outside the captured
+     * set. It must still be drained, or the retired pivot can never be dropped.
+     */
+    public function test_a_late_quick_tag_is_repointed_on_resume(): void
+    {
+        $this->applyReady();
+
+        Storage::disk('local')->put('migrate-tag/other--plastic_bag.json', json_encode([
+            'version' => 4,
+            'entry_id' => 'other--plastic_bag',
+            'mapping_fingerprint' => $this->mappingFingerprint(),
+            'baseline_items' => 7,
+            'baseline_xp' => (int) $this->photo->fresh()->xp,
+            'retired_object_id' => $this->retired->id,
+            'category_id' => $this->category->id,
+            'tag_ids' => [$this->tag->id],
+            'all_photo_ids' => [$this->photo->id],
+            'pending_photo_ids' => [$this->photo->id],
+            'quick_tag_ids' => [],
+        ]));
+
+        $late = $this->insertQuickTagFor(User::factory()->create()->id, $this->retiredClo->id);
+
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+
+        $newClo = (int) DB::table('category_litter_object')
+            ->where('category_id', $this->category->id)
+            ->where('litter_object_id', $this->desired->id)
+            ->value('id');
+
+        $this->assertSame($newClo, (int) DB::table('user_quick_tags')->where('id', $late)->value('clo_id'));
+    }
+
     // ── Verify ───────────────────────────────────────────────────────────────
 
     public function test_verify_passes_after_a_clean_apply(): void
@@ -543,6 +734,112 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--verify' => true])->assertExitCode(1);
     }
 
+    public function test_a_lingering_reference_to_the_retired_pivot_fails_the_apply(): void
+    {
+        // A row parked on the retired pivot that the object-keyed move does not see. The pivot
+        // cannot be dropped while it exists, and the run must not report success.
+        PhotoTag::create([
+            'photo_id' => $this->photo->id,
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+            'category_litter_object_id' => $this->retiredClo->id,
+            'quantity' => 1,
+        ]);
+
+        $this->photo->generateSummary();
+        $this->photo->refresh();
+
+        $this->applyReady();
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertDatabaseHas('category_litter_object', ['id' => $this->retiredClo->id]);
+        $this->assertTrue(Storage::disk('local')->exists('migrate-tag/other--plastic_bag.json'));
+    }
+
+    public function test_verify_fails_when_the_object_is_not_marked_retired(): void
+    {
+        $this->applyOk();
+
+        $this->retired->update(['retired_at' => null, 'merged_into_id' => null]);
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    public function test_verify_fails_when_the_retirement_points_at_the_wrong_survivor(): void
+    {
+        $this->applyOk();
+
+        $elsewhere = LitterObject::firstOrCreate(['key' => 'somewhere_else'], ['crowdsourced' => false]);
+        $this->retired->update(['merged_into_id' => $elsewhere->id]);
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    public function test_verify_fails_when_the_surviving_object_is_itself_retired(): void
+    {
+        $this->applyOk();
+
+        $this->desired->update(['retired_at' => now()]);
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    public function test_verify_fails_when_the_retired_pivot_still_exists(): void
+    {
+        $this->applyOk();
+
+        CategoryObject::create([
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    public function test_verify_fails_when_the_retired_object_lingers_in_a_location_scope(): void
+    {
+        $country = Country::factory()->create();
+        $this->photo->update(['country_id' => $country->id, 'processed_at' => now()]);
+
+        $this->applyOk();
+
+        // Draining MySQL removes the retired object from every derived expectation, so a
+        // MySQL-derived check alone can no longer see a stale country hash.
+        Redis::hset(
+            RedisKeys::objects(RedisKeys::country($country->id)),
+            (string) $this->retired->id,
+            4
+        );
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    public function test_a_redis_mismatch_fails_the_apply_and_keeps_the_snapshot(): void
+    {
+        Redis::hset(RedisKeys::objects(RedisKeys::global()), (string) $this->desired->id, 12345);
+
+        $this->applyReady();
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertTrue(Storage::disk('local')->exists('migrate-tag/other--plastic_bag.json'));
+    }
+
+    /**
+     * `olm:fix-orphaned-tags` encodes the pre-D-4 direction (149 → 92) plus other unapproved
+     * taxonomy moves. Under D-4 it would move data backwards onto a retired object.
+     */
+    public function test_the_obsolete_orphan_fix_command_refuses_to_run(): void
+    {
+        $this->artisan('olm:fix-orphaned-tags', ['--apply' => true])->assertExitCode(1);
+
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+    }
+
     public function test_complete_is_refused_when_verification_fails(): void
     {
         $this->writeQueue('PRODUCTION_VERIFIED');
@@ -573,7 +870,7 @@ class MigrateTagTest extends TestCase
         $this->applyReady();
 
         Storage::disk('local')->put('migrate-tag/other--plastic_bag.json', json_encode([
-            'version' => 3,
+            'version' => 4,
             'entry_id' => 'other--plastic_bag',
             'mapping_fingerprint' => 'stale-fingerprint',
             'baseline_rows' => 1,
@@ -585,6 +882,7 @@ class MigrateTagTest extends TestCase
             'tag_ids' => [$this->tag->id],
             'all_photo_ids' => [$this->photo->id],
             'pending_photo_ids' => [$this->photo->id],
+            'quick_tag_ids' => [],
         ]));
 
         $this->migrate(['--apply' => true])->assertExitCode(1);

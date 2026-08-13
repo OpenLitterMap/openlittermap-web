@@ -57,7 +57,7 @@ class MigrateTag extends Command
 
     private const QUEUE = 'readme/audit/TagRetirements-2026-08.csv';
     private const STATE_DIR = 'migrate-tag';
-    private const STATE_VERSION = 3;
+    private const STATE_VERSION = 4;
 
     /** Ordered lifecycle. A step may only advance to the next one. */
     public const STATUSES = [
@@ -314,26 +314,34 @@ class MigrateTag extends Command
     {
         $this->describe($entry);
 
-        // ── Step 0: close the door BEFORE anything moves ──
-        $this->closePicker($entry);
-
         $state = $this->loadState($entry);
 
         if ($state === null) {
+            // ── Step 0a: read-only preflight. A mismatch here has mutated nothing at all ──
+            if (!$this->expectationsMatch($entry, $this->measure($entry))) {
+                return self::FAILURE;
+            }
+
+            // ── Step 0b: never continue through somebody else's retirement ──
+            if (!$this->retirementIsCompatible($entry)) {
+                return self::FAILURE;
+            }
+
+            // ── Step 0c: close the door BEFORE anything moves ──
+            $closedByThisRun = $this->closePicker($entry);
+
+            // Re-measure under the closed door. Anything that landed between the preflight and
+            // the close is caught while a clean reopen is still possible.
+            if (!$this->expectationsMatch($entry, $this->measure($entry))) {
+                $this->reopenPicker($entry, $closedByThisRun);
+
+                return self::FAILURE;
+            }
+
             $rows = $this->retiredRowQuery($entry)
                 ->select('id', 'photo_id', 'quantity')
                 ->orderBy('id')
                 ->get();
-
-            $actual = [
-                'rows' => $rows->count(),
-                'items' => (int) $rows->sum('quantity'),
-                'photos' => $rows->pluck('photo_id')->unique()->count(),
-            ];
-
-            if (!$this->expectationsMatch($entry, $actual)) {
-                return self::FAILURE;
-            }
 
             $photoIds = $rows->pluck('photo_id')->unique()->values()->map('intval')->all();
 
@@ -341,23 +349,42 @@ class MigrateTag extends Command
                 'version' => self::STATE_VERSION,
                 'entry_id' => $entry['entry_id'],
                 'mapping_fingerprint' => $this->mappingFingerprint($entry),
-                'baseline_items' => $actual['items'],
+                'baseline_items' => (int) $rows->sum('quantity'),
                 'baseline_xp' => (int) DB::table('photos')->whereIn('id', $photoIds)->sum('xp'),
                 'retired_object_id' => (int) $entry['retired_id'],
                 'category_id' => (int) $entry['category_id'],
                 'tag_ids' => $rows->pluck('id')->map('intval')->all(),
                 'all_photo_ids' => $photoIds,
                 'pending_photo_ids' => $photoIds,
+                'quick_tag_ids' => $this->retiredQuickTagIds($entry),
             ];
 
-            $this->saveState($entry, $state);
-            $this->line('  snapshot: ' . count($state['tag_ids']) . ' tag ids, ' . count($photoIds) . ' photos');
+            // The retirement is only safe to keep once it is recoverable. Without durable state
+            // a later run would re-snapshot from scratch against a closed picker.
+            try {
+                $this->saveState($entry, $state);
+            } catch (Throwable $e) {
+                $this->error('  Could not persist the snapshot: ' . $e->getMessage());
+                $this->reopenPicker($entry, $closedByThisRun);
+
+                return self::FAILURE;
+            }
+
+            $this->line('  snapshot: ' . count($state['tag_ids']) . ' tag ids, ' . count($photoIds) . ' photos, '
+                . count($state['quick_tag_ids']) . ' quick tags');
         } else {
             if ($state['mapping_fingerprint'] !== $this->mappingFingerprint($entry)) {
                 $this->error('  The entry changed since this snapshot was taken. Refusing to resume.');
 
                 return self::FAILURE;
             }
+
+            if (!$this->retirementIsCompatible($entry)) {
+                return self::FAILURE;
+            }
+
+            // Idempotent: a resume must find the door shut even if the object was reopened by hand.
+            $this->closePicker($entry);
 
             $this->warn('  resuming from snapshot: ' . count($state['tag_ids']) . ' tag ids, '
                 . count($state['pending_photo_ids']) . ' summaries outstanding');
@@ -368,10 +395,12 @@ class MigrateTag extends Command
 
     /**
      * Sets retired_at + merged_into_id. The picker filters on retired_at (LitterObject::active),
-     * and AddTagsToPhotoAction refuses to tag a retired object, so from this point live traffic
-     * cannot add rows the snapshot would miss.
+     * and both tag-write paths plus the quick-tag sync refuse a retired object, so from this
+     * point live traffic cannot add rows the snapshot would miss.
+     *
+     * @return bool Whether THIS invocation closed it. Only a run that closed the door may reopen it.
      */
-    private function closePicker(array $entry): void
+    private function closePicker(array $entry): bool
     {
         $updated = DB::table('litter_objects')
             ->where('id', (int) $entry['retired_id'])
@@ -385,6 +414,77 @@ class MigrateTag extends Command
         $this->line($updated > 0
             ? "  picker closed: object {$entry['retired_id']} marked retired → {$entry['desired_id']}"
             : "  picker already closed for object {$entry['retired_id']}");
+
+        return $updated > 0;
+    }
+
+    /**
+     * Undo a retirement this invocation performed, after a failure that moved nothing. Never
+     * called once rows have started moving, and never applied to somebody else's retirement.
+     */
+    private function reopenPicker(array $entry, bool $closedByThisRun): void
+    {
+        if (!$closedByThisRun) {
+            $this->warn('  picker was closed before this run — leaving it closed.');
+
+            return;
+        }
+
+        DB::table('litter_objects')
+            ->where('id', (int) $entry['retired_id'])
+            ->update(['retired_at' => null, 'merged_into_id' => null, 'updated_at' => now()]);
+
+        $this->line("  picker reopened: object {$entry['retired_id']} is active again, nothing moved.");
+    }
+
+    /**
+     * An object already retired into a DIFFERENT survivor is another decision's work. Continuing
+     * would silently re-point it, so the run refuses instead.
+     */
+    private function retirementIsCompatible(array $entry): bool
+    {
+        $object = DB::table('litter_objects')
+            ->where('id', (int) $entry['retired_id'])
+            ->select('retired_at', 'merged_into_id')
+            ->first();
+
+        if ($object === null) {
+            $this->error("  object {$entry['retired_id']} does not exist.");
+
+            return false;
+        }
+
+        if ($object->retired_at === null) {
+            return true;
+        }
+
+        $mergedInto = $object->merged_into_id === null ? null : (int) $object->merged_into_id;
+
+        if ($mergedInto !== (int) $entry['desired_id']) {
+            $this->error("  object {$entry['retired_id']} is already retired into "
+                . ($mergedInto ?? 'nothing') . ", not {$entry['desired_id']}. Refusing.");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @return array<int, int> */
+    private function retiredQuickTagIds(array $entry): array
+    {
+        $retiredCloId = $this->retiredCloId($entry);
+
+        if ($retiredCloId === null) {
+            return [];
+        }
+
+        return DB::table('user_quick_tags')
+            ->where('clo_id', $retiredCloId)
+            ->orderBy('id')
+            ->pluck('id')
+            ->map('intval')
+            ->all();
     }
 
     private function mappingFingerprint(array $e): string
@@ -414,7 +514,9 @@ class MigrateTag extends Command
             return false;
         }
 
-        $this->repointQuickTags($entry, $desiredCloId);
+        if (!$this->repointQuickTags($entry, $state, $desiredCloId)) {
+            return false;
+        }
 
         $failed = [];
         $processed = 0;
@@ -477,15 +579,31 @@ class MigrateTag extends Command
             return false;
         }
 
-        if ($ok) {
-            $this->dropRetiredPivot($entry);
-            $this->clearState($entry);
-            $this->newLine();
-            $this->info('Applied. Next status: '
-                . (self::STATUSES[array_search($entry['status'], self::STATUSES, true) + 1] ?? 'none'));
+        if (!$ok) {
+            return false;
         }
 
-        return $ok;
+        if (!$this->dropRetiredPivot($entry)) {
+            return false;
+        }
+
+        // The apply is the only invocation holding the snapshot. Reconciling here — rather than
+        // leaving it to a later, separate --verify — is what stops a swallowed Redis error from
+        // clearing the resumable state and reporting success.
+        $retiredId = (int) $entry['retired_id'];
+
+        if (!$this->redisReconciles($desiredObjectId) || !$this->retiredIsDrainedFromRedis($retiredId, $desiredObjectId)) {
+            $this->error('  Redis did not reconcile — snapshot retained so the run can be resumed.');
+
+            return false;
+        }
+
+        $this->clearState($entry);
+        $this->newLine();
+        $this->info('Applied. Next status: '
+            . (self::STATUSES[array_search($entry['status'], self::STATUSES, true) + 1] ?? 'none'));
+
+        return true;
     }
 
     /**
@@ -562,59 +680,143 @@ class MigrateTag extends Command
     /**
      * Saved presets point at a CLO. The retired pivot is about to be deleted, so anything
      * referencing it must move or those presets break.
+     *
+     * Presets are repointed by captured id and never deleted. There is no unique constraint on
+     * (user_id, clo_id, type_id) — two presets on the same CLO are legal and can differ by
+     * quantity, pickup state, materials, brands, custom name or sort order — so a user already
+     * holding a preset on the surviving CLO is not a collision and destroys nothing.
      */
-    private function repointQuickTags(array $entry, int $desiredCloId): void
+    private function repointQuickTags(array $entry, array $state, int $desiredCloId): bool
     {
         $retiredCloId = $this->retiredCloId($entry);
 
         if ($retiredCloId === null) {
             $this->line('  quick tags: retired object has no pivot, nothing to move');
 
-            return;
+            return true;
         }
 
-        // A user may already hold a preset on the surviving CLO. The table is unique per
-        // (user, clo, type), so those rows are dropped rather than repointed into a collision.
-        $collisions = DB::table('user_quick_tags as a')
-            ->join('user_quick_tags as b', function ($join) use ($desiredCloId) {
-                $join->on('a.user_id', '=', 'b.user_id')
-                    ->where('b.clo_id', '=', $desiredCloId)
-                    ->whereRaw('(a.type_id <=> b.type_id)');
-            })
-            ->where('a.clo_id', $retiredCloId)
-            ->pluck('a.id');
+        $captured = array_map('intval', $state['quick_tag_ids']);
 
-        if ($collisions->isNotEmpty()) {
-            DB::table('user_quick_tags')->whereIn('id', $collisions)->delete();
-            $this->warn('  quick tags: dropped ' . $collisions->count() . ' that would collide with an existing preset');
+        if ($captured) {
+            DB::table('user_quick_tags')
+                ->whereIn('id', $captured)
+                ->where('clo_id', $retiredCloId)
+                ->update(['clo_id' => $desiredCloId, 'updated_at' => now()]);
         }
 
-        $moved = DB::table('user_quick_tags')
-            ->where('clo_id', $retiredCloId)
-            ->update(['clo_id' => $desiredCloId, 'updated_at' => now()]);
+        // Anything still on the retired pivot arrived after the snapshot was taken. It is
+        // outside the captured set but must still move, or the pivot can never be dropped.
+        $late = DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->pluck('id')->all();
 
-        $this->line("  quick tags: moved {$moved} from CLO {$retiredCloId} to {$desiredCloId}");
+        if ($late) {
+            DB::table('user_quick_tags')
+                ->whereIn('id', $late)
+                ->update(['clo_id' => $desiredCloId, 'updated_at' => now()]);
+
+            $this->warn('  quick tags: repointed ' . count($late) . ' that arrived after the snapshot');
+        }
+
+        // Assert the captured ids specifically. A total count at the target cannot tell a moved
+        // preset apart from an unrelated one that was already sitting there.
+        $arrived = $captured
+            ? DB::table('user_quick_tags')->whereIn('id', $captured)->where('clo_id', $desiredCloId)->count()
+            : 0;
+
+        if ($arrived !== count($captured)) {
+            $this->error('  quick tags: ' . $arrived . ' of ' . count($captured) . ' captured presets reached CLO ' . $desiredCloId);
+
+            return false;
+        }
+
+        $this->line('  quick tags: ' . (count($captured) + count($late)) . " now at CLO {$desiredCloId} (none deleted)");
+
+        return true;
     }
 
-    private function dropRetiredPivot(array $entry): void
+    /**
+     * A reference that survives the move is a failure, not a warning: the pivot cannot be
+     * dropped, so the retirement is incomplete and must stay resumable.
+     */
+    private function dropRetiredPivot(array $entry): bool
     {
         $retiredCloId = $this->retiredCloId($entry);
 
         if ($retiredCloId === null) {
-            return;
+            return true;
         }
 
-        $stillReferenced = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count()
-            + DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
+        $photoTags = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count();
+        $quickTags = DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
 
-        if ($stillReferenced > 0) {
-            $this->warn("  retired pivot CLO {$retiredCloId} still has {$stillReferenced} references — left in place");
+        if ($photoTags + $quickTags > 0) {
+            $this->error("  retired pivot CLO {$retiredCloId} still has {$photoTags} photo tags and "
+                . "{$quickTags} quick tags — cannot complete the retirement");
 
-            return;
+            return false;
         }
 
         DB::table('category_litter_object')->where('id', $retiredCloId)->delete();
         $this->line("  removed dangling pivot CLO {$retiredCloId}");
+
+        return true;
+    }
+
+    /**
+     * Draining MySQL removes the retired object from every MySQL-derived expectation, so
+     * `redisReconciles` alone stops looking at the scopes it used to occupy. Every one of those
+     * scopes is now a scope the SURVIVING object touches, so the survivor's population
+     * enumerates exactly where the retired object must read zero.
+     */
+    private function retiredIsDrainedFromRedis(int $retiredId, int $desiredId): bool
+    {
+        $hashes = [[RedisKeys::objects(RedisKeys::global()), (string) $retiredId]];
+
+        $levels = [
+            'country_id' => fn (int $id): string => RedisKeys::country($id),
+            'state_id' => fn (int $id): string => RedisKeys::state($id),
+            'city_id' => fn (int $id): string => RedisKeys::city($id),
+        ];
+
+        foreach ($levels as $column => $keyFor) {
+            foreach ($this->itemsGroupedBy($desiredId, "p.{$column}") as $scopeId => $items) {
+                $hashes[] = [RedisKeys::objects($keyFor((int) $scopeId)), (string) $retiredId];
+            }
+        }
+
+        foreach ($this->itemsGroupedBy($desiredId, 'p.user_id') as $userId => $items) {
+            $hashes[] = [RedisKeys::user((int) $userId) . ':tags', 'obj:' . $retiredId];
+        }
+
+        $stale = [];
+
+        foreach ($hashes as [$key, $field]) {
+            try {
+                $value = (int) (Redis::hget($key, $field) ?? 0);
+            } catch (Throwable $e) {
+                $this->error('  Redis unreadable: ' . $e->getMessage());
+
+                return false;
+            }
+
+            if ($value !== 0) {
+                $stale[] = "      {$key} {$field}: {$value}, expected 0";
+            }
+        }
+
+        if ($stale !== []) {
+            $this->error(sprintf('    object %d still present in %d of %d scopes', $retiredId, count($stale), count($hashes)));
+
+            foreach (array_slice($stale, 0, 10) as $line) {
+                $this->line($line);
+            }
+
+            return false;
+        }
+
+        $this->line(sprintf('      object %d reads zero across %d scopes', $retiredId, count($hashes)));
+
+        return true;
     }
 
     private function retiredCloId(array $entry): ?int
@@ -652,16 +854,32 @@ class MigrateTag extends Command
 
         $checks['surviving pivot exists'] = $desiredCloId !== null;
 
-        // Assert the presets SURVIVED, not that the retired CLO is empty. user_quick_tags.clo_id
-        // cascades on delete, and the retired pivot is dropped at the end of a run — so "zero
-        // rows on the retired CLO" is true whether the presets were repointed or destroyed.
-        $checks['quick tags survived the repoint'] = DB::table('user_quick_tags')
+        $object = DB::table('litter_objects')->where('id', $retiredId)
+            ->select('retired_at', 'merged_into_id')->first();
+
+        $checks['retired object is marked retired'] = $object !== null && $object->retired_at !== null;
+        $checks['retirement points at the survivor'] = $object !== null && (int) $object->merged_into_id === $desiredId;
+        $checks['surviving object is still active'] = DB::table('litter_objects')
+            ->where('id', $desiredId)->whereNull('retired_at')->exists();
+
+        $retiredCloId = $this->retiredCloId($entry);
+
+        $checks['retired pivot is gone'] = $retiredCloId === null;
+        $checks['nothing references the retired pivot'] = $retiredCloId === null
+            || DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count()
+                + DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count() === 0;
+
+        // A floor, NOT proof of preservation — an unrelated preset already on the surviving CLO
+        // satisfies it just as well as a moved one. By-id preservation is asserted during the
+        // apply, which is the only invocation that holds the captured set.
+        $checks['quick tags at or above the recorded floor'] = DB::table('user_quick_tags')
             ->where('clo_id', $desiredCloId)
             ->count() >= (int) $entry['quick_tags_on_retired_clo'];
 
         $checks['no summary references retired object'] = $this->summariesReferencing($retiredId) === 0;
 
-        $checks['redis reconciles'] = $this->redisReconciles($retiredId) && $this->redisReconciles($desiredId);
+        $checks['redis reconciles'] = $this->redisReconciles($desiredId)
+            && $this->retiredIsDrainedFromRedis($retiredId, $desiredId);
 
         foreach ($checks as $label => $passed) {
             $this->line(sprintf('    %-38s %s', $label, $passed ? '✓' : '✗ FAILED'));
@@ -872,7 +1090,7 @@ class MigrateTag extends Command
         }
 
         foreach (['version', 'entry_id', 'mapping_fingerprint', 'tag_ids', 'all_photo_ids', 'pending_photo_ids',
-            'baseline_items', 'baseline_xp', 'retired_object_id', 'category_id'] as $f) {
+            'baseline_items', 'baseline_xp', 'retired_object_id', 'category_id', 'quick_tag_ids'] as $f) {
             if (!array_key_exists($f, $state)) {
                 throw new \RuntimeException("Migration state at {$path} is missing '{$f}'.");
             }

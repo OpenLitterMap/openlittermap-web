@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\QuickTags;
 
+use App\Actions\QuickTags\SyncQuickTagsAction;
 use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class QuickTagsApiTest extends TestCase
@@ -646,5 +648,58 @@ class QuickTagsApiTest extends TestCase
         $this->assertCount(2, $brands);
         $this->assertEquals($brand1, $brands[0]['id']);
         $this->assertEquals(3, $brands[1]['quantity']);
+    }
+
+    // ── Retirement write barrier ─────────────────────────────────────────────
+
+    private function retireObjectBehind(int $cloId): void
+    {
+        $objectId = DB::table('category_litter_object')->where('id', $cloId)->value('litter_object_id');
+
+        DB::table('litter_objects')->where('id', $objectId)->update(['retired_at' => now()]);
+    }
+
+    public function test_sync_rejects_a_preset_on_a_retired_object(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+        $this->retireObjectBehind($clo);
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($clo)],
+            ])
+            ->assertStatus(422);
+    }
+
+    /**
+     * The sync is a bulk replace — it deletes every existing preset before inserting. If the
+     * retired check lived only in request validation, a caller reaching the action directly
+     * would wipe the user's presets and insert nothing.
+     */
+    public function test_action_refuses_a_retired_clo_without_destroying_existing_presets(): void
+    {
+        $user = User::factory()->create();
+        $keptClo = $this->createClo();
+        $retiredClo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($keptClo)],
+            ])->assertOk();
+
+        $this->retireObjectBehind($retiredClo);
+
+        try {
+            app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($retiredClo)]);
+            $this->fail('Expected the action to refuse a retired CLO.');
+        } catch (ValidationException $e) {
+            // expected
+        }
+
+        $rows = DB::table('user_quick_tags')->where('user_id', $user->id)->get();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame($keptClo, (int) $rows->first()->clo_id);
     }
 }

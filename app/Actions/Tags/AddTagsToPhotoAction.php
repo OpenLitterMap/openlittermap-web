@@ -211,6 +211,14 @@ class AddTagsToPhotoAction
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
+        // Same barrier as the CLO path: a retired object is being drained by a retirement run,
+        // so no client — however old its payload format — may add rows to it.
+        if ($object?->isRetired()) {
+            throw ValidationException::withMessages([
+                'tags' => ["Litter object '{$object->key}' is retired and can no longer be tagged."],
+            ]);
+        }
+
         // Resolve CLO from category + object
         $clo = null;
         if ($category && $object) {

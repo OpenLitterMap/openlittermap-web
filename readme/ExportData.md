@@ -112,10 +112,6 @@ Exports only `verified >= ADMIN_APPROVED` photos for the location.
 > **⚠ Column positions are not stable across format modes.** Selecting `split`, `joined`, or `split,joined` changes which blocks appear and how many columns precede each section. Always reference columns by **header name**, not index, in downstream scripts.
 >
 > Categories, objects, materials, and types are sorted **A-Z by key** (deterministic) so column positions within a single format mode are stable when the underlying tag set doesn't change.
->
-> That sort is PHP's `->sortBy('key')`, **not** a SQL `orderBy` under MySQL collation. Case, accents, numeric-looking keys and ties may therefore order differently than they did pre-v5.13.1. Same-data exports stay stable, but if positional stability ever becomes contractual, use an explicit comparator with an id tie-breaker. Key off header names regardless.
-
-> **Column derivation:** object columns come from `photo_tags` (via a `LitterObject` key lookup), **not** from the `category_litter_object` pivot. Deriving them from the pivot silently dropped any tagged object without a pivot row — see `readme/PostMigration-2026-08.md` for the v5 migration incident this caused. Any object with tags must always get a column.
 
 **Block order (per mode):**
 

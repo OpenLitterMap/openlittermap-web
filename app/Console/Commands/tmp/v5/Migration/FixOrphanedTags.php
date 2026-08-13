@@ -13,7 +13,7 @@ class FixOrphanedTags extends Command
         {--batch=5000 : Batch size for chunked updates}
         {--log= : Write output to log file (e.g. storage/logs/orphan-fix.log)}';
 
-    protected $description = 'Fix 189k+ orphaned photo_tags from v5 migration (missing category_litter_object_id)';
+    protected $description = 'RETIRED — superseded by olm:migrate-tag. Cannot be executed.';
 
     private int $totalUpdated = 0;
     private int $totalExpected = 0;
@@ -27,7 +27,26 @@ class FixOrphanedTags extends Command
     /** @var array<int> */
     private array $affectedPhotoIds = [];
 
+    /**
+     * Refuses unconditionally. Its mappings were never approved, and its `plasticBags` row
+     * (149 → 92, CLO 111) encodes the direction D-4 reversed — running it would move data back
+     * onto a retired object. Approved retirements go through `olm:migrate-tag`, one entry at a
+     * time, against the list in readme/audit/TagRetirements-2026-08.csv.
+     */
     public function handle(): int
+    {
+        $this->error('olm:fix-orphaned-tags is retired and cannot be run.');
+        $this->line('Its mappings are unapproved, and the plasticBags row encodes the pre-D-4 direction.');
+        $this->line('Use olm:migrate-tag --entry=... instead.');
+
+        return self::FAILURE;
+    }
+
+    /**
+     * Preserved verbatim as the historical record of what this command would have done — the
+     * migration scripts are the record and are not rewritten. Never called.
+     */
+    private function retiredBody(): int
     {
         $this->apply = $this->option('apply');
         $this->batchSize = (int) $this->option('batch');

@@ -196,8 +196,12 @@ All 277k items are now visible in exports. Verified no change to clean data
 The command remains in the tree under `app/Console/Commands/tmp/v5/Migration/` as an
 unapproved historical artifact. It bundles 74 unreviewed taxonomy decisions into one
 irreversible run, changes object identity, category and type, and hardcodes numeric ids with
-no preflight. **It is superseded and must not be executed.** The approved process is
-`readme/PostTagMigrationClean.md`.
+no preflight. Its `plasticBags` row (149 → 92) also encodes the direction D-4 reversed, so a
+run would move data back onto a retired object.
+
+**`handle()` now refuses unconditionally and returns a failure exit code** — the ban is enforced
+in code, not by convention. The original body is preserved unreachable as the historical record.
+The approved process is `readme/PostTagMigrationClean.md`.
 
 ---
 

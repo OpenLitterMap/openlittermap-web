@@ -11,6 +11,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
 use App\Tags\TagsConfig;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -100,7 +101,10 @@ class GetTagsController extends Controller
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        $query = CategoryObject::query();
+        // Retired objects keep their pivot until a retirement run drains them, so the pivot
+        // alone is not proof an object is still offerable.
+        $query = CategoryObject::query()
+            ->whereHas('litterObject', fn (Builder $q) => $q->active());
 
         if ($categoryKey) {
             $query->whereHas('category', function($q) use ($categoryKey) {

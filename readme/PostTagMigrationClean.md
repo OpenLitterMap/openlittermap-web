@@ -447,7 +447,8 @@ deleted quick-tags test returns, and the verify-surface tests are new. Roughly a
 **`TagMigrationQueue-2026-08.csv`** — its single row encoded the pre-D-4 direction. Replaced by
 the new list and deleted.
 
-**`olm:fix-orphaned-tags`** — unchanged, unapproved, still **do not run**.
+**`olm:fix-orphaned-tags`** — unapproved and now **unrunnable**: `handle()` refuses
+unconditionally. Its body is preserved unreachable as the historical record.
 
 ---
 
