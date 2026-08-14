@@ -66,6 +66,8 @@ class AddTagsToPhotoAction
      */
     protected function addTagsToPhoto(int $userId, int $photoId, array $tags): array
     {
+        $this->rejectRetiredClos($tags);
+
         $photoTags = [];
 
         foreach ($tags as $tag) {
@@ -80,6 +82,57 @@ class AddTagsToPhotoAction
         }
 
         return $photoTags;
+    }
+
+    /**
+     * A retired object may still hold a pivot row mid-retirement. The picker filters retired
+     * objects out, but a client holding a stale CLO id could otherwise keep writing new tags
+     * onto a key that is being drained.
+     *
+     * One query for the whole payload rather than one per tag — the guard can only fire during
+     * the minutes a retirement run is draining a key, so it must cost nothing the rest of the
+     * time. The legacy path checks its own already-materialised object for free.
+     *
+     * @param array<int, array<string, mixed>> $tags
+     *
+     * @throws ValidationException
+     */
+    protected function rejectRetiredClos(array $tags): void
+    {
+        $cloIds = array_filter(array_column($tags, 'category_litter_object_id'));
+
+        if (empty($cloIds)) {
+            return;
+        }
+
+        $retired = LitterObject::query()
+            ->join('category_litter_object', 'category_litter_object.litter_object_id', '=', 'litter_objects.id')
+            ->whereIn('category_litter_object.id', $cloIds)
+            ->whereNotNull('litter_objects.retired_at')
+            ->first(['litter_objects.key', 'litter_objects.merged_into_id']);
+
+        if ($retired) {
+            $this->rejectRetiredObject($retired->key, $retired->merged_into_id);
+        }
+    }
+
+    /**
+     * Names the survivor where the retirement recorded one, so a client holding a stale id is
+     * told what to tag instead rather than only that its choice is gone.
+     *
+     * @throws ValidationException
+     */
+    protected function rejectRetiredObject(string $key, ?int $mergedIntoId): void
+    {
+        $survivor = $mergedIntoId ? LitterObject::find($mergedIntoId)?->key : null;
+
+        throw ValidationException::withMessages([
+            'tags' => [
+                $survivor
+                    ? "Litter object '{$key}' has been merged into '{$survivor}' — refresh your tag list."
+                    : "Litter object '{$key}' is retired and can no longer be tagged.",
+            ],
+        ]);
     }
 
     /**
@@ -144,20 +197,11 @@ class AddTagsToPhotoAction
     protected function createTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
     {
         $cloId = $tag['category_litter_object_id'];
-        $clo = CategoryObject::with('litterObject:id,key,retired_at')->find($cloId);
+        $clo = CategoryObject::find($cloId);
 
         if (! $clo) {
             throw ValidationException::withMessages([
                 'tags' => ["Invalid category_litter_object_id: {$cloId}"],
-            ]);
-        }
-
-        // A retired object may still hold a pivot row mid-retirement. The tag picker filters
-        // retired objects out, but a client holding a stale CLO id could otherwise keep
-        // writing new tags onto a key that is being drained.
-        if ($clo->litterObject?->isRetired()) {
-            throw ValidationException::withMessages([
-                'tags' => ["Litter object '{$clo->litterObject->key}' is retired and can no longer be tagged."],
             ]);
         }
 
@@ -214,9 +258,7 @@ class AddTagsToPhotoAction
         // Same barrier as the CLO path: a retired object is being drained by a retirement run,
         // so no client — however old its payload format — may add rows to it.
         if ($object?->isRetired()) {
-            throw ValidationException::withMessages([
-                'tags' => ["Litter object '{$object->key}' is retired and can no longer be tagged."],
-            ]);
+            $this->rejectRetiredObject($object->key, $object->merged_into_id);
         }
 
         // Resolve CLO from category + object

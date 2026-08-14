@@ -135,7 +135,10 @@ re-checked per entry.
    retirement**, or the next `AutoCreateBrandRelationships` run reintroduces the retired key from
    config. No-op for entry 1: `BrandsConfig` already carries `plasticBags` only.
 6. `resources/js/langs/*/litter.json` — all locales, not just `en`.
-7. Resurrection guard — `firstOrCreate` paths refuse a retired key.
+7. Resurrection guard — `firstOrCreate` paths refuse a retired key. Both of them:
+   `AutoCreateBrandRelationships` and `GenerateTagsSeeder`, which rebuilds objects **and** pivots
+   straight from `TagsConfig`. B.4 is the intended fix, but it is a hand edit — the guard is what
+   stops a stale config silently undoing a completed retirement.
 
 `ClassifyTagsService` is **never edited.** It is the historical record of what the v5 migration
 did, and under D-4's direction line 228 is already correct.
@@ -271,8 +274,9 @@ nothing is self-evident.
 | `photos.summary` | no summary JSON contains the retired `object_id` | `--verify` 9 |
 | Redis `:obj` + `rank:objects` + `{u:ID}:tags`, `metrics` | reconcile **absolutely** — MySQL vs Redis for both objects, both structures, at global and every affected country/state/city, plus every contributing user hash | `--verify` 10 |
 | Picker endpoints, retirement state columns | retired key absent, desired key present | `MigrateTagTest` |
+| Reseeding | `GenerateTagsSeeder` does not rebuild a retired object's pivot | `MigrateTagTest` |
 | `GET /api/locations/{type}/{id}/tags/*` | `top`, `summary`, `by-category`, `cleanup`, `trending` — retired key absent from each | by hand |
-| `GET /api/user/top-tags` | retired CLO absent from Quick Tags suggestions | by hand |
+| `GET /api/user/top-tags` | retired CLO absent from Quick Tags suggestions | `TopTagsTest` |
 | CSV export | retired column gone; desired column carries the combined total | by hand |
 | Code references | zero in `TagsConfig`, `BrandsConfig`, `langs/*/litter.json`, rest of `app/` | by hand (B.4–B.6) |
 

@@ -61,6 +61,32 @@ class TopTagsTest extends TestCase
             ->assertJsonPath('tags.1.total', 10);
     }
 
+    public function test_retired_objects_are_not_suggested(): void
+    {
+        $category = Category::factory()->create(['key' => 'other']);
+        $retired = LitterObject::factory()->create(['key' => 'plastic_bag', 'retired_at' => now()]);
+        $kept = LitterObject::factory()->create(['key' => 'plasticBags']);
+
+        $retiredClo = CategoryObject::create(['category_id' => $category->id, 'litter_object_id' => $retired->id]);
+        $keptClo = CategoryObject::create(['category_id' => $category->id, 'litter_object_id' => $kept->id]);
+
+        $photo = Photo::factory()->create(['user_id' => $this->user->id]);
+
+        DB::table('photo_tags')->insert([
+            ['photo_id' => $photo->id, 'category_litter_object_id' => $retiredClo->id, 'category_id' => $category->id, 'litter_object_id' => $retired->id, 'quantity' => 50, 'created_at' => now(), 'updated_at' => now()],
+            ['photo_id' => $photo->id, 'category_litter_object_id' => $keptClo->id, 'category_id' => $category->id, 'litter_object_id' => $kept->id, 'quantity' => 10, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // A retired object keeps its tag history, so it out-ranks the survivor here. Suggesting
+        // it would hand the user a preset SyncQuickTagsAction refuses the moment they save.
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/v3/user/top-tags');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'tags')
+            ->assertJsonPath('tags.0.object_key', 'plasticBags');
+    }
+
     public function test_groups_by_clo_and_type(): void
     {
         $category = Category::factory()->create(['key' => 'alcohol']);

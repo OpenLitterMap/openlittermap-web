@@ -75,6 +75,9 @@ class MigrateTag extends Command
 
     private const APPLY_REQUIRES = 'DRY_RUN_VERIFIED';
 
+    /** Commands per Redis pipeline round trip. */
+    private const REDIS_BATCH = 1000;
+
     public function handle(GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
     {
         if (!$this->option('entry')) {
@@ -873,19 +876,19 @@ class MigrateTag extends Command
             $reads[] = ['hash', RedisKeys::user((int) $userId) . ':tags', 'obj:' . $retiredId];
         }
 
+        try {
+            $values = $this->readCounts($reads);
+        } catch (Throwable $e) {
+            $this->error('  Redis unreadable: ' . $e->getMessage());
+
+            return false;
+        }
+
         $stale = [];
 
-        foreach ($reads as [$kind, $key, $field]) {
-            try {
-                $value = $this->readCount($kind, $key, $field);
-            } catch (Throwable $e) {
-                $this->error('  Redis unreadable: ' . $e->getMessage());
-
-                return false;
-            }
-
-            if ($value !== 0) {
-                $stale[] = "      {$key} {$field}: {$value}, expected 0";
+        foreach ($reads as $i => [$kind, $key, $field]) {
+            if ($values[$i] !== 0) {
+                $stale[] = "      {$key} {$field}: {$values[$i]}, expected 0";
             }
         }
 
@@ -958,12 +961,36 @@ class MigrateTag extends Command
      * A missing hash field and a missing ZSET member both read as zero — the state a fully
      * drained object is expected to be in. Scores are floats in Redis, but every count written
      * through `zIncrBy` is a whole number, so the cast is exact.
+     *
+     * Pipelined. A retirement touches ~1,200 location scopes plus one hash per contributing
+     * user, and each reconciliation reads every one of them for both objects; issued singly
+     * that was thousands of sequential round trips per `--verify`.
+     *
+     * @param array<int, array{0: string, 1: string, 2: string}> $reads kind, key, field
+     *
+     * @return array<int, int> counts, in the order given
      */
-    private function readCount(string $kind, string $key, string $field): int
+    private function readCounts(array $reads): array
     {
-        return $kind === 'zset'
-            ? (int) (Redis::zscore($key, $field) ?? 0)
-            : (int) (Redis::hget($key, $field) ?? 0);
+        $counts = [];
+
+        foreach (array_chunk($reads, self::REDIS_BATCH) as $chunk) {
+            $replies = Redis::pipeline(function ($pipe) use ($chunk) {
+                foreach ($chunk as [$kind, $key, $field]) {
+                    if ($kind === 'zset') {
+                        $pipe->zscore($key, $field);
+                    } else {
+                        $pipe->hget($key, $field);
+                    }
+                }
+            });
+
+            foreach (array_keys($chunk) as $i) {
+                $counts[] = (int) ($replies[$i] ?? 0);
+            }
+        }
+
+        return $counts;
     }
 
     // ── Repair ───────────────────────────────────────────────────────────────
@@ -1004,21 +1031,27 @@ class MigrateTag extends Command
         $retiredUsers = $this->itemsGroupedBy($retiredId, 'p.user_id');
         $users = array_unique(array_merge(array_keys($survivorUsers), array_keys($retiredUsers)));
 
+        $writes = [];
+
+        foreach ($scopes as $scope) {
+            $hash = RedisKeys::objects($scope);
+            $rank = RedisKeys::ranking($scope, 'objects');
+
+            $writes[] = ['hash', $hash, (string) $desiredId, $survivorScopes[$scope] ?? 0];
+            $writes[] = ['zset', $rank, (string) $desiredId, $survivorScopes[$scope] ?? 0];
+            $writes[] = ['hash', $hash, (string) $retiredId, $retiredScopes[$scope] ?? 0];
+            $writes[] = ['zset', $rank, (string) $retiredId, $retiredScopes[$scope] ?? 0];
+        }
+
+        foreach ($users as $userId) {
+            $key = RedisKeys::user((int) $userId) . ':tags';
+
+            $writes[] = ['hash', $key, 'obj:' . $desiredId, $survivorUsers[$userId] ?? 0];
+            $writes[] = ['hash', $key, 'obj:' . $retiredId, $retiredUsers[$userId] ?? 0];
+        }
+
         try {
-            foreach ($scopes as $scope) {
-                $hash = RedisKeys::objects($scope);
-                $rank = RedisKeys::ranking($scope, 'objects');
-
-                $this->writeCount($hash, $rank, (string) $desiredId, $survivorScopes[$scope] ?? 0);
-                $this->writeCount($hash, $rank, (string) $retiredId, $retiredScopes[$scope] ?? 0);
-            }
-
-            foreach ($users as $userId) {
-                $key = RedisKeys::user((int) $userId) . ':tags';
-
-                $this->writeField($key, 'obj:' . $desiredId, $survivorUsers[$userId] ?? 0);
-                $this->writeField($key, 'obj:' . $retiredId, $retiredUsers[$userId] ?? 0);
-            }
+            $this->writeCounts($writes);
         } catch (Throwable $e) {
             $this->error('  Repair failed against Redis: ' . $e->getMessage());
 
@@ -1047,29 +1080,27 @@ class MigrateTag extends Command
      * Zero is written as ABSENCE, not as a stored zero. A zero-scored member is still a member
      * of the ranking ZSET `LocationService::getTopTags()` reads, and in a scope holding fewer
      * objects than the page size a retired key would still be served.
+     *
+     * Pipelined for the same reason as `readCounts()` — a repair rewrites both objects at every
+     * scope and user hash, which is thousands of writes.
+     *
+     * @param array<int, array{0: string, 1: string, 2: string, 3: int}> $writes kind, key, field, items
      */
-    private function writeCount(string $hashKey, string $rankKey, string $field, int $items): void
+    private function writeCounts(array $writes): void
     {
-        $this->writeField($hashKey, $field, $items);
-
-        if ($items === 0) {
-            Redis::zrem($rankKey, $field);
-
-            return;
+        foreach (array_chunk($writes, self::REDIS_BATCH) as $chunk) {
+            Redis::pipeline(function ($pipe) use ($chunk) {
+                foreach ($chunk as [$kind, $key, $field, $items]) {
+                    if ($items === 0) {
+                        $kind === 'zset' ? $pipe->zrem($key, $field) : $pipe->hdel($key, $field);
+                    } elseif ($kind === 'zset') {
+                        $pipe->zadd($key, $items, $field);
+                    } else {
+                        $pipe->hset($key, $field, $items);
+                    }
+                }
+            });
         }
-
-        Redis::zadd($rankKey, $items, $field);
-    }
-
-    private function writeField(string $key, string $field, int $items): void
-    {
-        if ($items === 0) {
-            Redis::hdel($key, $field);
-
-            return;
-        }
-
-        Redis::hset($key, $field, $items);
     }
 
     private function retiredCloId(array $entry): ?int
@@ -1194,19 +1225,19 @@ class MigrateTag extends Command
             $expected[] = ['hash', RedisKeys::user((int) $userId) . ':tags', 'obj:' . $objectId, $items];
         }
 
+        try {
+            $values = $this->readCounts($expected);
+        } catch (Throwable $e) {
+            $this->error('  Redis unreadable: ' . $e->getMessage());
+
+            return false;
+        }
+
         $mismatches = [];
 
-        foreach ($expected as [$kind, $key, $field, $mysql]) {
-            try {
-                $redis = $this->readCount($kind, $key, $field);
-            } catch (Throwable $e) {
-                $this->error('  Redis unreadable: ' . $e->getMessage());
-
-                return false;
-            }
-
-            if ($mysql !== $redis) {
-                $mismatches[] = "      {$key} {$field}: MySQL {$mysql} vs Redis {$redis}";
+        foreach ($expected as $i => [$kind, $key, $field, $mysql]) {
+            if ($mysql !== $values[$i]) {
+                $mismatches[] = "      {$key} {$field}: MySQL {$mysql} vs Redis {$values[$i]}";
             }
         }
 
@@ -1293,10 +1324,14 @@ class MigrateTag extends Command
     /** @return array{rows:int, items:int, photos:int} */
     private function measure(array $e): array
     {
+        $row = $this->retiredRowQuery($e)
+            ->selectRaw('COUNT(*) AS n_rows, COALESCE(SUM(quantity), 0) AS n_items, COUNT(DISTINCT photo_id) AS n_photos')
+            ->first();
+
         return [
-            'rows' => (int) $this->retiredRowQuery($e)->count(),
-            'items' => (int) $this->retiredRowQuery($e)->sum('quantity'),
-            'photos' => (int) $this->retiredRowQuery($e)->distinct()->count('photo_id'),
+            'rows' => (int) $row->n_rows,
+            'items' => (int) $row->n_items,
+            'photos' => (int) $row->n_photos,
         ];
     }
 

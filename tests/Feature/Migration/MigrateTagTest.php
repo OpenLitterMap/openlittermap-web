@@ -5,6 +5,7 @@ namespace Tests\Feature\Migration;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Location\Country;
 use App\Models\Photo;
@@ -131,6 +132,18 @@ class MigrateTagTest extends TestCase
         return array_combine($header, $row);
     }
 
+    /**
+     * The refusal assertion for every "this must not have moved the data" test: the tag is
+     * still on the retired object.
+     */
+    private function assertTagDidNotMove(): void
+    {
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+    }
+
     private function migrate(array $opts = []): \Illuminate\Testing\PendingCommand
     {
         return $this->artisan('olm:migrate-tag', array_merge([
@@ -217,10 +230,7 @@ class MigrateTagTest extends TestCase
     {
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     public function test_apply_is_still_blocked_at_code_updated(): void
@@ -229,10 +239,7 @@ class MigrateTagTest extends TestCase
 
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     public function test_status_transitions_must_be_sequential(): void
@@ -291,10 +298,7 @@ class MigrateTagTest extends TestCase
 
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     // ── Failed apply leaves no half-retired object ──────────────────────────
@@ -332,10 +336,7 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
         $this->assertSame($elsewhere->id, (int) $this->retired->fresh()->merged_into_id);
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     /**
@@ -353,10 +354,7 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
         $this->assertNull($this->retired->fresh()->retired_at);
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
         $this->assertDatabaseMissing('category_litter_object', [
             'category_id' => $this->category->id,
             'litter_object_id' => $this->desired->id,
@@ -370,10 +368,7 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
         $this->assertNull($this->retired->fresh()->retired_at);
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     public function test_a_snapshot_that_cannot_be_persisted_reopens_the_picker(): void
@@ -397,10 +392,7 @@ class MigrateTagTest extends TestCase
         $this->retired->refresh();
 
         $this->assertNull($this->retired->retired_at);
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     public function test_there_is_no_bulk_apply(): void
@@ -416,15 +408,13 @@ class MigrateTagTest extends TestCase
 
     public function test_type_expansions_are_refused(): void
     {
-        $type = DB::table('litter_object_types')->insertGetId([
-            'key' => 'testtype', 'name' => 'Test Type', 'created_at' => now(), 'updated_at' => now(),
-        ]);
-        $this->tag->update(['litter_object_type_id' => $type]);
+        $type = LitterObjectType::factory()->create();
+        $this->tag->update(['litter_object_type_id' => $type->id]);
 
         $this->applyReady();
 
         $this->migrate(['--apply' => true])->assertExitCode(1);
-        $this->assertDatabaseHas('photo_tags', ['id' => $this->tag->id, 'litter_object_id' => $this->retired->id]);
+        $this->assertTagDidNotMove();
     }
 
     public function test_object_tagged_across_several_categories_is_refused(): void
@@ -513,6 +503,29 @@ class MigrateTagTest extends TestCase
 
         $this->assertNotNull($this->retired->retired_at);
         $this->assertSame($this->desired->id, (int) $this->retired->merged_into_id);
+    }
+
+    /**
+     * The seeder `firstOrCreate`s an object AND its pivot from `TagsConfig`, so re-running it
+     * after a retirement would make the retired key selectable again. Removing the key from
+     * `TagsConfig` (step B.4) is the intended fix, but that is a hand edit on a separate commit —
+     * a stale config must not be able to silently undo a completed retirement.
+     */
+    public function test_reseeding_does_not_resurrect_a_retired_object(): void
+    {
+        // Retire a key the seeder actually reaches. `plastic_bag` is already out of TagsConfig,
+        // so it would pass vacuously; `plasticBags` is in it, and stands in for any future entry
+        // whose B.4 config edit has not landed yet.
+        $this->desired->update(['retired_at' => now()]);
+
+        $this->seed(GenerateTagsSeeder::class);
+
+        $this->assertDatabaseMissing('category_litter_object', [
+            'litter_object_id' => $this->desired->id,
+        ]);
+
+        $keys = collect($this->getJson('/api/tags/all')->assertOk()->json('objects') ?? [])->pluck('key');
+        $this->assertNotContains('plasticBags', $keys);
     }
 
     public function test_retired_object_is_excluded_from_the_tag_picker(): void
@@ -992,10 +1005,7 @@ class MigrateTagTest extends TestCase
         // The exit code alone proves nothing — the end-of-run reconciliation already fails on an
         // unreadable Redis. What the preflight adds is that it fails having moved NOTHING.
         $this->assertNull($this->retired->fresh()->retired_at);
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     /**
@@ -1059,10 +1069,7 @@ class MigrateTagTest extends TestCase
     {
         $this->artisan('olm:fix-orphaned-tags', ['--apply' => true])->assertExitCode(1);
 
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 
     public function test_complete_is_refused_when_verification_fails(): void
@@ -1098,12 +1105,10 @@ class MigrateTagTest extends TestCase
             'version' => 4,
             'entry_id' => 'other--plastic_bag',
             'mapping_fingerprint' => 'stale-fingerprint',
-            'baseline_rows' => 1,
             'baseline_items' => 7,
             'baseline_xp' => 0,
             'retired_object_id' => $this->retired->id,
             'category_id' => $this->category->id,
-            'desired_clo_id' => null,
             'tag_ids' => [$this->tag->id],
             'all_photo_ids' => [$this->photo->id],
             'pending_photo_ids' => [$this->photo->id],
@@ -1112,9 +1117,6 @@ class MigrateTagTest extends TestCase
 
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
-        $this->assertDatabaseHas('photo_tags', [
-            'id' => $this->tag->id,
-            'litter_object_id' => $this->retired->id,
-        ]);
+        $this->assertTagDidNotMove();
     }
 }

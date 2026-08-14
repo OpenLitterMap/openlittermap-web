@@ -97,6 +97,14 @@ class GenerateTagsSeeder extends Seeder
             foreach ($objects as $objectKey => $attributes) {
                 $litterObject = LitterObject::firstOrCreate(['key' => $objectKey]);
 
+                // Same resurrection guard as AutoCreateBrandRelationships: firstOrCreate here
+                // would hand a retired key a fresh pivot and make it selectable again. Removing
+                // the key from TagsConfig is the intended fix, but that is a hand edit — this
+                // stops a stale config from silently undoing a retirement.
+                if ($litterObject->isRetired()) {
+                    continue;
+                }
+
                 $pivot = CategoryObject::firstOrCreate([
                     'category_id' => $category->id,
                     'litter_object_id' => $litterObject->id,

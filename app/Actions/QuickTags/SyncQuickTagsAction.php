@@ -2,8 +2,10 @@
 
 namespace App\Actions\QuickTags;
 
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Users\User;
 use App\Models\Users\UserQuickTag;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -69,11 +71,12 @@ class SyncQuickTagsAction
             return;
         }
 
-        $retired = DB::table('category_litter_object')
-            ->join('litter_objects', 'litter_objects.id', '=', 'category_litter_object.litter_object_id')
-            ->whereIn('category_litter_object.id', $cloIds)
-            ->whereNotNull('litter_objects.retired_at')
-            ->pluck('litter_objects.key')
+        $retired = CategoryObject::query()
+            ->whereIn('id', $cloIds)
+            ->whereHas('litterObject', fn (Builder $q) => $q->whereNotNull('retired_at'))
+            ->with('litterObject:id,key')
+            ->get()
+            ->pluck('litterObject.key')
             ->all();
 
         if (empty($retired)) {

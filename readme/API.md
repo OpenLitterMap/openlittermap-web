@@ -833,6 +833,8 @@ Toggling `is_public` on a verified (`>= ADMIN_APPROVED`) photo marks its cluster
 
 Returns the authenticated user's most-tagged items grouped by CLO + type, ordered by total quantity. Used by mobile to populate Quick Tags with personal presets via "Use my top tags."
 
+Retired litter objects are excluded. A retired object keeps its tag history, so it can out-rank its survivor here — suggesting it would hand the user a preset that `PUT /api/v3/user/quick-tags` then rejects.
+
 **Query parameters:**
 - `limit` — integer, 1-30, default 20
 
