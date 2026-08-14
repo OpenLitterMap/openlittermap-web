@@ -592,8 +592,15 @@ onMounted(async () => {
 
     const stored = localStorage.getItem('recentTags');
     if (stored) {
-        // Filter out stale entries from before category disambiguation was added
-        const parsed = JSON.parse(stored).filter((t) => t.type !== 'object' || t.cloId);
+        // Drop entries from before category disambiguation was added (no cloId at all), and —
+        // once the tag list has loaded — entries whose cloId the API no longer offers, which is
+        // what a retired object leaves behind. Keeping one would submit a tag the server refuses.
+        const canCheckClos = tagsStore.categoryObjects.length > 0;
+        const parsed = JSON.parse(stored).filter((t) => {
+            if (t.type !== 'object') return true;
+            if (!t.cloId) return false;
+            return !canCheckClos || tagsStore.hasClo(t.cloId);
+        });
         recentTags.value = parsed.slice(0, 5);
         localStorage.setItem('recentTags', JSON.stringify(recentTags.value));
     }

@@ -34,7 +34,7 @@ class SyncQuickTagsRequest extends FormRequest
     {
         return [
             'tags.max' => 'Maximum 30 quick tags allowed.',
-            'tags.*.clo_id.exists' => 'One or more tag IDs are no longer valid. Please remove stale tags and try again.',
+            'tags.*.clo_id.exists' => 'One or more of these tags is no longer available — refresh your tag list.',
         ];
     }
 }

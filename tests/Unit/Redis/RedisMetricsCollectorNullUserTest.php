@@ -121,6 +121,39 @@ class RedisMetricsCollectorNullUserTest extends TestCase
     }
 
     /**
+     * The whole pipeline, not just the collector. `MetricsService` is the single writer, and a
+     * retirement drives it over every affected photo — including ownerless ones, where it must
+     * write the aggregate metrics row and skip the per-user one (`metrics.user_id` is NOT NULL
+     * and part of the primary key) without touching `users.xp`.
+     */
+    public function test_ownerless_photo_through_metrics_service_writes_aggregate_rows_only(): void
+    {
+        $photo = $this->ownerlessPhoto();
+        $photo->update(['verified' => 2, 'xp' => 10]);
+
+        app(\App\Services\Metrics\MetricsService::class)->processPhoto($photo);
+
+        $photo->refresh();
+        $this->assertNotNull($photo->processed_at);
+
+        $this->assertDatabaseHas('metrics', [
+            'user_id' => 0,
+            'timescale' => 0,
+            'location_type' => \App\Enums\LocationType::Global->value,
+            'location_id' => 0,
+        ]);
+
+        $this->assertSame(
+            0,
+            \Illuminate\Support\Facades\DB::table('metrics')->where('user_id', '>', 0)->count(),
+            'an ownerless photo must not write a per-user metrics row'
+        );
+
+        $this->assertSame(0, (int) Redis::zcard(RedisKeys::xpRanking('{g}')));
+        $this->assertSame(0, (int) Redis::pfcount(RedisKeys::hll('{g}')));
+    }
+
+    /**
      * A TypeError or any other Error raised inside Redis processing must be logged and
      * swallowed, not propagated. catch (\Exception) did not cover Error, so a null created_at
      * killed the calling process instead of degrading.

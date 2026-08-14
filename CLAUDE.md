@@ -197,6 +197,7 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/PostMigrationCleanup.md` — Post-migration cleanup tasks (pending v4 code removal; links the v5 migration tooling)
 - `readme/SchoolPipeline.md` — School approval pipeline (critical data flow)
 - `readme/Tags.md` — Tagging system and categories
+- `readme/PostTagMigrationClean.md` — Litter object retirement (`retired_at`/`merged_into_id`, `olm:migrate-tag`, the production write-freeze runbook)
 - `readme/Teams.md` — Teams architecture, permissions, safeguarding, API routes
 - `readme/Upload.md` — Photo upload pipeline
 - `readme/Admin.md` — Admin verification system, queue UI, roles/permissions

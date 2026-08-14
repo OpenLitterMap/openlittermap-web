@@ -469,6 +469,13 @@ When a user selects "wine", you submit `category_litter_object_id: 42, litter_ob
 | `tags.*.brands` | int[]\|object[] | optional | Plain IDs `[10]` (qty=1) or objects `[{"id": 10, "quantity": 3}]` for per-brand quantity. |
 | `tags.*.custom_tags` | string[] | optional | Free text. Sanitized server-side (`strip_tags` + `trim`), accepts any characters incl. `& . ' /`, capped to 255 chars (`custom_tags_new.key`). Empty-after-sanitize entries are silently skipped — never rejected. |
 
+**Retired and stale objects (422).** Two cases, both telling the client to refetch `/api/tags/all`:
+
+- **Mid-retirement** — the retired object still holds its pivot, so the id passes `exists` and the whole payload is rejected under `errors.tags`, naming the survivor: `Litter object 'plastic_bag' has been merged into 'plasticBags' — refresh your tag list.`
+- **After the run drops the pivot**, or for any other stale id — `exists` fails first, under `errors.tags.{i}.category_litter_object_id`: `This tag is no longer available — refresh your tag list.` No replacement can be named here; the row needed to resolve it is gone.
+
+`PUT /api/v3/tags` applies the identical contract. `PUT /api/v3/user/quick-tags` uses the same wording on `tags.*.clo_id`.
+
 **Standalone tag types** (no `category_litter_object_id`):
 
 The standalone `{ custom: true, key }` form (below) sanitizes `key` the same way — punctuation is accepted, never a 422/500 (a single bad custom tag must not abort the POST or roll back valid tags).

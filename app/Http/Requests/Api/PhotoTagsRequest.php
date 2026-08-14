@@ -65,4 +65,19 @@ class PhotoTagsRequest extends FormRequest
             'tags.*.key' => 'sometimes',
         ];
     }
+
+    /**
+     * A CLO id can go stale under a client that is still holding an old tag list — a completed
+     * retirement drops the pivot, and so does any other cleanup. The default `exists` wording
+     * gives the user nothing to act on; this tells them what to do. It cannot name a replacement,
+     * because by the time the pivot is gone there is no row left to resolve.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'tags.*.category_litter_object_id.exists' => 'This tag is no longer available — refresh your tag list.',
+        ];
+    }
 }

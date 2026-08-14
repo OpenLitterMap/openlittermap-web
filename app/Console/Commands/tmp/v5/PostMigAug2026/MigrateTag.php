@@ -958,6 +958,39 @@ class MigrateTag extends Command
     }
 
     /**
+     * A repair rebuilds Redis from `photo_tags`, which `repointRows()` moves in one go BEFORE
+     * the per-photo summary and metrics loop. So while any photo is still pending, MySQL already
+     * reads as fully retired while those photos' `processed_tags` still name the retired object.
+     *
+     * Repairing there writes the FINAL counts, and the `--apply` rerun that follows then has
+     * `MetricsService` emit the retired→survivor delta for each pending photo on top of them —
+     * double-counting the survivor and driving the retired id negative. `--verify` catches it and
+     * a second repair fixes it, but the run has to be sent round the loop again for no reason.
+     *
+     * The apply rerun is what drains the pending photos, so it goes first.
+     */
+    private function pendingPhotosAreDrained(array $entry): bool
+    {
+        $state = $this->loadState($entry);
+        $pending = $state === null ? [] : ($state['pending_photo_ids'] ?? []);
+
+        if ($pending === []) {
+            return true;
+        }
+
+        $base = 'php artisan olm:migrate-tag --entry=' . $this->option('entry');
+
+        $this->error(sprintf('  %d photos are still pending metrics — repairing now would be undone.', count($pending)));
+        $this->line('  The rows already moved, but those photos have not been reprocessed, so a repair');
+        $this->line('  writes final counts that the next apply then adds to again.');
+        $this->newLine();
+        $this->line("  Rerun the apply first:\n    {$base} --apply");
+        $this->line("  Then repair only if it still reports a Redis mismatch:\n    {$base} --repair-redis");
+
+        return false;
+    }
+
+    /**
      * A missing hash field and a missing ZSET member both read as zero — the state a fully
      * drained object is expected to be in. Scores are floats in Redis, but every count written
      * through `zIncrBy` is a whole number, so the cast is exact.
@@ -1014,6 +1047,10 @@ class MigrateTag extends Command
         $desiredId = (int) $entry['desired_id'];
 
         $this->describe($entry);
+
+        if (!$this->pendingPhotosAreDrained($entry)) {
+            return self::FAILURE;
+        }
 
         if (!$this->redisIsReachable()) {
             return self::FAILURE;

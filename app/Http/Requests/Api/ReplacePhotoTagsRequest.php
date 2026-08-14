@@ -46,4 +46,17 @@ class ReplacePhotoTagsRequest extends FormRequest
             'tags.*.key' => 'sometimes',
         ];
     }
+
+    /**
+     * Same contract as `PhotoTagsRequest` — a stale CLO id on the replace path gets actionable
+     * copy rather than the default `exists` wording.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'tags.*.category_litter_object_id.exists' => 'This tag is no longer available — refresh your tag list.',
+        ];
+    }
 }

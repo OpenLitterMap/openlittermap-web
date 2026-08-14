@@ -74,9 +74,16 @@ class GetTagsController extends Controller
 
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
-        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')->get();
+        // The retired object keeps its pivot until a run drains it, so these two must be filtered
+        // the same way `objects` is. Otherwise the payload references a litter_object_id it does
+        // not contain, and a client that indexes from the join table can still resolve a retired
+        // CLO while the picker hides it.
+        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')
+            ->whereHas('litterObject', fn (Builder $q) => $q->active())
+            ->get();
 
         $categoryObjectTypes = DB::table('category_object_types')
+            ->whereIn('category_litter_object_id', $categoryObjects->pluck('id'))
             ->select('category_litter_object_id', 'litter_object_type_id')
             ->get();
 

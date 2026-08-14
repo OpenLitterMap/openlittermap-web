@@ -64,6 +64,53 @@ class ReplacePhotoTagsTest extends TestCase
         $this->assertGreaterThan(0, $photo->xp);
     }
 
+    /**
+     * The write barrier has to hold on the replace path too — same action, different request
+     * class, and the pivot outlives the picker while a retirement is draining the key.
+     */
+    public function test_replace_tags_refuses_a_retired_object_and_names_the_survivor(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $can = LitterObject::firstWhere('key', 'can');
+        $bottle = LitterObject::firstWhere('key', 'bottle');
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+
+        $can->update(['retired_at' => now(), 'merged_into_id' => $bottle->id]);
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['category_litter_object_id' => $cloId, 'quantity' => 3],
+            ],
+        ])->assertStatus(422)
+            ->assertJsonPath('errors.tags.0', "Litter object 'can' has been merged into 'bottle' — refresh your tag list.");
+
+        $this->assertDatabaseCount('photo_tags', 0);
+    }
+
+    /**
+     * Once a retirement drops the pivot the id fails `exists` before the action runs, so nothing
+     * can name the survivor any more. The copy has to at least tell the client what to do.
+     */
+    public function test_a_stale_clo_id_tells_the_client_to_refresh(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['category_litter_object_id' => 999999, 'quantity' => 1],
+            ],
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'tags.0.category_litter_object_id' => 'This tag is no longer available — refresh your tag list.',
+            ]);
+    }
+
     public function test_replace_tags_allows_already_tagged_photos(): void
     {
         $user = User::factory()->create(['verification_required' => false]);

@@ -10,6 +10,7 @@ use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Location\Country;
 use App\Models\Photo;
 use App\Models\Users\User;
+use App\Services\Metrics\MetricsService;
 use App\Services\Redis\RedisKeys;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\DB;
@@ -1035,6 +1036,60 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--repair-redis' => true])->assertExitCode(0);
 
         $this->migrate(['--verify' => true])->assertExitCode(0);
+    }
+
+    /**
+     * The production shape: the photo was already processed while its tag sat on the retired
+     * object, so `processed_tags` names 92 and `MetricsService` must take its delta path —
+     * moving the count to 149 rather than crediting 149 from empty and leaving 92 behind.
+     * Most apply tests leave `processed_at` null, so the delta path never runs in them.
+     */
+    public function test_apply_moves_metrics_for_a_photo_already_processed_on_the_retired_object(): void
+    {
+        $country = Country::factory()->create();
+        $this->photo->update(['country_id' => $country->id]);
+
+        app(MetricsService::class)->processPhoto($this->photo->fresh());
+
+        $scope = RedisKeys::country($country->id);
+        $this->assertSame(7, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->retired->id));
+        $litterBefore = (int) Redis::hGet(RedisKeys::stats($scope), 'litter');
+
+        $this->applyOk();
+
+        $this->assertSame(7, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->desired->id));
+        $this->assertSame(0, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->retired->id));
+
+        // A retirement moves a count between objects; it must not change the litter total.
+        $this->assertSame($litterBefore, (int) Redis::hGet(RedisKeys::stats($scope), 'litter'));
+
+        $this->migrate(['--verify' => true])->assertExitCode(0);
+    }
+
+    /**
+     * `repointRows()` moves every row before the per-photo metrics loop, so mid-loop MySQL reads
+     * as fully retired while the pending photos' `processed_tags` still name the retired object.
+     * A repair there writes final counts the apply rerun would then add to again.
+     */
+    public function test_repair_redis_refuses_while_photos_are_pending_metrics(): void
+    {
+        $this->applyReady();
+
+        Storage::disk('local')->put('migrate-tag/other--plastic_bag.json', json_encode([
+            'version' => 4,
+            'entry_id' => 'other--plastic_bag',
+            'mapping_fingerprint' => $this->mappingFingerprint(),
+            'baseline_items' => 7,
+            'baseline_xp' => 0,
+            'retired_object_id' => $this->retired->id,
+            'category_id' => $this->category->id,
+            'tag_ids' => [$this->tag->id],
+            'all_photo_ids' => [$this->photo->id],
+            'pending_photo_ids' => [$this->photo->id],
+            'quick_tag_ids' => [],
+        ]));
+
+        $this->migrate(['--repair-redis' => true])->assertExitCode(1);
     }
 
     /**

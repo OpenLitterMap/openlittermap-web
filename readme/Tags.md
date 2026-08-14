@@ -280,6 +280,18 @@ The `unclassified` system category is NOT in `TagsConfig`; it is created by `Gen
 
 `TagsConfig` helper methods (use these instead of hardcoding lists): `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()`.
 
+### Retired objects
+
+`litter_objects.retired_at` marks a key we no longer want; `merged_into_id` names the object that replaced it. Retirement is an explicit fact, not the absence of a pivot — a retired object keeps its `category_litter_object` row until a retirement run drains it.
+
+Consequences to respect anywhere you touch objects:
+
+- **Reads must filter.** Use `LitterObject::active()`, or `whereHas('litterObject', fn ($q) => $q->active())` when starting from `CategoryObject`. `/api/tags`, `/api/tags/all` (including its `category_objects` / `category_object_types` arrays) and `/api/v3/user/top-tags` all do.
+- **Writes must refuse.** `AddTagsToPhotoAction` (both payload formats) and `SyncQuickTagsAction` reject a retired object with a 422 naming the survivor.
+- **`firstOrCreate` paths must not resurrect.** `AutoCreateBrandRelationships` and `GenerateTagsSeeder` skip retired keys — both create an object *and* a pivot, so either would silently undo a retirement.
+
+The retirement itself runs one approved entry at a time through `olm:migrate-tag`. Process, verification surfaces and the production write-freeze runbook: `readme/PostTagMigrationClean.md`.
+
 ### Shared objects (multi-category via pivot)
 
 Some objects exist under several categories; each combination is its own CLO row:
@@ -590,4 +602,5 @@ The tagging frontend uses the dark-glass design system:
 - `readme/Upload.md` — upload/tagging architecture, metrics pipeline, Redis key alignment
 - `readme/Mobile.md` — mobile v4→v5 tag shim (`ConvertV4TagsAction`)
 - `readme/PostMigrationCleanup.md` — remaining post-migration code cleanup (legacy columns, orphaned rows)
+- `readme/PostTagMigrationClean.md` — litter object retirement process and production runbook
 - `readme/API.md` — full API endpoint reference (source of truth for request/response contracts)

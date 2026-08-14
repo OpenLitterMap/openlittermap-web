@@ -240,7 +240,12 @@ appended to `verification_evidence` as `STATUS by <who> at <when>`.
    with the picker open since, so the dry run may abort with "data moved since approval". That is
    the guard working — re-measure from its "Measured now" line, update the list, and re-approve.
    Do not advance past a refusal.
-8. **B.3 is accepted-cosmetic.** The survivor still reads `crowdsourced=1` after a verified
+8. **Do not run `db:seed` between `CODE_UPDATED` and the apply.** B.4 puts the *survivor* into
+   `TagsConfig`, and the survivor is not retired, so the seeder hands it a pivot early. Both keys
+   are then selectable at once — a window in which new tags can land on either. The resurrection
+   guard does not close this: it only refuses keys that are already retired. If a seed does run,
+   re-measure at the dry run before continuing.
+9. **B.3 is accepted-cosmetic.** The survivor still reads `crowdsourced=1` after a verified
    retirement. Nothing reads that column; it is not a defect to chase mid-run.
 
 ---
