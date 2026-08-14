@@ -47,6 +47,7 @@ class MigrateTag extends Command
         {--entry= : entry_id to operate on}
         {--apply : execute (dry-run by default)}
         {--verify : assert every surface for an applied retirement}
+        {--repair-redis : rewrite both objects\' Redis counts from MySQL truth}
         {--advance= : record a manual status transition}
         {--by= : who performed the transition (required with --advance)}
         {--evidence= : verification evidence (required for *_VERIFIED transitions)}
@@ -97,6 +98,10 @@ class MigrateTag extends Command
 
         if ($this->option('verify')) {
             return $this->verify($entry) ? self::SUCCESS : self::FAILURE;
+        }
+
+        if ($this->option('repair-redis')) {
+            return $this->withLock($entry, fn (): int => $this->repairRedis($entry));
         }
 
         return $this->option('apply')
@@ -170,7 +175,7 @@ class MigrateTag extends Command
     {
         $this->describe($entry);
 
-        if (!$this->supportedScope($entry)) {
+        if (!$this->supportedScope($entry) || !$this->survivorIsUsable($entry)) {
             return self::FAILURE;
         }
 
@@ -270,6 +275,12 @@ class MigrateTag extends Command
             return self::FAILURE;
         }
 
+        return $this->withLock($entry, fn (): int => $this->applyLocked($entry, $summaries, $metrics));
+    }
+
+    /** Every path that mutates MySQL or Redis for an entry runs under the same exclusive lock. */
+    private function withLock(array $entry, callable $work): int
+    {
         $lockHandle = $this->acquireLock($entry);
 
         if ($lockHandle === null) {
@@ -279,7 +290,7 @@ class MigrateTag extends Command
         }
 
         try {
-            return $this->applyLocked($entry, $summaries, $metrics);
+            return $work();
         } finally {
             flock($lockHandle, LOCK_UN);
             fclose($lockHandle);
@@ -313,6 +324,10 @@ class MigrateTag extends Command
     private function applyLocked(array $entry, GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
     {
         $this->describe($entry);
+
+        if (!$this->survivorIsUsable($entry) || !$this->redisIsReachable()) {
+            return self::FAILURE;
+        }
 
         $state = $this->loadState($entry);
 
@@ -470,6 +485,74 @@ class MigrateTag extends Command
         return true;
     }
 
+    /**
+     * The survivor is where the data lands. A missing object cannot take a pivot at all, and a
+     * retired one would receive every moved row behind a closed key. `verify()` asserts this, but
+     * only once apply has reported success and cleared its snapshot — so it is asserted here too,
+     * ahead of the first mutation, in both the fresh and the resumed path.
+     */
+    private function survivorIsUsable(array $entry): bool
+    {
+        $survivor = DB::table('litter_objects')
+            ->where('id', (int) $entry['desired_id'])
+            ->select('retired_at')
+            ->first();
+
+        if ($survivor === null) {
+            $this->error("  surviving object {$entry['desired_id']} does not exist.");
+
+            return false;
+        }
+
+        if ($survivor->retired_at !== null) {
+            $this->error("  surviving object {$entry['desired_id']} is itself retired — refusing to migrate into it.");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * `RedisMetricsCollector::processPhoto()` logs and swallows every Redis error, so a run
+     * against a dead Redis repoints MySQL while silently discarding every matching metrics
+     * write — and `MetricsService` will not produce those deltas a second time once
+     * `processed_fp` has advanced. The end-of-run reconciliation catches it, but only after the
+     * picker is closed and the rows have moved. Refuse before touching anything.
+     */
+    private function redisIsReachable(): bool
+    {
+        try {
+            Redis::ping();
+
+            return true;
+        } catch (Throwable $e) {
+            $this->error('  Redis is unreachable: ' . $e->getMessage());
+            $this->line('  Every metrics write would be swallowed and never replayed. Refusing to start.');
+
+            return false;
+        }
+    }
+
+    /**
+     * The full recovery path after a Redis mismatch failed an apply, in order.
+     *
+     * `--repair-redis` fixes Redis but does NOT finish the retirement: only a successful
+     * `--apply` calls `clearState()`, so a repair-then-verify leaves the snapshot on disk and
+     * the entry looking mid-run to the next operator. The rerun is cheap — every MySQL step is
+     * idempotent, the rows are already at the target and the pivot is already gone — but it is
+     * the only thing that clears the snapshot and reports the retirement finished.
+     */
+    private function recoverySequence(): void
+    {
+        $base = 'php artisan olm:migrate-tag --entry=' . $this->option('entry');
+
+        $this->line('  Recover in this order:');
+        $this->line("    1. {$base} --repair-redis");
+        $this->line("    2. {$base} --apply        (idempotent; this is what clears the snapshot)");
+        $this->line("    3. {$base} --verify");
+    }
+
     /** @return array<int, int> */
     private function retiredQuickTagIds(array $entry): array
     {
@@ -594,6 +677,7 @@ class MigrateTag extends Command
 
         if (!$this->redisReconciles($desiredObjectId) || !$this->retiredIsDrainedFromRedis($retiredId, $desiredObjectId)) {
             $this->error('  Redis did not reconcile — snapshot retained so the run can be resumed.');
+            $this->recoverySequence();
 
             return false;
         }
@@ -746,20 +830,29 @@ class MigrateTag extends Command
             return true;
         }
 
-        $photoTags = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count();
-        $quickTags = DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
+        // `photo_tags.category_litter_object_id` is ON DELETE CASCADE, so a row inserted between
+        // the count and the delete would be destroyed by the delete rather than blocking it.
+        // Taking the pivot row's write lock first closes that window: InnoDB needs a shared lock
+        // on the parent row to check the foreign key, so no INSERT referencing this pivot can
+        // commit while the lock is held.
+        return DB::transaction(function () use ($retiredCloId): bool {
+            DB::table('category_litter_object')->where('id', $retiredCloId)->lockForUpdate()->first();
 
-        if ($photoTags + $quickTags > 0) {
-            $this->error("  retired pivot CLO {$retiredCloId} still has {$photoTags} photo tags and "
-                . "{$quickTags} quick tags — cannot complete the retirement");
+            $photoTags = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count();
+            $quickTags = DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
 
-            return false;
-        }
+            if ($photoTags + $quickTags > 0) {
+                $this->error("  retired pivot CLO {$retiredCloId} still has {$photoTags} photo tags and "
+                    . "{$quickTags} quick tags — cannot complete the retirement");
 
-        DB::table('category_litter_object')->where('id', $retiredCloId)->delete();
-        $this->line("  removed dangling pivot CLO {$retiredCloId}");
+                return false;
+            }
 
-        return true;
+            DB::table('category_litter_object')->where('id', $retiredCloId)->delete();
+            $this->line("  removed dangling pivot CLO {$retiredCloId}");
+
+            return true;
+        });
     }
 
     /**
@@ -770,29 +863,21 @@ class MigrateTag extends Command
      */
     private function retiredIsDrainedFromRedis(int $retiredId, int $desiredId): bool
     {
-        $hashes = [[RedisKeys::objects(RedisKeys::global()), (string) $retiredId]];
+        $reads = [];
 
-        $levels = [
-            'country_id' => fn (int $id): string => RedisKeys::country($id),
-            'state_id' => fn (int $id): string => RedisKeys::state($id),
-            'city_id' => fn (int $id): string => RedisKeys::city($id),
-        ];
-
-        foreach ($levels as $column => $keyFor) {
-            foreach ($this->itemsGroupedBy($desiredId, "p.{$column}") as $scopeId => $items) {
-                $hashes[] = [RedisKeys::objects($keyFor((int) $scopeId)), (string) $retiredId];
-            }
+        foreach ($this->locationScopes($desiredId) as [$kind, $key, $items]) {
+            $reads[] = [$kind, $key, (string) $retiredId];
         }
 
         foreach ($this->itemsGroupedBy($desiredId, 'p.user_id') as $userId => $items) {
-            $hashes[] = [RedisKeys::user((int) $userId) . ':tags', 'obj:' . $retiredId];
+            $reads[] = ['hash', RedisKeys::user((int) $userId) . ':tags', 'obj:' . $retiredId];
         }
 
         $stale = [];
 
-        foreach ($hashes as [$key, $field]) {
+        foreach ($reads as [$kind, $key, $field]) {
             try {
-                $value = (int) (Redis::hget($key, $field) ?? 0);
+                $value = $this->readCount($kind, $key, $field);
             } catch (Throwable $e) {
                 $this->error('  Redis unreadable: ' . $e->getMessage());
 
@@ -805,7 +890,7 @@ class MigrateTag extends Command
         }
 
         if ($stale !== []) {
-            $this->error(sprintf('    object %d still present in %d of %d scopes', $retiredId, count($stale), count($hashes)));
+            $this->error(sprintf('    object %d still present in %d of %d scopes', $retiredId, count($stale), count($reads)));
 
             foreach (array_slice($stale, 0, 10) as $line) {
                 $this->line($line);
@@ -814,9 +899,177 @@ class MigrateTag extends Command
             return false;
         }
 
-        $this->line(sprintf('      object %d reads zero across %d scopes', $retiredId, count($hashes)));
+        $this->line(sprintf('      object %d reads zero across %d scopes', $retiredId, count($reads)));
 
         return true;
+    }
+
+    /**
+     * Every location scope an object's photos touch, as [kind, key, items] triples.
+     *
+     * `RedisMetricsCollector::updateTags()` writes each count to BOTH a `:obj` hash and a
+     * `rank:objects` ZSET, so both are enumerated — `LocationService::getTopTags()` reads the
+     * ZSET as its fast path and only falls back to the hash, so a hash-only reconciliation
+     * passes while the surface users actually see is wrong.
+     *
+     * User tag hashes are enumerated by the callers instead: `updateUserMetrics()` writes an
+     * `obj:{id}` hash field with no ranking counterpart.
+     *
+     * @return array<int, array{0: string, 1: string, 2: int}>
+     */
+    private function locationScopes(int $objectId): array
+    {
+        $reads = [];
+
+        foreach ($this->scopeItems($objectId) as $scope => $items) {
+            $reads[] = ['hash', RedisKeys::objects($scope), $items];
+            $reads[] = ['zset', RedisKeys::ranking($scope, 'objects'), $items];
+        }
+
+        return $reads;
+    }
+
+    /**
+     * MySQL truth per location scope: global, plus every country / state / city holding one of
+     * the object's processed, live photos.
+     *
+     * @return array<string, int> scope prefix => items
+     */
+    private function scopeItems(int $objectId): array
+    {
+        $items = [RedisKeys::global() => $this->itemsFor($objectId)];
+
+        $levels = [
+            'country_id' => fn (int $id): string => RedisKeys::country($id),
+            'state_id' => fn (int $id): string => RedisKeys::state($id),
+            'city_id' => fn (int $id): string => RedisKeys::city($id),
+        ];
+
+        foreach ($levels as $column => $keyFor) {
+            foreach ($this->itemsGroupedBy($objectId, "p.{$column}") as $scopeId => $count) {
+                $items[$keyFor((int) $scopeId)] = $count;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * A missing hash field and a missing ZSET member both read as zero — the state a fully
+     * drained object is expected to be in. Scores are floats in Redis, but every count written
+     * through `zIncrBy` is a whole number, so the cast is exact.
+     */
+    private function readCount(string $kind, string $key, string $field): int
+    {
+        return $kind === 'zset'
+            ? (int) (Redis::zscore($key, $field) ?? 0)
+            : (int) (Redis::hget($key, $field) ?? 0);
+    }
+
+    // ── Repair ───────────────────────────────────────────────────────────────
+
+    /**
+     * Rewrite both objects' Redis counts from MySQL truth, absolutely.
+     *
+     * A retirement's entire Redis footprint is the objects dimension. `supportedScope()` holds
+     * the category, the quantities and the XP weighting equal, so the litter and XP deltas are
+     * zero and no stats hash, HLL or leaderboard ZSET is written at all. Everything a swallowed
+     * Redis error can lose is therefore recomputable from MySQL here — which is what makes this
+     * a bounded repair rather than the global `olm:redis:rebuild`, which §8a of the design doc
+     * records as lossy for litter and unsafe to run on production.
+     *
+     * Absolute, never a delta: once MySQL and `processed_tags` are updated `MetricsService`
+     * produces no second delta, so a replay-based repair would have nothing to replay.
+     */
+    private function repairRedis(array $entry): int
+    {
+        $retiredId = (int) $entry['retired_id'];
+        $desiredId = (int) $entry['desired_id'];
+
+        $this->describe($entry);
+
+        if (!$this->redisIsReachable()) {
+            return self::FAILURE;
+        }
+
+        $survivorScopes = $this->scopeItems($desiredId);
+        $retiredScopes = $this->scopeItems($retiredId);
+
+        // The union of both populations. A fully drained object touches no scope of its own, so
+        // the survivor's population is what enumerates where the retired id must now read zero;
+        // before the drain completes, the retired object's own scopes still matter.
+        $scopes = array_unique(array_merge(array_keys($survivorScopes), array_keys($retiredScopes)));
+
+        $survivorUsers = $this->itemsGroupedBy($desiredId, 'p.user_id');
+        $retiredUsers = $this->itemsGroupedBy($retiredId, 'p.user_id');
+        $users = array_unique(array_merge(array_keys($survivorUsers), array_keys($retiredUsers)));
+
+        try {
+            foreach ($scopes as $scope) {
+                $hash = RedisKeys::objects($scope);
+                $rank = RedisKeys::ranking($scope, 'objects');
+
+                $this->writeCount($hash, $rank, (string) $desiredId, $survivorScopes[$scope] ?? 0);
+                $this->writeCount($hash, $rank, (string) $retiredId, $retiredScopes[$scope] ?? 0);
+            }
+
+            foreach ($users as $userId) {
+                $key = RedisKeys::user((int) $userId) . ':tags';
+
+                $this->writeField($key, 'obj:' . $desiredId, $survivorUsers[$userId] ?? 0);
+                $this->writeField($key, 'obj:' . $retiredId, $retiredUsers[$userId] ?? 0);
+            }
+        } catch (Throwable $e) {
+            $this->error('  Repair failed against Redis: ' . $e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->line(sprintf('  rewrote %d location scopes and %d user hashes from MySQL', count($scopes), count($users)));
+
+        if (!$this->redisReconciles($desiredId) || !$this->retiredIsDrainedFromRedis($retiredId, $desiredId)) {
+            return self::FAILURE;
+        }
+
+        // A repair is never the last step of a failed apply. The snapshot on disk is the signal
+        // that one is outstanding, and only a successful --apply clears it.
+        $base = 'php artisan olm:migrate-tag --entry=' . $this->option('entry');
+
+        $this->newLine();
+        $this->info(Storage::disk('local')->exists($this->statePath($entry))
+            ? "Redis repaired. A snapshot is still outstanding — finish with:\n  {$base} --apply\n  {$base} --verify"
+            : "Redis repaired. No snapshot outstanding — confirm with:\n  {$base} --verify");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Zero is written as ABSENCE, not as a stored zero. A zero-scored member is still a member
+     * of the ranking ZSET `LocationService::getTopTags()` reads, and in a scope holding fewer
+     * objects than the page size a retired key would still be served.
+     */
+    private function writeCount(string $hashKey, string $rankKey, string $field, int $items): void
+    {
+        $this->writeField($hashKey, $field, $items);
+
+        if ($items === 0) {
+            Redis::zrem($rankKey, $field);
+
+            return;
+        }
+
+        Redis::zadd($rankKey, $items, $field);
+    }
+
+    private function writeField(string $key, string $field, int $items): void
+    {
+        if ($items === 0) {
+            Redis::hdel($key, $field);
+
+            return;
+        }
+
+        Redis::hset($key, $field, $items);
     }
 
     private function retiredCloId(array $entry): ?int
@@ -931,29 +1184,21 @@ class MigrateTag extends Command
      */
     private function redisReconciles(int $objectId): bool
     {
-        $expected = [[RedisKeys::objects(RedisKeys::global()), (string) $objectId, $this->itemsFor($objectId)]];
+        $expected = [];
 
-        $levels = [
-            'country_id' => fn (int $id): string => RedisKeys::country($id),
-            'state_id' => fn (int $id): string => RedisKeys::state($id),
-            'city_id' => fn (int $id): string => RedisKeys::city($id),
-        ];
-
-        foreach ($levels as $column => $keyFor) {
-            foreach ($this->itemsGroupedBy($objectId, "p.{$column}") as $scopeId => $items) {
-                $expected[] = [RedisKeys::objects($keyFor((int) $scopeId)), (string) $objectId, $items];
-            }
+        foreach ($this->locationScopes($objectId) as [$kind, $key, $items]) {
+            $expected[] = [$kind, $key, (string) $objectId, $items];
         }
 
         foreach ($this->itemsGroupedBy($objectId, 'p.user_id') as $userId => $items) {
-            $expected[] = [RedisKeys::user((int) $userId) . ':tags', 'obj:' . $objectId, $items];
+            $expected[] = ['hash', RedisKeys::user((int) $userId) . ':tags', 'obj:' . $objectId, $items];
         }
 
         $mismatches = [];
 
-        foreach ($expected as [$key, $field, $mysql]) {
+        foreach ($expected as [$kind, $key, $field, $mysql]) {
             try {
-                $redis = (int) (Redis::hget($key, $field) ?? 0);
+                $redis = $this->readCount($kind, $key, $field);
             } catch (Throwable $e) {
                 $this->error('  Redis unreadable: ' . $e->getMessage());
 
@@ -972,7 +1217,10 @@ class MigrateTag extends Command
                 $this->line($line);
             }
 
-            $this->line('    Rebuild with: php artisan olm:redis:rebuild (flushes by default)');
+            // NOT olm:redis:rebuild — §8a records it as lossy for litter and unsafe on
+            // production. --repair-redis rewrites only this entry's two objects, from MySQL.
+            $this->line('    Repair with: php artisan olm:migrate-tag --entry='
+                . $this->option('entry') . ' --repair-redis');
 
             return false;
         }

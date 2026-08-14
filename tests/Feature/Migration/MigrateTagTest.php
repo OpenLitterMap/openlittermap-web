@@ -170,6 +170,37 @@ class MigrateTagTest extends TestCase
         ], $overrides));
     }
 
+    /**
+     * Point the default connection at a closed port for the duration of the callback.
+     *
+     * `RedisManager` captures its config at construction, so rewriting `config()` alone changes
+     * nothing — the container instance and the facade's resolved instance both have to go.
+     */
+    private function withUnreachableRedis(callable $fn): void
+    {
+        $original = config('database.redis');
+
+        config(['database.redis.default' => array_merge($original['default'], [
+            'host' => '127.0.0.1',
+            'port' => 63999,
+        ])]);
+        $this->rebuildRedisManager();
+
+        try {
+            $fn();
+        } finally {
+            config(['database.redis' => $original]);
+            $this->rebuildRedisManager();
+        }
+    }
+
+    private function rebuildRedisManager(): void
+    {
+        app()->forgetInstance('redis');
+        app()->forgetInstance('redis.connection');
+        Redis::clearResolvedInstances();
+    }
+
     /** The command's own resume fingerprint, so a hand-written snapshot is accepted. */
     private function mappingFingerprint(): string
     {
@@ -301,6 +332,44 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
         $this->assertSame($elsewhere->id, (int) $this->retired->fresh()->merged_into_id);
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+    }
+
+    /**
+     * The survivor is where the data lands. Migrating into an object that has itself been retired
+     * would mint a pivot for a closed key and bury 10,051 rows behind it, and `--verify` only
+     * notices afterwards — by which point apply has already reported success and cleared the
+     * snapshot. The assertion therefore belongs ahead of the first mutation.
+     */
+    public function test_apply_is_refused_when_the_survivor_is_itself_retired(): void
+    {
+        $this->desired->update(['retired_at' => now()]);
+
+        $this->applyReady();
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertNull($this->retired->fresh()->retired_at);
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+        $this->assertDatabaseMissing('category_litter_object', [
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
+    }
+
+    public function test_apply_is_refused_when_the_survivor_does_not_exist(): void
+    {
+        $this->writeQueue('DRY_RUN_VERIFIED', ['desired_id' => 99999999]);
+
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertNull($this->retired->fresh()->retired_at);
         $this->assertDatabaseHas('photo_tags', [
             'id' => $this->tag->id,
             'litter_object_id' => $this->retired->id,
@@ -815,6 +884,41 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--verify' => true])->assertExitCode(1);
     }
 
+    /**
+     * `RedisMetricsCollector::updateTags()` writes each object count to a `:obj` hash AND a
+     * `rank:objects` ZSET, and `LocationService::getTopTags()` reads the ZSET as its fast path —
+     * the hash is only the fallback. A reconciliation that reads hashes alone therefore passes
+     * while the surface users actually see is wrong.
+     */
+    public function test_verify_fails_when_the_survivor_ranking_zset_disagrees(): void
+    {
+        $this->applyOk();
+
+        Redis::zAdd(
+            RedisKeys::ranking(RedisKeys::global(), 'objects'),
+            9999,
+            (string) $this->desired->id
+        );
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
+    public function test_verify_fails_when_the_retired_object_lingers_in_a_ranking_zset(): void
+    {
+        $country = Country::factory()->create();
+        $this->photo->update(['country_id' => $country->id, 'processed_at' => now()]);
+
+        $this->applyOk();
+
+        Redis::zAdd(
+            RedisKeys::ranking(RedisKeys::country($country->id), 'objects'),
+            4,
+            (string) $this->retired->id
+        );
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+    }
+
     public function test_a_redis_mismatch_fails_the_apply_and_keeps_the_snapshot(): void
     {
         Redis::hset(RedisKeys::objects(RedisKeys::global()), (string) $this->desired->id, 12345);
@@ -824,6 +928,127 @@ class MigrateTagTest extends TestCase
         $this->migrate(['--apply' => true])->assertExitCode(1);
 
         $this->assertTrue(Storage::disk('local')->exists('migrate-tag/other--plastic_bag.json'));
+    }
+
+    /**
+     * The whole recovery path, end to end, from a mismatch raised DURING an apply — the only
+     * state that leaves a snapshot behind.
+     *
+     * `--repair-redis` fixes Redis but does not finish the retirement: `clearState()` is reached
+     * only by a successful `--apply`, so a repair-then-verify would pass every assertion while
+     * leaving the entry looking mid-run to the next operator. The rerun is what clears it.
+     *
+     * Deliberately NOT the same scenario as `test_repair_redis_rewrites_the_objects_dimension...`
+     * below, which corrupts Redis *after* a clean apply and so never has a snapshot to clear.
+     */
+    public function test_a_redis_mismatch_recovers_through_repair_then_rerun_then_verify(): void
+    {
+        $snapshot = 'migrate-tag/other--plastic_bag.json';
+
+        $country = Country::factory()->create();
+        $this->photo->update(['country_id' => $country->id, 'processed_at' => now()]);
+
+        // A metrics write the collector swallowed: Redis carries a count MySQL cannot justify,
+        // and the end-of-run reconciliation is the first thing to notice.
+        Redis::hset(RedisKeys::objects(RedisKeys::global()), (string) $this->desired->id, 12345);
+
+        $this->applyReady();
+
+        // 1. The apply moves MySQL, then fails on the mismatch and retains the snapshot.
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+        $this->assertTrue(Storage::disk('local')->exists($snapshot));
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
+
+        // 2. The repair succeeds — and leaves the snapshot exactly where it was.
+        $this->migrate(['--repair-redis' => true])->assertExitCode(0);
+        $this->assertTrue(Storage::disk('local')->exists($snapshot));
+
+        // 3. Rerunning the apply is the step that finishes the run. Every MySQL stage is
+        //    idempotent: the rows are already at the target and the retired pivot is gone.
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->assertFalse(Storage::disk('local')->exists($snapshot));
+
+        // 4. Only now does verify mean the retirement is complete.
+        $this->migrate(['--verify' => true])->assertExitCode(0);
+    }
+
+    /**
+     * `RedisMetricsCollector::processPhoto()` logs and swallows every Redis error, so a run
+     * against a dead Redis would repoint 10,051 rows in MySQL while silently discarding every
+     * matching metrics write — and `MetricsService` will not produce those deltas a second time
+     * once `processed_fp` has advanced. Refusing at the door is the only cheap remedy.
+     */
+    public function test_apply_refuses_to_start_when_redis_is_unreachable(): void
+    {
+        $this->applyReady();
+
+        $this->withUnreachableRedis(function (): void {
+            $this->migrate(['--apply' => true])->assertExitCode(1);
+        });
+
+        // The exit code alone proves nothing — the end-of-run reconciliation already fails on an
+        // unreadable Redis. What the preflight adds is that it fails having moved NOTHING.
+        $this->assertNull($this->retired->fresh()->retired_at);
+        $this->assertDatabaseHas('photo_tags', [
+            'id' => $this->tag->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+    }
+
+    /**
+     * A retirement moves nothing but the objects dimension — quantities, category and XP are all
+     * held equal by `supportedScope()`, so the litter and XP deltas are zero and no stats hash,
+     * HLL or leaderboard ZSET is touched. That makes the lost writes exactly recoverable from
+     * MySQL, without the global `olm:redis:rebuild` that §8a says must not run on production.
+     */
+    public function test_repair_redis_rewrites_the_objects_dimension_from_mysql(): void
+    {
+        $country = Country::factory()->create();
+        $this->photo->update(['country_id' => $country->id, 'processed_at' => now()]);
+
+        $this->applyOk();
+        $this->migrate(['--verify' => true])->assertExitCode(0);
+
+        // The state a swallowed Redis error leaves behind: the survivor never credited, the
+        // retired object never drained.
+        $scope = RedisKeys::country($country->id);
+        Redis::hset(RedisKeys::objects($scope), (string) $this->desired->id, 0);
+        Redis::zAdd(RedisKeys::ranking($scope, 'objects'), 0, (string) $this->desired->id);
+        Redis::hset(RedisKeys::objects($scope), (string) $this->retired->id, 7);
+        Redis::zAdd(RedisKeys::ranking($scope, 'objects'), 7, (string) $this->retired->id);
+
+        $this->migrate(['--verify' => true])->assertExitCode(1);
+
+        $this->migrate(['--repair-redis' => true])->assertExitCode(0);
+
+        $this->migrate(['--verify' => true])->assertExitCode(0);
+    }
+
+    /**
+     * Zero and absent both reconcile, but only absence keeps a dead key out of the ranking ZSET
+     * that `getTopTags()` reads — in a small city scope a zero-scored member is still a member.
+     */
+    public function test_repair_redis_erases_the_retired_object_rather_than_zeroing_it(): void
+    {
+        $this->applyOk();
+
+        $global = RedisKeys::global();
+        Redis::hset(RedisKeys::objects($global), (string) $this->retired->id, 7);
+        Redis::zAdd(RedisKeys::ranking($global, 'objects'), 7, (string) $this->retired->id);
+
+        $this->migrate(['--repair-redis' => true])->assertExitCode(0);
+
+        $this->assertNotContains(
+            (string) $this->retired->id,
+            Redis::hkeys(RedisKeys::objects($global))
+        );
+        $this->assertNotContains(
+            (string) $this->retired->id,
+            Redis::zrange(RedisKeys::ranking($global, 'objects'), 0, -1)
+        );
     }
 
     /**

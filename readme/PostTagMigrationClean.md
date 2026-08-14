@@ -172,6 +172,11 @@ This ordering is the main reason the `retired_at` column is worth a migration: t
 be closed by deleting the pivot instead, because `photo_tags` still references that CLO at this
 point.
 
+Closing the door is necessary but **not sufficient** — it stops writes that *name* the retired
+object, not a replace or a delete that omits it, and it is read without a row lock. The hard
+write freeze in §E.3 is what actually holds the population still, and it is a required
+precondition of the production run, not a nicety.
+
 ### A — move the data
 
 Everything operates on an immutable snapshot taken at first run, so a row inserted or edited
@@ -261,8 +266,12 @@ never overwritten. Every rung after that is attributed in `verification_evidence
 
 ### E — the production run
 
-A checklist for the console, in order. Entry 1 is rehearsed and `CODE_UPDATED`; everything below
-is the remaining path.
+A checklist for the console, in order. Entry 1 is `CODE_UPDATED`. Its 2026-08-09 rehearsal is
+**void** — the apply control flow changed after it (survivor preflight, Redis reachability ping,
+`--repair-redis`, `rank:objects` reconciliation, the pivot write lock, and the repair → rerun
+recovery), so a **fresh rehearsal from a current production snapshot, on the exact commit that
+will be deployed, is required before `PRODUCTION_APPLIED`**. Everything below is the remaining
+path.
 
 1. **Confirm the database before anything runs.** The dry run measures whatever `.env` points
    at, and a rehearsal leaves it on a post-apply database where the retired object reads zero
@@ -272,15 +281,136 @@ is the remaining path.
    (`pluck()` discarding `selectRaw` aliases, reporting false divergence). A verify run on older
    code cannot be trusted. Separately, per §8a, **do not rebuild production Redis** — the litter
    gap there is unresolved and is not part of this run.
-3. **Run the entry in one sitting**, in this order: dry run → `--advance=DRY_RUN_VERIFIED`
+3. **Freeze tag writes, then drain. Mandatory, and it is a gate of eight steps — not one command.**
+
+   Work through these in order. Do not start the final dry run until every one has passed.
+
+   1. **Enumerate every serving web node.** Write the list down. `config/app.php` has no
+      `maintenance` key, so the driver is the framework default `file`
+      (`MaintenanceModeManager::getDefaultDriver()`) and the flag is
+      `storage_path('framework/down')` — **local disk, per-node**. On more than one node, `down`
+      on one leaves the others serving. Do not assume a single node; confirm it.
+
+   2. **`php artisan down` on every node in that list.** For this one-off run, prefer taking each
+      node down individually over switching to the shared `cache` maintenance driver. That driver
+      is a real option (`'maintenance' => ['driver' => 'cache', 'store' => 'redis']`) but it is a
+      config change that must itself be committed, deployed and identical on every node before it
+      can be trusted — new risk on the day, for no benefit here. **Do not pass `--secret`:** every
+      step of this run is CLI, and the bypass cookie would turn step 3 into a false negative for
+      whoever holds it.
+
+   3. **Confirm 503 on an exact endpoint**, not a placeholder:
+
+      ```
+      curl -s -o /dev/null -w '%{http_code}\n' https://openlittermap.com/api/v3/user/photos
+      ```
+
+      That route is `routes/api.php:82`, inside the `['prefix' => 'v3', 'middleware' =>
+      ['auth:sanctum']]` group — **the same group as `POST /tags` and `PUT /tags`**, so a 503 here
+      is direct evidence the tag-write routes are down too. Unauthenticated and *not* in
+      maintenance it answers `401`; in maintenance it must answer `503`. A `401` means the freeze
+      is not on.
+
+   4. **Verify each node directly wherever the infrastructure allows it.** One request through a
+      load balancer proves one backend answered — not that every backend is down. If nodes cannot
+      be addressed individually, say so explicitly in the run log and treat step 3 as weaker
+      evidence than it looks.
+
+   5. **Drain or terminate in-flight PHP/web requests using production's established procedure,**
+      then wait at least the configured maximum request/transaction lifetime.
+      **[OPERATOR PREREQUISITE — the exact command is external to this repository.]** `down` gates
+      request *entry*, not exit: anything already past `CheckForMaintenanceMode` runs to
+      completion, and a tag write in flight when the picker closes is precisely the race the
+      freeze exists to remove. This step is the actual drain guarantee. Establish and record the
+      command before the run day.
+
+   6. **Check for relevant open database transactions**, if production access permits — e.g.
+      `SELECT * FROM information_schema.innodb_trx;` (needs the `PROCESS` privilege). An
+      uncommitted transaction is invisible to every check below.
+
+   7. **Only now, the SQL snapshots — as a backstop, not as proof.** Run twice, ~60s apart, and
+      require identical output:
+
+      ```
+      mysql> SELECT COUNT(*), MAX(id), MAX(updated_at) FROM photo_tags;
+      mysql> SELECT COUNT(*), MAX(id), MAX(updated_at) FROM user_quick_tags;
+      ```
+
+      The triple covers insert (`MAX(id)`), edit (`MAX(updated_at)`) and delete (`COUNT(*)`) on
+      both tables the run touches. **Two identical readings do not prove the system is drained** —
+      a request can hold an open transaction across both and commit afterward, which is what
+      steps 5 and 6 exist to rule out. What this step does prove is the negative: if either
+      reading moves, something is definitely still writing. **Abort and find the writer.**
+
+   8. **Then start the final dry run.** `php artisan up` only once `--verify` has passed.
+
+   `CheckForMaintenanceMode` is registered in the **global** middleware stack
+   (`app/Http/Kernel.php:21`) and its `$except` list is empty, so `down` returns 503 for every HTTP
+   route — web SPA and mobile alike. No queued job, listener or scheduled command writes
+   `photo_tags` (every writer is an HTTP request or a console command an operator runs), so once
+   HTTP is stopped on every node and in-flight work has drained, the freeze is complete.
+
+   The freeze must span the whole run — **from before the final dry run through apply, any
+   `--repair-redis` and apply rerun, and verify** — and traffic is restored only after verify has
+   passed. Each of those steps measures or asserts against a population the previous one fixed; a
+   write landing between any two of them invalidates the one before it.
+
+   **Why the `retired_at` guards are not a substitute.** They refuse a *write that names a
+   retired object* — `AddTagsToPhotoAction::createTagFromClo()`, the legacy key path, and
+   `SyncQuickTagsAction::rejectRetiredObjects()`. Three things they do not cover:
+
+   - They read `retired_at` without a row lock, so a request that read the object as *active*
+     moments before step 0 closed the picker still writes after it.
+   - `PUT /api/v3/tags` replaces a photo's tags by deleting and re-adding. A replace that
+     **omits** the retired tag never names it, passes every guard, and deletes a row the
+     snapshot is holding by id.
+   - The quick-tag sync bulk-replaces the same way: a sync omitting the retired CLO clears the
+     preset without naming it.
+
+   A shared lock on the object row would close the first case only. Covering the other two means
+   coordinating every mutation path against the migration — far more than this retirement is
+   worth. The freeze covers all three at once.
+
+   **Residual, if the freeze is skipped anyway.** Nothing is silently destroyed: the run refuses
+   to drop the pivot while any row references it, and the drop holds the pivot row's write lock
+   (`dropRetiredPivot()`), so InnoDB's foreign-key check blocks a concurrent insert rather than
+   letting `ON DELETE CASCADE` take it. That lock stays as defence in depth. The cost is a
+   **wedge**: a late row is not in the immutable snapshot, so no rerun repoints it, `--verify`
+   cannot pass, and the picker stays closed until the row is repointed by hand. A deleted row is
+   worse — `repointRows()` fails its count and the entry stalls with the picker shut.
+4. **Run the entry in one sitting**, in this order: dry run → `--advance=DRY_RUN_VERIFIED`
    → `--apply` → `--verify` → advance the remaining rungs. `--advance=COMPLETE` re-runs verify
    itself and refuses on failure.
-4. **Expect the counts to have drifted.** `retired_rows`/`retired_items`/`retired_photos` were
+5. **If Redis does not reconcile, repair it — do not rebuild it.** `--apply` retains its
+   snapshot and fails on a Redis mismatch. The recovery is four steps, in this order:
+
+   ```
+   php artisan olm:migrate-tag --entry=… --apply           # fails: Redis mismatch, snapshot kept
+   php artisan olm:migrate-tag --entry=… --repair-redis    # Redis now matches MySQL
+   php artisan olm:migrate-tag --entry=… --apply           # idempotent rerun — CLEARS the snapshot
+   php artisan olm:migrate-tag --entry=… --verify
+   ```
+
+   **The rerun is not optional.** `clearState()` is reached only by a successful `--apply`, so
+   repair-then-verify passes every assertion while leaving the snapshot on disk and the entry
+   looking mid-run to whoever picks it up next. The rerun is cheap and safe: by then the rows are
+   already at the target, the retired pivot is already gone, and every MySQL stage is idempotent,
+   so it moves nothing and simply re-asserts. The command prints this sequence itself on the
+   failure, and `--repair-redis` checks for an outstanding snapshot and names the right next step.
+
+   The repair rewrites only this entry's two objects, from MySQL, at every scope.
+   `olm:redis:rebuild` is a different and much larger thing, and §8a says it must not run on
+   production.
+6. **The locations tags API is cached for 10 minutes.** `LocationService::getTopTags()` wraps its
+   read in `Cache::remember(…, 600)`, so §6's locations-API surface reads stale data straight
+   after a run. Flush the `tags:*` keys or wait it out before checking that row — the picker
+   endpoints are uncached and can be checked immediately.
+7. **Expect the counts to have drifted.** `retired_rows`/`retired_items`/`retired_photos` were
    measured 2026-08-08 and the picker has been open since, so the dry run may abort with
    "data moved since approval". That is the guard working. Re-measure from the dry run's
    "Measured now" line, update the list, and re-approve before continuing — do not advance past
    a refusal.
-5. **B.3 is accepted-cosmetic.** The survivor still reads `crowdsourced=1` after a complete,
+8. **B.3 is accepted-cosmetic.** The survivor still reads `crowdsourced=1` after a complete,
    verified retirement. Nothing reads `litter_objects.crowdsourced`. It is not a defect to chase
    mid-run.
 
@@ -320,7 +450,8 @@ the audit found **21 retired objects referenced by `BrandsConfig`**.
 ## 6. Verification surfaces
 
 The surfaces a retirement touches. This is the design intent; what `--verify` asserts **today**
-is the five-check subset recorded directly below the table.
+is the check list recorded directly below the table. Everything in the table that the command
+does not assert is named there as checked by hand or by test instead.
 
 | Surface | Assertion |
 |---|---|
@@ -339,25 +470,35 @@ is the five-check subset recorded directly below the table.
 | CSV export | retired column gone; desired column carries the combined total |
 | Code references | zero in `TagsConfig`, `BrandsConfig`, `langs/*/litter.json`, rest of `app/` |
 
-### What `--verify` asserts today (2026-08-09)
+### What `--verify` asserts today (2026-08-13)
 
-Five checks, chosen because each can fail independently. An earlier ten-check version restated
-itself — "retired key absent from picker" is implied by `retired_at` being set plus the pivot
-being dropped, and both of those were self-checks on work the command had just done in the same
-run.
+Ten checks, each able to fail independently of the others. An earlier five-check version dropped
+the ones that "restate work the command just did" — but `--verify` also runs standalone, days
+after the apply and against production rather than a rehearsal database, where nothing is
+self-evident and the run that would have made it so is long gone.
 
 1. `photo_tags` drained — zero rows on the retired object id, including tags on soft-deleted photos
 2. surviving pivot exists — (category, desired object) is present, so the key is selectable
-3. quick tags survived the repoint — count on the **surviving** CLO ≥ `quick_tags_on_retired_clo`
-4. no `photos.summary` references the retired object id
-5. Redis reconciles **absolutely** — MySQL vs Redis for both objects at global, every affected
-   country / state / city, and every contributing user's `{u:ID}:tags` hash
+3. the retired object carries `retired_at`
+4. `merged_into_id` points at THIS entry's survivor, not another decision's
+5. the surviving object is itself still active
+6. the retired pivot is gone
+7. nothing references the retired pivot — `photo_tags` and `user_quick_tags` both
+8. quick tags at or above the recorded floor on the **surviving** CLO
+9. no `photos.summary` references the retired object id
+10. Redis reconciles **absolutely** — MySQL vs Redis for both objects, in BOTH the `:obj` hash
+    and the `rank:objects` ZSET, at global and every affected country / state / city, plus every
+    contributing user's `{u:ID}:tags` hash (which has no ranking counterpart)
 
-Check 3 is deliberately an assertion of survival, not of absence. `user_quick_tags.clo_id`
+Check 5 is asserted again ahead of the apply's first mutation, not only here. Verification runs
+after apply has reported success and cleared its snapshot, so on its own it would find a
+migration into a retired survivor only once the rows were already behind a closed key.
+
+Check 8 is deliberately an assertion of survival, not of absence. `user_quick_tags.clo_id`
 cascades on delete and the retired pivot is dropped at the end of a run, so "zero rows on the
 retired CLO" is true whether the presets were repointed or silently destroyed.
 
-Check 5 is what the deleted `olm:tag-retirement-snapshot` harness used to do. Folding it into
+Check 10 is what the deleted `olm:tag-retirement-snapshot` harness used to do. Folding it into
 `--verify` means the rehearsal instrument and the production gate are the same tool; the
 previous global-only check covered a small fraction of what a retirement moves.
 
@@ -377,12 +518,36 @@ scripts under `app/Console/Commands/tmp/v5/Migration/`, which are frozen history
 **On the Redis rows.** `RedisMetricsCollector::updateTags()` writes object counts to a `:obj`
 hash *and* a `rank:objects` ZSET for every scope in `RedisKeys::getPhotoScopes()` — global,
 country, state, city — plus an `obj:{id}` field in each contributing user's `{u:ID}:tags` hash.
-The first entry alone touches 10,051 photos spread across many countries and users. Verifying
-the global hash only, as the current command does, covers a small fraction of what moved.
+The first entry alone touches 10,051 photos spread across many countries and users. Both halves
+are now reconciled at every scope: the ZSET is not decorative, `LocationService::getTopTags()`
+reads it as the fast path and falls back to the hash only when it is empty.
 
 Reconciliation is **absolute** (MySQL vs Redis), never a before/after delta. A delta cannot
 survive a retry: once MySQL and `processed_tags` are updated, `MetricsService` produces no
 second delta, so a rerun after a Redis outage would fail forever.
+
+**When Redis loses a write.** `RedisMetricsCollector::processPhoto()` logs and swallows every
+Redis error, so a run against a degraded Redis moves MySQL while discarding the matching metrics
+writes — and, per the paragraph above, they are never produced again. Two guards:
+
+- `--apply` pings Redis before it closes the picker, so an outage that is already underway
+  refuses the run having mutated nothing.
+- `--repair-redis` rewrites both objects' counts from MySQL, absolutely, at every location scope
+  and user hash. It is bounded and complete because the objects dimension is a retirement's
+  *entire* Redis footprint: `supportedScope()` holds the category, the quantities and the XP
+  weighting equal, so the litter and XP deltas are zero and no stats hash, HLL or leaderboard
+  ZSET is written at all. Zero is written as absence (`HDEL`/`ZREM`), because a zero-scored
+  member is still a member of the ranking ZSET.
+
+This is the remediation `--verify` points at on a mismatch. **It replaces the old
+`olm:redis:rebuild` hint**, which §8a records as lossy for litter and unsafe on production.
+
+**The repair is not the end of the run.** A mismatch raised *during* an apply leaves a snapshot
+on disk, and only a successful `--apply` calls `clearState()`. The recovery is therefore
+`--apply` (fails) → `--repair-redis` → `--apply` again → `--verify`; the rerun is what finishes
+the retirement and clears the snapshot. A mismatch raised by a standalone `--verify` long after a
+clean apply has no snapshot outstanding and needs only `--repair-redis` → `--verify`. The command
+distinguishes the two itself. Sequence and rationale in §E.5.
 
 ---
 
@@ -495,15 +660,23 @@ count as litter in one path and contribute nothing to `objects` in the other. Qu
 photo before changing anything.
 
 **Consequence for `--verify`:** its Redis assertion is scoped to the two objects in the
-retirement, both of which reconcile exactly, so this does not weaken it. But its remediation
-hint ("rebuild with `olm:redis:rebuild`") should not be followed on production until the
-rebuild is known to be faithful.
+retirement, both of which reconcile exactly, so this does not weaken it. Its remediation hint no
+longer points here at all — a mismatch now sends the operator to `--repair-redis`, which touches
+only this entry's two objects and derives every value from MySQL. `olm:redis:rebuild` should not
+be run on production until the litter gap above is understood.
 
 ---
 
 ## 9. Open questions
 
-0. **[BLOCKING — blocks entry 1]** **151 processed, live photos have `user_id = NULL`, and
+0. **[RESOLVED 2026-08-13 — was BLOCKING]** Both defects are fixed and covered by
+   `tests/Unit/Redis/RedisMetricsCollectorNullUserTest.php` (7 tests): `updateUserMetrics()`
+   takes `?int $userId` and every user-scoped write is skipped for an ownerless photo, and the
+   catch in `processPhoto()` is `\Throwable`. Location and global metrics still count the litter.
+   The `olm:redis:rebuild` litter gap in §8a is a **separate** open issue and is unaffected.
+   Original report follows.
+
+   **151 processed, live photos have `user_id = NULL`, and
    `RedisMetricsCollector::updateUserMetrics()` type-hints `int $userId`.** Passing null throws
    a `TypeError`, which `processPhoto()`'s `catch (\Exception $e)` at line 81 does **not**
    catch — `TypeError` extends `Error`, not `Exception` — so it propagates and kills the
