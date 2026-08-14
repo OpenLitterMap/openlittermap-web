@@ -216,7 +216,16 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/ViteUpgradePlan.md` — Vite 8 / Rolldown upgrade plan (why the 6→8 bump was reverted, CJS/UMD interop root cause, at-risk deps, fix options, de-risk path, readiness checklist)
 
 ## Daily Changelog
-After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries by session. This is the running record of all work done each day.
+After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries under `## Session — <short title> (vX.Y.Z)`. This is the running record of **what changed and what it now does** — not why, not how it was decided.
+
+**Entry style — core logic / result only:**
+- **One line per change.** No rationale, no measurements, no review-round narrative, no restatement of the code. If a line needs a second sentence, the detail belongs in the domain doc (`readme/*.md`), not here.
+- No multi-line bullets, no session preambles, no "deliberately kept" / "considered and rejected" notes.
+- End each line with the version: `— v5.14.0`.
+- Right: `- Retired litter object plastic_bag (92) into plasticBags (149); picker, tag writes and quick-tag sync now refuse retired objects — v5.14.0`
+- Wrong: three bullets explaining why the merge direction was inverted, what the rehearsal measured, and which review round found it.
+
+**One file per deliverable.** A branch or feature spanning several days gets ONE changelog file, dated the day it lands — not one file per day worked. Fold earlier days into it as the work continues rather than leaving a trail of daily files for a single piece of work.
 
 ### `## Public` block (what OLMbot posts)
 A changelog file MAY include a single `## Public` block — curated, plain-language release notes that the `twitter:changelog` bot posts to the social feeds (Bluesky; X gated off). Rules:
