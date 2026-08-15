@@ -74,11 +74,6 @@ class GetTagsController extends Controller
 
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
-        // Filtered like `objects`, or the payload would reference a litter_object_id it does not
-        // contain and a client indexing from the join table could still resolve a retired CLO.
-        // `category_object_types` needs no filter: its rows are keyed by CLO and every consumer
-        // resolves the CLO through `category_objects` first, so rows for a retired (but kept)
-        // pivot are unreachable.
         $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')
             ->whereHas('litterObject', fn (Builder $q) => $q->active())
             ->get();
@@ -108,8 +103,6 @@ class GetTagsController extends Controller
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        // Retired objects keep their pivot until a retirement run drains them, so the pivot
-        // alone is not proof an object is still offerable.
         $query = CategoryObject::query()
             ->whereHas('litterObject', fn (Builder $q) => $q->active());
 

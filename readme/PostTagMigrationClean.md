@@ -348,9 +348,10 @@ There is no separate measurement harness — `olm:tag-retirement-snapshot` was d
 all-scope reconciliation folded into `--verify`, so the rehearsal instrument and the production
 gate are the same tool.
 
-`olm:fix-orphaned-tags` is unapproved and **unrunnable**: `handle()` refuses unconditionally
-because its `plasticBags` row encodes the pre-D-4 direction. Its signature stays so the refusal
-answers what an operator would type; `master` holds what it did.
+`olm:fix-orphaned-tags` is **deleted**. Its 75 mappings were never approved and its `plasticBags`
+row encoded the pre-D-4 direction, so running it would have moved data backwards onto a retired
+object. `master` holds what it did. Approved retirements go through `olm:migrate-tag`, one entry
+at a time, against `readme/audit/TagRetirements-2026-08.csv`.
 
 ---
 

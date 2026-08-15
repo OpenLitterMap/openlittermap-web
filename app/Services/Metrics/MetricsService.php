@@ -454,9 +454,6 @@ final class MetricsService
                 // Aggregate row (user_id=0)
                 $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta);
 
-                // Per-user row (user_id>0) for leaderboard queries. An ownerless photo
-                // contributes to the aggregate row only — metrics.user_id is NOT NULL and part
-                // of the primary key, so there is no per-user row to write.
                 if ($photo->user_id !== null) {
                     $rows[] = $this->buildSingleRow($timescale, $locationType, $locationId, $timestamp, $metrics, $uploadsDelta, (int) $photo->user_id);
                 }

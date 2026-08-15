@@ -66,7 +66,7 @@ class AddTagsToPhotoAction
      */
     protected function addTagsToPhoto(int $userId, int $photoId, array $tags): array
     {
-        $tags = $this->repointRetiredClos($tags);
+        $tags = $this->repointToActiveClos($tags);
 
         $photoTags = [];
 
@@ -86,16 +86,16 @@ class AddTagsToPhotoAction
 
     /**
      * Stale clients (mobile caches `/api/tags/all` for 7 days and cannot ship)
-     * still submit the retired CLO. Remount onto the survivor in the same
-     * category so the write lands on the living key. A retired object with no
-     * `merged_into_id` still 422s — there is nowhere to send it.
+     * still submit a CLO whose litter object is retired. Remount onto the CLO for
+     * the active object in the same category so the write lands on the living key.
+     * A retired object with no `merged_into_id` still 422s — nowhere to send it.
      *
      * @param  array<int, array<string, mixed>>  $tags
      * @return array<int, array<string, mixed>>
      *
      * @throws ValidationException
      */
-    protected function repointRetiredClos(array $tags): array
+    protected function repointToActiveClos(array $tags): array
     {
         $cloIds = array_values(array_unique(array_filter(array_column($tags, 'category_litter_object_id'))));
 
@@ -103,11 +103,7 @@ class AddTagsToPhotoAction
             return $tags;
         }
 
-        $clos = CategoryObject::query()
-            ->whereIn('id', $cloIds)
-            ->with('litterObject:id,key,retired_at,merged_into_id')
-            ->get()
-            ->keyBy('id');
+        $clos = CategoryObject::withRetirementState($cloIds);
 
         foreach ($tags as $i => $tag) {
             $cloId = $tag['category_litter_object_id'] ?? null;
@@ -122,19 +118,19 @@ class AddTagsToPhotoAction
                 continue;
             }
 
-            $target = $clo->resolveActiveClo();
+            $activeClo = $clo->resolveActiveClo();
 
-            if ($target === null) {
-                $this->rejectRetiredObject($clo->litterObject->key, null);
+            if ($activeClo === null) {
+                $this->rejectRetiredObject($clo->litterObject->key);
             }
 
-            $tags[$i]['category_litter_object_id'] = $target->id;
+            $tags[$i]['category_litter_object_id'] = $activeClo->id;
 
             $typeId = $tag['litter_object_type_id'] ?? null;
 
-            if ($typeId && $target->id !== (int) $cloId) {
+            if ($typeId && $activeClo->id !== (int) $cloId) {
                 $valid = DB::table('category_object_types')
-                    ->where('category_litter_object_id', $target->id)
+                    ->where('category_litter_object_id', $activeClo->id)
                     ->where('litter_object_type_id', $typeId)
                     ->exists();
 
@@ -148,21 +144,15 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Names the survivor where the retirement recorded one, so a client holding a stale id is
-     * told what to tag instead rather than only that its choice is gone.
+     * A retired litter object with nowhere active to send the write. Only reached once the
+     * remount has been tried and found no active object, so there is nothing to name.
      *
      * @throws ValidationException
      */
-    protected function rejectRetiredObject(string $key, ?int $mergedIntoId): void
+    protected function rejectRetiredObject(string $key): never
     {
-        $survivor = $mergedIntoId ? LitterObject::find($mergedIntoId)?->key : null;
-
         throw ValidationException::withMessages([
-            'tags' => [
-                $survivor
-                    ? "Litter object '{$key}' has been merged into '{$survivor}' — refresh your tag list."
-                    : "Litter object '{$key}' is retired and can no longer be tagged.",
-            ],
+            'tags' => ["Litter object '{$key}' is retired and can no longer be tagged."],
         ]);
     }
 
@@ -286,15 +276,16 @@ class AddTagsToPhotoAction
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
-        // Same remount as the CLO path: a stale `{ object: "plastic_bag" }` lands
-        // on the survivor. Retired with no merge still 422s.
+        // Same remount as the CLO path, but object-level: a stale
+        // `{ object: "plastic_bag" }` lands on the active litter object.
+        // Retired with no merge still 422s.
         $remounted = false;
 
         if ($object?->isRetired()) {
             $active = $object->activeObject();
 
             if ($active === null) {
-                $this->rejectRetiredObject($object->key, null);
+                $this->rejectRetiredObject($object->key);
             }
 
             $object = $active;

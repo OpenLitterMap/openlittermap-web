@@ -3,6 +3,7 @@
 namespace App\Models\Litter\Tags;
 
 use App\Traits\ManagesTaggables;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -39,33 +40,50 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * The CLO this write should land on. A retired object resolves to its
-     * survivor in the same category, creating that pivot if it is missing.
-     * No survivor returns null so the caller can 422.
+     * CLOs keyed by id, carrying just enough of the litter object to decide
+     * retirement. The shared first step of every repoint.
+     *
+     * @param  array<int, int>  $cloIds
+     * @return Collection<int, self>
+     */
+    public static function withRetirementState(array $cloIds): Collection
+    {
+        return static::query()
+            ->whereIn('id', $cloIds)
+            ->with('litterObject:id,key,retired_at,merged_into_id')
+            ->get()
+            ->keyBy('id');
+    }
+
+    /**
+     * The CLO this write should land on. When the litter object is retired, returns
+     * the CLO pairing the same category with the active object it merged into,
+     * creating that row if it is missing. No active object returns null so the
+     * caller can 422.
      */
     public function resolveActiveClo(): ?self
     {
-        $object = $this->relationLoaded('litterObject')
+        $litterObject = $this->relationLoaded('litterObject')
             ? $this->litterObject
             : $this->litterObject()->first();
 
-        if ($object === null || ! $object->isRetired()) {
+        if ($litterObject === null || ! $litterObject->isRetired()) {
             return $this;
         }
 
-        $active = $object->activeObject();
+        $activeLitterObject = $litterObject->activeObject();
 
-        if ($active === null) {
+        if ($activeLitterObject === null) {
             return null;
         }
 
-        if ($active->id === (int) $this->litter_object_id) {
+        if ($activeLitterObject->id === (int) $this->litter_object_id) {
             return $this;
         }
 
         $attrs = [
             'category_id' => $this->category_id,
-            'litter_object_id' => $active->id,
+            'litter_object_id' => $activeLitterObject->id,
         ];
 
         try {

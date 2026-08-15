@@ -60,8 +60,6 @@ class QuickTagsController extends Controller
             ->leftJoin('litter_object_types as lot', 'lot.id', '=', 'pt.litter_object_type_id')
             ->where('p.user_id', $userId)
             ->whereNotNull('pt.category_litter_object_id')
-            // A retired object keeps its tag history, so it would otherwise be suggested here
-            // and then refused by SyncQuickTagsAction the moment the user saved it.
             ->whereNull('lo.retired_at')
             ->select(
                 'pt.category_litter_object_id as clo_id',

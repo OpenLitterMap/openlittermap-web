@@ -1216,17 +1216,6 @@ class MigrateTagTest extends TestCase
         );
     }
 
-    /**
-     * `olm:fix-orphaned-tags` encodes the pre-D-4 direction (149 → 92) plus other unapproved
-     * taxonomy moves. Under D-4 it would move data backwards onto a retired object.
-     */
-    public function test_the_obsolete_orphan_fix_command_refuses_to_run(): void
-    {
-        $this->artisan('olm:fix-orphaned-tags', ['--apply' => true])->assertExitCode(1);
-
-        $this->assertTagDidNotMove();
-    }
-
     public function test_complete_is_refused_when_verification_fails(): void
     {
         $this->writeQueue('PRODUCTION_VERIFIED');

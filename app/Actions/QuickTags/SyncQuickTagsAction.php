@@ -21,7 +21,7 @@ class SyncQuickTagsAction
     public function run(User $user, array $tags)
     {
         return DB::transaction(function () use ($user, $tags) {
-            $tags = $this->repointRetiredObjects($tags);
+            $tags = $this->repointToActiveClos($tags);
 
             UserQuickTag::where('user_id', $user->id)->delete();
 
@@ -53,16 +53,16 @@ class SyncQuickTagsAction
     }
 
     /**
-     * Repoints presets that name a retired CLO onto its survivor, so a stale
-     * mobile catalog can still sync. No survivor throws — ahead of the delete,
-     * so existing presets survive the refusal.
+     * Repoints presets whose litter object is retired onto the CLO for the active
+     * object, so a stale mobile catalog can still sync. No active object throws —
+     * ahead of the delete, so existing presets are left untouched.
      *
      * @param  array<int, array{clo_id: int}>  $tags
      * @return array<int, array{clo_id: int}>
      *
      * @throws ValidationException
      */
-    private function repointRetiredObjects(array $tags): array
+    private function repointToActiveClos(array $tags): array
     {
         $cloIds = array_unique(array_map(static fn (array $tag): int => (int) $tag['clo_id'], $tags));
 
@@ -70,11 +70,7 @@ class SyncQuickTagsAction
             return $tags;
         }
 
-        $clos = CategoryObject::query()
-            ->whereIn('id', $cloIds)
-            ->with('litterObject:id,key,retired_at,merged_into_id')
-            ->get()
-            ->keyBy('id');
+        $clos = CategoryObject::withRetirementState($cloIds);
 
         $unmapped = [];
 
@@ -85,15 +81,15 @@ class SyncQuickTagsAction
                 continue;
             }
 
-            $target = $clo->resolveActiveClo();
+            $activeClo = $clo->resolveActiveClo();
 
-            if ($target === null) {
+            if ($activeClo === null) {
                 $unmapped[] = $clo->litterObject->key;
 
                 continue;
             }
 
-            $tags[$i]['clo_id'] = $target->id;
+            $tags[$i]['clo_id'] = $activeClo->id;
         }
 
         if ($unmapped !== []) {

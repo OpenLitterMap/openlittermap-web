@@ -22,8 +22,7 @@ final class RedisMetricsCollector
     /**
      * Process a photo into Redis (called by MetricsService after MySQL update).
      *
-     * A photo may have no owner (photos.user_id is nullable — 151 processed rows on the
-     * production snapshot). Location and global metrics still count that litter; anything
+     * A photo may have no owner. Location and global metrics still count that litter; anything
      * user-scoped is skipped, because there is no user to attribute, rank or de-duplicate.
      *
      * Casting a null user id to string yields "", which would add a phantom member to the

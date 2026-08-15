@@ -27,10 +27,6 @@ class LitterObject extends Model
         return 'key';
     }
 
-    /**
-     * Objects still offered to users. Retirement is an explicit fact, not an accident of a
-     * missing pivot row — the retirement process creates pivots deliberately.
-     */
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereNull('retired_at');
