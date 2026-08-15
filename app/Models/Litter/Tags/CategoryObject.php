@@ -39,12 +39,11 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * The CLO a write should land on. Retired+merged rows return the survivor
-     * in the same category (created if the apply has not made it yet) so a
-     * stale mobile catalog can still tag. Retired with no survivor returns
-     * null so the caller can 422.
+     * The CLO this write should land on. A retired object resolves to its
+     * survivor in the same category, creating that pivot if it is missing.
+     * No survivor returns null so the caller can 422.
      */
-    public function writeTarget(): ?self
+    public function resolveActiveClo(): ?self
     {
         $object = $this->relationLoaded('litterObject')
             ? $this->litterObject

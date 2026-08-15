@@ -122,7 +122,7 @@ class AddTagsToPhotoAction
                 continue;
             }
 
-            $target = $clo->writeTarget();
+            $target = $clo->resolveActiveClo();
 
             if ($target === null) {
                 $this->rejectRetiredObject($clo->litterObject->key, null);

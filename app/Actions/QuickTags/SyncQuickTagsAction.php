@@ -53,10 +53,9 @@ class SyncQuickTagsAction
     }
 
     /**
-     * Stale mobile presets still name the retired CLO. Remount onto the survivor
-     * before the bulk replace so a 7-day-old catalog can sync. Retired with no
-     * merge still 422s — and that refusal is ahead of the delete so existing
-     * presets are left untouched.
+     * Repoints presets that name a retired CLO onto its survivor, so a stale
+     * mobile catalog can still sync. No survivor throws — ahead of the delete,
+     * so existing presets survive the refusal.
      *
      * @param  array<int, array{clo_id: int}>  $tags
      * @return array<int, array{clo_id: int}>
@@ -86,7 +85,7 @@ class SyncQuickTagsAction
                 continue;
             }
 
-            $target = $clo->writeTarget();
+            $target = $clo->resolveActiveClo();
 
             if ($target === null) {
                 $unmapped[] = $clo->litterObject->key;
