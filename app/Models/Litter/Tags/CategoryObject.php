@@ -3,12 +3,12 @@
 namespace App\Models\Litter\Tags;
 
 use App\Traits\ManagesTaggables;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class CategoryObject extends Pivot
@@ -40,9 +40,7 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * CLOs keyed by id, carrying just enough of the litter object to decide
-     * retirement. The shared first step of every repoint.
-     *
+     * CLOs by id to decide retirement.
      * @param  array<int, int>  $cloIds
      * @return Collection<int, self>
      */

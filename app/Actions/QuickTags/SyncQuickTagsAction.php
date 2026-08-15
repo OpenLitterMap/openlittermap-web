@@ -55,10 +55,6 @@ class SyncQuickTagsAction
     /**
      * Replace retired clo_id with activeCloId.
      *
-     * Repoints presets whose litter object is retired onto the CLO for the active object, so a
-     * stale mobile catalog can still sync. No active object throws — ahead of the delete, so
-     * existing presets are left untouched.
-     *
      * @param  array<int, array{clo_id: int}>  $tags
      * @return array<int, array{clo_id: int}>
      *
