@@ -85,10 +85,12 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Stale clients (mobile caches `/api/tags/all` for 7 days and cannot ship)
-     * still submit a CLO whose litter object is retired. Remount onto the CLO for
-     * the active object in the same category so the write lands on the living key.
-     * A retired object with no `merged_into_id` still 422s — nowhere to send it.
+     * Replace retired category_litter_object_id with activeCloId.
+     *
+     * Stale clients (mobile caches `/api/tags/all` for 7 days and cannot ship) still submit a
+     * CLO whose litter object is retired. Remount onto the CLO for the active object in the
+     * same category so the write lands on the living key. A retired object with no
+     * `merged_into_id` still 422s — nowhere to send it.
      *
      * @param  array<int, array<string, mixed>>  $tags
      * @return array<int, array<string, mixed>>
