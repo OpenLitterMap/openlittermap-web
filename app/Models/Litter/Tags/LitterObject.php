@@ -41,6 +41,33 @@ class LitterObject extends Model
         return $this->retired_at !== null;
     }
 
+    /**
+     * The active object this key now resolves to, following a chain of retirements — the object
+     * a key was merged into can itself be retired later, and a stale client holds the key from
+     * before either run. Null when the chain dead-ends on a retired object with no target, or
+     * loops. Returns `$this` when the object is not retired.
+     */
+    public function activeObject(): ?self
+    {
+        $object = $this;
+        $seen = [];
+
+        while ($object->isRetired()) {
+            if ($object->merged_into_id === null || isset($seen[$object->id])) {
+                return null;
+            }
+
+            $seen[$object->id] = true;
+            $object = static::find($object->merged_into_id);
+
+            if ($object === null) {
+                return null;
+            }
+        }
+
+        return $object;
+    }
+
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(

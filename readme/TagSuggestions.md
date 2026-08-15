@@ -91,7 +91,7 @@ Bulk-replaces all quick tags. Deletes existing rows and inserts new ones in a DB
 
 **Response 200:** Same format as GET (returns newly saved tags with server-assigned IDs).
 
-**Response 422:** Validation error. Rejects the entire payload if any `clo_id` is stale (`One or more of these tags is no longer available — refresh your tag list.`) or resolves to a retired litter object. The retired check runs inside the transaction, ahead of the delete, so a refusal leaves the user's existing presets untouched.
+**Response 422:** Validation error. Rejects the entire payload if any `clo_id` does not exist (`One or more of these tags is no longer available — refresh your tag list.`) or names a retired object with no survivor. A retired+merged `clo_id` is remounted onto the survivor rather than refused. A no-survivor refusal runs inside the transaction, ahead of the delete, so existing presets are left untouched.
 
 **Clearing all tags:** Send `"tags": []` — returns empty array, deletes all rows.
 

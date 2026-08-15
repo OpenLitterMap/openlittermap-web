@@ -127,8 +127,9 @@ suggested types and materials in `getAllTags()` while the picker reads the datab
 re-checked per entry.
 
 1. Set `retired_at` and `merged_into_id`; filter retired objects out of the picker. **Precedes A.**
-2. Delete the retired CLO row — cleanup, not load-bearing. The picker already excludes the object
-   via `retired_at`, and the retired export column disappears because A.3 drained its rows.
+2. Keep the retired CLO row. The picker already excludes the object via `retired_at`. The pivot
+   is the only way a stale mobile CLO id can remount onto the survivor after apply. Export
+   columns disappear because A.3 drained the rows, not because the pivot is gone.
 3. Clear `crowdsourced` on a migration-minted survivor. Not automated; see §E.8.
 4. `TagsConfig` — survivor in, retired key out.
 5. `BrandsConfig` — repoint references to the survivor. **Must land in the same commit as the
@@ -142,6 +143,13 @@ re-checked per entry.
 
 `ClassifyTagsService` is **never edited.** It is the historical record of what the v5 migration
 did, and under D-4's direction line 228 is already correct.
+
+> **Per-entry check — the remount keeps the client's category.** A stale write is rewritten onto
+> the survivor *in the category the client sent*, creating that pivot if it does not exist. Entry
+> 1 is safe because both keys live in `other` and A.2 creates the pivot anyway. For any entry that
+> also moves category — 10 of the manifest's rows do — a stale client would mint the survivor into
+> the **old** category and make that pairing selectable. Confirm the survivor's categories before
+> approving such an entry.
 
 ### C — prove the new key is used everywhere
 
@@ -206,20 +214,20 @@ appended to `verification_evidence` as `STATUS by <who> at <when>`.
    `--repair-redis`, the apply rerun and verify. Each step measures against a population the
    previous one fixed.
 
-   **Why the `retired_at` guards are not a substitute.** They refuse a write that *names* a
-   retired object. Three cases they miss: a request that read the object as active before Step 0
-   (the guard takes no row lock); a `PUT /api/v3/tags` replace that **omits** the retired tag,
-   deleting a row the snapshot holds by id; and a quick-tag sync that bulk-replaces the same way.
-   A shared row lock closes only the first. The freeze closes all three.
+   **Why remount is not a substitute for the freeze.** Live writes that *name* the retired
+   object remount onto the survivor. Two cases remount cannot cover: a request that read the
+   object as active before Step 0 (no row lock); and a `PUT /api/v3/tags` replace that
+   **omits** a snapshotted tag, deleting a row the snapshot holds by id. The freeze closes both.
 
-   **Residual, if the freeze is skipped anyway.** Nothing is silently destroyed — `dropRetiredPivot()`
-   refuses while any row references the pivot and holds its write lock, so InnoDB blocks a
-   concurrent insert rather than letting `ON DELETE CASCADE` take it. The cost is a **wedge**: a
-   late row is not in the snapshot, no rerun repoints it, `--verify` cannot pass, and the picker
-   stays closed until it is repointed by hand.
+   **Residual, if the freeze is skipped anyway.** Live writes remount onto the survivor, so a
+   late tag is not a leftover on the retired id. A `PUT` that *omits* a snapshotted tag can
+   still delete a row the snapshot holds by id — that is why the freeze stays.
 4. **Run the entry in one sitting:** dry run → `--advance=DRY_RUN_VERIFIED` → `--apply` →
    `--verify` → advance the remaining rungs. `--advance=COMPLETE` re-runs verify and refuses on
-   failure.
+   failure. The dry run reports the affected footprint (users + countries/states/cities) alongside
+   its "Measured now" counts, and a successful `--apply` closes with an **Overview** — tags/items
+   migrated, photos, distinct users, countries/states/cities, quick tags — read from the snapshot,
+   so it counts exactly what the run moved, not the survivor's pre-existing population.
 5. **If Redis does not reconcile, repair it — do not rebuild it.** `--apply` retains its snapshot
    and fails on a mismatch. Recovery is four steps:
    ```
@@ -273,7 +281,7 @@ nothing is self-evident.
 | Surface | Assertion | Proved by |
 |---|---|---|
 | `photo_tags` | zero rows on the retired object id, soft-deleted photos included | `--verify` 1 |
-| `category_litter_object` | surviving pivot exists (key is selectable); retired pivot gone | `--verify` 2, 6 |
+| `category_litter_object` | surviving pivot exists (key is selectable); retired pivot kept and unreferenced | `--verify` 2, 6 |
 | `litter_objects` | `retired_at` set; `merged_into_id` = THIS entry's survivor; survivor itself still active | `--verify` 3, 4, 5 |
 | `user_quick_tags` | nothing references the retired pivot; quick tags at or above the recorded floor on the **surviving** CLO | `--verify` 7, 8 |
 | `photos.summary` | no summary JSON contains the retired `object_id` | `--verify` 9 |

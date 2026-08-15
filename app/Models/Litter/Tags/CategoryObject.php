@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Log;
 
 class CategoryObject extends Pivot
@@ -35,6 +36,47 @@ class CategoryObject extends Pivot
     public function litterObject(): BelongsTo
     {
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
+    }
+
+    /**
+     * The CLO a write should land on. Retired+merged rows return the survivor
+     * in the same category (created if the apply has not made it yet) so a
+     * stale mobile catalog can still tag. Retired with no survivor returns
+     * null so the caller can 422.
+     */
+    public function writeTarget(): ?self
+    {
+        $object = $this->relationLoaded('litterObject')
+            ? $this->litterObject
+            : $this->litterObject()->first();
+
+        if ($object === null || ! $object->isRetired()) {
+            return $this;
+        }
+
+        $active = $object->activeObject();
+
+        if ($active === null) {
+            return null;
+        }
+
+        if ($active->id === (int) $this->litter_object_id) {
+            return $this;
+        }
+
+        $attrs = [
+            'category_id' => $this->category_id,
+            'litter_object_id' => $active->id,
+        ];
+
+        try {
+            return static::firstOrCreate($attrs, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            return static::where($attrs)->first();
+        }
     }
 
     /**

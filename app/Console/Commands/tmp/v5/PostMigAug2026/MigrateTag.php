@@ -23,16 +23,17 @@ use Throwable;
  * `plasticBags` survives, because it holds 10,051 of the 10,304 rows.
  *
  * ORDERING IS LOAD-BEARING. `retired_at` is set and the picker closed BEFORE any data moves.
- * The snapshot is immutable, so a tag created mid-run would not be in it, would survive the
- * retirement, and would fail verification with no remediation short of starting over.
+ * Live writes remount onto the survivor (mobile cannot ship a catalog refresh), so a tag
+ * created mid-run lands on the living key and is not a leftover on the retired id.
  *
  * Automated (deterministic):
  *   - marks the retired object with retired_at + merged_into_id, closing the tag picker
  *   - creates the surviving object's pivot if it has none
  *   - repoints an immutable, pre-snapshotted set of photo_tags rows
  *   - repoints user_quick_tags off the retired pivot
+ *   - remounts any leftover photo_tags still naming the retired CLO
  *   - regenerates photos.summary and re-runs metrics for processed, non-deleted photos
- *   - deletes the now-dangling retired pivot
+ *   - keeps the drained retired pivot so a stale CLO id can still remount
  *
  * Manual per tag (gated by status, never automated):
  *   TagsConfig, BrandsConfig, translations, docs/changelog.
@@ -184,10 +185,21 @@ class MigrateTag extends Command
 
         $actual = $this->measure($entry);
 
+        $affectedPhotoIds = $this->retiredRowQuery($entry)->distinct()->pluck('photo_id')->map('intval')->all();
+        $footprint = $this->affectedFootprint($affectedPhotoIds);
+        $sample = $this->samplePhotoIds($affectedPhotoIds);
+
         $this->line('  Measured now:');
         $this->line("    rows   {$actual['rows']}   (expected {$entry['retired_rows']})");
         $this->line("    items  {$actual['items']}   (expected {$entry['retired_items']})");
         $this->line("    photos {$actual['photos']}  (expected {$entry['retired_photos']})");
+        $this->line("    users     {$footprint['users']}");
+        $this->line("    countries {$footprint['countries']}   states {$footprint['states']}   cities {$footprint['cities']}");
+
+        if ($sample !== []) {
+            $this->line('    sample photo IDs: ' . implode(', ', $sample));
+        }
+
         $this->newLine();
 
         if (!$this->expectationsMatch($entry, $actual)) {
@@ -412,9 +424,9 @@ class MigrateTag extends Command
     }
 
     /**
-     * Sets retired_at + merged_into_id. The picker filters on retired_at (LitterObject::active),
-     * and both tag-write paths plus the quick-tag sync refuse a retired object, so from this
-     * point live traffic cannot add rows the snapshot would miss.
+     * Sets retired_at + merged_into_id. The picker filters on retired_at (LitterObject::active).
+     * Live writes remount onto the survivor, so from this point new rows land on the living
+     * key rather than on the snapshot's retired id.
      *
      * @return bool Whether THIS invocation closed it. Only a run that closed the door may reopen it.
      */
@@ -432,6 +444,10 @@ class MigrateTag extends Command
         $this->line($updated > 0
             ? "  picker closed: object {$entry['retired_id']} marked retired → {$entry['desired_id']}"
             : "  picker already closed for object {$entry['retired_id']}");
+
+        // Survivor must be selectable (and remountable) from the moment the old
+        // key closes — not only when the apply later creates the pivot.
+        $this->ensureDesiredPivot((int) $entry['category_id'], (int) $entry['desired_id']);
 
         return $updated > 0;
     }
@@ -543,8 +559,8 @@ class MigrateTag extends Command
      * `--repair-redis` fixes Redis but does NOT finish the retirement: only a successful
      * `--apply` calls `clearState()`, so a repair-then-verify leaves the snapshot on disk and
      * the entry looking mid-run to the next operator. The rerun is cheap — every MySQL step is
-     * idempotent, the rows are already at the target and the pivot is already gone — but it is
-     * the only thing that clears the snapshot and reports the retirement finished.
+     * idempotent, the rows are already at the target — but it is the only thing that clears
+     * the snapshot and reports the retirement finished.
      */
     private function recoverySequence(): void
     {
@@ -669,7 +685,7 @@ class MigrateTag extends Command
             return false;
         }
 
-        if (!$this->dropRetiredPivot($entry)) {
+        if (!$this->remountLingeringCloReferences($entry, $desiredCloId)) {
             return false;
         }
 
@@ -685,7 +701,10 @@ class MigrateTag extends Command
             return false;
         }
 
+        $sample = $this->samplePhotoIds($state['all_photo_ids']);
+
         $this->clearState($entry);
+        $this->overview($entry, $state, $sample);
         $this->newLine();
         $this->info('Applied. Next status: '
             . (self::STATUSES[array_search($entry['status'], self::STATUSES, true) + 1] ?? 'none'));
@@ -765,8 +784,8 @@ class MigrateTag extends Command
     }
 
     /**
-     * Saved presets point at a CLO. The retired pivot is about to be deleted, so anything
-     * referencing it must move or those presets break.
+     * Saved presets point at a CLO. Anything still on the retired pivot must move so a
+     * later verify can assert the drained pivot is unreferenced.
      *
      * Presets are repointed by captured id and never deleted. There is no unique constraint on
      * (user_id, clo_id, type_id) — two presets on the same CLO are legal and can differ by
@@ -793,7 +812,7 @@ class MigrateTag extends Command
         }
 
         // Anything still on the retired pivot arrived after the snapshot was taken. It is
-        // outside the captured set but must still move, or the pivot can never be dropped.
+        // outside the captured set but must still move so verify can assert the pivot is idle.
         $late = DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->pluck('id')->all();
 
         if ($late) {
@@ -822,10 +841,11 @@ class MigrateTag extends Command
     }
 
     /**
-     * A reference that survives the move is a failure, not a warning: the pivot cannot be
-     * dropped, so the retirement is incomplete and must stay resumable.
+     * Rows whose object already moved but whose CLO id still names the retired
+     * pivot. The object-keyed remount misses them. The pivot is kept (stale
+     * mobile CLO ids remount through it), but nothing should still point at it.
      */
-    private function dropRetiredPivot(array $entry): bool
+    private function remountLingeringCloReferences(array $entry, int $desiredCloId): bool
     {
         $retiredCloId = $this->retiredCloId($entry);
 
@@ -833,29 +853,29 @@ class MigrateTag extends Command
             return true;
         }
 
-        // `photo_tags.category_litter_object_id` is ON DELETE CASCADE, so a row inserted between
-        // the count and the delete would be destroyed by the delete rather than blocking it.
-        // Taking the pivot row's write lock first closes that window: InnoDB needs a shared lock
-        // on the parent row to check the foreign key, so no INSERT referencing this pivot can
-        // commit while the lock is held.
-        return DB::transaction(function () use ($retiredCloId): bool {
-            DB::table('category_litter_object')->where('id', $retiredCloId)->lockForUpdate()->first();
+        $moved = DB::table('photo_tags')
+            ->where('category_litter_object_id', $retiredCloId)
+            ->update([
+                'category_litter_object_id' => $desiredCloId,
+                'updated_at' => now(),
+            ]);
 
-            $photoTags = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count();
-            $quickTags = DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
+        if ($moved > 0) {
+            $this->line("  remounted {$moved} leftover photo_tags off retired CLO {$retiredCloId}");
+        }
 
-            if ($photoTags + $quickTags > 0) {
-                $this->error("  retired pivot CLO {$retiredCloId} still has {$photoTags} photo tags and "
-                    . "{$quickTags} quick tags — cannot complete the retirement");
+        $left = DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count()
+            + DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count();
 
-                return false;
-            }
+        if ($left > 0) {
+            $this->error("  retired pivot CLO {$retiredCloId} still has {$left} references");
 
-            DB::table('category_litter_object')->where('id', $retiredCloId)->delete();
-            $this->line("  removed dangling pivot CLO {$retiredCloId}");
+            return false;
+        }
 
-            return true;
-        });
+        $this->line("  retired pivot CLO {$retiredCloId} kept (unreferenced) so stale clients can remount");
+
+        return true;
     }
 
     /**
@@ -1185,7 +1205,7 @@ class MigrateTag extends Command
 
         $retiredCloId = $this->retiredCloId($entry);
 
-        $checks['retired pivot is gone'] = $retiredCloId === null;
+        $checks['retired pivot is kept'] = $retiredCloId !== null;
         $checks['nothing references the retired pivot'] = $retiredCloId === null
             || DB::table('photo_tags')->where('category_litter_object_id', $retiredCloId)->count()
                 + DB::table('user_quick_tags')->where('clo_id', $retiredCloId)->count() === 0;
@@ -1349,6 +1369,120 @@ class MigrateTag extends Command
         $this->line("  retire {$e['category_key']}/{$e['retired_key']} (object {$e['retired_id']})");
         $this->line("  keep   {$e['category_key']}/{$e['desired_key']} (object {$e['desired_id']})");
         $this->newLine();
+    }
+
+    /**
+     * Human-facing summary of what the retirement moved: rows, items, the photos behind them,
+     * the distinct users who own those photos, and the location scopes they span. Printed once,
+     * on a fully reconciled apply. Every figure is read from the snapshot, so it describes the
+     * exact set THIS run moved — not the survivor's pre-existing population, which the Redis
+     * reconciliation above sums over instead.
+     *
+     * @param array<string, mixed> $state
+     */
+    /**
+     * @param array<string, mixed> $state
+     * @param array<int, int> $samplePhotoIds computed before clearState() — printing it adds no query
+     */
+    private function overview(array $entry, array $state, array $samplePhotoIds): void
+    {
+        $footprint = $this->affectedFootprint($state['all_photo_ids']);
+
+        $this->newLine();
+        $this->line("<options=bold>Overview</>  {$entry['entry_id']}");
+        $this->line("  retired {$entry['category_key']}/{$entry['retired_key']} → kept {$entry['category_key']}/{$entry['desired_key']}");
+        $this->line('  tags migrated: ' . count($state['tag_ids']) . ' (' . (int) $state['baseline_items'] . ' items)');
+        $this->line('  photos affected: ' . count($state['all_photo_ids']));
+        $this->line('  users affected: ' . $footprint['users']);
+        $this->line('  countries affected: ' . $footprint['countries']);
+        $this->line('  states affected: ' . $footprint['states']);
+        $this->line('  cities affected: ' . $footprint['cities']);
+        $this->line('  quick tags moved: ' . count($state['quick_tag_ids']));
+
+        if ($samplePhotoIds !== []) {
+            $this->line('  sample photo IDs: ' . implode(', ', $samplePhotoIds));
+        }
+    }
+
+    /**
+     * The distinct users and location scopes a set of photos touches — the "who and where" of a
+     * retirement. Counted from the moved photo set (not the survivor's Redis population, which
+     * also holds rows this entry never touched) with a chunked scan so a 10k-photo entry stays
+     * inside one bounded pass.
+     *
+     * @param array<int, int> $photoIds
+     * @return array{users:int, countries:int, states:int, cities:int}
+     */
+    private function affectedFootprint(array $photoIds): array
+    {
+        $users = $countries = $states = $cities = [];
+
+        foreach (array_chunk($photoIds, 5000) as $chunk) {
+            $rows = DB::table('photos')
+                ->whereIn('id', $chunk)
+                ->select('user_id', 'country_id', 'state_id', 'city_id')
+                ->get();
+
+            foreach ($rows as $row) {
+                if ($row->user_id !== null) {
+                    $users[(int) $row->user_id] = true;
+                }
+
+                if ($row->country_id !== null) {
+                    $countries[(int) $row->country_id] = true;
+                }
+
+                if ($row->state_id !== null) {
+                    $states[(int) $row->state_id] = true;
+                }
+
+                if ($row->city_id !== null) {
+                    $cities[(int) $row->city_id] = true;
+                }
+            }
+        }
+
+        return [
+            'users' => count($users),
+            'countries' => count($countries),
+            'states' => count($states),
+            'cities' => count($cities),
+        ];
+    }
+
+    /**
+     * A deterministic, at-most-five sample of the affected photo ids, evenly spaced across the
+     * sorted unique set (first and last always included). Five or fewer ids are all returned.
+     *
+     * Pure: derived from the ids already collected — the live retired set on a dry run, the
+     * snapshot on an apply — with no database read and no randomness. That is what lets it print
+     * safely after clearState() has removed the recovery snapshot, and lets a dry run and its
+     * apply produce the same sample whenever the population has not changed (the sort makes the
+     * two sources' row ordering irrelevant). Soft-deleted and unprocessed photos are in the ids
+     * by construction — both sources read photo_tags with no join to photos.
+     *
+     * @param array<int, int> $photoIds
+     * @return array<int, int>
+     */
+    private function samplePhotoIds(array $photoIds): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $photoIds)));
+        sort($ids, SORT_NUMERIC);
+
+        $n = count($ids);
+        $k = 5;
+
+        if ($n <= $k) {
+            return $ids;
+        }
+
+        $sample = [];
+
+        for ($i = 0; $i < $k; $i++) {
+            $sample[] = $ids[(int) round($i * ($n - 1) / ($k - 1))];
+        }
+
+        return array_values(array_unique($sample));
     }
 
     private function retiredRowQuery(array $e)

@@ -330,7 +330,7 @@ Side effects: S3 upload (full + bbox thumbnail), reverse geocoding via `ResolveL
 | `materials` | string | Comma-separated material keys |
 | `search` | string | Prefix search across all keys |
 
-Retired litter objects (`litter_objects.retired_at` set) are excluded, matching `/api/tags/all`. A retired object keeps its pivot row until a retirement run drains it, so pivot existence alone does not mean an object is still offerable.
+Retired litter objects (`litter_objects.retired_at` set) are excluded, matching `/api/tags/all`. A retired object keeps its pivot row so a stale CLO id can remount onto the survivor — pivot existence alone does not mean an object is still offerable.
 
 **Response (200):**
 ```json
@@ -469,12 +469,14 @@ When a user selects "wine", you submit `category_litter_object_id: 42, litter_ob
 | `tags.*.brands` | int[]\|object[] | optional | Plain IDs `[10]` (qty=1) or objects `[{"id": 10, "quantity": 3}]` for per-brand quantity. |
 | `tags.*.custom_tags` | string[] | optional | Free text. Sanitized server-side (`strip_tags` + `trim`), accepts any characters incl. `& . ' /`, capped to 255 chars (`custom_tags_new.key`). Empty-after-sanitize entries are silently skipped — never rejected. |
 
-**Retired and stale objects (422).** Two cases, both telling the client to refetch `/api/tags/all`:
+**Retired objects are remounted, not refused.** A retired CLO that has a `merged_into_id` is rewritten onto the survivor in the same category (POST/PUT `/api/v3/tags` and `PUT /api/v3/user/quick-tags`). The picker still hides the retired key; a stale mobile catalog (cached 7 days, cannot ship) can keep submitting the old id and the write lands on `plasticBags`. Quantity, materials, brands and custom tags are preserved. A type that is not valid on the survivor is dropped.
 
-- **Mid-retirement** — the retired object still holds its pivot, so the id passes `exists` and the whole payload is rejected under `errors.tags`, naming the survivor: `Litter object 'plastic_bag' has been merged into 'plasticBags' — refresh your tag list.`
-- **After the run drops the pivot**, or for any other stale id — `exists` fails first, under `errors.tags.{i}.category_litter_object_id`: `This tag is no longer available — refresh your tag list.` No replacement can be named here; the row needed to resolve it is gone.
+**Still 422:**
 
-`PUT /api/v3/tags` applies the identical contract. `PUT /api/v3/user/quick-tags` uses the same wording on `tags.*.clo_id`.
+- Retired with no survivor (`merged_into_id` null) — `errors.tags`: `Litter object '…' is retired and can no longer be tagged.`
+- Any other missing CLO id — `errors.tags.{i}.category_litter_object_id`: `This tag is no longer available — refresh your tag list.`
+
+`PUT /api/v3/tags` applies the identical contract. `PUT /api/v3/user/quick-tags` remounts `tags.*.clo_id` the same way; a no-survivor refusal is ahead of the delete so existing presets are left untouched.
 
 **Standalone tag types** (no `category_litter_object_id`):
 

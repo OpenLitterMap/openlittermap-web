@@ -282,12 +282,12 @@ The `unclassified` system category is NOT in `TagsConfig`; it is created by `Gen
 
 ### Retired objects
 
-`litter_objects.retired_at` marks a key we no longer want; `merged_into_id` names the object that replaced it. Retirement is an explicit fact, not the absence of a pivot — a retired object keeps its `category_litter_object` row until a retirement run drains it.
+`litter_objects.retired_at` marks a key we no longer want; `merged_into_id` names the object that replaced it. Retirement is an explicit fact. The retired object **keeps** its `category_litter_object` row so a stale CLO id can still be remounted.
 
 Consequences to respect anywhere you touch objects:
 
-- **Reads must filter.** Use `LitterObject::active()`, or `whereHas('litterObject', fn ($q) => $q->active())` when starting from `CategoryObject`. `/api/tags`, `/api/tags/all` (including its `category_objects` / `category_object_types` arrays) and `/api/v3/user/top-tags` all do.
-- **Writes must refuse.** `AddTagsToPhotoAction` (both payload formats) and `SyncQuickTagsAction` reject a retired object with a 422 naming the survivor.
+- **Reads must filter.** Use `LitterObject::active()`, or `whereHas('litterObject', fn ($q) => $q->active())` when starting from `CategoryObject`. `/api/tags`, `/api/tags/all` (its `objects` and `category_objects` arrays) and `/api/v3/user/top-tags` all do. `category_object_types` is deliberately unfiltered: its rows are keyed by CLO, every consumer resolves the CLO through `category_objects` first, and rows for a retired pivot are therefore unreachable.
+- **Writes remount.** `AddTagsToPhotoAction` (CLO and legacy) and `SyncQuickTagsAction` rewrite a retired+merged id onto the survivor in the same category. Mobile cannot ship a catalog refresh and caches `/api/tags/all` for 7 days — a 422 would leave tagged photos stuck in the inbox. Retired with no `merged_into_id` still 422s.
 - **`firstOrCreate` paths must not resurrect.** `AutoCreateBrandRelationships` and `GenerateTagsSeeder` skip retired keys — both create an object *and* a pivot, so either would silently undo a retirement.
 
 The retirement itself runs one approved entry at a time through `olm:migrate-tag`. Process, verification surfaces and the production write-freeze runbook: `readme/PostTagMigrationClean.md`.

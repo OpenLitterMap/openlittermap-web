@@ -650,34 +650,50 @@ class QuickTagsApiTest extends TestCase
         $this->assertEquals(3, $brands[1]['quantity']);
     }
 
-    // ── Retirement write barrier ─────────────────────────────────────────────
+    // ── Retirement remount ───────────────────────────────────────────────────
 
-    private function retireObjectBehind(int $cloId): void
+    private function retireObjectBehind(int $cloId, ?int $mergedIntoId = null): void
     {
         $objectId = DB::table('category_litter_object')->where('id', $cloId)->value('litter_object_id');
 
-        DB::table('litter_objects')->where('id', $objectId)->update(['retired_at' => now()]);
+        DB::table('litter_objects')->where('id', $objectId)->update([
+            'retired_at' => now(),
+            'merged_into_id' => $mergedIntoId,
+        ]);
     }
 
-    public function test_sync_rejects_a_preset_on_a_retired_object(): void
+    public function test_sync_remounts_a_preset_on_a_retired_object_onto_the_survivor(): void
     {
         $user = User::factory()->create();
-        $clo = $this->createClo();
-        $this->retireObjectBehind($clo);
+        $catId = DB::table('categories')->insertGetId(['key' => 'smoking_' . uniqid()]);
+        $retiredObj = DB::table('litter_objects')->insertGetId(['key' => 'old_' . uniqid()]);
+        $survivorObj = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $retiredClo = $this->getCloId($catId, $retiredObj);
+        $survivorClo = $this->getCloId($catId, $survivorObj);
+
+        $this->retireObjectBehind($retiredClo, $survivorObj);
 
         $this->actingAs($user)
             ->putJson('/api/v3/user/quick-tags', [
-                'tags' => [$this->makeTagPayload($clo)],
+                'tags' => [$this->makeTagPayload($retiredClo)],
             ])
-            ->assertStatus(422);
+            ->assertOk();
+
+        $this->assertDatabaseHas('user_quick_tags', [
+            'user_id' => $user->id,
+            'clo_id' => $survivorClo,
+        ]);
+        $this->assertDatabaseMissing('user_quick_tags', [
+            'user_id' => $user->id,
+            'clo_id' => $retiredClo,
+        ]);
     }
 
     /**
-     * The sync is a bulk replace — it deletes every existing preset before inserting. If the
-     * retired check lived only in request validation, a caller reaching the action directly
-     * would wipe the user's presets and insert nothing.
+     * Retired with no survivor still 422s, and that refusal is ahead of the
+     * delete so a bulk-replace cannot wipe the user's existing presets.
      */
-    public function test_action_refuses_a_retired_clo_without_destroying_existing_presets(): void
+    public function test_action_refuses_a_retired_clo_without_a_survivor_without_destroying_existing_presets(): void
     {
         $user = User::factory()->create();
         $keptClo = $this->createClo();
@@ -692,7 +708,7 @@ class QuickTagsApiTest extends TestCase
 
         try {
             app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($retiredClo)]);
-            $this->fail('Expected the action to refuse a retired CLO.');
+            $this->fail('Expected the action to refuse a retired CLO with no survivor.');
         } catch (ValidationException $e) {
             // expected
         }

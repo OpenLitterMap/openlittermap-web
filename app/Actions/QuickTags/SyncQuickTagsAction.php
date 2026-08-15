@@ -5,7 +5,6 @@ namespace App\Actions\QuickTags;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Users\User;
 use App\Models\Users\UserQuickTag;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -22,7 +21,7 @@ class SyncQuickTagsAction
     public function run(User $user, array $tags)
     {
         return DB::transaction(function () use ($user, $tags) {
-            $this->rejectRetiredObjects($tags);
+            $tags = $this->repointRetiredObjects($tags);
 
             UserQuickTag::where('user_id', $user->id)->delete();
 
@@ -54,37 +53,56 @@ class SyncQuickTagsAction
     }
 
     /**
-     * A retired object is being drained by a retirement run. `clo_id` validation only proves the
-     * pivot exists — the pivot outlives the picker — so the check runs here, inside the same
-     * transaction as the bulk replace and ahead of the delete, and a refusal rolls the whole
-     * sync back rather than leaving the user with no presets at all.
+     * Stale mobile presets still name the retired CLO. Remount onto the survivor
+     * before the bulk replace so a 7-day-old catalog can sync. Retired with no
+     * merge still 422s — and that refusal is ahead of the delete so existing
+     * presets are left untouched.
      *
-     * @param array<int, array{clo_id: int}> $tags
+     * @param  array<int, array{clo_id: int}>  $tags
+     * @return array<int, array{clo_id: int}>
      *
      * @throws ValidationException
      */
-    private function rejectRetiredObjects(array $tags): void
+    private function repointRetiredObjects(array $tags): array
     {
         $cloIds = array_unique(array_map(static fn (array $tag): int => (int) $tag['clo_id'], $tags));
 
-        if (empty($cloIds)) {
-            return;
+        if ($cloIds === []) {
+            return $tags;
         }
 
-        $retired = CategoryObject::query()
+        $clos = CategoryObject::query()
             ->whereIn('id', $cloIds)
-            ->whereHas('litterObject', fn (Builder $q) => $q->whereNotNull('retired_at'))
-            ->with('litterObject:id,key')
+            ->with('litterObject:id,key,retired_at,merged_into_id')
             ->get()
-            ->pluck('litterObject.key')
-            ->all();
+            ->keyBy('id');
 
-        if (empty($retired)) {
-            return;
+        $unmapped = [];
+
+        foreach ($tags as $i => $tag) {
+            $clo = $clos->get((int) $tag['clo_id']);
+
+            if ($clo === null || ! $clo->litterObject?->isRetired()) {
+                continue;
+            }
+
+            $target = $clo->writeTarget();
+
+            if ($target === null) {
+                $unmapped[] = $clo->litterObject->key;
+
+                continue;
+            }
+
+            $tags[$i]['clo_id'] = $target->id;
         }
 
-        throw ValidationException::withMessages([
-            'tags' => ['Retired and can no longer be saved as a quick tag: ' . implode(', ', $retired) . '.'],
-        ]);
+        if ($unmapped !== []) {
+            throw ValidationException::withMessages([
+                'tags' => ['Retired and can no longer be saved as a quick tag: ' . implode(', ', array_unique($unmapped)) . '.'],
+            ]);
+        }
+
+        return $tags;
     }
 }

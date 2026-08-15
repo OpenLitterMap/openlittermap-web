@@ -66,7 +66,7 @@ class AddTagsToPhotoAction
      */
     protected function addTagsToPhoto(int $userId, int $photoId, array $tags): array
     {
-        $this->rejectRetiredClos($tags);
+        $tags = $this->repointRetiredClos($tags);
 
         $photoTags = [];
 
@@ -85,35 +85,66 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * A retired object may still hold a pivot row mid-retirement. The picker filters retired
-     * objects out, but a client holding a stale CLO id could otherwise keep writing new tags
-     * onto a key that is being drained.
+     * Stale clients (mobile caches `/api/tags/all` for 7 days and cannot ship)
+     * still submit the retired CLO. Remount onto the survivor in the same
+     * category so the write lands on the living key. A retired object with no
+     * `merged_into_id` still 422s — there is nowhere to send it.
      *
-     * One query for the whole payload rather than one per tag — the guard can only fire during
-     * the minutes a retirement run is draining a key, so it must cost nothing the rest of the
-     * time. The legacy path checks its own already-materialised object for free.
-     *
-     * @param array<int, array<string, mixed>> $tags
+     * @param  array<int, array<string, mixed>>  $tags
+     * @return array<int, array<string, mixed>>
      *
      * @throws ValidationException
      */
-    protected function rejectRetiredClos(array $tags): void
+    protected function repointRetiredClos(array $tags): array
     {
-        $cloIds = array_filter(array_column($tags, 'category_litter_object_id'));
+        $cloIds = array_values(array_unique(array_filter(array_column($tags, 'category_litter_object_id'))));
 
-        if (empty($cloIds)) {
-            return;
+        if ($cloIds === []) {
+            return $tags;
         }
 
-        $retired = LitterObject::query()
-            ->join('category_litter_object', 'category_litter_object.litter_object_id', '=', 'litter_objects.id')
-            ->whereIn('category_litter_object.id', $cloIds)
-            ->whereNotNull('litter_objects.retired_at')
-            ->first(['litter_objects.key', 'litter_objects.merged_into_id']);
+        $clos = CategoryObject::query()
+            ->whereIn('id', $cloIds)
+            ->with('litterObject:id,key,retired_at,merged_into_id')
+            ->get()
+            ->keyBy('id');
 
-        if ($retired) {
-            $this->rejectRetiredObject($retired->key, $retired->merged_into_id);
+        foreach ($tags as $i => $tag) {
+            $cloId = $tag['category_litter_object_id'] ?? null;
+
+            if ($cloId === null || ! $clos->has($cloId)) {
+                continue;
+            }
+
+            $clo = $clos[$cloId];
+
+            if (! $clo->litterObject?->isRetired()) {
+                continue;
+            }
+
+            $target = $clo->writeTarget();
+
+            if ($target === null) {
+                $this->rejectRetiredObject($clo->litterObject->key, null);
+            }
+
+            $tags[$i]['category_litter_object_id'] = $target->id;
+
+            $typeId = $tag['litter_object_type_id'] ?? null;
+
+            if ($typeId && $target->id !== (int) $cloId) {
+                $valid = DB::table('category_object_types')
+                    ->where('category_litter_object_id', $target->id)
+                    ->where('litter_object_type_id', $typeId)
+                    ->exists();
+
+                if (! $valid) {
+                    $tags[$i]['litter_object_type_id'] = null;
+                }
+            }
         }
+
+        return $tags;
     }
 
     /**
@@ -255,18 +286,32 @@ class AddTagsToPhotoAction
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
-        // Same barrier as the CLO path: a retired object is being drained by a retirement run,
-        // so no client — however old its payload format — may add rows to it.
+        // Same remount as the CLO path: a stale `{ object: "plastic_bag" }` lands
+        // on the survivor. Retired with no merge still 422s.
+        $remounted = false;
+
         if ($object?->isRetired()) {
-            $this->rejectRetiredObject($object->key, $object->merged_into_id);
+            $active = $object->activeObject();
+
+            if ($active === null) {
+                $this->rejectRetiredObject($object->key, null);
+            }
+
+            $object = $active;
+            $remounted = true;
         }
 
         // Resolve CLO from category + object
         $clo = null;
         if ($category && $object) {
-            $clo = CategoryObject::where('category_id', $category->id)
-                ->where('litter_object_id', $object->id)
-                ->first();
+            $clo = $remounted
+                ? CategoryObject::firstOrCreate([
+                    'category_id' => $category->id,
+                    'litter_object_id' => $object->id,
+                ])
+                : CategoryObject::where('category_id', $category->id)
+                    ->where('litter_object_id', $object->id)
+                    ->first();
 
             if (! $clo) {
                 throw ValidationException::withMessages([

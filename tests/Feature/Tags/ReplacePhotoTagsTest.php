@@ -65,10 +65,71 @@ class ReplacePhotoTagsTest extends TestCase
     }
 
     /**
-     * The write barrier has to hold on the replace path too — same action, different request
-     * class, and the pivot outlives the picker while a retirement is draining the key.
+     * Stale mobile catalogs still submit the retired CLO. Same action as POST,
+     * different request class — remount onto the survivor rather than 422.
      */
-    public function test_replace_tags_refuses_a_retired_object_and_names_the_survivor(): void
+    public function test_replace_tags_writes_a_retired_object_as_the_survivor(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $can = LitterObject::firstWhere('key', 'can');
+        $bottle = LitterObject::firstWhere('key', 'bottle');
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+        $survivorCloId = $this->getCloId($alcohol->id, $bottle->id);
+
+        $can->update(['retired_at' => now(), 'merged_into_id' => $bottle->id]);
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [
+                ['category_litter_object_id' => $cloId, 'quantity' => 3],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('photo_tags', [
+            'photo_id' => $photo->id,
+            'category_litter_object_id' => $survivorCloId,
+            'litter_object_id' => $bottle->id,
+            'quantity' => 3,
+        ]);
+        $this->assertDatabaseMissing('photo_tags', [
+            'photo_id' => $photo->id,
+            'litter_object_id' => $can->id,
+        ]);
+    }
+
+    /**
+     * A survivor can itself be retired by a later entry, and the stalest clients hold a key from
+     * before either run. The remount follows the chain rather than landing on the middle object,
+     * which is being drained in its own right.
+     */
+    public function test_a_chained_retirement_remounts_onto_the_final_survivor(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $can = LitterObject::firstWhere('key', 'can');
+        $bottle = LitterObject::firstWhere('key', 'bottle');
+        $cup = LitterObject::firstWhere('key', 'cup');
+        $cloId = $this->getCloId($alcohol->id, $can->id);
+
+        $can->update(['retired_at' => now(), 'merged_into_id' => $bottle->id]);
+        $bottle->update(['retired_at' => now(), 'merged_into_id' => $cup->id]);
+
+        $this->actingAs($user)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['category_litter_object_id' => $cloId, 'quantity' => 1]],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('photo_tags', ['photo_id' => $photo->id, 'litter_object_id' => $cup->id]);
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id, 'litter_object_id' => $bottle->id]);
+    }
+
+    /** A retirement loop resolves to nothing, so the write is refused rather than looping. */
+    public function test_a_retirement_cycle_is_refused(): void
     {
         $user = User::factory()->create(['verification_required' => false]);
         $photo = Photo::factory()->create(['user_id' => $user->id]);
@@ -79,14 +140,12 @@ class ReplacePhotoTagsTest extends TestCase
         $cloId = $this->getCloId($alcohol->id, $can->id);
 
         $can->update(['retired_at' => now(), 'merged_into_id' => $bottle->id]);
+        $bottle->update(['retired_at' => now(), 'merged_into_id' => $can->id]);
 
-        $this->actingAs($user)->putJson('/api/v3/tags', [
+        $this->actingAs($user)->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
-            'tags' => [
-                ['category_litter_object_id' => $cloId, 'quantity' => 3],
-            ],
-        ])->assertStatus(422)
-            ->assertJsonPath('errors.tags.0', "Litter object 'can' has been merged into 'bottle' — refresh your tag list.");
+            'tags' => [['category_litter_object_id' => $cloId, 'quantity' => 1]],
+        ])->assertStatus(422);
 
         $this->assertDatabaseCount('photo_tags', 0);
     }
