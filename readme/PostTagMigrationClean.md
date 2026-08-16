@@ -4,13 +4,7 @@
 
 ## Mapping list
 
-Mappings live in `readme/audit/TagRetirements-2026-08.csv`. The command reads only:
-
-- `entry_id`
-- `retired_key` and `retired_id`
-- `desired_key` and `desired_id`
-
-The command never chooses or reverses a mapping. Each mapping must be approved before use.
+Approved mappings are recorded in `readme/audit/TagRetirements-2026-08.csv`. The command receives the two approved keys directly and never chooses or reverses a mapping.
 
 The first approved mapping is:
 
@@ -35,7 +29,7 @@ The old object and its pivots remain as tombstones so stale clients can resolve 
 The default is a read-only dry run:
 
 ```bash
-php artisan olm:migrate-tag --entry=other--plastic_bag
+php artisan olm:migrate-tag plastic_bag plasticBags
 ```
 
 It reports only the mapping, affected row count, total tag quantity, and up to five example photo IDs:
@@ -50,7 +44,7 @@ Example photo IDs: 123, 456, 789
 Apply the migration with:
 
 ```bash
-php artisan olm:migrate-tag --entry=other--plastic_bag --apply
+php artisan olm:migrate-tag plastic_bag plasticBags --apply
 ```
 
 ## Before applying

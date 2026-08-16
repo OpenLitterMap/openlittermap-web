@@ -14,33 +14,38 @@ use Illuminate\Support\Facades\DB;
 class MigrateTag extends Command
 {
     protected $signature = 'olm:migrate-tag
-        {--entry= : entry_id to operate on}
-        {--apply : execute the migration (dry-run by default)}
-        {--queue= : override the CSV file (relative to base_path)}';
+        {retired : litter object key to retire}
+        {desired : replacement litter object key}
+        {--apply : execute the migration (dry-run by default)}';
 
     protected $description = 'Retire one litter object and move its data to another.';
 
-    private const QUEUE = 'readme/audit/TagRetirements-2026-08.csv';
-
     public function handle(GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
     {
-        $entryId = (string) $this->option('entry');
+        $retiredKey = (string) $this->argument('retired');
+        $desiredKey = (string) $this->argument('desired');
+        $retiredId = DB::table('litter_objects')->where('key', $retiredKey)->value('id');
+        $desiredId = DB::table('litter_objects')->where('key', $desiredKey)->value('id');
 
-        if ($entryId === '') {
-            $this->error('--entry is required.');
-
-            return self::FAILURE;
-        }
-
-        $entry = $this->findEntry($entryId);
-
-        if ($entry === null) {
-            $this->error("Unknown entry: {$entryId}");
+        if ($retiredId === null) {
+            $this->error("Unknown litter object: {$retiredKey}");
 
             return self::FAILURE;
         }
 
-        $change = $this->measure((int) $entry['retired_id']);
+        if ($desiredId === null) {
+            $this->error("Unknown litter object: {$desiredKey}");
+
+            return self::FAILURE;
+        }
+
+        $entry = [
+            'retired_key' => $retiredKey,
+            'retired_id' => (int) $retiredId,
+            'desired_key' => $desiredKey,
+            'desired_id' => (int) $desiredId,
+        ];
+        $change = $this->measure((int) $retiredId);
         $this->report($entry, $change, !$this->option('apply'));
 
         if (!$this->option('apply')) {
@@ -70,7 +75,7 @@ class MigrateTag extends Command
     }
 
     /**
-     * @param array<string, string> $entry
+     * @param array{retired_key:string, retired_id:int, desired_key:string, desired_id:int} $entry
      * @param array{rows:int, tags:int, photo_ids:array<int, int>} $change
      */
     private function report(array $entry, array $change, bool $dryRun): void
@@ -84,7 +89,7 @@ class MigrateTag extends Command
         $this->line('Example photo IDs: ' . ($sample === [] ? 'none' : implode(', ', $sample)));
     }
 
-    /** @param array<string, string> $entry */
+    /** @param array{retired_key:string, retired_id:int, desired_key:string, desired_id:int} $entry */
     private function apply(
         array $entry,
         array $photoIds,
@@ -165,29 +170,4 @@ class MigrateTag extends Command
         }
     }
 
-    /** @return array<string, string>|null */
-    private function findEntry(string $entryId): ?array
-    {
-        $path = base_path($this->option('queue') ?: self::QUEUE);
-        $handle = fopen($path, 'r');
-        $header = fgetcsv($handle);
-
-        while (($values = fgetcsv($handle)) !== false) {
-            if (count($values) !== count($header)) {
-                continue;
-            }
-
-            $entry = array_combine($header, $values);
-
-            if ($entry['entry_id'] === $entryId) {
-                fclose($handle);
-
-                return $entry;
-            }
-        }
-
-        fclose($handle);
-
-        return null;
-    }
 }

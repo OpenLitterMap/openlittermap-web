@@ -18,8 +18,6 @@ use Tests\TestCase;
 
 class MigrateTagTest extends TestCase
 {
-    private const QUEUE = 'storage/framework/testing/tag-retirements.csv';
-
     private Category $category;
     private LitterObject $retired;
     private LitterObject $desired;
@@ -57,13 +55,6 @@ class MigrateTagTest extends TestCase
         ]);
 
         $this->photo->generateSummary();
-        $this->writeQueue();
-    }
-
-    protected function tearDown(): void
-    {
-        @unlink(base_path(self::QUEUE));
-        parent::tearDown();
     }
 
     public function test_dry_run_reports_the_change_without_applying_it(): void
@@ -149,33 +140,16 @@ class MigrateTagTest extends TestCase
     public function test_unknown_entry_fails(): void
     {
         $this->artisan('olm:migrate-tag', [
-            '--entry' => 'missing',
-            '--queue' => self::QUEUE,
+            'retired' => 'missing',
+            'desired' => 'plasticBags',
         ])->assertExitCode(1);
     }
 
     private function migrate(array $options = []): \Illuminate\Testing\PendingCommand
     {
         return $this->artisan('olm:migrate-tag', array_merge([
-            '--entry' => 'other--plastic_bag',
-            '--queue' => self::QUEUE,
+            'retired' => 'plastic_bag',
+            'desired' => 'plasticBags',
         ], $options));
-    }
-
-    private function writeQueue(): void
-    {
-        $row = [
-            'entry_id' => 'other--plastic_bag',
-            'retired_key' => 'plastic_bag',
-            'retired_id' => $this->retired->id,
-            'desired_key' => 'plasticBags',
-            'desired_id' => $this->desired->id,
-        ];
-
-        @mkdir(dirname(base_path(self::QUEUE)), 0777, true);
-        $handle = fopen(base_path(self::QUEUE), 'w');
-        fputcsv($handle, array_keys($row));
-        fputcsv($handle, array_values($row));
-        fclose($handle);
     }
 }
