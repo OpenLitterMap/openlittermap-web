@@ -173,14 +173,14 @@ The mobile app must join these to build a searchable index:
 
 ### Retired objects — a stale catalog keeps working
 
-An object can be retired and merged into a survivor (`plastic_bag` → `plasticBags`). Because a cached catalog cannot be refreshed on demand and an app release takes days to reach users, **the server accepts the retired `clo_id` and rewrites the tag onto the survivor** rather than rejecting it. Quantity, materials, brands, custom tags and `picked_up` are preserved; a `litter_object_type_id` that is not valid on the survivor is dropped. Chains resolve to the end (`A → B → C` lands on `C`).
+An object can be retired and merged into a survivor (`plastic_bag` → `plasticBags`). Because a cached catalog cannot be refreshed on demand and an app release takes days to reach users, **the server accepts the retired `clo_id` and rewrites the tag onto an existing approved survivor CLO** rather than rejecting it. API writes never create category/object relationships. Quantity, materials, brands, custom tags and `picked_up` are preserved; a `litter_object_type_id` that is not valid on the survivor is dropped. Chains resolve to the end (`A → B → C` lands on `C`) when the final survivor CLO exists in the submitted category.
 
 Consequences for the app:
 
 - **No client change is required** to keep tagging after a retirement.
 - A refreshed catalog no longer lists the retired key — `objects` and `category_objects` both exclude it — so the new key appears on the next fetch and the old one disappears from the picker.
 - The rewrite is silent: the response reflects the survivor, so a client that echoes back what it submitted will disagree with the server. Read `new_tags` from the photo rather than assuming the payload was stored verbatim.
-- Two cases still 422 (see `readme/API.md`): a retired object with no recorded survivor, and a `clo_id` that no longer exists at all. Both mean *refetch `/api/tags/all`*.
+- Three cases still 422 (see `readme/API.md`): a retired object with no recorded survivor, a missing approved survivor CLO in the submitted category, and a `clo_id` that no longer exists at all. All mean *refetch `/api/tags/all`*.
 - Quick tags behave the same way — `PUT /api/v3/user/quick-tags` remounts stale presets onto the survivor.
 
 ---

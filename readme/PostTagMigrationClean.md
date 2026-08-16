@@ -144,12 +144,11 @@ re-checked per entry.
 `ClassifyTagsService` is **never edited.** It is the historical record of what the v5 migration
 did, and under D-4's direction line 228 is already correct.
 
-> **Per-entry check — the remount keeps the client's category.** A stale write is rewritten onto
-> the survivor *in the category the client sent*, creating that pivot if it does not exist. Entry
-> 1 is safe because both keys live in `other` and A.2 creates the pivot anyway. For any entry that
-> also moves category — 10 of the manifest's rows do — a stale client would mint the survivor into
-> the **old** category and make that pairing selectable. Confirm the survivor's categories before
-> approving such an entry.
+> **API writes never create taxonomy relationships.** A stale write can remount only when the
+> survivor already has a CLO in the category the client sent. The approved migration is the sole
+> owner of survivor-pivot creation (A.2); if that pivot is missing, photo-tag and quick-tag writes
+> fail with 422 rather than minting an unapproved category/object pairing. Entry 1 is safe because
+> both keys live in `other` and A.2 creates `(other, plasticBags)` before data moves.
 
 ### C — prove the new key is used everywhere
 
@@ -393,6 +392,15 @@ Likely candidates are photos whose `processed_tags` object map does not sum to t
    `litter_objects.key` or `summary.object_id` may be showing users a raw key today — e.g.
    `plasticBags` instead of "Plastic Bag". Unchecked: map popups, profile tag breakdowns, mobile
    tag display, achievements.
+6. **[non-blocking, future]** **No category reassignment — the survivor inherits the retired
+   object's category.** Moved rows keep their original `category_id`, and every rewrite
+   (`repointRows`, `remountLingeringCloReferences`, `ensureDesiredPivot`) assumes one unchanged
+   category; `supportedScope()` enforces it by refusing any object tagged across more than one
+   category. A future entry may need to retire a key *into a different* category (a category move
+   folded into the retirement). Lifting this requires rewriting `photo_tags.category_id`,
+   resolving/creating the destination CLO in the new category, re-pointing the object's
+   metrics/Redis scopes to that category, and re-checking XP weighting under the destination
+   category. Out of scope for v1 — note it before scheduling any cross-category entry.
 
 ---
 

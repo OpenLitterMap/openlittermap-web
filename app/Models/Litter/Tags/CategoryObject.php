@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -55,9 +54,10 @@ class CategoryObject extends Pivot
 
     /**
      * The CLO this write should land on. When the litter object is retired, returns
-     * the CLO pairing the same category with the active object it merged into,
-     * creating that row if it is missing. No active object returns null so the
-     * caller can 422.
+     * the existing CLO pairing the same category with the active object it merged into.
+     * API writes never create taxonomy relationships: the approved migration owns survivor
+     * pivot creation. No active object or no approved survivor CLO returns null so the caller
+     * can 422.
      */
     public function resolveActiveClo(): ?self
     {
@@ -79,19 +79,9 @@ class CategoryObject extends Pivot
             return $this;
         }
 
-        $attrs = [
-            'category_id' => $this->category_id,
-            'litter_object_id' => $activeLitterObject->id,
-        ];
-
-        try {
-            return static::firstOrCreate($attrs, [
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        } catch (UniqueConstraintViolationException) {
-            return static::where($attrs)->first();
-        }
+        return static::where('category_id', $this->category_id)
+            ->where('litter_object_id', $activeLitterObject->id)
+            ->first();
     }
 
     /**

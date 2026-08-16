@@ -287,7 +287,7 @@ The `unclassified` system category is NOT in `TagsConfig`; it is created by `Gen
 Consequences to respect anywhere you touch objects:
 
 - **Reads must filter.** Use `LitterObject::active()`, or `whereHas('litterObject', fn ($q) => $q->active())` when starting from `CategoryObject`. `/api/tags`, `/api/tags/all` (its `objects` and `category_objects` arrays) and `/api/v3/user/top-tags` all do. `category_object_types` is deliberately unfiltered: its rows are keyed by CLO, every consumer resolves the CLO through `category_objects` first, and rows for a retired pivot are therefore unreachable.
-- **Writes remount.** `AddTagsToPhotoAction` (CLO and legacy) and `SyncQuickTagsAction` rewrite a retired+merged id onto the survivor in the same category. Mobile cannot ship a catalog refresh and caches `/api/tags/all` for 7 days — a 422 would leave tagged photos stuck in the inbox. Retired with no `merged_into_id` still 422s.
+- **Writes remount onto approved pivots only.** `AddTagsToPhotoAction` (CLO and legacy) and `SyncQuickTagsAction` rewrite a retired+merged id onto an existing survivor CLO in the same category. They never create category/object relationships; the approved migration owns survivor-pivot creation. Mobile cannot ship a catalog refresh and caches `/api/tags/all` for 7 days, but a missing survivor CLO or missing `merged_into_id` still 422s.
 - **`firstOrCreate` paths must not resurrect.** `AutoCreateBrandRelationships` and `GenerateTagsSeeder` skip retired keys — both create an object *and* a pivot, so either would silently undo a retirement.
 
 The retirement itself runs one approved entry at a time through `olm:migrate-tag`. Process, verification surfaces and the production write-freeze runbook: `readme/PostTagMigrationClean.md`.

@@ -689,6 +689,39 @@ class QuickTagsApiTest extends TestCase
         ]);
     }
 
+    public function test_sync_cannot_create_a_missing_survivor_clo(): void
+    {
+        $user = User::factory()->create();
+        $keptClo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($keptClo)],
+            ])->assertOk();
+
+        $catId = DB::table('categories')->insertGetId(['key' => 'smoking_' . uniqid()]);
+        $retiredObj = DB::table('litter_objects')->insertGetId(['key' => 'old_' . uniqid()]);
+        $survivorObj = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $retiredClo = $this->getCloId($catId, $retiredObj);
+
+        $this->retireObjectBehind($retiredClo, $survivorObj);
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($retiredClo)],
+            ])
+            ->assertStatus(422);
+
+        $this->assertDatabaseMissing('category_litter_object', [
+            'category_id' => $catId,
+            'litter_object_id' => $survivorObj,
+        ]);
+
+        $rows = DB::table('user_quick_tags')->where('user_id', $user->id)->get();
+        $this->assertCount(1, $rows);
+        $this->assertSame($keptClo, (int) $rows->first()->clo_id);
+    }
+
     /**
      * Retired with no survivor still 422s, and that refusal is ahead of the
      * delete so a bulk-replace cannot wipe the user's existing presets.

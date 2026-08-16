@@ -88,9 +88,10 @@ class AddTagsToPhotoAction
      * Replace retired category_litter_object_id with activeCloId.
      *
      * Stale clients (mobile caches `/api/tags/all` for 7 days and cannot ship) still submit a
-     * CLO whose litter object is retired. Remount onto the CLO for the active object in the
-     * same category so the write lands on the living key. A retired object with no
-     * `merged_into_id` still 422s — nowhere to send it.
+     * CLO whose litter object is retired. Remount onto an existing, approved CLO for the active
+     * object in the same category so the write lands on the living key. API writes never create
+     * taxonomy relationships. A retired object with no `merged_into_id`, or without an approved
+     * target CLO, still 422s.
      *
      * @param  array<int, array<string, mixed>>  $tags
      * @return array<int, array<string, mixed>>
@@ -278,12 +279,13 @@ class AddTagsToPhotoAction
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
-        // Same remount as the CLO path, but object-level: a stale
-        // `{ object: "plastic_bag" }` lands on the active litter object.
-        // Retired with no merge still 422s.
-        $remounted = false;
+        // Same lookup-only remount as the CLO path, but object-level: a stale
+        // `{ object: "plastic_bag" }` lands on an existing approved CLO for the active object.
+        // Retired with no merge or no approved target CLO still 422s.
+        $remountedFrom = null;
 
         if ($object?->isRetired()) {
+            $remountedFrom = $object->key;
             $active = $object->activeObject();
 
             if ($active === null) {
@@ -291,22 +293,20 @@ class AddTagsToPhotoAction
             }
 
             $object = $active;
-            $remounted = true;
         }
 
         // Resolve CLO from category + object
         $clo = null;
         if ($category && $object) {
-            $clo = $remounted
-                ? CategoryObject::firstOrCreate([
-                    'category_id' => $category->id,
-                    'litter_object_id' => $object->id,
-                ])
-                : CategoryObject::where('category_id', $category->id)
-                    ->where('litter_object_id', $object->id)
-                    ->first();
+            $clo = CategoryObject::where('category_id', $category->id)
+                ->where('litter_object_id', $object->id)
+                ->first();
 
             if (! $clo) {
+                if ($remountedFrom !== null) {
+                    $this->rejectRetiredObject($remountedFrom);
+                }
+
                 throw ValidationException::withMessages([
                     'tags' => [[
                         'msg' => 'Category does not contain object',

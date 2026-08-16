@@ -611,6 +611,10 @@ class MigrateTagTest extends TestCase
     public function test_a_stale_retired_clo_is_written_as_the_survivor(): void
     {
         $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+        $desiredClo = CategoryObject::create([
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
 
         $user = User::factory()->create();
         $photo = Photo::factory()->create(['user_id' => $user->id]);
@@ -628,6 +632,7 @@ class MigrateTagTest extends TestCase
         $this->assertDatabaseHas('photo_tags', [
             'photo_id' => $photo->id,
             'litter_object_id' => $this->desired->id,
+            'category_litter_object_id' => $desiredClo->id,
         ]);
         $this->assertDatabaseMissing('photo_tags', [
             'photo_id' => $photo->id,
@@ -638,6 +643,10 @@ class MigrateTagTest extends TestCase
     public function test_legacy_payload_of_a_retired_object_is_written_as_the_survivor(): void
     {
         $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+        $desiredClo = CategoryObject::create([
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
 
         $user = User::factory()->create();
         $photo = Photo::factory()->create(['user_id' => $user->id]);
@@ -656,7 +665,57 @@ class MigrateTagTest extends TestCase
         $this->assertDatabaseHas('photo_tags', [
             'photo_id' => $photo->id,
             'litter_object_id' => $this->desired->id,
+            'category_litter_object_id' => $desiredClo->id,
         ]);
+    }
+
+    public function test_a_stale_retired_clo_cannot_create_a_missing_survivor_pivot(): void
+    {
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->postJson('/api/v3/tags', [
+                'photo_id' => $photo->id,
+                'tags' => [[
+                    'category_litter_object_id' => $this->retiredClo->id,
+                    'quantity' => 1,
+                ]],
+            ])
+            ->assertStatus(422);
+
+        $this->assertDatabaseMissing('category_litter_object', [
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
+        $this->assertSame(0, DB::table('photo_tags')->where('photo_id', $photo->id)->count());
+    }
+
+    public function test_a_legacy_retired_key_cannot_create_a_missing_survivor_pivot(): void
+    {
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->postJson('/api/v3/tags', [
+                'photo_id' => $photo->id,
+                'tags' => [[
+                    'category' => 'other',
+                    'object' => 'plastic_bag',
+                    'quantity' => 1,
+                ]],
+            ])
+            ->assertStatus(422);
+
+        $this->assertDatabaseMissing('category_litter_object', [
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
+        $this->assertSame(0, DB::table('photo_tags')->where('photo_id', $photo->id)->count());
     }
 
     public function test_a_retired_object_with_no_survivor_is_still_refused(): void

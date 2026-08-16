@@ -240,6 +240,12 @@ class MigrateTag extends Command
 
         // Both objects must sit in exactly the one category this entry names. A key tagged in
         // several categories is a different, unimplemented transformation.
+        //
+        // TODO (future): support retiring a key INTO a different category. Today the survivor
+        // inherits the retired object's category_id; a category move folded into a retirement
+        // needs photo_tags.category_id rewritten, the destination CLO resolved/created in the new
+        // category, the object's metrics/Redis scopes re-pointed, and XP re-checked under the new
+        // category. See readme/PostTagMigrationClean.md §9 (item 6).
         foreach (['retired_id', 'desired_id'] as $field) {
             $categories = DB::table('photo_tags')
                 ->where('litter_object_id', (int) $entry[$field])

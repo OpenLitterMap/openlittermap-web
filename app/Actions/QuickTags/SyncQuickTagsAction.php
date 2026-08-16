@@ -53,7 +53,8 @@ class SyncQuickTagsAction
     }
 
     /**
-     * Replace retired clo_id with activeCloId.
+     * Replace retired clo_id with an existing approved active CLO. Normal API writes never
+     * create category/object relationships; a missing target is refused before the bulk delete.
      *
      * @param  array<int, array{clo_id: int}>  $tags
      * @return array<int, array{clo_id: int}>

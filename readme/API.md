@@ -469,7 +469,7 @@ When a user selects "wine", you submit `category_litter_object_id: 42, litter_ob
 | `tags.*.brands` | int[]\|object[] | optional | Plain IDs `[10]` (qty=1) or objects `[{"id": 10, "quantity": 3}]` for per-brand quantity. |
 | `tags.*.custom_tags` | string[] | optional | Free text. Sanitized server-side (`strip_tags` + `trim`), accepts any characters incl. `& . ' /`, capped to 255 chars (`custom_tags_new.key`). Empty-after-sanitize entries are silently skipped — never rejected. |
 
-**Retired objects are remounted, not refused.** A retired CLO that has a `merged_into_id` is rewritten onto the survivor in the same category (POST/PUT `/api/v3/tags` and `PUT /api/v3/user/quick-tags`). The picker still hides the retired key; a stale mobile catalog (cached 7 days, cannot ship) can keep submitting the old id and the write lands on `plasticBags`. Quantity, materials, brands and custom tags are preserved. A type that is not valid on the survivor is dropped.
+**Retired objects remount only onto an existing approved CLO.** A retired CLO that has a `merged_into_id` is rewritten onto the survivor in the same category (POST/PUT `/api/v3/tags` and `PUT /api/v3/user/quick-tags`) only when that survivor CLO already exists. API writes never create category/object relationships; a missing survivor CLO returns 422. The picker still hides the retired key; a stale mobile catalog (cached 7 days, cannot ship) can keep submitting the old id after the approved migration creates the target pivot, and the write lands on `plasticBags`. Quantity, materials, brands and custom tags are preserved. A type that is not valid on the survivor is dropped.
 
 **Still 422:**
 
