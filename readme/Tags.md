@@ -290,7 +290,7 @@ Consequences to respect anywhere you touch objects:
 - **Writes remount onto approved pivots only.** `AddTagsToPhotoAction` (CLO and legacy) and `SyncQuickTagsAction` rewrite a retired+merged id onto an existing survivor CLO in the same category. They never create category/object relationships; the approved migration owns survivor-pivot creation. Mobile cannot ship a catalog refresh and caches `/api/tags/all` for 7 days, but a missing survivor CLO or missing `merged_into_id` still 422s.
 - **`firstOrCreate` paths must not resurrect.** `AutoCreateBrandRelationships` and `GenerateTagsSeeder` skip retired keys — both create an object *and* a pivot, so either would silently undo a retirement.
 
-The retirement itself runs one approved entry at a time through `olm:migrate-tag`. Process, verification surfaces and the production write-freeze runbook: `readme/PostTagMigrationClean.md`.
+The retirement itself runs one approved entry at a time through `olm:migrate-tag`. Process and production runbook: `readme/PostTagMigrationClean.md`.
 
 ### Shared objects (multi-category via pivot)
 

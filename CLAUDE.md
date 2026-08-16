@@ -226,8 +226,6 @@ Add a `## Session — <short title> (vX.Y.Z)` section with:
 - Extra detail only for breaking changes, migrations, or manual deployment steps.
 - Related details in the relevant `readme/*.md` document, linked once if useful.
 
-Example: `- Retired plastic_bag into plasticBags; retired objects refused on write and hidden in picker — v5.14.0`
-
 ### Public notes
 For a genuinely user-facing release, add one `## Public` block directly below the date title:
 
