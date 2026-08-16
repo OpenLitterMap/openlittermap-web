@@ -75,6 +75,7 @@ class MigrateTagTest extends TestCase
     {
         $this->migrate(['--apply' => true])
             ->expectsOutputToContain('APPLY: plastic_bag')
+            ->expectsOutputToContain('1/1 rows')
             ->assertExitCode(0);
 
         $retired = $this->retired->fresh();

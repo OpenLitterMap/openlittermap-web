@@ -69,7 +69,7 @@ class MigrateTag extends Command
             return self::FAILURE;
         }
 
-        return $this->apply($entry, $summaries, $metrics)
+        return $this->apply($entry, $change['rows'], $summaries, $metrics)
             ? self::SUCCESS
             : self::FAILURE;
     }
@@ -162,27 +162,32 @@ class MigrateTag extends Command
     /** @param array{retired_key:string, retired_id:int, desired_key:string, desired_id:int} $entry */
     private function apply(
         array $entry,
+        int $totalRows,
         GeneratePhotoSummaryService $summaries,
         MetricsService $metrics,
     ): bool {
         $retiredId = (int) $entry['retired_id'];
         $desiredId = (int) $entry['desired_id'];
+        $progress = $this->output->createProgressBar($totalRows);
+        $progress->setFormat(' %current%/%max% rows [%bar%] %percent:3s%% %elapsed:6s%');
+        $progress->start();
 
         try {
             $pivots = $this->prepareRetirement($retiredId, $desiredId);
 
             Photo::withTrashed()
                 ->whereHas('photoTags', fn ($query) => $query->where('litter_object_id', $retiredId))
-                ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaries, $metrics): void {
+                ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaries, $metrics, $progress): void {
                     if (!$this->redisIsReachable()) {
                         throw new \RuntimeException('Redis became unavailable.');
                     }
 
-                    DB::transaction(function () use ($photos, $retiredId, $desiredId, $pivots, $summaries, $metrics): void {
+                    $moved = DB::transaction(function () use ($photos, $retiredId, $desiredId, $pivots, $summaries, $metrics): int {
                         $photoIds = $photos->pluck('id');
+                        $moved = 0;
 
                         foreach ($pivots as $categoryId => $desiredCloId) {
-                            DB::table('photo_tags')
+                            $moved += DB::table('photo_tags')
                                 ->whereIn('photo_id', $photoIds)
                                 ->where('litter_object_id', $retiredId)
                                 ->where('category_id', $categoryId)
@@ -192,7 +197,7 @@ class MigrateTag extends Command
                                 ]);
                         }
 
-                        DB::table('photo_tags')
+                        $moved += DB::table('photo_tags')
                             ->whereIn('photo_id', $photoIds)
                             ->where('litter_object_id', $retiredId)
                             ->whereNull('category_id')
@@ -212,13 +217,21 @@ class MigrateTag extends Command
                                 $metrics->processPhoto($photo);
                             }
                         }
+
+                        return $moved;
                     });
+
+                    $progress->advance($moved);
                 });
         } catch (Throwable $e) {
+            $this->newLine();
             $this->error('Migration stopped: ' . $e->getMessage());
 
             return false;
         }
+
+        $progress->finish();
+        $this->newLine();
 
         return true;
     }

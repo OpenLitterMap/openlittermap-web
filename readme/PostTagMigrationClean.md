@@ -51,6 +51,8 @@ Apply the migration with:
 php artisan olm:migrate-tag plastic_bag plasticBags --apply
 ```
 
+During apply, a progress bar shows the number of durably migrated rows.
+
 ## Before applying
 
 - Update `TagsConfig`, `BrandsConfig`, translations, and documentation for the approved mapping.
