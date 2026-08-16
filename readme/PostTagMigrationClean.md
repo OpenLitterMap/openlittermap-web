@@ -23,6 +23,10 @@ For one entry, the command:
 5. Reprocesses metrics for affected live, previously processed photos.
 
 The old object and its pivots remain as tombstones so stale clients can resolve the retirement.
+Photos are processed in atomic batches of 200. A failed batch rolls back and can be rerun.
+
+The command refuses self-migrations, retired replacements, conflicting existing retirements,
+different XP weights, and typed tags.
 
 ## Usage
 
@@ -52,6 +56,7 @@ php artisan olm:migrate-tag plastic_bag plasticBags --apply
 - Update `TagsConfig`, `BrandsConfig`, translations, and documentation for the approved mapping.
 - Put every web node into maintenance mode and drain in-flight tag writes.
 - Back up MySQL and run the dry run against the exact database and code being deployed.
+- Confirm Redis is available; `--apply` also checks it before starting and before every batch.
 - Confirm the reported counts and example photos match the approved mapping.
 
 ## After applying
@@ -63,7 +68,7 @@ Check that:
 - Affected summaries and Redis object counts use Tag B.
 - Picker, location, profile, and export surfaces no longer expose Tag A.
 
-The command intentionally has no lifecycle manager, snapshot files, repair mode, or verification mode. If an apply fails, stop and inspect the database before running anything again.
+The command intentionally has no lifecycle manager, snapshot files, repair mode, or verification mode. If an apply fails, inspect the database and Redis before rerunning it. MySQL batches are resumable, but Redis is not transactionally coupled to MySQL and still requires the checks above.
 
 ## Scope
 

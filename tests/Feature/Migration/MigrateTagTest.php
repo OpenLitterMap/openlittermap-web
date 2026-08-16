@@ -11,6 +11,7 @@ use App\Models\Photo;
 use App\Models\Users\User;
 use App\Services\Metrics\MetricsService;
 use App\Services\Redis\RedisKeys;
+use App\Services\Tags\GeneratePhotoSummaryService;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -137,7 +138,71 @@ class MigrateTagTest extends TestCase
         $this->assertSame(7, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->desired->id));
     }
 
-    public function test_unknown_entry_fails(): void
+    public function test_apply_processes_more_than_one_photo_batch(): void
+    {
+        $photos = Photo::factory()->count(200)->create([
+            'verified' => 2,
+            'user_id' => $this->photo->user_id,
+            'country_id' => null,
+            'state_id' => null,
+        ]);
+        $now = now();
+
+        DB::table('photo_tags')->insert($photos->map(fn (Photo $photo) => [
+            'photo_id' => $photo->id,
+            'category_id' => $this->category->id,
+            'litter_object_id' => $this->retired->id,
+            'category_litter_object_id' => $this->retiredClo->id,
+            'quantity' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->all());
+
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+
+        $this->assertSame(0, PhotoTag::where('litter_object_id', $this->retired->id)->count());
+        $this->assertSame(201, PhotoTag::where('litter_object_id', $this->desired->id)->count());
+        $this->assertArrayHasKey($this->desired->id, $photos->last()->fresh()->summary['keys']['objects']);
+    }
+
+    public function test_a_failed_batch_can_be_rerun(): void
+    {
+        $this->app->instance(GeneratePhotoSummaryService::class, new class extends GeneratePhotoSummaryService
+        {
+            public function run(Photo $photo): Photo
+            {
+                throw new \RuntimeException('summary failed');
+            }
+        });
+
+        $this->migrate(['--apply' => true])
+            ->expectsOutputToContain('Migration stopped: summary failed')
+            ->assertExitCode(1);
+
+        $this->assertSame($this->retired->id, $this->tag->fresh()->litter_object_id);
+
+        $this->app->instance(GeneratePhotoSummaryService::class, new GeneratePhotoSummaryService());
+
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->assertSame($this->desired->id, $this->tag->fresh()->litter_object_id);
+    }
+
+    public function test_invalid_mappings_fail_without_changes(): void
+    {
+        $this->artisan('olm:migrate-tag', [
+            'retired' => 'plastic_bag',
+            'desired' => 'plastic_bag',
+            '--apply' => true,
+        ])->assertExitCode(1);
+
+        $this->desired->update(['retired_at' => now()]);
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+
+        $this->assertNull($this->retired->fresh()->retired_at);
+        $this->assertSame($this->retired->id, $this->tag->fresh()->litter_object_id);
+    }
+
+    public function test_unknown_tag_fails(): void
     {
         $this->artisan('olm:migrate-tag', [
             'retired' => 'missing',

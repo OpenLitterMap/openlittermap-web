@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\tmp\v5\PostMigAug2026;
 
+use App\Enums\XpScore;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
 use App\Services\Tags\GeneratePhotoSummaryService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
+use Throwable;
 
 /** Retires one approved litter object in favour of another. */
 class MigrateTag extends Command
@@ -24,31 +27,102 @@ class MigrateTag extends Command
     {
         $retiredKey = (string) $this->argument('retired');
         $desiredKey = (string) $this->argument('desired');
-        $retiredId = DB::table('litter_objects')->where('key', $retiredKey)->value('id');
-        $desiredId = DB::table('litter_objects')->where('key', $desiredKey)->value('id');
+        $retired = DB::table('litter_objects')
+            ->where('key', $retiredKey)
+            ->select('id', 'retired_at', 'merged_into_id')
+            ->first();
+        $desired = DB::table('litter_objects')
+            ->where('key', $desiredKey)
+            ->select('id', 'retired_at')
+            ->first();
 
-        if ($retiredId === null || $desiredId === null) {
+        if ($retired === null) {
+            $this->error("Unknown litter object: {$retiredKey}");
+
+            return self::FAILURE;
+        }
+
+        if ($desired === null) {
             $this->error("Unknown litter object: {$desiredKey}");
 
             return self::FAILURE;
         }
 
+        if (!$this->mappingIsValid($retiredKey, $retired, $desiredKey, $desired)) {
+            return self::FAILURE;
+        }
+
         $entry = [
             'retired_key' => $retiredKey,
-            'retired_id' => (int) $retiredId,
+            'retired_id' => (int) $retired->id,
             'desired_key' => $desiredKey,
-            'desired_id' => (int) $desiredId,
+            'desired_id' => (int) $desired->id,
         ];
-        $change = $this->measure((int) $retiredId);
+        $change = $this->measure((int) $retired->id);
         $this->report($entry, $change, !$this->option('apply'));
 
         if (!$this->option('apply')) {
             return self::SUCCESS;
         }
 
-        $this->apply($entry, $summaries, $metrics);
+        if (!$this->redisIsReachable()) {
+            return self::FAILURE;
+        }
 
-        return self::SUCCESS;
+        return $this->apply($entry, $summaries, $metrics)
+            ? self::SUCCESS
+            : self::FAILURE;
+    }
+
+    private function mappingIsValid(string $retiredKey, object $retired, string $desiredKey, object $desired): bool
+    {
+        if ((int) $retired->id === (int) $desired->id) {
+            $this->error('The retired and replacement tags must be different.');
+
+            return false;
+        }
+
+        if ($desired->retired_at !== null) {
+            $this->error("Replacement tag {$desiredKey} is already retired.");
+
+            return false;
+        }
+
+        if ($retired->retired_at !== null && (int) $retired->merged_into_id !== (int) $desired->id) {
+            $this->error("Tag {$retiredKey} already points to a different replacement.");
+
+            return false;
+        }
+
+        if (XpScore::getObjectXp($retiredKey) !== XpScore::getObjectXp($desiredKey)) {
+            $this->error('The two tags have different XP values.');
+
+            return false;
+        }
+
+        if (DB::table('photo_tags')
+            ->where('litter_object_id', $retired->id)
+            ->whereNotNull('litter_object_type_id')
+            ->exists()) {
+            $this->error('Typed tags require a separate migration.');
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function redisIsReachable(): bool
+    {
+        try {
+            Redis::ping();
+
+            return true;
+        } catch (Throwable $e) {
+            $this->error('Redis is unavailable: ' . $e->getMessage());
+
+            return false;
+        }
     }
 
     /** @return array{rows:int, tags:int, example_photo_ids:array<int, int>} */
@@ -90,11 +164,69 @@ class MigrateTag extends Command
         array $entry,
         GeneratePhotoSummaryService $summaries,
         MetricsService $metrics,
-    ): void {
+    ): bool {
         $retiredId = (int) $entry['retired_id'];
         $desiredId = (int) $entry['desired_id'];
 
-        $pivots = DB::transaction(function () use ($retiredId, $desiredId): array {
+        try {
+            $pivots = $this->prepareRetirement($retiredId, $desiredId);
+
+            Photo::withTrashed()
+                ->whereHas('photoTags', fn ($query) => $query->where('litter_object_id', $retiredId))
+                ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaries, $metrics): void {
+                    if (!$this->redisIsReachable()) {
+                        throw new \RuntimeException('Redis became unavailable.');
+                    }
+
+                    DB::transaction(function () use ($photos, $retiredId, $desiredId, $pivots, $summaries, $metrics): void {
+                        $photoIds = $photos->pluck('id');
+
+                        foreach ($pivots as $categoryId => $desiredCloId) {
+                            DB::table('photo_tags')
+                                ->whereIn('photo_id', $photoIds)
+                                ->where('litter_object_id', $retiredId)
+                                ->where('category_id', $categoryId)
+                                ->update([
+                                    'litter_object_id' => $desiredId,
+                                    'category_litter_object_id' => $desiredCloId,
+                                ]);
+                        }
+
+                        DB::table('photo_tags')
+                            ->whereIn('photo_id', $photoIds)
+                            ->where('litter_object_id', $retiredId)
+                            ->whereNull('category_id')
+                            ->update(['litter_object_id' => $desiredId]);
+
+                        $photos->load([
+                            'photoTags.category',
+                            'photoTags.object',
+                            'photoTags.type',
+                            'photoTags.extraTags.extraTag',
+                        ]);
+
+                        foreach ($photos as $photo) {
+                            $summaries->run($photo);
+
+                            if ($photo->processed_at !== null && $photo->deleted_at === null) {
+                                $metrics->processPhoto($photo);
+                            }
+                        }
+                    });
+                });
+        } catch (Throwable $e) {
+            $this->error('Migration stopped: ' . $e->getMessage());
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @return array<int, int> category id => replacement CLO id */
+    private function prepareRetirement(int $retiredId, int $desiredId): array
+    {
+        return DB::transaction(function () use ($retiredId, $desiredId): array {
             DB::table('litter_objects')
                 ->where('id', $retiredId)
                 ->update([
@@ -145,38 +277,5 @@ class MigrateTag extends Command
 
             return $pivots;
         });
-
-        Photo::withTrashed()
-            ->whereHas('photoTags', fn ($query) => $query->where('litter_object_id', $retiredId))
-            ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaries, $metrics): void {
-                $photoIds = $photos->pluck('id');
-
-                DB::transaction(function () use ($photoIds, $retiredId, $desiredId, $pivots): void {
-                    foreach ($pivots as $categoryId => $desiredCloId) {
-                        DB::table('photo_tags')
-                            ->whereIn('photo_id', $photoIds)
-                            ->where('litter_object_id', $retiredId)
-                            ->where('category_id', $categoryId)
-                            ->update([
-                                'litter_object_id' => $desiredId,
-                                'category_litter_object_id' => $desiredCloId,
-                            ]);
-                    }
-
-                    DB::table('photo_tags')
-                        ->whereIn('photo_id', $photoIds)
-                        ->where('litter_object_id', $retiredId)
-                        ->whereNull('category_id')
-                        ->update(['litter_object_id' => $desiredId]);
-                });
-
-                foreach ($photos as $photo) {
-                    $summaries->run($photo);
-
-                    if ($photo->processed_at !== null && $photo->deleted_at === null) {
-                        $metrics->processPhoto($photo);
-                    }
-                }
-            });
     }
 }

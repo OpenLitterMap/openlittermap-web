@@ -47,9 +47,11 @@ class GeneratePhotoSummaryService
 {
     public function run(Photo $photo): Photo
     {
-        $photoTags = $photo->photoTags()
-            ->with(['category', 'object', 'type', 'extraTags.extraTag'])
-            ->get();
+        $photoTags = $photo->relationLoaded('photoTags')
+            ? $photo->photoTags
+            : $photo->photoTags()
+                ->with(['category', 'object', 'type', 'extraTags.extraTag'])
+                ->get();
 
         $tags = [];
         $totalObjects = 0;
