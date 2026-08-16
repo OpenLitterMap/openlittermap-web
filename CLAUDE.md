@@ -217,28 +217,26 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/ViteUpgradePlan.md` — Vite 8 / Rolldown upgrade plan (why the 6→8 bump was reverted, CJS/UMD interop root cause, at-risk deps, fix options, de-risk path, readiness checklist)
 
 ## Daily Changelog
-Append to `readme/changelog/YYYY-MM-DD.md` under `## Session — <short title> (vX.Y.Z)`.
+Use one `readme/changelog/YYYY-MM-DD.md` file per deliverable, dated the day it lands. For multi-day work, keep updating that file instead of creating daily entries.
 
-**Shortest possible summary. Critical information only.**
-- One line per change, **~15 words max**. What changed — nothing else. End with `— v5.14.0`.
-- Never include: rationale, decisions, measurements, counts, file paths, line numbers, class/method names, test results, review narrative, "deliberately kept" / "considered and rejected" notes. Detail belongs in the domain doc (`readme/*.md`) — link it once at most.
-- **Prefer fewer lines.** If two changes are one story, they are one line. A whole session of refactoring is one line.
-- The only things that earn extra words are what a reader must not miss: **breaking changes, required migrations, and manual deploy/run steps.** State them in a sentence.
-- Right: `- Retired plastic_bag into plasticBags; retired objects refused on write, hidden in picker — v5.14.0`
-- Wrong: `- Retired plastic_bag (92) into plasticBags (149) — decision D-4, product-owner approved, inverting the direction TagMigrationQueue assumed; 253 rows moved, verified across 1,646 Redis scopes; MigrateTagTest 55 passing — v5.14.0`
+Add a `## Session — <short title> (vX.Y.Z)` section with:
 
-**One file per deliverable.** A branch or feature spanning several days gets ONE changelog file, dated the day it lands. Fold earlier days into it as work continues; never leave a trail of daily files for one piece of work.
+- One line per change, about 15 words or fewer, ending with `— vX.Y.Z`.
+- Only what changed. Omit rationale, implementation details, measurements, file paths, tests, and review notes.
+- Extra detail only for breaking changes, migrations, or manual deployment steps.
+- Related details in the relevant `readme/*.md` document, linked once if useful.
 
-### `## Public` block (what OLMbot posts)
-A changelog file MAY include a single `## Public` block — curated, plain-language release notes that the `twitter:changelog` bot posts to the social feeds (Bluesky; X gated off). Rules:
-- **Audience:** OLM users, educators/schools, the citizen-science community, funders. NOT contributors — they read the PR. No file paths, class/function names, route/throttle internals. If a teacher couldn't follow it, rewrite it.
-- **0–3 plain-language points written as tight prose** (not a bullet list). The whole post must fit ONE Bluesky post (300 chars) — write to that ceiling. If it genuinely needs more it threads, but one post under 300 is the default unit.
-- **Lead with what matters most to an observer:** privacy/safeguarding and access changes first, usability/speed after.
-- **One `## Public` per release, on the day the release lands.** A multi-day feature gets a single public post on its completion day — do NOT fragment it across each day the work spanned (that re-buries the headline change). When the release day arrives, consolidate the user-facing story into one block and leave the earlier days' blocks absent.
-- **Silence is correct and expected.** Most days are internal-only — leave the block absent and the bot posts nothing. Only add it when something is genuinely user-facing. The detailed session entries above stay as the internal record regardless.
-- The block runs from the `## Public` heading to the next heading; place it directly under the `# YYYY-MM-DD` title. See `readme/changelog/2026-06-27.md`, `2026-06-28.md`, `2026-05-04.md` for worked examples.
+Example: `- Retired plastic_bag into plasticBags; retired objects refused on write and hidden in picker — v5.14.0`
 
-The mobile app (react-native) repo follows the same `## Public` convention in its own changelog; the bot fetches that file and adds a second post on days both have content (mobile after web). Mobile blocks self-label (e.g. "OpenLitterMap app update 📱…").
+### Public notes
+For a genuinely user-facing release, add one `## Public` block directly below the date title:
+
+- Write 0–3 plain-language prose points for users, educators, citizen scientists, and funders.
+- Keep the entire block within 300 characters for one Bluesky post.
+- Lead with privacy, safeguarding, or access changes, then usability or speed.
+- Add it only on the release day; omit it for internal-only work.
+
+The mobile repo uses the same convention, but its public block must identify itself as a mobile update.
 
 ## Versioning
 - The single source of truth for the app version is `package.json` `"version"` field
