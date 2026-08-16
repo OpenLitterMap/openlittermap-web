@@ -27,13 +27,7 @@ class MigrateTag extends Command
         $retiredId = DB::table('litter_objects')->where('key', $retiredKey)->value('id');
         $desiredId = DB::table('litter_objects')->where('key', $desiredKey)->value('id');
 
-        if ($retiredId === null) {
-            $this->error("Unknown litter object: {$retiredKey}");
-
-            return self::FAILURE;
-        }
-
-        if ($desiredId === null) {
+        if ($retiredId === null || $desiredId === null) {
             $this->error("Unknown litter object: {$desiredKey}");
 
             return self::FAILURE;
@@ -52,12 +46,12 @@ class MigrateTag extends Command
             return self::SUCCESS;
         }
 
-        $this->apply($entry, $change['photo_ids'], $summaries, $metrics);
+        $this->apply($entry, $summaries, $metrics);
 
         return self::SUCCESS;
     }
 
-    /** @return array{rows:int, tags:int, photo_ids:array<int, int>} */
+    /** @return array{rows:int, tags:int, example_photo_ids:array<int, int>} */
     private function measure(int $retiredId): array
     {
         $query = DB::table('photo_tags')->where('litter_object_id', $retiredId);
@@ -65,9 +59,10 @@ class MigrateTag extends Command
         return [
             'rows' => (clone $query)->count(),
             'tags' => (int) (clone $query)->sum('quantity'),
-            'photo_ids' => (clone $query)
+            'example_photo_ids' => (clone $query)
                 ->distinct()
                 ->orderBy('photo_id')
+                ->limit(5)
                 ->pluck('photo_id')
                 ->map('intval')
                 ->all(),
@@ -76,30 +71,30 @@ class MigrateTag extends Command
 
     /**
      * @param array{retired_key:string, retired_id:int, desired_key:string, desired_id:int} $entry
-     * @param array{rows:int, tags:int, photo_ids:array<int, int>} $change
+     * @param array{rows:int, tags:int, example_photo_ids:array<int, int>} $change
      */
     private function report(array $entry, array $change, bool $dryRun): void
     {
         $mode = $dryRun ? 'DRY RUN' : 'APPLY';
-        $sample = array_slice($change['photo_ids'], 0, 5);
 
         $this->line("{$mode}: {$entry['retired_key']} ({$entry['retired_id']}) → {$entry['desired_key']} ({$entry['desired_id']})");
         $this->line("Rows: {$change['rows']}");
         $this->line("Tags: {$change['tags']}");
-        $this->line('Example photo IDs: ' . ($sample === [] ? 'none' : implode(', ', $sample)));
+        $this->line('Example photo IDs: ' . ($change['example_photo_ids'] === []
+            ? 'none'
+            : implode(', ', $change['example_photo_ids'])));
     }
 
     /** @param array{retired_key:string, retired_id:int, desired_key:string, desired_id:int} $entry */
     private function apply(
         array $entry,
-        array $photoIds,
         GeneratePhotoSummaryService $summaries,
-        MetricsService $metrics
+        MetricsService $metrics,
     ): void {
         $retiredId = (int) $entry['retired_id'];
         $desiredId = (int) $entry['desired_id'];
 
-        DB::transaction(function () use ($retiredId, $desiredId): void {
+        $pivots = DB::transaction(function () use ($retiredId, $desiredId): array {
             DB::table('litter_objects')
                 ->where('id', $retiredId)
                 ->update([
@@ -117,6 +112,7 @@ class MigrateTag extends Command
                     ->pluck('category_id'))
                 ->unique()
                 ->map('intval');
+            $pivots = [];
 
             foreach ($categoryIds as $categoryId) {
                 $retiredCloId = DB::table('category_litter_object')
@@ -138,13 +134,7 @@ class MigrateTag extends Command
                     ]);
                 }
 
-                DB::table('photo_tags')
-                    ->where('litter_object_id', $retiredId)
-                    ->where('category_id', $categoryId)
-                    ->update([
-                        'litter_object_id' => $desiredId,
-                        'category_litter_object_id' => $desiredCloId,
-                    ]);
+                $pivots[$categoryId] = (int) $desiredCloId;
 
                 if ($retiredCloId !== null) {
                     DB::table('user_quick_tags')
@@ -153,21 +143,40 @@ class MigrateTag extends Command
                 }
             }
 
-            DB::table('photo_tags')
-                ->where('litter_object_id', $retiredId)
-                ->whereNull('category_id')
-                ->update(['litter_object_id' => $desiredId]);
+            return $pivots;
         });
 
-        foreach (array_chunk($photoIds, 200) as $chunk) {
-            foreach (Photo::withTrashed()->whereIn('id', $chunk)->get() as $photo) {
-                $summaries->run($photo);
+        Photo::withTrashed()
+            ->whereHas('photoTags', fn ($query) => $query->where('litter_object_id', $retiredId))
+            ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaries, $metrics): void {
+                $photoIds = $photos->pluck('id');
 
-                if ($photo->processed_at !== null && $photo->deleted_at === null) {
-                    $metrics->processPhoto($photo);
+                DB::transaction(function () use ($photoIds, $retiredId, $desiredId, $pivots): void {
+                    foreach ($pivots as $categoryId => $desiredCloId) {
+                        DB::table('photo_tags')
+                            ->whereIn('photo_id', $photoIds)
+                            ->where('litter_object_id', $retiredId)
+                            ->where('category_id', $categoryId)
+                            ->update([
+                                'litter_object_id' => $desiredId,
+                                'category_litter_object_id' => $desiredCloId,
+                            ]);
+                    }
+
+                    DB::table('photo_tags')
+                        ->whereIn('photo_id', $photoIds)
+                        ->where('litter_object_id', $retiredId)
+                        ->whereNull('category_id')
+                        ->update(['litter_object_id' => $desiredId]);
+                });
+
+                foreach ($photos as $photo) {
+                    $summaries->run($photo);
+
+                    if ($photo->processed_at !== null && $photo->deleted_at === null) {
+                        $metrics->processPhoto($photo);
+                    }
                 }
-            }
-        }
+            });
     }
-
 }
