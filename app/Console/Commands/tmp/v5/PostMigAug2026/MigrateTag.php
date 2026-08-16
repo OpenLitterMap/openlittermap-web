@@ -23,7 +23,7 @@ class MigrateTag extends Command
 
     protected $description = 'Retire one litter object and move its data to another.';
 
-    public function handle(GeneratePhotoSummaryService $summaries, MetricsService $metrics): int
+    public function handle(GeneratePhotoSummaryService $summaryService, MetricsService $metricsService): int
     {
         $retiredKey = (string) $this->argument('retired');
         $desiredKey = (string) $this->argument('desired');
@@ -69,7 +69,7 @@ class MigrateTag extends Command
             return self::FAILURE;
         }
 
-        return $this->apply($entry, $change['rows'], $summaries, $metrics)
+        return $this->apply($entry, $change['rows'], $summaryService, $metricsService)
             ? self::SUCCESS
             : self::FAILURE;
     }
@@ -163,8 +163,8 @@ class MigrateTag extends Command
     private function apply(
         array $entry,
         int $totalRows,
-        GeneratePhotoSummaryService $summaries,
-        MetricsService $metrics,
+        GeneratePhotoSummaryService $summaryService,
+        MetricsService $metricsService,
     ): bool {
         $retiredId = (int) $entry['retired_id'];
         $desiredId = (int) $entry['desired_id'];
@@ -177,12 +177,12 @@ class MigrateTag extends Command
 
             Photo::withTrashed()
                 ->whereHas('photoTags', fn ($query) => $query->where('litter_object_id', $retiredId))
-                ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaries, $metrics, $progress): void {
+                ->chunkById(200, function ($photos) use ($retiredId, $desiredId, $pivots, $summaryService, $metricsService, $progress): void {
                     if (!$this->redisIsReachable()) {
                         throw new \RuntimeException('Redis became unavailable.');
                     }
 
-                    $moved = DB::transaction(function () use ($photos, $retiredId, $desiredId, $pivots, $summaries, $metrics): int {
+                    $moved = DB::transaction(function () use ($photos, $retiredId, $desiredId, $pivots, $summaryService, $metricsService): int {
                         $photoIds = $photos->pluck('id');
                         $moved = 0;
 
@@ -211,10 +211,10 @@ class MigrateTag extends Command
                         ]);
 
                         foreach ($photos as $photo) {
-                            $summaries->run($photo);
+                            $summaryService->run($photo);
 
                             if ($photo->processed_at !== null && $photo->deleted_at === null) {
-                                $metrics->processPhoto($photo);
+                                $metricsService->processPhoto($photo);
                             }
                         }
 
