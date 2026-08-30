@@ -38,6 +38,46 @@ class CategoryObject extends Pivot
         return $this->belongsTo(LitterObject::class, 'litter_object_id');
     }
 
+    /** @var array<string, int>|null category id:object id => CLO id */
+    private static ?array $resolverCache = null;
+
+    /**
+     * The CLO for a category/object pairing, or null when the taxonomy does not sanction it.
+     *
+     * `photo_tags` records an observation as `category_id` + `litter_object_id`; the CLO is a
+     * taxonomy row derived from that pairing, not an independent fact. A unique index on
+     * (category_id, litter_object_id) makes the lookup a bijection. Prefer this over reading
+     * `photo_tags.category_litter_object_id`, which is deprecated and null on rows written
+     * before their pivot existed.
+     */
+    public static function resolveId(?int $categoryId, ?int $objectId): ?int
+    {
+        if ($categoryId === null || $objectId === null) {
+            return null;
+        }
+
+        if (self::$resolverCache === null) {
+            self::$resolverCache = static::query()
+                ->get(['id', 'category_id', 'litter_object_id'])
+                ->mapWithKeys(fn (self $clo) => [
+                    $clo->category_id . ':' . $clo->litter_object_id => (int) $clo->id,
+                ])
+                ->all();
+        }
+
+        return self::$resolverCache[$categoryId . ':' . $objectId] ?? null;
+    }
+
+    /**
+     * Drop the memoised map. Required after creating a pivot in a process that goes on to resolve
+     * pairings — `MigrateTag` creates the survivor pivot and then regenerates summaries in the
+     * same run.
+     */
+    public static function flushResolverCache(): void
+    {
+        self::$resolverCache = null;
+    }
+
     /**
      * CLOs by id to decide retirement.
      * @param  array<int, int>  $cloIds

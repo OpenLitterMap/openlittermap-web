@@ -481,7 +481,17 @@ class AddTagsToPhotoAction
                 : LitterObject::where('key', $tag['object'])->first();
 
             if ($object) {
-                // Validate provided category belongs to this object, fall back otherwise
+                // Validate provided category belongs to this object, fall back otherwise.
+                //
+                // The fallback is deliberate leniency for legacy/mobile clients that send a
+                // category the taxonomy does not pair with the object — correcting beats a 422,
+                // and `createTagLegacy` has no CLO to write without it.
+                //
+                // KNOWN RISK while the 73 unsanctioned pairings survive: re-saving one of those
+                // ~179k historical tags reclassifies it here (marine/bottle becomes
+                // alcohol/bottle), because the edit round-trips on this path once the pairing
+                // resolves to no CLO. Repairing the pairings removes the exposure; see
+                // readme/PostTagMigrationClean.md.
                 if ($category && ! $object->categories()->where('categories.id', $category->id)->exists()) {
                     $category = null;
                 }

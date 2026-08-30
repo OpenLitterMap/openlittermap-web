@@ -214,6 +214,35 @@ class UsersUploadsControllerTest extends TestCase
         ]);
     }
 
+    /**
+     * The edit form round-trips `category_litter_object_id` straight back to the tag endpoints,
+     * so handing it the deprecated null leaves the tag uneditable. The pairing is known from
+     * `category_id` and `litter_object_id`, so the payload derives it.
+     */
+    public function test_index_derives_the_clo_when_the_deprecated_column_is_null(): void
+    {
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $this->user);
+
+        $category = Category::where('key', CategoryKey::Smoking->value)->first();
+        $object = LitterObject::where('key', 'butts')->first();
+        $clo = CategoryObject::where('category_id', $category->id)
+            ->where('litter_object_id', $object->id)
+            ->first();
+
+        PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $object->id,
+            'category_litter_object_id' => null,
+            'quantity' => 1,
+        ]);
+
+        $response = $this->actingAs($this->user)->getJson('/api/v3/user/photos');
+
+        $response->assertOk();
+        $this->assertSame($clo->id, $response->json('photos.0.new_tags.0.category_litter_object_id'));
+    }
+
     public function test_index_returns_is_public_and_school_team_fields(): void
     {
         $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $this->user);

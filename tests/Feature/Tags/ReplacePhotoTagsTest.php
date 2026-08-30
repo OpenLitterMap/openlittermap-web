@@ -21,6 +21,50 @@ class ReplacePhotoTagsTest extends TestCase
         $this->seed(GenerateTagsSeeder::class);
     }
 
+    /**
+     * Characterisation test for a KNOWN, ACCEPTED risk — it asserts today's behaviour so the
+     * exposure is visible rather than discovered again later.
+     *
+     * An unsanctioned (category, object) pairing resolves to no CLO, so an edit round-trips on
+     * the legacy payload path, where the recorded category is replaced by
+     * `$object->categories()->first()`. Re-saving one of the ~179k historical tags on the 73
+     * unsanctioned pairings therefore reclassifies it.
+     *
+     * The fallback is not removable in isolation: `createTagLegacy` has no CLO to write without
+     * it, so dropping it turns the write into a 422 and breaks the legacy-client leniency that
+     * `AddNewTagsToPhotosTest` pins. Repairing the 73 pairings is what removes the exposure.
+     * When that lands, flip this test to assert the recorded category survives.
+     */
+    public function test_editing_an_unsanctioned_pairing_currently_reclassifies_it(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $marine = Category::firstWhere('key', CategoryKey::Marine->value);
+        $bottle = LitterObject::firstWhere('key', 'bottle');
+
+        // `bottle` is sanctioned under alcohol/softdrinks, never marine — the shape of the 73 gaps.
+        $this->assertFalse(
+            $bottle->categories()->where('categories.id', $marine->id)->exists(),
+            'fixture assumes marine/bottle has no pivot'
+        );
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [[
+                'category' => ['id' => $marine->id, 'key' => $marine->key],
+                'object' => ['id' => $bottle->id, 'key' => $bottle->key],
+                'quantity' => 2,
+            ]],
+        ])->assertOk();
+
+        $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
+
+        $this->assertSame($bottle->id, $tag->litter_object_id);
+        $this->assertNotSame($marine->id, $tag->category_id, 'reclassification no longer happens — update this test');
+        $this->assertSame($bottle->categories()->first()->id, $tag->category_id);
+    }
+
     public function test_replace_tags_deletes_old_tags_and_adds_new(): void
     {
         $user = User::factory()->create(['verification_required' => false]);

@@ -51,25 +51,30 @@ class QuickTagsController extends Controller
         $limit = min((int) ($request->query('limit', 20)), 30);
         $userId = $request->user()->id;
 
-        // Get top CLO + type combos by quantity
+        // Get top CLO + type combos by quantity.
+        // The CLO is derived from (category_id, litter_object_id) rather than read from the
+        // deprecated pointer column, which is null on rows written before their pivot existed.
+        // An extras-only tag has no category or object, so the inner join drops it as before.
         $rows = DB::table('photo_tags as pt')
             ->join('photos as p', 'p.id', '=', 'pt.photo_id')
-            ->join('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
+            ->join('category_litter_object as clo', function ($join) {
+                $join->on('clo.category_id', '=', 'pt.category_id')
+                    ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+            })
             ->join('categories as c', 'c.id', '=', 'clo.category_id')
             ->join('litter_objects as lo', 'lo.id', '=', 'clo.litter_object_id')
             ->leftJoin('litter_object_types as lot', 'lot.id', '=', 'pt.litter_object_type_id')
             ->where('p.user_id', $userId)
-            ->whereNotNull('pt.category_litter_object_id')
             ->whereNull('lo.retired_at')
             ->select(
-                'pt.category_litter_object_id as clo_id',
+                'clo.id as clo_id',
                 'c.key as category_key',
                 'lo.key as object_key',
                 'pt.litter_object_type_id as type_id',
                 'lot.key as type_key',
                 DB::raw('SUM(pt.quantity) as total')
             )
-            ->groupBy('pt.category_litter_object_id', 'c.key', 'lo.key', 'pt.litter_object_type_id', 'lot.key')
+            ->groupBy('clo.id', 'c.key', 'lo.key', 'pt.litter_object_type_id', 'lot.key')
             ->havingRaw('SUM(pt.quantity) >= 3')
             ->orderByDesc('total')
             ->limit($limit)
@@ -86,17 +91,20 @@ class QuickTagsController extends Controller
             ->join('photo_tags as pt', 'pt.id', '=', 'ptet.photo_tag_id')
             ->join('photos as p', 'p.id', '=', 'pt.photo_id')
             ->join('brandslist as bl', 'bl.id', '=', 'ptet.tag_type_id')
+            ->join('category_litter_object as clo', function ($join) {
+                $join->on('clo.category_id', '=', 'pt.category_id')
+                    ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+            })
             ->where('ptet.tag_type', 'brand')
             ->where('p.user_id', $userId)
-            ->whereNotNull('pt.category_litter_object_id')
             ->select(
-                'pt.category_litter_object_id as clo_id',
+                'clo.id as clo_id',
                 'pt.litter_object_type_id as type_id',
                 'ptet.tag_type_id as brand_id',
                 'bl.key as brand_key',
                 DB::raw('SUM(ptet.quantity) as brand_total')
             )
-            ->groupBy('pt.category_litter_object_id', 'pt.litter_object_type_id', 'ptet.tag_type_id', 'bl.key')
+            ->groupBy('clo.id', 'pt.litter_object_type_id', 'ptet.tag_type_id', 'bl.key')
             ->orderByDesc('brand_total')
             ->get();
 

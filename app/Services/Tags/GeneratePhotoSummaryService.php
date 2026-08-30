@@ -4,6 +4,7 @@ namespace App\Services\Tags;
 
 use App\Enums\Dimension;
 use App\Enums\XpScore;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Photo;
 
 /**
@@ -81,7 +82,7 @@ class GeneratePhotoSummaryService
             $qty = $pt->quantity;
             $categoryId = $pt->category_id ?: 0;
             $objectId = $pt->litter_object_id ?: 0;
-            $cloId = $pt->category_litter_object_id;
+            $cloId = CategoryObject::resolveId($pt->category_id, $pt->litter_object_id);
             $typeId = $pt->litter_object_type_id;
 
             // Only count as litter if there's an actual object

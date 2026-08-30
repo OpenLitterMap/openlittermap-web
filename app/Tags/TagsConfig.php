@@ -205,6 +205,7 @@ class TagsConfig
             ],
 
             CategoryKey::Industrial->value => [
+                'plastic' => [],
                 'oil_container' => [
                     'materials' => ['plastic', 'metal'],
                 ],
@@ -263,6 +264,9 @@ class TagsConfig
                 'macroplastics' => [
                     'materials' => ['plastic'],
                 ],
+                'medium_plastic' => [
+                    'materials' => ['plastic'],
+                ],
                 'microplastics' => [
                     'materials' => ['plastic'],
                 ],
@@ -284,6 +288,21 @@ class TagsConfig
                 ],
                 'styrofoam' => [
                     'materials' => ['polystyrene'],
+                ],
+                'straw' => [
+                    'materials' => ['plastic', 'paper'],
+                ],
+                'balloon' => [
+                    'materials' => ['plastic', 'latex'],
+                ],
+                'bag' => [
+                    'materials' => ['plastic', 'paper', 'cloth', 'bioplastic'],
+                ],
+                'bottle' => [
+                    'materials' => ['glass', 'plastic'],
+                ],
+                'lighters' => [
+                    'materials' => ['plastic', 'metal'],
                 ],
                 'other' => [],
             ],
@@ -329,7 +348,8 @@ class TagsConfig
                 'plastic' => [],
                 'traffic_cone' => [],
                 'metal' => [],
-                'plasticBags' => [],
+                'plastic_bag' => [],
+                'random_litter' => [],
                 'paper' => [
                     'materials' => ['paper'],
                 ],

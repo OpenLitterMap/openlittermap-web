@@ -87,6 +87,40 @@ class TopTagsTest extends TestCase
             ->assertJsonPath('tags.0.object_key', 'plasticBags');
     }
 
+    /**
+     * The v5 migration wrote rows before their pivot existed, leaving `category_litter_object_id`
+     * null on a third of all object tags. The pairing is still fully described by `category_id`
+     * and `litter_object_id`, so it belongs in the suggestions — the deprecated column is not the
+     * source of truth for which CLO a tag refers to.
+     */
+    public function test_suggests_tags_whose_deprecated_clo_column_is_null(): void
+    {
+        $category = Category::factory()->create(['key' => 'other']);
+        $obj = LitterObject::factory()->create(['key' => 'plasticBags']);
+        $clo = CategoryObject::create(['category_id' => $category->id, 'litter_object_id' => $obj->id]);
+
+        $photo = Photo::factory()->create(['user_id' => $this->user->id]);
+
+        DB::table('photo_tags')->insert([
+            'photo_id' => $photo->id,
+            'category_litter_object_id' => null,
+            'category_id' => $category->id,
+            'litter_object_id' => $obj->id,
+            'quantity' => 12,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/v3/user/top-tags');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'tags')
+            ->assertJsonPath('tags.0.clo_id', $clo->id)
+            ->assertJsonPath('tags.0.object_key', 'plasticBags')
+            ->assertJsonPath('tags.0.total', 12);
+    }
+
     public function test_groups_by_clo_and_type(): void
     {
         $category = Category::factory()->create(['key' => 'alcohol']);

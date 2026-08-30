@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\Photos;
 
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Photo;
 use App\Services\Redis\RedisMetricsCollector;
 use Illuminate\Http\JsonResponse;
@@ -315,7 +316,9 @@ class UsersUploadsController extends Controller
 
             $tag = [
                 'id' => $photoTag->id,
-                'category_litter_object_id' => $hasObject ? $photoTag->category_litter_object_id : null,
+                'category_litter_object_id' => $hasObject
+                    ? CategoryObject::resolveId($photoTag->category_id, $photoTag->litter_object_id)
+                    : null,
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
                 'picked_up' => (bool) ($photoTag->picked_up ?? $photo->picked_up),

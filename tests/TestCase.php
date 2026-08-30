@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\Litter\Tags\CategoryObject;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
@@ -38,6 +39,10 @@ abstract class TestCase extends BaseTestCase
 
         // Clear all tag keys from cache
         TagKeyCache::forgetAll();
+
+        // The CLO resolver memoises the pivot table, which RefreshDatabase rolls back beneath it.
+        // Without this a map built in one test resolves ids that no longer exist in the next.
+        CategoryObject::flushResolverCache();
     }
 
     /**

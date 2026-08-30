@@ -20,8 +20,8 @@ I found [QUANTITY] × [OBJECT]
 
 | Dimension | Cardinality | Stored on |
 |-----------|-------------|-----------|
-| Category | 0 or 1 | `photo_tags.category_id` (derived from CLO). Null for extra-tag-only tags |
-| LitterObject | 0 or 1 | `photo_tags.litter_object_id` (derived from CLO). Null for extra-tag-only tags |
+| Category | 0 or 1 | `photo_tags.category_id` — source of truth. Null for extra-tag-only tags |
+| LitterObject | 0 or 1 | `photo_tags.litter_object_id` — source of truth. Null for extra-tag-only tags |
 | LitterObjectType | 0 or 1 | `photo_tags.litter_object_type_id` |
 | Material | 0 to many (set membership, qty=1 in DB, weighted by tag qty in metrics) | `photo_tag_extra_tags` |
 | Brand | 0 to many (independent quantities) | `photo_tag_extra_tags` |
@@ -34,12 +34,17 @@ I found [QUANTITY] × [OBJECT]
 ### Design principles
 
 1. **An object key represents the physical thing** — `bottle`, `can`, `cup` (not `beer_bottle`, `water_bottle`).
-2. **Product context is a separate dimension** — `beer`, `water`, `soda` via `LitterObjectType`.
-3. **Category + Object pairing is always explicit** via a `category_litter_object_id` (CLO) — no `categories()->first()` inference, which breaks when an object belongs to multiple categories.
-4. **Optional dimensions don't block data collection** — students can skip type/material/brand.
-5. **Extra-tag-only tags allow null CLO** — brand-only, material-only, and custom-only PhotoTags have nullable `category_id`, `litter_object_id`, and `category_litter_object_id`. They are not forced into `unclassified/other`.
-6. **Types are strictly "what was in it"** — beer, water, juice. Not container forms (pint, shot) or physical states (crushed, degraded).
-7. **Materials are set membership, not counted** — a bottle is glass, full stop. Only brands carry independent quantities.
+2. **An object key is singular** — `straw`, not `straws`; `bottle`, not `bottles`. The key names one
+   object; how many were seen lives in `photo_tags.quantity`. A plural key double-encodes count and
+   makes the same litter reachable under two names. See [Key naming](#key-naming).
+3. **Product context is a separate dimension** — `beer`, `water`, `soda` via `LitterObjectType`.
+4. **The pairing is `category_id` + `litter_object_id`** — the CLO is derived from them, never the
+   other way round. Do not infer a category with `categories()->first()`; it is arbitrary when an
+   object belongs to several categories.
+5. **Optional dimensions don't block data collection** — students can skip type/material/brand.
+6. **Extra-tag-only tags allow null CLO** — brand-only, material-only, and custom-only PhotoTags have nullable `category_id`, `litter_object_id`, and `category_litter_object_id`. They are not forced into `unclassified/other`.
+7. **Types are strictly "what was in it"** — beer, water, juice. Not container forms (pint, shot) or physical states (crushed, degraded).
+8. **Materials are set membership, not counted** — a bottle is glass, full stop. Only brands carry independent quantities.
 
 ### Tag hierarchy
 
@@ -57,7 +62,55 @@ Photo
         └── CustomTags    (user-defined notes)
 ```
 
-The category+object pairing is identified by a single `category_litter_object_id` (CLO). Each (category, object) combination is a row in the `category_litter_object` pivot with its own auto-increment ID, so `bottle` in alcohol (e.g. CLO id 42) is a different selection than `bottle` in beverages (e.g. CLO id 43). `category_id` and `litter_object_id` on `photo_tags` are denormalised from the CLO and resolved on write (see [Denormalisation](#denormalisation-integrity)).
+The category+object pairing is recorded on `photo_tags` as `category_id` + `litter_object_id`.
+Each combination also has a row in the `category_litter_object` pivot (the CLO) with its own
+auto-increment id, so `bottle` in alcohol is a different pairing from `bottle` in softdrinks. A
+unique index on `(category_id, litter_object_id)` makes the CLO a **derived** value: resolve it with
+`CategoryObject::resolveId()`, or join on the two columns. The picker still identifies a user's
+selection by CLO id on the way in, and the write resolves that to the pair.
+
+## Key naming
+
+**Object keys are singular.** `straw`, `bottle`, `wipe` — never `straws`, `bottles`, `wipes`. The
+key names one object; the count lives in `photo_tags.quantity`. Plural keys double-encode quantity
+and let the same litter be recorded under two names, which is how `straws` and `straw` ended up as
+separate objects with separate pivots.
+
+Keys are `snake_case`. There are no camelCase keys: the two the v5 migration created
+(`plasticBags`, `randomLitter`) are deprecated into `plastic_bag` and `random_litter`. An earlier
+decision kept the data-heavy camelCase key to avoid moving ~46k items; that was decided on volume
+rather than naming and has been reversed — the conforming key wins, and the row count is not a
+reason to keep a non-conforming one.
+
+### Deprecate, never rename
+
+A key is changed by **retiring the old object into a new one** with `olm:migrate-tag`, never by
+updating `litter_objects.key` in place. Renaming is cheaper — no rows move — but it rewrites what
+historical observations say they were, and leaves no record that the old name ever existed.
+Retirement keeps the old object as a tombstone with `merged_into_id` pointing at the survivor, so
+the audit trail survives and stale clients can still resolve the old CLO id.
+
+### Creating new taxonomy
+
+New categories, objects and pairings are **declared in config and created by the seeder** — never
+by a migration or an API write. `GenerateTagsSeeder` is idempotent and skips retired objects, so it
+is safe to re-run on deploy.
+
+| To create | Declare in |
+|-----------|------------|
+| Category | `App\Enums\CategoryKey` + a `TagsConfig` group |
+| Litter object | a `TagsConfig` entry under its category |
+| CLO (pairing) | implicit — the config nesting *is* the pairing |
+| Valid types / materials | the object's `TagsConfig` entry |
+
+Some `-s` keys are correct because the noun has no singular in this context: `macroplastics`,
+`microplastics`, `nurdles` (mass nouns), and `six_pack_rings`, `headphones`, `chopsticks` (the
+object *is* a set). These are not violations.
+
+The remainder are legacy and should be migrated to singular when their pairing is next touched:
+`butts`, `bricks`, `gloves`, `lighters`, `napkins`, `nappies`, `papers`, `wipes`, `ear_swabs`,
+`loose_cables`, `plasticBags`. Renaming a key is a retirement — use `olm:migrate-tag`, never an
+in-place `UPDATE`, so tag rows, quick tags, summaries and metrics all move with it.
 
 ## Database Schema
 
@@ -82,8 +135,8 @@ category_litter_object (
     litter_object_id    FK → litter_objects NOT NULL,
     UNIQUE(category_id, litter_object_id)
 )
--- Model: CategoryObject (Pivot). This IS the CLO. Each row's id is the
--- category_litter_object_id stored on photo_tags.
+-- Model: CategoryObject (Pivot). This IS the CLO. Resolve it from
+-- (category_id, litter_object_id); the UNIQUE index makes that a bijection.
 
 category_object_types (
     category_litter_object_id   FK → category_litter_object NOT NULL,
@@ -100,9 +153,9 @@ category_object_types (
 photo_tags (
     id                          BIGINT UNSIGNED AUTO_INCREMENT PK,
     photo_id                    FK → photos NOT NULL,
-    category_litter_object_id   FK → category_litter_object NULL,   -- null for extra-tag-only tags
-    category_id                 FK → categories NULL,                -- denormalised from CLO; null for extra-tag-only tags
-    litter_object_id            FK → litter_objects NULL,            -- denormalised from CLO; null for extra-tag-only tags
+    category_litter_object_id   FK → category_litter_object NULL,   -- DEPRECATED, do not read; null on ~189k historical rows
+    category_id                 FK → categories NULL,                -- source of truth; null for extra-tag-only tags
+    litter_object_id            FK → litter_objects NULL,            -- source of truth; null for extra-tag-only tags
     litter_object_type_id       FK → litter_object_types NULL,
     custom_tag_primary_id       FK → custom_tags_new NULL,           -- legacy custom-only support (see PostMigrationCleanup.md)
     quantity                    INT UNSIGNED NOT NULL DEFAULT 1,
@@ -121,7 +174,19 @@ photo_tag_extra_tags (
 -- Brands: independent count (e.g. 3 Heineken + 2 Coca-Cola out of 5 bottles).
 ```
 
-> **Denormalisation note:** `category_id` and `litter_object_id` are derived from `category_litter_object_id` and must always match. They are resolved from the CLO on write in `AddTagsToPhotoAction`. They exist because `MetricsService` and Redis keys reference `category_id`/`object_id` directly, avoiding joins in the hottest code path. See [Denormalisation integrity](#denormalisation-integrity).
+> **`photo_tags.category_litter_object_id` is deprecated — do not read it.** `category_id` and
+> `litter_object_id` are the observation and the source of truth; the CLO is a taxonomy row
+> *derived* from that pairing via `CategoryObject::resolveId($categoryId, $objectId)`, which a
+> unique index on `(category_id, litter_object_id)` makes a bijection. In SQL, join
+> `ON clo.category_id = pt.category_id AND clo.litter_object_id = pt.litter_object_id`.
+>
+> The column is still written on create so nothing breaks mid-deprecation, but it is null on
+> ~189k object tags that the v5 migration wrote before their pivot existed — reading it silently
+> drops a third of the platform's litter. Writes still *accept* a CLO id (the picker identifies a
+> selection that way) and resolve it to the pair; that request contract is unaffected.
+>
+> The resolver memoises the pivot table per process. Anything that creates a pivot and then
+> resolves in the same run must call `CategoryObject::flushResolverCache()` — `MigrateTag` does.
 
 > **Pending cleanup:** `custom_tag_primary_id` on `photo_tags` and the `brand_id` legacy column are slated for removal. See `readme/PostMigrationCleanup.md`.
 
