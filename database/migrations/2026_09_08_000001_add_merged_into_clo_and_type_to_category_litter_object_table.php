@@ -22,7 +22,7 @@ return new class extends Migration
     {
         Schema::table('category_litter_object', function (Blueprint $table) {
             $table->unsignedBigInteger('merged_into_clo_id')->nullable()->after('litter_object_id');
-            $table->unsignedInteger('merged_into_type_id')->nullable()->after('merged_into_clo_id');
+            $table->unsignedBigInteger('merged_into_type_id')->nullable()->after('merged_into_clo_id');
 
             $table->foreign('merged_into_clo_id')
                 ->references('id')->on('category_litter_object')
