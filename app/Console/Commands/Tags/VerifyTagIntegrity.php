@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Tags;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class VerifyTagIntegrity extends Command
@@ -37,6 +38,20 @@ class VerifyTagIntegrity extends Command
             return self::FAILURE;
         }
 
+        // A deployment check that exits 0 with defects present is worse than no check.
+        // Unsanctioned pairings are unrepairable by design, so recount after repairing.
+        $remaining = $this->unsanctionedPairings()->count()
+            + $this->stalePointers()->count()
+            + $this->invalidTypes()->count();
+
+        if ($remaining > 0) {
+            $this->error("{$remaining} issue(s) remain after repair.");
+
+            return self::FAILURE;
+        }
+
+        $this->info('All repairable issues fixed.');
+
         return self::SUCCESS;
     }
 
@@ -47,22 +62,63 @@ class VerifyTagIntegrity extends Command
      * the pairing, so nothing can derive a CLO for it. Not auto-repairable — creating the pivot is
      * a taxonomy decision that belongs to an approved migration, never to a repair command.
      */
-    private function checkUnsanctionedPairings(): int
+    /** Object tags whose (category_id, litter_object_id) pairing has no pivot. */
+    private function unsanctionedPairings(): Builder
     {
-        $query = DB::table('photo_tags as pt')
-            ->leftJoin('category_litter_object as clo', function ($join) {
-                $join->on('clo.category_id', '=', 'pt.category_id')
-                    ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
-            })
-            ->whereNotNull('pt.litter_object_id')
-            ->whereNotNull('pt.category_id')
-            ->whereNull('clo.id');
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->leftJoin('category_litter_object as clo', function ($join) {
+                    $join->on('clo.category_id', '=', 'pt.category_id')
+                        ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+                })
+                ->whereNotNull('pt.litter_object_id')
+                ->whereNotNull('pt.category_id')
+                ->whereNull('clo.id')
+        );
+    }
 
+    /** Rows whose deprecated pointer disagrees with their pairing. */
+    private function stalePointers(): Builder
+    {
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->join('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
+                ->where(function ($q) {
+                    $q->whereColumn('pt.category_id', '!=', 'clo.category_id')
+                        ->orWhereColumn('pt.litter_object_id', '!=', 'clo.litter_object_id');
+                })
+        );
+    }
+
+    /** Typed rows whose type is not approved for their pairing's CLO. */
+    private function invalidTypes(): Builder
+    {
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->whereNotNull('pt.litter_object_type_id')
+                ->whereNotExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('category_litter_object as clo')
+                        ->join('category_object_types as cot', 'cot.category_litter_object_id', '=', 'clo.id')
+                        ->whereColumn('clo.category_id', 'pt.category_id')
+                        ->whereColumn('clo.litter_object_id', 'pt.litter_object_id')
+                        ->whereColumn('cot.litter_object_type_id', 'pt.litter_object_type_id');
+                })
+        );
+    }
+
+    private function scopeToPhoto(Builder $query): Builder
+    {
         if ($this->option('photo-id')) {
             $query->where('pt.photo_id', $this->option('photo-id'));
         }
 
-        $count = $query->count();
+        return $query;
+    }
+
+    private function checkUnsanctionedPairings(): int
+    {
+        $count = $this->unsanctionedPairings()->count();
 
         if ($count > 0) {
             $this->error("{$count} photo_tags have a (category, object) pairing with no CLO pivot.");
@@ -83,18 +139,7 @@ class VerifyTagIntegrity extends Command
      */
     private function checkStalePointers(): int
     {
-        $query = DB::table('photo_tags as pt')
-            ->join('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
-            ->where(function ($q) {
-                $q->whereColumn('pt.category_id', '!=', 'clo.category_id')
-                    ->orWhereColumn('pt.litter_object_id', '!=', 'clo.litter_object_id');
-            });
-
-        if ($this->option('photo-id')) {
-            $query->where('pt.photo_id', $this->option('photo-id'));
-        }
-
-        $count = $query->count();
+        $count = $this->stalePointers()->count();
 
         if ($count === 0) {
             $this->info('CLO pointers: OK');
@@ -130,25 +175,7 @@ class VerifyTagIntegrity extends Command
      */
     private function checkInvalidTypes(): int
     {
-        $invalid = function ($query) {
-            $query->whereNotNull('pt.litter_object_type_id')
-                ->whereNotExists(function ($sub) {
-                    $sub->select(DB::raw(1))
-                        ->from('category_litter_object as clo')
-                        ->join('category_object_types as cot', 'cot.category_litter_object_id', '=', 'clo.id')
-                        ->whereColumn('clo.category_id', 'pt.category_id')
-                        ->whereColumn('clo.litter_object_id', 'pt.litter_object_id')
-                        ->whereColumn('cot.litter_object_type_id', 'pt.litter_object_type_id');
-                });
-        };
-
-        $query = DB::table('photo_tags as pt')->where($invalid);
-
-        if ($this->option('photo-id')) {
-            $query->where('pt.photo_id', $this->option('photo-id'));
-        }
-
-        $count = $query->count();
+        $count = $this->invalidTypes()->count();
 
         if ($count === 0) {
             $this->info('Type references: OK');
@@ -161,9 +188,7 @@ class VerifyTagIntegrity extends Command
         if ($this->option('fix')) {
             $this->info('Clearing invalid type ids...');
 
-            $fixed = DB::table('photo_tags as pt')
-                ->where($invalid)
-                ->update(['litter_object_type_id' => null]);
+            $fixed = $this->invalidTypes()->update(['litter_object_type_id' => null]);
 
             $this->info("Cleared type_id on {$fixed} rows.");
         }

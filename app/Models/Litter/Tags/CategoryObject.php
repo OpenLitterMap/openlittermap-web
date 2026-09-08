@@ -93,14 +93,55 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * The CLO this write should land on. When the litter object is retired, returns
-     * the existing CLO pairing the same category with the active object it merged into.
-     * API writes never create taxonomy relationships: the approved migration owns survivor
-     * pivot creation. No active object or no approved survivor CLO returns null so the caller
-     * can 422.
+     * Pivots that may still be tagged. A pivot with `merged_into_clo_id` set is a tombstone: its
+     * rows moved to the recorded survivor, which may be a different category even when the
+     * object itself stayed live (a pure category move retires the pairing, not the object).
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('merged_into_clo_id');
+    }
+
+    /**
+     * Whether this pairing has been retired into another, regardless of the object's state.
+     */
+    public function isRetired(): bool
+    {
+        return $this->merged_into_clo_id !== null;
+    }
+
+    /**
+     * The CLO this write should land on.
+     *
+     * A retired pivot records its survivor directly (`merged_into_clo_id`), so the answer is
+     * exact even when the survivor lives in another category — searching the original category
+     * for the active object found nothing there and rejected stale clients as retired. Chains are
+     * followed with a cycle guard. Older tombstones with no recorded survivor fall back to the
+     * object walk. API writes never create taxonomy relationships: an unrecorded, unresolvable
+     * retirement returns null so the caller can 422.
      */
     public function resolveActiveClo(): ?self
     {
+        $clo = $this;
+        $seen = [];
+
+        while ($clo->merged_into_clo_id !== null) {
+            if (isset($seen[$clo->id])) {
+                return null;
+            }
+
+            $seen[$clo->id] = true;
+            $clo = static::find($clo->merged_into_clo_id);
+
+            if ($clo === null) {
+                return null;
+            }
+        }
+
+        if ($clo !== $this) {
+            return $clo;
+        }
+
         $litterObject = $this->relationLoaded('litterObject')
             ? $this->litterObject
             : $this->litterObject()->first();

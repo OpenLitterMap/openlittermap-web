@@ -75,6 +75,7 @@ class GetTagsController extends Controller
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
         $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')
+            ->active()
             ->whereHas('litterObject', fn (Builder $q) => $q->active())
             ->get();
 
@@ -104,6 +105,7 @@ class GetTagsController extends Controller
         $searchQuery   = $request['search'] ?? null;
 
         $query = CategoryObject::query()
+            ->active()
             ->whereHas('litterObject', fn (Builder $q) => $q->active());
 
         if ($categoryKey) {

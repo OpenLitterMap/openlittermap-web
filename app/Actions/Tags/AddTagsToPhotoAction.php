@@ -117,7 +117,9 @@ class AddTagsToPhotoAction
 
             $clo = $clos[$cloId];
 
-            if (! $clo->litterObject?->isRetired()) {
+            // A pairing can be retired while its object stays live (a pure category move), so
+            // the pivot's own retirement is checked, not only the object's.
+            if (! $clo->isRetired() && ! $clo->litterObject?->isRetired()) {
                 continue;
             }
 
@@ -129,7 +131,13 @@ class AddTagsToPhotoAction
 
             $tags[$i]['category_litter_object_id'] = $activeClo->id;
 
-            $typeId = $tag['litter_object_type_id'] ?? null;
+            // A v4 composite key split into object + type. The client cannot know the approved
+            // subtype, so a submission with no type takes the one recorded on the tombstone.
+            if (($tag['litter_object_type_id'] ?? null) === null && $clo->merged_into_type_id !== null) {
+                $tags[$i]['litter_object_type_id'] = $clo->merged_into_type_id;
+            }
+
+            $typeId = $tags[$i]['litter_object_type_id'] ?? null;
 
             if ($typeId && $activeClo->id !== (int) $cloId) {
                 $valid = DB::table('category_object_types')

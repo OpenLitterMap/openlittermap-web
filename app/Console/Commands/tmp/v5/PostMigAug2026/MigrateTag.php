@@ -443,10 +443,28 @@ class MigrateTag extends Command
                     ->whereNull('category_litter_object_id')
                     ->update(['category_litter_object_id' => $desiredCloId]);
 
-                if ($retiredCloId !== null) {
+                if ($retiredCloId !== null && (int) $retiredCloId !== (int) $desiredCloId) {
+                    // The approved mapping is a triple — survivor object, category and type —
+                    // and a retirement can span categories with a different survivor in each,
+                    // so it is recorded on the source pivot, not the object. Stale clients and
+                    // saved quick tags resolve the exact pairing and subtype from here.
+                    DB::table('category_litter_object')
+                        ->where('id', $retiredCloId)
+                        ->update([
+                            'merged_into_clo_id' => $desiredCloId,
+                            'merged_into_type_id' => $this->typeId,
+                            'updated_at' => now(),
+                        ]);
+
+                    $quickTagUpdate = ['clo_id' => $desiredCloId, 'updated_at' => now()];
+
+                    if ($this->typeId !== null) {
+                        $quickTagUpdate['type_id'] = $this->typeId;
+                    }
+
                     DB::table('user_quick_tags')
                         ->where('clo_id', $retiredCloId)
-                        ->update(['clo_id' => $desiredCloId, 'updated_at' => now()]);
+                        ->update($quickTagUpdate);
                 }
             }
 
