@@ -444,6 +444,105 @@ class MigrateTagTest extends TestCase
         return $survivor;
     }
 
+    /**
+     * A saved quick tag is a preset the user re-applies. Repointing only its CLO turns a saved
+     * `beer_can` into a plain `can`, silently dropping the subtype the approved split preserved
+     * on every photo tag. `user_quick_tags.type_id` exists precisely to carry it.
+     */
+    public function test_apply_carries_the_approved_type_onto_repointed_quick_tags(): void
+    {
+        [$type, $survivorClo] = $this->approveTypeOnDesiredClo('beer');
+
+        $quickTagId = DB::table('user_quick_tags')->insertGetId([
+            'user_id' => User::factory()->create()->id,
+            'clo_id' => $this->retiredClo->id,
+            'type_id' => null,
+            'quantity' => 1,
+            'materials' => '[]',
+            'brands' => '[]',
+            'sort_order' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->migrate(['--apply' => true, '--type' => 'beer'])->assertExitCode(0);
+
+        $quickTag = DB::table('user_quick_tags')->where('id', $quickTagId)->first();
+
+        $this->assertSame($survivorClo->id, (int) $quickTag->clo_id);
+        $this->assertSame($type->id, (int) $quickTag->type_id, 'the subtype must survive the repoint');
+    }
+
+    /**
+     * `litter_objects.merged_into_id` names the survivor object only. The approved mapping is a
+     * triple, and the source pivot is the only place that can hold all of it — a retirement can
+     * span several categories with a different survivor in each. Recording it there lets a stale
+     * client resolve the old CLO to the exact approved pairing and subtype.
+     */
+    public function test_apply_records_the_survivor_clo_and_type_on_the_tombstone_pivot(): void
+    {
+        [$type, $survivorClo] = $this->approveTypeOnDesiredClo('beer');
+
+        $this->migrate(['--apply' => true, '--type' => 'beer'])->assertExitCode(0);
+
+        $tombstone = CategoryObject::find($this->retiredClo->id);
+
+        $this->assertSame($survivorClo->id, $tombstone->merged_into_clo_id);
+        $this->assertSame($type->id, $tombstone->merged_into_type_id);
+        $this->assertSame($survivorClo->id, $tombstone->resolveActiveClo()?->id);
+    }
+
+    /**
+     * Resolving by searching the ORIGINAL category finds nothing once the survivor lives in a
+     * different category, so a stale submission of `other/automobile` was rejected as retired
+     * instead of landing on `vehicles/car_part`. The recorded survivor pivot answers directly.
+     */
+    public function test_a_stale_clo_resolves_into_the_target_category_after_an_object_and_category_move(): void
+    {
+        $target = Category::where('key', 'dumping')->firstOrFail();
+        $targetClo = CategoryObject::firstOrCreate([
+            'category_id' => $target->id,
+            'litter_object_id' => $this->desired->id,
+        ]);
+        CategoryObject::flushResolverCache();
+
+        $this->migrate(['--apply' => true, '--category' => 'dumping'])->assertExitCode(0);
+
+        $tombstone = CategoryObject::find($this->retiredClo->id);
+
+        $this->assertSame($targetClo->id, $tombstone->resolveActiveClo()?->id, 'must not 422 a stale client');
+    }
+
+    /**
+     * A pure category move keeps the object live, so nothing on the object hides the old
+     * pairing — the source pivot stayed selectable and writable, quietly re-creating the pairing
+     * the run had just emptied. The source pivot is now marked with its target and excluded from
+     * the active set the picker serves.
+     */
+    public function test_a_pure_category_move_retires_the_source_pivot_and_hides_it_from_the_picker(): void
+    {
+        $target = Category::where('key', 'dumping')->firstOrFail();
+        $targetClo = CategoryObject::firstOrCreate([
+            'category_id' => $target->id,
+            'litter_object_id' => $this->retired->id,
+        ]);
+        CategoryObject::flushResolverCache();
+
+        $this->artisan('olm:migrate-tag', [
+            'retired' => 'plastic_bag',
+            'desired' => 'plastic_bag',
+            '--category' => 'dumping',
+            '--apply' => true,
+        ])->assertExitCode(0);
+
+        $source = CategoryObject::find($this->retiredClo->id);
+
+        $this->assertSame($targetClo->id, $source->merged_into_clo_id);
+        $this->assertSame($targetClo->id, $source->resolveActiveClo()?->id);
+        $this->assertFalse(CategoryObject::active()->whereKey($source->id)->exists(), 'source pivot must leave the picker');
+        $this->assertTrue(CategoryObject::active()->whereKey($targetClo->id)->exists());
+    }
+
     public function test_invalid_mappings_fail_without_changes(): void
     {
         $this->artisan('olm:migrate-tag', [

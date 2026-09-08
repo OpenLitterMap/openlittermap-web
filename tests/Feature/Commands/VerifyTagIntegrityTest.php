@@ -79,6 +79,28 @@ class VerifyTagIntegrityTest extends TestCase
     }
 
     /**
+     * `--fix` cannot invent a pivot, so an unsanctioned pairing survives the repair. Returning
+     * success anyway makes this a deployment check that exits 0 with defects present — worse than
+     * no check. It must fail when anything remains after repairing.
+     */
+    public function test_fix_still_fails_when_unrepairable_defects_remain(): void
+    {
+        $orphan = LitterObject::create(['key' => 'shadowObject']);
+
+        PhotoTag::create([
+            'photo_id' => $this->photo->id,
+            'category_id' => $this->category->id,
+            'litter_object_id' => $orphan->id,
+            'category_litter_object_id' => null,
+            'quantity' => 2,
+        ]);
+
+        $this->artisan('olm:verify-tag-integrity', ['--fix' => true])
+            ->expectsOutputToContain('no CLO pivot')
+            ->assertExitCode(1);
+    }
+
+    /**
      * The repair direction is the whole point: the pointer is rebuilt from the pairing. Repairing
      * the other way round would overwrite the source of truth from a deprecated column.
      */

@@ -65,6 +65,48 @@ class ReplacePhotoTagsTest extends TestCase
         $this->assertSame($bottle->categories()->first()->id, $tag->category_id);
     }
 
+    /**
+     * End to end for the stale mobile client. It caches `/api/tags/all` for days and cannot ship,
+     * so after `beer_can → can --type=beer` it still submits the old CLO. The remount must land
+     * the write on `can` AND carry `beer`; before, the subtype was lost because the retirement
+     * record could not say what the approved split was.
+     */
+    public function test_a_stale_clo_submission_lands_on_the_survivor_with_the_approved_type(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+
+        $other = Category::firstWhere('key', CategoryKey::Other->value);
+        $retired = LitterObject::firstOrCreate(['key' => 'beer_can_legacy']);
+        $survivor = LitterObject::firstWhere('key', 'can');
+        $beer = \App\Models\Litter\Tags\LitterObjectType::firstOrCreate(['key' => 'beer']);
+
+        $staleCloId = $this->getCloId($other->id, $retired->id);
+        $survivorCloId = $this->getCloId($other->id, $survivor->id);
+        \Illuminate\Support\Facades\DB::table('category_object_types')->insertOrIgnore([
+            'category_litter_object_id' => $survivorCloId,
+            'litter_object_type_id' => $beer->id,
+        ]);
+        \App\Models\Litter\Tags\CategoryObject::flushResolverCache();
+
+        $this->artisan('olm:migrate-tag', [
+            'retired' => 'beer_can_legacy',
+            'desired' => 'can',
+            '--type' => 'beer',
+            '--apply' => true,
+        ])->assertExitCode(0);
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['category_litter_object_id' => $staleCloId, 'quantity' => 1]],
+        ])->assertOk();
+
+        $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
+
+        $this->assertSame($survivor->id, $tag->litter_object_id);
+        $this->assertSame($beer->id, $tag->litter_object_type_id, 'stale submission must keep the approved subtype');
+    }
+
     public function test_replace_tags_deletes_old_tags_and_adds_new(): void
     {
         $user = User::factory()->create(['verification_required' => false]);
