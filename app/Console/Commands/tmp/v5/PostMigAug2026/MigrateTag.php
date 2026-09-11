@@ -332,11 +332,25 @@ class MigrateTag extends Command
                                 ->update($update);
                         }
 
+                        // Rows with no category still belong to the object: they take the same
+                        // object and type, and land on the target pairing when the mapping moves.
+                        $uncategorised = ['litter_object_id' => $desiredId];
+
+                        if ($this->typeId !== null) {
+                            $uncategorised['litter_object_type_id'] = $this->typeId;
+                        }
+
+                        if ($this->targetCategoryId !== null) {
+                            $uncategorised['category_id'] = $this->targetCategoryId;
+                            $uncategorised['category_litter_object_id'] = $pivots[$this->targetCategoryId]
+                                ?? CategoryObject::resolveId($this->targetCategoryId, $desiredId);
+                        }
+
                         $moved += DB::table('photo_tags')
                             ->whereIn('photo_id', $photoIds)
                             ->where('litter_object_id', $retiredId)
                             ->whereNull('category_id')
-                            ->update(['litter_object_id' => $desiredId]);
+                            ->update($uncategorised);
 
                         $photos->load([
                             'photoTags.category',
@@ -399,14 +413,41 @@ class MigrateTag extends Command
             $pivots = [];
 
             foreach ($categoryIds as $categoryId) {
-                $retiredCloId = DB::table('category_litter_object')
+                $retiredClo = DB::table('category_litter_object')
                     ->where('category_id', $categoryId)
                     ->where('litter_object_id', $retiredId)
-                    ->value('id');
+                    ->first(['id', 'merged_into_clo_id', 'merged_into_type_id']);
+                $retiredCloId = $retiredClo?->id;
 
                 // A category move lands on a fixed target pairing; otherwise the survivor stays
                 // in the category the rows are already in.
                 $targetCategoryId = $this->targetCategoryId ?? $categoryId;
+
+                // A recorded mapping is immutable. A tombstone left by an earlier, different
+                // mapping is skipped — its chain continues through the survivor it recorded. A
+                // tombstone from this same mapping is resumed. One that disagrees with the
+                // requested category or type is a conflicting retry and aborts the run.
+                if ($retiredClo?->merged_into_clo_id !== null) {
+                    $recorded = DB::table('category_litter_object')
+                        ->where('id', $retiredClo->merged_into_clo_id)
+                        ->first(['id', 'category_id', 'litter_object_id']);
+
+                    if ((int) $recorded->litter_object_id !== $desiredId) {
+                        continue;
+                    }
+
+                    $recordedTypeId = $retiredClo->merged_into_type_id === null ? null : (int) $retiredClo->merged_into_type_id;
+
+                    if ((int) $recorded->category_id !== $targetCategoryId || $recordedTypeId !== $this->typeId) {
+                        throw new \RuntimeException(sprintf(
+                            'Pairing %d is already mapped to pivot %d (category %d, type %s); recorded mappings are immutable.',
+                            $retiredClo->id,
+                            $recorded->id,
+                            $recorded->category_id,
+                            $recordedTypeId ?? 'none'
+                        ));
+                    }
+                }
 
                 $desiredCloId = DB::table('category_litter_object')
                     ->where('category_id', $targetCategoryId)
@@ -414,20 +455,15 @@ class MigrateTag extends Command
                     ->value('id');
 
                 if ($desiredCloId === null) {
-                    // Creating the survivor pivot in place is approved; creating one for a
-                    // category the mapping moves to would be the migration choosing taxonomy.
-                    if ($this->targetCategoryId !== null) {
-                        throw new \RuntimeException(
-                            "No approved pivot for the replacement tag in category {$this->targetCategoryKey}."
-                        );
-                    }
+                    // Taxonomy is declared in TagsConfig and created by the seeder. A migration
+                    // that invents the survivor pairing is how the shadow objects were made.
+                    $targetCategoryKey = $this->targetCategoryKey
+                        ?? (string) DB::table('categories')->where('id', $categoryId)->value('key');
 
-                    $desiredCloId = DB::table('category_litter_object')->insertGetId([
-                        'category_id' => $categoryId,
-                        'litter_object_id' => $desiredId,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    throw new \RuntimeException(
+                        "No approved pivot for the replacement tag in category {$targetCategoryKey}. "
+                        . 'Declare the pairing in TagsConfig and run the seeder, or move the rows with --category.'
+                    );
                 }
 
                 $pivots[$categoryId] = (int) $desiredCloId;
@@ -443,7 +479,7 @@ class MigrateTag extends Command
                     ->whereNull('category_litter_object_id')
                     ->update(['category_litter_object_id' => $desiredCloId]);
 
-                if ($retiredCloId !== null && (int) $retiredCloId !== (int) $desiredCloId) {
+                if ($retiredCloId !== null && (int) $retiredCloId !== (int) $desiredCloId && $retiredClo->merged_into_clo_id === null) {
                     // The approved mapping is a triple — survivor object, category and type —
                     // and a retirement can span categories with a different survivor in each,
                     // so it is recorded on the source pivot, not the object. Stale clients and
