@@ -2,6 +2,7 @@
 
 namespace App\Models\Litter\Tags;
 
+use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ManagesTaggables;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
