@@ -29,6 +29,72 @@ class VerifyTagIntegrityTest extends TestCase
         $this->photo = Photo::factory()->create();
     }
 
+    /**
+     * A mapping that stopped part-way leaves rows on a pairing whose pivot already records its
+     * survivor. The pairing is sanctioned, so the pivot check passes, yet the migration is not
+     * complete. The deployment gate must fail until the mapping is re-run.
+     */
+    public function test_it_reports_rows_left_on_a_tombstoned_pairing(): void
+    {
+        [$source, $target] = $this->tombstonedPairing();
+
+        PhotoTag::create([
+            'photo_id' => $this->photo->id,
+            'category_id' => $source->category_id,
+            'litter_object_id' => $source->litter_object_id,
+            'category_litter_object_id' => $source->id,
+            'quantity' => 1,
+        ]);
+
+        $this->artisan('olm:verify-tag-integrity')
+            ->expectsOutputToContain('tombstoned')
+            ->assertExitCode(1);
+    }
+
+    public function test_it_reports_quick_tags_left_on_a_tombstoned_pairing(): void
+    {
+        [$source, $target] = $this->tombstonedPairing();
+
+        \Illuminate\Support\Facades\DB::table('user_quick_tags')->insert([
+            'user_id' => \App\Models\Users\User::factory()->create()->id,
+            'clo_id' => $source->id,
+            'quantity' => 1,
+            'materials' => '[]',
+            'brands' => '[]',
+            'sort_order' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->artisan('olm:verify-tag-integrity')
+            ->expectsOutputToContain('quick tag')
+            ->assertExitCode(1);
+    }
+
+    public function test_it_reports_a_retirement_cycle(): void
+    {
+        [$source, $target] = $this->tombstonedPairing();
+        $target->update(['merged_into_clo_id' => $source->id]);
+
+        $this->artisan('olm:verify-tag-integrity')
+            ->expectsOutputToContain('cycle')
+            ->assertExitCode(1);
+    }
+
+    /** @return array{0: CategoryObject, 1: CategoryObject} source tombstone, survivor */
+    private function tombstonedPairing(): array
+    {
+        $source = CategoryObject::create([
+            'category_id' => $this->category->id,
+            'litter_object_id' => LitterObject::create(['key' => 'tombstoned_object'])->id,
+        ]);
+        $target = CategoryObject::where('category_id', $this->category->id)->firstOrFail();
+        $source->update(['merged_into_clo_id' => $target->id]);
+        CategoryObject::flushResolverCache();
+
+        return [$source, $target];
+    }
+
     public function test_a_null_pointer_on_a_sanctioned_pairing_is_not_an_integrity_error(): void
     {
         $clo = CategoryObject::where('category_id', $this->category->id)->firstOrFail();

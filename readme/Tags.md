@@ -337,7 +337,15 @@ A null summary (zero tags) yields zero metrics. Summary + XP are generated regar
 
 ### Denormalisation integrity
 
-`category_id` and `litter_object_id` on `photo_tags` must match the referenced CLO. This is enforced on write in `AddTagsToPhotoAction` (resolved from the CLO). The `olm:verify-tag-integrity` artisan command detects and repairs CLO↔denorm drift — run it after migrations, seeders, and data scripts.
+`category_id` and `litter_object_id` on `photo_tags` are the source of truth; the deprecated `category_litter_object_id` pointer is derived from them. `olm:verify-tag-integrity` is the deployment gate after migrations, seeders, data scripts and every `olm:migrate-tag` run. It reports:
+
+- object rows whose (category, object) pairing has no pivot — never auto-repaired, a taxonomy decision;
+- pointers that disagree with their pairing — `--fix` rebuilds them from the pairing;
+- type ids not approved for the pairing — `--fix` clears them;
+- rows and quick tags still sitting on a tombstoned pairing (a mapping that did not finish) — re-run the mapping;
+- retirement chains that form a cycle.
+
+It exits non-zero while anything remains, with or without `--fix`.
 
 ### Deduplication & uniqueness
 

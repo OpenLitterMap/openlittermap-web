@@ -18,13 +18,18 @@ For one entry, the command:
 
 1. Sets `retired_at` on Tag A and points `merged_into_id` to Tag B (skipped for a pure
    category move, where the object stays live).
-2. Creates Tag B's category pivot where needed. With `--category` the target pivot must already
-   exist — the run refuses to create it.
+2. Requires Tag B's pairing to already exist in every category Tag A's rows sit in (or in the
+   `--category` target). Taxonomy is declared in `TagsConfig` and created by the seeder; the run
+   never invents a pivot and aborts before any change when one is missing. Rows on an unsanctioned
+   source pairing therefore need a decision first: declare the pairing, or move them with `--category`.
 3. Records the full approved mapping on each of Tag A's source pivots:
    `category_litter_object.merged_into_clo_id` (the survivor pairing) and `merged_into_type_id`
    (the approved subtype, when `--type` is given). This is what stale clients and saved quick tags
    resolve from, so a v4 composite key keeps its subtype and an object+category move lands in the
    right category. A marked pivot is excluded from the picker by `CategoryObject::active()`.
+   Recorded mappings are immutable: a tombstone left by an earlier, different mapping is left
+   alone (its chain continues through the survivor it recorded), a tombstone from the same mapping
+   is resumed, and a retry that disagrees on category or type aborts.
 4. Backfills `photo_tags.category_litter_object_id` on rows already sitting on Tag B with a null CLO.
 5. Repoints `photo_tags` and `user_quick_tags` from A to B, carrying the approved type onto quick
    tags when `--type` is given.
@@ -100,15 +105,17 @@ During apply, a progress bar shows the number of durably migrated rows.
 
 Check that:
 
+- `php artisan olm:verify-tag-integrity` exits 0. It fails on rows or quick tags left on a
+  tombstoned pairing (the mapping did not finish — re-run it), on pairings with no pivot, and on
+  retirement chains that form a cycle.
 - Tag A is retired and points to Tag B.
 - No `photo_tags` or quick tags still reference Tag A.
 - No `photo_tags` row on Tag B has a null `category_litter_object_id`.
 - Affected summaries and Redis object counts use Tag B.
 - Picker, location, profile, and export surfaces no longer expose Tag A.
 
-The dry run counts only rows sitting on Tag A. It does not report the rows that step 3 backfills
-or the export columns the new pivot unlocks, so a small or zero row count is not evidence of a
-small change.
+The dry run counts only rows sitting on Tag A. It does not report the rows that step 4 backfills,
+so a small or zero row count is not evidence of a small change.
 
 The command intentionally has no lifecycle manager, snapshot files, repair mode, or verification mode. If an apply fails, inspect the database and Redis before rerunning it. MySQL batches are resumable, but Redis is not transactionally coupled to MySQL and still requires the checks above.
 

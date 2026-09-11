@@ -39,6 +39,8 @@ See `readme/Clustering.md` for full details.
 | `olm:v5` | Main migration script — converts photos to v5 tag structure |
 | `olm:v5:reset --force` | Reset all v5 migration changes (destructive) |
 | `olm:verify-tags-fixed {--user=}` | Verify tag migration accuracy for users |
+| `olm:migrate-tag {retired} {desired} {--type=} {--category=} {--allow-xp-change} {--apply}` | Apply one approved tag mapping (dry-run by default); see `readme/PostTagMigrationClean.md` |
+| `olm:verify-tag-integrity {--fix} {--photo-id=}` | Deployment gate for `photo_tags`: pivot-less pairings, stale pointers, invalid types, rows/quick tags on tombstones, chain cycles |
 | `olm:locations:analysis` | Analyze location data integrity (duplicates, orphans) |
 | `olm:locations:cleanup` | Merge duplicate locations, remove orphans |
 | `olm:extract-brands` | Extract brand-object relationships from all photos |

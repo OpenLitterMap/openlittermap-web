@@ -12,7 +12,7 @@ class VerifyTagIntegrity extends Command
         {--fix : Rebuild stale CLO pointers and clear invalid type ids}
         {--photo-id= : Check a specific photo only}';
 
-    protected $description = 'Detect taxonomy gaps and stale CLO pointers on photo_tags';
+    protected $description = 'Detect taxonomy gaps, stale CLO pointers, rows and quick tags left on tombstoned pairings, and broken retirement chains';
 
     public function handle(): int
     {
@@ -21,8 +21,11 @@ class VerifyTagIntegrity extends Command
         $unsanctioned = $this->checkUnsanctionedPairings();
         $stalePointers = $this->checkStalePointers();
         $invalidTypes = $this->checkInvalidTypes();
+        $onTombstones = $this->checkRowsOnTombstones();
+        $quickTagsOnTombstones = $this->checkQuickTagsOnTombstones();
+        $cycles = $this->checkRetirementCycles();
 
-        $total = $unsanctioned + $stalePointers + $invalidTypes;
+        $total = $unsanctioned + $stalePointers + $invalidTypes + $onTombstones + $quickTagsOnTombstones + $cycles;
 
         if ($total === 0) {
             $this->info('All photo_tags are valid. 0 issues found.');
@@ -42,7 +45,10 @@ class VerifyTagIntegrity extends Command
         // Unsanctioned pairings are unrepairable by design, so recount after repairing.
         $remaining = $this->unsanctionedPairings()->count()
             + $this->stalePointers()->count()
-            + $this->invalidTypes()->count();
+            + $this->invalidTypes()->count()
+            + $this->rowsOnTombstones()->count()
+            + $this->quickTagsOnTombstones()->count()
+            + $this->retirementCycles();
 
         if ($remaining > 0) {
             $this->error("{$remaining} issue(s) remain after repair.");
@@ -105,6 +111,62 @@ class VerifyTagIntegrity extends Command
                         ->whereColumn('cot.litter_object_type_id', 'pt.litter_object_type_id');
                 })
         );
+    }
+
+    /**
+     * Object tags still sitting on a pairing whose pivot records a survivor. The pairing is
+     * sanctioned, so the pivot check passes, but the mapping that retired it did not finish (or a
+     * write slipped in after it). Not auto-repairable: the mapping has to be re-run.
+     */
+    private function rowsOnTombstones(): Builder
+    {
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->join('category_litter_object as clo', function ($join) {
+                    $join->on('clo.category_id', '=', 'pt.category_id')
+                        ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+                })
+                ->whereNotNull('clo.merged_into_clo_id')
+        );
+    }
+
+    /** Saved presets that still point at a retired pairing. */
+    private function quickTagsOnTombstones(): Builder
+    {
+        return DB::table('user_quick_tags as uqt')
+            ->join('category_litter_object as clo', 'clo.id', '=', 'uqt.clo_id')
+            ->whereNotNull('clo.merged_into_clo_id');
+    }
+
+    /**
+     * Tombstones whose chain never reaches an active pivot. Every write path follows the chain
+     * with a cycle guard and 422s on one, so a cycle silently blocks tagging for that pairing.
+     */
+    private function retirementCycles(): int
+    {
+        $next = DB::table('category_litter_object')
+            ->whereNotNull('merged_into_clo_id')
+            ->pluck('merged_into_clo_id', 'id')
+            ->map('intval')
+            ->all();
+        $broken = 0;
+
+        foreach (array_keys($next) as $start) {
+            $seen = [];
+            $clo = $start;
+
+            while (isset($next[$clo])) {
+                if (isset($seen[$clo])) {
+                    $broken++;
+                    break;
+                }
+
+                $seen[$clo] = true;
+                $clo = $next[$clo];
+            }
+        }
+
+        return $broken;
     }
 
     private function scopeToPhoto(Builder $query): Builder
@@ -173,6 +235,46 @@ class VerifyTagIntegrity extends Command
      * Type ids not valid for the tag's category/object pairing. The valid-type set hangs off the
      * CLO, so the pairing is resolved to a CLO first rather than trusting the deprecated pointer.
      */
+    private function checkRowsOnTombstones(): int
+    {
+        $count = $this->rowsOnTombstones()->count();
+
+        if ($count > 0) {
+            $this->error("{$count} photo_tags remain on a tombstoned pairing.");
+            $this->line('  Re-run the mapping that retired it — the migration did not finish.');
+        } else {
+            $this->info('Rows on tombstoned pairings: OK');
+        }
+
+        return $count;
+    }
+
+    private function checkQuickTagsOnTombstones(): int
+    {
+        $count = $this->quickTagsOnTombstones()->count();
+
+        if ($count > 0) {
+            $this->error("{$count} quick tag(s) still point at a tombstoned pairing.");
+        } else {
+            $this->info('Quick tags on tombstoned pairings: OK');
+        }
+
+        return $count;
+    }
+
+    private function checkRetirementCycles(): int
+    {
+        $count = $this->retirementCycles();
+
+        if ($count > 0) {
+            $this->error("{$count} retirement chain(s) form a cycle and never reach an active pairing.");
+        } else {
+            $this->info('Retirement chains: OK');
+        }
+
+        return $count;
+    }
+
     private function checkInvalidTypes(): int
     {
         $count = $this->invalidTypes()->count();
