@@ -2,6 +2,10 @@
 
 namespace Tests\Feature\Api\Tags;
 
+use App\Enums\CategoryKey;
+use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
+use App\Models\Litter\Tags\LitterObject;
 use Database\Seeders\Tags\GenerateTagsSeeder;
 use Tests\TestCase;
 
@@ -35,6 +39,38 @@ class GetAllTagsObjectTypesTest extends TestCase
 
         // No duplicates after merging across categories
         $this->assertCount(count(array_unique($bottleTypes)), $bottleTypes);
+    }
+
+    /**
+     * The web picker builds its category chips from `objects[].categories`, not from
+     * `category_objects`, so a tombstoned pairing has to be filtered out of that array too or
+     * a pure category move leaves the old shelf selectable.
+     */
+    public function test_objects_categories_exclude_a_tombstoned_pairing(): void
+    {
+        $marine = Category::firstWhere('key', CategoryKey::Marine->value);
+        $softdrinks = Category::firstWhere('key', CategoryKey::Softdrinks->value);
+        $bottle = LitterObject::firstWhere('key', 'bottle');
+        $source = CategoryObject::where('category_id', $marine->id)->where('litter_object_id', $bottle->id)->firstOrFail();
+        $target = CategoryObject::where('category_id', $softdrinks->id)->where('litter_object_id', $bottle->id)->firstOrFail();
+        $source->update(['merged_into_clo_id' => $target->id]);
+
+        $object = collect($this->getJson('/api/tags/all')->assertOk()->json('objects'))->firstWhere('key', 'bottle');
+
+        $this->assertNotContains($marine->id, array_column($object['categories'], 'id'), 'retired pairing must leave the picker');
+        $this->assertContains($softdrinks->id, array_column($object['categories'], 'id'));
+    }
+
+    public function test_an_object_whose_only_pairing_is_tombstoned_leaves_the_picker(): void
+    {
+        $other = Category::firstWhere('key', CategoryKey::Other->value);
+        $lonely = LitterObject::create(['key' => 'lonely_object']);
+        $target = CategoryObject::where('category_id', $other->id)->firstOrFail();
+        CategoryObject::create(['category_id' => $other->id, 'litter_object_id' => $lonely->id, 'merged_into_clo_id' => $target->id]);
+
+        $keys = array_column($this->getJson('/api/tags/all')->assertOk()->json('objects'), 'key');
+
+        $this->assertNotContains('lonely_object', $keys);
     }
 
     public function test_objects_without_types_return_empty_array(): void

@@ -54,8 +54,12 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        $litterObjects = LitterObject::with(['categories:id,key'])
-            ->whereHas('categories')
+        // The web picker builds its category chips from this array, so tombstoned pairings are
+        // filtered here as well as in `category_objects` below.
+        $litterObjects = LitterObject::with(['categories' => fn ($q) => $q
+                ->select('categories.id', 'categories.key')
+                ->wherePivotNull('merged_into_clo_id')])
+            ->whereHas('categories', fn (Builder $q) => $q->whereNull('category_litter_object.merged_into_clo_id'))
             ->active()
             ->select('id', 'key')
             ->orderBy('key')
