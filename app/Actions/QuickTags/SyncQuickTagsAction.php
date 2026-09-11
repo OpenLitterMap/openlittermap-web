@@ -76,19 +76,27 @@ class SyncQuickTagsAction
         foreach ($tags as $i => $tag) {
             $clo = $clos->get((int) $tag['clo_id']);
 
-            if ($clo === null || ! $clo->litterObject?->isRetired()) {
+            // A pairing can be retired while its object stays live (a pure category move), so
+            // the pivot's own retirement is checked, not only the object's.
+            if ($clo === null || (! $clo->isRetired() && ! $clo->litterObject?->isRetired())) {
                 continue;
             }
 
-            $activeClo = $clo->resolveActiveClo();
+            $mapping = $clo->resolveActiveMapping();
 
-            if ($activeClo === null) {
+            if ($mapping === null) {
                 $unmapped[] = $clo->litterObject->key;
 
                 continue;
             }
 
-            $tags[$i]['clo_id'] = $activeClo->id;
+            $tags[$i]['clo_id'] = $mapping['clo']->id;
+
+            // A v4 composite key split into object + type: a preset saved before the split has no
+            // type of its own, so it takes the approved subtype recorded on the chain.
+            if (($tag['type_id'] ?? null) === null && $mapping['type_id'] !== null) {
+                $tags[$i]['type_id'] = $mapping['type_id'];
+            }
         }
 
         if ($unmapped !== []) {

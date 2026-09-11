@@ -51,6 +51,43 @@ class QuickTagsApiTest extends TestCase
         ], $overrides);
     }
 
+    /**
+     * A pure category move retires the pairing, not the object. The sync used to check only the
+     * object and so re-saved the tombstoned pairing, restoring what the migration had emptied.
+     */
+    public function test_sync_repoints_a_quick_tag_whose_pairing_moved_to_another_category(): void
+    {
+        $user = User::factory()->create();
+        $objId = DB::table('litter_objects')->insertGetId(['key' => 'moved_' . uniqid()]);
+        $sourceCloId = $this->getCloId(DB::table('categories')->insertGetId(['key' => 'from_' . uniqid()]), $objId);
+        $targetCloId = $this->getCloId(DB::table('categories')->insertGetId(['key' => 'to_' . uniqid()]), $objId);
+        DB::table('category_litter_object')->where('id', $sourceCloId)->update(['merged_into_clo_id' => $targetCloId]);
+
+        $saved = app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($sourceCloId)]);
+
+        $this->assertSame($targetCloId, $saved->first()->clo_id, 'sync must not restore the retired pairing');
+    }
+
+    public function test_sync_carries_the_approved_type_when_repointing_a_split_object(): void
+    {
+        $user = User::factory()->create();
+        $catId = DB::table('categories')->insertGetId(['key' => 'cat_' . uniqid()]);
+        $newObjId = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $oldObjId = DB::table('litter_objects')->insertGetId([
+            'key' => 'old_' . uniqid(), 'retired_at' => now(), 'merged_into_id' => $newObjId,
+        ]);
+        $oldCloId = $this->getCloId($catId, $oldObjId);
+        $newCloId = $this->getCloId($catId, $newObjId);
+        $typeId = $this->createType();
+        DB::table('category_object_types')->insert(['category_litter_object_id' => $newCloId, 'litter_object_type_id' => $typeId]);
+        DB::table('category_litter_object')->where('id', $oldCloId)->update(['merged_into_clo_id' => $newCloId, 'merged_into_type_id' => $typeId]);
+
+        $saved = app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($oldCloId)]);
+
+        $this->assertSame($newCloId, $saved->first()->clo_id);
+        $this->assertSame($typeId, $saved->first()->type_id, 'sync must keep the approved subtype');
+    }
+
     public function test_guest_cannot_access_quick_tags(): void
     {
         $this->getJson('/api/v3/user/quick-tags')->assertStatus(401);

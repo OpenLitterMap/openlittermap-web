@@ -108,6 +108,104 @@ class ReplacePhotoTagsTest extends TestCase
         $this->assertSame($beer->id, $tag->litter_object_type_id, 'stale submission must keep the approved subtype');
     }
 
+    /**
+     * Two mappings later, the stale client still submits the first CLO. The chain resolves to the
+     * final survivor and the subtype has to come from the hop that introduced it, not from the
+     * first tombstone, which recorded no type.
+     */
+    public function test_a_stale_clo_two_mappings_old_lands_on_the_final_survivor_with_the_type_introduced_later(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+        $other = Category::firstWhere('key', CategoryKey::Other->value);
+
+        $a = LitterObject::firstOrCreate(['key' => 'chain_a']);
+        $b = LitterObject::firstOrCreate(['key' => 'chain_b']);
+        $c = LitterObject::firstOrCreate(['key' => 'chain_c']);
+        $beer = \App\Models\Litter\Tags\LitterObjectType::firstOrCreate(['key' => 'beer']);
+
+        $aCloId = $this->getCloId($other->id, $a->id);
+        $this->getCloId($other->id, $b->id);
+        $cCloId = $this->getCloId($other->id, $c->id);
+        \Illuminate\Support\Facades\DB::table('category_object_types')->insertOrIgnore([
+            'category_litter_object_id' => $cCloId,
+            'litter_object_type_id' => $beer->id,
+        ]);
+        \App\Models\Litter\Tags\CategoryObject::flushResolverCache();
+
+        $this->artisan('olm:migrate-tag', ['retired' => 'chain_a', 'desired' => 'chain_b', '--apply' => true])->assertExitCode(0);
+        $this->artisan('olm:migrate-tag', ['retired' => 'chain_b', 'desired' => 'chain_c', '--type' => 'beer', '--apply' => true])->assertExitCode(0);
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['category_litter_object_id' => $aCloId, 'quantity' => 1]],
+        ])->assertOk();
+
+        $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
+
+        $this->assertSame($c->id, $tag->litter_object_id);
+        $this->assertSame($beer->id, $tag->litter_object_type_id, 'type introduced on the second hop must survive');
+    }
+
+    /**
+     * A legacy `{ object, category }` payload names the pairing by keys. After a pure category
+     * move that pairing is a tombstone; the write must follow it rather than re-populate the
+     * pairing the migration just emptied.
+     */
+    public function test_a_legacy_write_naming_a_moved_pairing_lands_on_the_target_category(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+        $other = Category::firstWhere('key', CategoryKey::Other->value);
+        $dumping = Category::firstWhere('key', CategoryKey::Dumping->value);
+        $object = LitterObject::firstOrCreate(['key' => 'moved_pairing']);
+
+        $sourceCloId = $this->getCloId($other->id, $object->id);
+        $targetCloId = $this->getCloId($dumping->id, $object->id);
+        \App\Models\Litter\Tags\CategoryObject::whereKey($sourceCloId)->update(['merged_into_clo_id' => $targetCloId]);
+        \App\Models\Litter\Tags\CategoryObject::flushResolverCache();
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['object' => 'moved_pairing', 'category' => 'other', 'quantity' => 1]],
+        ])->assertOk();
+
+        $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
+
+        $this->assertSame($dumping->id, $tag->category_id, 'write must follow the tombstone, not refill the moved pairing');
+        $this->assertSame($targetCloId, $tag->category_litter_object_id);
+    }
+
+    public function test_a_legacy_write_naming_a_split_object_carries_the_approved_type(): void
+    {
+        $user = User::factory()->create(['verification_required' => false]);
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+        $other = Category::firstWhere('key', CategoryKey::Other->value);
+        $old = LitterObject::firstOrCreate(['key' => 'split_old']);
+        $new = LitterObject::firstOrCreate(['key' => 'split_new']);
+        $beer = \App\Models\Litter\Tags\LitterObjectType::firstOrCreate(['key' => 'beer']);
+
+        $oldCloId = $this->getCloId($other->id, $old->id);
+        $newCloId = $this->getCloId($other->id, $new->id);
+        \Illuminate\Support\Facades\DB::table('category_object_types')->insertOrIgnore([
+            'category_litter_object_id' => $newCloId,
+            'litter_object_type_id' => $beer->id,
+        ]);
+        $old->update(['retired_at' => now(), 'merged_into_id' => $new->id]);
+        \App\Models\Litter\Tags\CategoryObject::whereKey($oldCloId)->update(['merged_into_clo_id' => $newCloId, 'merged_into_type_id' => $beer->id]);
+        \App\Models\Litter\Tags\CategoryObject::flushResolverCache();
+
+        $this->actingAs($user)->putJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['object' => 'split_old', 'category' => 'other', 'quantity' => 1]],
+        ])->assertOk();
+
+        $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
+
+        $this->assertSame($new->id, $tag->litter_object_id);
+        $this->assertSame($beer->id, $tag->litter_object_type_id, 'legacy payload must pick up the approved subtype');
+    }
+
     public function test_replace_tags_deletes_old_tags_and_adds_new(): void
     {
         $user = User::factory()->create(['verification_required' => false]);

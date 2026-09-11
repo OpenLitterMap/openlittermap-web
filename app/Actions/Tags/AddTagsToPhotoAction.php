@@ -123,18 +123,19 @@ class AddTagsToPhotoAction
                 continue;
             }
 
-            $activeClo = $clo->resolveActiveClo();
+            $mapping = $clo->resolveActiveMapping();
 
-            if ($activeClo === null) {
+            if ($mapping === null) {
                 $this->rejectRetiredObject($clo->litterObject->key);
             }
 
+            $activeClo = $mapping['clo'];
             $tags[$i]['category_litter_object_id'] = $activeClo->id;
 
             // A v4 composite key split into object + type. The client cannot know the approved
-            // subtype, so a submission with no type takes the one recorded on the tombstone.
-            if (($tag['litter_object_type_id'] ?? null) === null && $clo->merged_into_type_id !== null) {
-                $tags[$i]['litter_object_type_id'] = $clo->merged_into_type_id;
+            // subtype, so a submission with no type takes the one recorded on the chain.
+            if (($tag['litter_object_type_id'] ?? null) === null && $mapping['type_id'] !== null) {
+                $tags[$i]['litter_object_type_id'] = $mapping['type_id'];
             }
 
             $typeId = $tags[$i]['litter_object_type_id'] ?? null;
@@ -287,34 +288,42 @@ class AddTagsToPhotoAction
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
-        // Same lookup-only remount as the CLO path, but object-level: a stale
-        // `{ object: "plastic_bag" }` lands on an existing approved CLO for the active object.
-        // Retired with no merge or no approved target CLO still 422s.
-        $remountedFrom = null;
-
-        if ($object?->isRetired()) {
-            $remountedFrom = $object->key;
-            $active = $object->activeObject();
-
-            if ($active === null) {
-                $this->rejectRetiredObject($object->key);
-            }
-
-            $object = $active;
-        }
-
-        // Resolve CLO from category + object
+        // Same lookup-only remount as the CLO path. The pairing the client named is resolved
+        // first: a tombstoned pivot records exactly where its rows went (possibly another
+        // category) and which subtype the split approved. Only a pairing with no pivot at all
+        // falls back to the object walk. Retired with no merge or no approved target still 422s.
         $clo = null;
+        $typeId = null;
+
         if ($category && $object) {
-            $clo = CategoryObject::where('category_id', $category->id)
+            $named = CategoryObject::where('category_id', $category->id)
                 ->where('litter_object_id', $object->id)
                 ->first();
 
-            if (! $clo) {
-                if ($remountedFrom !== null) {
-                    $this->rejectRetiredObject($remountedFrom);
+            if ($named !== null) {
+                $mapping = $named->resolveActiveMapping();
+
+                if ($mapping === null) {
+                    $this->rejectRetiredObject($object->key);
                 }
 
+                $clo = $mapping['clo'];
+                $typeId = $mapping['type_id'];
+            } elseif ($object->isRetired()) {
+                $active = $object->activeObject();
+
+                if ($active === null) {
+                    $this->rejectRetiredObject($object->key);
+                }
+
+                $clo = CategoryObject::where('category_id', $category->id)
+                    ->where('litter_object_id', $active->id)
+                    ->first();
+
+                if (! $clo) {
+                    $this->rejectRetiredObject($object->key);
+                }
+            } else {
                 throw ValidationException::withMessages([
                     'tags' => [[
                         'msg' => 'Category does not contain object',
@@ -330,6 +339,7 @@ class AddTagsToPhotoAction
             'category_litter_object_id' => $clo?->id,
             'category_id' => $clo?->category_id,
             'litter_object_id' => $clo?->litter_object_id,
+            'litter_object_type_id' => $typeId,
             'quantity' => $quantity,
             'picked_up' => $pickedUp,
         ]);

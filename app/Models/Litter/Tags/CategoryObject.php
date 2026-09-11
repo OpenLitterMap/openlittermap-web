@@ -114,16 +114,30 @@ class CategoryObject extends Pivot
     /**
      * The CLO this write should land on.
      *
-     * A retired pivot records its survivor directly (`merged_into_clo_id`), so the answer is
-     * exact even when the survivor lives in another category — searching the original category
-     * for the active object found nothing there and rejected stale clients as retired. Chains are
-     * followed with a cycle guard. Older tombstones with no recorded survivor fall back to the
-     * object walk. API writes never create taxonomy relationships: an unrecorded, unresolvable
-     * retirement returns null so the caller can 422.
+     * @see resolveActiveMapping()
      */
     public function resolveActiveClo(): ?self
     {
+        return $this->resolveActiveMapping()['clo'] ?? null;
+    }
+
+    /**
+     * Where a write against this pivot should land, and with which subtype.
+     *
+     * A retired pivot records its survivor directly (`merged_into_clo_id`), so the answer is
+     * exact even when the survivor lives in another category. Chains are followed with a cycle
+     * guard, and the approved subtype is carried forward from whichever hop introduced it — a
+     * stale client holding the first CLO cannot know about a split made two mappings later.
+     * Older tombstones with no recorded survivor fall back to the object walk. API writes never
+     * create taxonomy relationships: an unrecorded, unresolvable retirement returns null so the
+     * caller can 422.
+     *
+     * @return array{clo: self, type_id: int|null}|null
+     */
+    public function resolveActiveMapping(): ?array
+    {
         $clo = $this;
+        $typeId = null;
         $seen = [];
 
         while ($clo->merged_into_clo_id !== null) {
@@ -132,6 +146,7 @@ class CategoryObject extends Pivot
             }
 
             $seen[$clo->id] = true;
+            $typeId = $clo->merged_into_type_id ?? $typeId;
             $clo = static::find($clo->merged_into_clo_id);
 
             if ($clo === null) {
@@ -140,7 +155,7 @@ class CategoryObject extends Pivot
         }
 
         if ($clo !== $this) {
-            return $clo;
+            return ['clo' => $clo, 'type_id' => $typeId === null ? null : (int) $typeId];
         }
 
         $litterObject = $this->relationLoaded('litterObject')
@@ -148,7 +163,7 @@ class CategoryObject extends Pivot
             : $this->litterObject()->first();
 
         if ($litterObject === null || ! $litterObject->isRetired()) {
-            return $this;
+            return ['clo' => $this, 'type_id' => null];
         }
 
         $activeLitterObject = $litterObject->activeObject();
@@ -158,12 +173,14 @@ class CategoryObject extends Pivot
         }
 
         if ($activeLitterObject->id === (int) $this->litter_object_id) {
-            return $this;
+            return ['clo' => $this, 'type_id' => null];
         }
 
-        return static::where('category_id', $this->category_id)
+        $survivor = static::where('category_id', $this->category_id)
             ->where('litter_object_id', $activeLitterObject->id)
             ->first();
+
+        return $survivor === null ? null : ['clo' => $survivor, 'type_id' => null];
     }
 
     /**
