@@ -40,29 +40,30 @@ class ReplacePhotoTagsTest extends TestCase
         $user = User::factory()->create(['verification_required' => false]);
         $photo = Photo::factory()->create(['user_id' => $user->id]);
 
-        $marine = Category::firstWhere('key', CategoryKey::Marine->value);
-        $bottle = LitterObject::firstWhere('key', 'bottle');
+        $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
+        $butts = LitterObject::firstWhere('key', 'butts');
 
-        // `bottle` is sanctioned under alcohol/softdrinks, never marine — the shape of the 73 gaps.
+        // `butts` is sanctioned under smoking only, never alcohol — the shape of the unsanctioned
+        // gaps. (`marine/bottle` was the original fixture; it is now a declared pairing.)
         $this->assertFalse(
-            $bottle->categories()->where('categories.id', $marine->id)->exists(),
-            'fixture assumes marine/bottle has no pivot'
+            $butts->categories()->where('categories.id', $alcohol->id)->exists(),
+            'fixture assumes alcohol/butts has no pivot'
         );
 
         $this->actingAs($user)->putJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [[
-                'category' => ['id' => $marine->id, 'key' => $marine->key],
-                'object' => ['id' => $bottle->id, 'key' => $bottle->key],
+                'category' => ['id' => $alcohol->id, 'key' => $alcohol->key],
+                'object' => ['id' => $butts->id, 'key' => $butts->key],
                 'quantity' => 2,
             ]],
         ])->assertOk();
 
         $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
 
-        $this->assertSame($bottle->id, $tag->litter_object_id);
-        $this->assertNotSame($marine->id, $tag->category_id, 'reclassification no longer happens — update this test');
-        $this->assertSame($bottle->categories()->first()->id, $tag->category_id);
+        $this->assertSame($butts->id, $tag->litter_object_id);
+        $this->assertNotSame($alcohol->id, $tag->category_id, 'reclassification no longer happens — update this test');
+        $this->assertSame($butts->categories()->first()->id, $tag->category_id);
     }
 
     /**
