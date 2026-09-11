@@ -347,6 +347,8 @@ A null summary (zero tags) yields zero metrics. Summary + XP are generated regar
 
 It exits non-zero while anything remains, with or without `--fix`.
 
+Three places still touch the deprecated pointer on purpose: this verifier (to detect stale pointers), the `PhotoTag::categoryObject()` relationship it repairs through, and raw `PhotoTag` model serialisation. Every transformed API payload, summary, export and metric derives the CLO from the pairing instead.
+
 ### Deduplication & uniqueness
 
 - **PhotoTags:** there is no DB unique constraint on `(photo_id, category_litter_object_id, litter_object_type_id)`. Duplicate CLO+type combinations are theoretically possible under a concurrent-request race, but in practice prevented by the transaction wrapping in `AddTagsToPhotoAction::run()`.
