@@ -16,12 +16,24 @@ other--plastic_bag: plastic_bag (92) → plasticBags (149)
 
 For one entry, the command:
 
-1. Sets `retired_at` on Tag A and points `merged_into_id` to Tag B.
-2. Creates Tag B's category pivot where needed.
-3. Backfills `photo_tags.category_litter_object_id` on rows already sitting on Tag B with a null CLO.
-4. Repoints `photo_tags` and `user_quick_tags` from A to B.
-5. Regenerates affected photo summaries.
-6. Reprocesses metrics for affected live, previously processed photos.
+1. Sets `retired_at` on Tag A and points `merged_into_id` to Tag B (skipped for a pure
+   category move, where the object stays live).
+2. Creates Tag B's category pivot where needed. With `--category` the target pivot must already
+   exist — the run refuses to create it.
+3. Records the full approved mapping on each of Tag A's source pivots:
+   `category_litter_object.merged_into_clo_id` (the survivor pairing) and `merged_into_type_id`
+   (the approved subtype, when `--type` is given). This is what stale clients and saved quick tags
+   resolve from, so a v4 composite key keeps its subtype and an object+category move lands in the
+   right category. A marked pivot is excluded from the picker by `CategoryObject::active()`.
+4. Backfills `photo_tags.category_litter_object_id` on rows already sitting on Tag B with a null CLO.
+5. Repoints `photo_tags` and `user_quick_tags` from A to B, carrying the approved type onto quick
+   tags when `--type` is given.
+6. Regenerates affected photo summaries.
+7. Reprocesses metrics for affected live, previously processed photos.
+
+The mapping lives on the **pivot**, not the object, because a retirement can span categories with
+a different survivor in each (`straws` → `softdrinks/straw` and `marine/straw`).
+`litter_objects.merged_into_id` alone names only the survivor object and cannot express that.
 
 Step 3 exists because the v5 migration wrote rows straight onto shadow objects before any pivot
 existed for them. Those rows never reference Tag A, so the per-photo loop cannot reach them.

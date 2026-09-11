@@ -90,6 +90,13 @@ historical observations say they were, and leaves no record that the old name ev
 Retirement keeps the old object as a tombstone with `merged_into_id` pointing at the survivor, so
 the audit trail survives and stale clients can still resolve the old CLO id.
 
+The precise mapping is recorded on the **source pivot**, not the object: each retired
+`category_litter_object` row carries `merged_into_clo_id` (the survivor pairing, which may be in a
+different category) and `merged_into_type_id` (the approved subtype for a v4 composite-key split).
+`CategoryObject::resolveActiveClo()` follows that directly and `CategoryObject::active()` hides
+marked pivots from the picker. A pure category move retires the *pairing* this way while leaving
+the object live. Object-level `merged_into_id` is kept as the fallback for anything unrecorded.
+
 ### Creating new taxonomy
 
 New categories, objects and pairings are **declared in config and created by the seeder** — never
