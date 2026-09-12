@@ -598,6 +598,28 @@ class MigrateTagTest extends TestCase
             ->assertExitCode(1);
     }
 
+    /**
+     * Replaying a manifest must be safe. Once A → B has finished and B has itself retired into
+     * C, re-running A → B has nothing left to do; it reports that and exits 0 instead of
+     * refusing because B is retired.
+     */
+    public function test_replaying_a_completed_mapping_is_a_no_op_after_its_survivor_retires(): void
+    {
+        $final = LitterObject::firstOrCreate(['key' => 'plastic_bag_final']);
+        CategoryObject::firstOrCreate(['category_id' => $this->category->id, 'litter_object_id' => $final->id]);
+        CategoryObject::flushResolverCache();
+
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->artisan('olm:migrate-tag', ['retired' => 'plasticBags', 'desired' => 'plastic_bag_final', '--apply' => true])
+            ->assertExitCode(0);
+
+        $this->migrate(['--apply' => true])
+            ->expectsOutputToContain('Already applied')
+            ->assertExitCode(0);
+
+        $this->assertSame($final->id, $this->tag->fresh()->litter_object_id);
+    }
+
     public function test_a_mapping_that_changes_xp_is_refused_by_default(): void
     {
         $this->approveXpDifferentSurvivor();

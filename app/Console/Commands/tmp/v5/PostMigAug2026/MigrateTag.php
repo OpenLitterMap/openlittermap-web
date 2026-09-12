@@ -70,6 +70,12 @@ class MigrateTag extends Command
             return self::FAILURE;
         }
 
+        if ($this->alreadyApplied($retired, $desired)) {
+            $this->info("Already applied: {$retiredKey} is retired into {$desiredKey} and nothing remains on it.");
+
+            return self::SUCCESS;
+        }
+
         if (!$this->mappingIsValid($retiredKey, $retired, $desiredKey, $desired)) {
             return self::FAILURE;
         }
@@ -103,6 +109,54 @@ class MigrateTag extends Command
         return $this->apply($entry, $change['rows'], $summaryService, $metricsService)
             ? self::SUCCESS
             : self::FAILURE;
+    }
+
+    /**
+     * A manifest replay must be safe. A mapping that finished — object retired into this
+     * survivor, every source pivot tombstoned, no rows or presets left — has nothing to do,
+     * even when the survivor has since retired into something else.
+     */
+    private function alreadyApplied(object $retired, object $desired): bool
+    {
+        if ($retired->retired_at === null
+            || (int) $retired->id === (int) $desired->id
+            || (int) $retired->merged_into_id !== (int) $desired->id) {
+            return false;
+        }
+
+        $rowsLeft = DB::table('photo_tags')->where('litter_object_id', $retired->id)->exists();
+        $pivotsLeft = DB::table('category_litter_object')
+            ->where('litter_object_id', $retired->id)
+            ->whereNull('merged_into_clo_id')
+            ->exists();
+        $quickTagsLeft = DB::table('user_quick_tags as uqt')
+            ->join('category_litter_object as clo', 'clo.id', '=', 'uqt.clo_id')
+            ->where('clo.litter_object_id', $retired->id)
+            ->exists();
+
+        if ($rowsLeft || $pivotsLeft || $quickTagsLeft) {
+            return false;
+        }
+
+        // "Applied" means applied as requested: a replay that names a different category or type
+        // is a conflicting retry, which the immutability check must refuse, not a no-op.
+        $disagreeing = DB::table('category_litter_object as source')
+            ->join('category_litter_object as target', 'target.id', '=', 'source.merged_into_clo_id')
+            ->where('source.litter_object_id', $retired->id)
+            ->where(function ($q) use ($desired) {
+                $q->where('target.litter_object_id', '!=', $desired->id)
+                    ->orWhere('target.category_id', '!=', $this->targetCategoryId === null
+                        ? DB::raw('source.category_id')
+                        : $this->targetCategoryId)
+                    ->orWhere(function ($q) {
+                        $this->typeId === null
+                            ? $q->whereNotNull('source.merged_into_type_id')
+                            : $q->whereNull('source.merged_into_type_id')->orWhere('source.merged_into_type_id', '!=', $this->typeId);
+                    });
+            })
+            ->exists();
+
+        return !$disagreeing;
     }
 
     private function mappingIsValid(string $retiredKey, object $retired, string $desiredKey, object $desired): bool

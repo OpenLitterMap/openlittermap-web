@@ -29,7 +29,12 @@ For one entry, the command:
    right category. A marked pivot is excluded from the picker by `CategoryObject::active()`.
    Recorded mappings are immutable: a tombstone left by an earlier, different mapping is left
    alone (its chain continues through the survivor it recorded), a tombstone from the same mapping
-   is resumed, and a retry that disagrees on category or type aborts.
+   is resumed, and a retry that disagrees on category or type aborts. A tombstone from an earlier
+   mapping that still has rows or quick tags on it aborts the run too ("re-run that mapping
+   first"): the object is not retired until the earlier mapping has finished. The survivor pairing
+   must be active, not merely present — a pairing an earlier category move already retired is
+   refused. A replay of a mapping that finished exactly as requested exits 0 with "Already
+   applied", even after its survivor has itself retired.
 4. Backfills `photo_tags.category_litter_object_id` on rows already sitting on Tag B with a null CLO.
 5. Repoints `photo_tags` and `user_quick_tags` from A to B, carrying the approved type onto quick
    tags when `--type` is given.
@@ -97,7 +102,10 @@ During apply, a progress bar shows the number of durably migrated rows.
 
 - Update `TagsConfig`, `BrandsConfig`, translations, and documentation for the approved mapping.
 - Put every web node into maintenance mode and drain in-flight tag writes.
-- Back up MySQL and run the dry run against the exact database and code being deployed.
+- Back up MySQL and run the dry run against the exact database and code being deployed. The dry
+  run performs every apply-time check (survivor declared and active, type approved, recorded
+  mappings consistent, no interrupted earlier mapping) and exits 1 with "Would fail: …" on any
+  of them, so a clean dry run of the whole manifest is meaningful.
 - Confirm Redis is available; `--apply` also checks it before starting and before every batch.
 - Confirm the reported counts and example photos match the approved mapping.
 
