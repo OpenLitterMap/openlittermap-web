@@ -76,30 +76,31 @@ php artisan olm:migrate-tag beer_can can --type=beer --apply
 
 The type must already be approved for the survivor pairing in `category_object_types`. The run
 refuses otherwise rather than attaching it, because a migration inventing a taxonomy relationship
-is what produced the shadow objects in the first place. A survivor CLO the run creates itself has
-no approved types, so `--type` cannot be used with one.
+is what produced the shadow objects in the first place. Types are approved on the survivor pairing
+by `TagsConfig` and the seeder before the run.
 
 ## Usage
 
 The default is a read-only dry run:
 
 ```bash
-php artisan olm:migrate-tag plastic_bag plasticBags
+php artisan olm:migrate-tag plasticBags plastic_bag
 ```
 
-It reports only the mapping, affected row count, total tag quantity, and up to five example photo IDs:
+It reports the mapping, affected row count, total tag quantity, and up to five example photo IDs, then
+runs every apply-time validation and exits 1 with "Would fail: …" if any would abort:
 
 ```text
-DRY RUN: plastic_bag (92) → plasticBags (149)
-Rows: 253
-Tags: 264
+DRY RUN: plasticBags (149) → plastic_bag (92)
+Rows: 10051
+Tags: 12946
 Example photo IDs: 123, 456, 789
 ```
 
 Apply the migration with:
 
 ```bash
-php artisan olm:migrate-tag plastic_bag plasticBags --apply
+php artisan olm:migrate-tag plasticBags plastic_bag --apply
 ```
 
 During apply, a progress bar shows the number of durably migrated rows.
@@ -123,12 +124,12 @@ During apply, a progress bar shows the number of durably migrated rows.
 
 Check that:
 
-- `php artisan olm:verify-tag-integrity` exits 0. It fails on rows or quick tags left on a
-  tombstoned pairing (the mapping did not finish — re-run it), on pairings with no pivot, and on
-  retirement chains that form a cycle.
+- `php artisan olm:verify-tag-integrity` reports no rows or quick tags left on a tombstoned pairing
+  (the mapping did not finish — re-run it) and no retirement chain cycles. Its exit code stays 1
+  while any undecided pairing still has no pivot, so the full manifest must be applied, and the
+  remaining pairings declared or moved, before the gate exits 0.
 - Tag A is retired and points to Tag B.
 - No `photo_tags` or quick tags still reference Tag A.
-- No `photo_tags` row on Tag B has a null `category_litter_object_id`.
 - Affected summaries and Redis object counts use Tag B.
 - Picker, location, profile, and export surfaces no longer expose Tag A.
 

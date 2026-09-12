@@ -345,7 +345,7 @@ A null summary (zero tags) yields zero metrics. Summary + XP are generated regar
 - rows and quick tags still sitting on a tombstoned pairing (a mapping that did not finish) — re-run the mapping;
 - retirement chains that form a cycle.
 
-It exits non-zero while anything remains, with or without `--fix`.
+It exits non-zero while anything remains, with or without `--fix`. Until every undecided pairing has been declared or moved, the pivot-less check keeps the exit code at 1, so treat the per-check lines as the signal during the migration and the exit code as the gate once the manifest is complete.
 
 Three places still touch the deprecated pointer on purpose: this verifier (to detect stale pointers), the `PhotoTag::categoryObject()` relationship it repairs through, and raw `PhotoTag` model serialisation. Every transformed API payload, summary, export and metric derives the CLO from the pairing instead.
 
