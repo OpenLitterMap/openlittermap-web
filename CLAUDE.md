@@ -217,25 +217,43 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/ExportData.md` — CSV data export system (user/team/location exports, column layout, date filters, S3 pipeline)
 - `readme/ViteUpgradePlan.md` — Vite 8 / Rolldown upgrade plan (why the 6→8 bump was reverted, CJS/UMD interop root cause, at-risk deps, fix options, de-risk path, readiness checklist)
 
-## Daily Changelog
-Use one `readme/changelog/YYYY-MM-DD.md` file per deliverable, dated the day it lands. For multi-day work, keep updating that file instead of creating daily entries.
+## Changelog
 
-Add a `## Session — <short title> (vX.Y.Z)` section with:
+Use `readme/changelog/YYYY-MM-DD.md`, dated when the deliverable lands.
+Deliverables landing on the same day share a file. Keep multi-day work
+together; do not create daily progress entries.
 
-- One line per change, about 15 words or fewer, ending with `— vX.Y.Z`.
-- Only what changed. Omit rationale, implementation details, measurements, file paths, tests, and review notes.
-- Extra detail only for breaking changes, migrations, or manual deployment steps.
-- Related details in the relevant `readme/*.md` document, linked once if useful.
+### Change entries
+
+Add one `## Session — <short title> (vX.Y.Z)` section per deliverable.
+
+- Write one bullet per meaningful change, usually 15 words or fewer.
+- Describe what changed in simple, concrete language.
+- Combine related changes and describe the final result.
+- Put the version in the heading only.
+- Omit rationale, implementation details, measurements, file paths,
+  tests, and review notes.
+- For breaking changes, migrations, or manual deployment steps, include
+  the required action and distinguish automatic changes from separate steps.
+- Put supporting detail in the relevant `readme/*.md` document; link once
+  when useful.
+- Record completed changes only.
 
 ### Public notes
-For a genuinely user-facing release, add one `## Public` block directly below the date title:
 
-- Write 0–3 plain-language prose points for users, educators, citizen scientists, and funders.
-- Keep the entire block within 300 characters for one Bluesky post.
-- Lead with privacy, safeguarding, or access changes, then usability or speed.
-- Add it only on the release day; omit it for internal-only work.
+For a user-facing release, add one `## Public` block directly below the
+date title on release day.
 
-The mobile repo uses the same convention, but its public block must identify itself as a mobile update.
+- Summarise the changes in 1–3 short, plain-language sentences.
+- Keep the entire block within 300 characters, including any links.
+- Lead with the most significant change.
+- Avoid jargon, version numbers, implementation details, and promotional language.
+- Include only changes available to users that day.
+- Combine the day's released changes into one block.
+- Omit the block for internal-only work.
+
+The mobile repo follows the same convention. Its public block must identify
+itself as a mobile update within the same character limit.
 
 ## Versioning
 - The single source of truth for the app version is `package.json` `"version"` field
@@ -245,13 +263,13 @@ The mobile repo uses the same convention, but its public block must identify its
 - **Minor bump** (`5.0.25` → `5.1.0`): new user-facing features (new page, new command, new API endpoint, new UI component, new email campaign, new integration). Resets patch to 0
 - **Major bump**: reserved for full platform rewrites (v5 → v6). Only bump on explicit user request
 - If unsure whether a change is patch or minor, **ask the user**
-- Include the version number in each `readme/changelog/YYYY-MM-DD.md` entry
+- Include the version number in each deliverable's changelog section heading
 
 ## BOOP
 When the user says "BOOP", perform all of the following:
 1. Determine if the change is a new feature (minor bump) or a fix/improvement (patch bump). Ask if unsure
 2. Bump the appropriate version in `package.json`
-3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date). If the work is user-facing, also add/extend the day's `## Public` block (see Daily Changelog) — otherwise leave it absent
+3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date). If the work is user-facing, also add/extend the day's `## Public` block (see Changelog) — otherwise leave it absent
 4. Update any readme docs (`readme/*.md`) affected by the changes
 5. Update any skills files affected by the changes
 4. Update any skills files affected by the changes

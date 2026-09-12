@@ -4,13 +4,19 @@
 
 ## Mapping list
 
-Approved mappings are recorded in `readme/audit/TagRetirements-2026-08.csv`. The command receives the two approved keys directly and never chooses or reverses a mapping.
+The command receives the two approved keys (plus `--type` / `--category` where the approval says
+so) directly and never chooses or reverses a mapping. Survivors use snake_case singular keys
+declared in `TagsConfig`; shadow keys such as `plasticBags` and `randomLitter` are the retired side
+(`plasticBags → plastic_bag`, `randomLitter → random_litter`).
 
-The first approved mapping is:
+**Before the production run, the approved list must be committed** to
+`readme/audit/TagRetirements-2026-08.csv`, one row per mapping with its type and category options,
+in the order it will be applied. That file currently holds a single voided rehearsal row; the
+approvals so far live in the tag-pairings register. `readme/audit/TagPairMigrationManifest-2026-08.csv`
+is the audit inventory (every pairing, `PROPOSED`/`PENDING`), not the approved list.
 
-```text
-other--plastic_bag: plastic_bag (92) → plasticBags (149)
-```
+Explicitly excluded from production although rehearsed on a clone, because the mapping is
+semantically wrong: `automobile → car_part`, `menstrual → sanitary_pad`, `crisp_small → crisp_packet`.
 
 ## What the command does
 
@@ -101,6 +107,10 @@ During apply, a progress bar shows the number of durably migrated rows.
 ## Before applying
 
 - Update `TagsConfig`, `BrandsConfig`, translations, and documentation for the approved mapping.
+- Deploy the code, run `php artisan migrate`, then run the tags seeder (`composer seed:tags`, which
+  calls `GenerateTagsSeeder`) so every declared survivor pairing exists. The command never creates a
+  pivot, so a mapping whose survivor pairing is missing aborts. New code reads the `retired_at`,
+  `merged_into_id` and `merged_into_*` columns on hot paths, so migrate before traffic resumes.
 - Put every web node into maintenance mode and drain in-flight tag writes.
 - Back up MySQL and run the dry run against the exact database and code being deployed. The dry
   run performs every apply-time check (survivor declared and active, type approved, recorded
