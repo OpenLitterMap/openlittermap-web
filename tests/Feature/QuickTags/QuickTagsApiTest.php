@@ -88,6 +88,26 @@ class QuickTagsApiTest extends TestCase
         $this->assertSame($typeId, $saved->first()->type_id, 'sync must keep the approved subtype');
     }
 
+    public function test_sync_drops_a_preset_type_the_survivor_does_not_approve(): void
+    {
+        $user = User::factory()->create();
+        $catId = DB::table('categories')->insertGetId(['key' => 'cat_' . uniqid()]);
+        $newObjId = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $oldObjId = DB::table('litter_objects')->insertGetId([
+            'key' => 'old_' . uniqid(), 'retired_at' => now(), 'merged_into_id' => $newObjId,
+        ]);
+        $oldCloId = $this->getCloId($catId, $oldObjId);
+        $newCloId = $this->getCloId($catId, $newObjId);
+        $oldOnlyType = $this->createType();
+        DB::table('category_object_types')->insert(['category_litter_object_id' => $oldCloId, 'litter_object_type_id' => $oldOnlyType]);
+        DB::table('category_litter_object')->where('id', $oldCloId)->update(['merged_into_clo_id' => $newCloId]);
+
+        $saved = app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($oldCloId, ['type_id' => $oldOnlyType])]);
+
+        $this->assertSame($newCloId, $saved->first()->clo_id);
+        $this->assertNull($saved->first()->type_id, 'a type not approved on the survivor must not ride along');
+    }
+
     public function test_guest_cannot_access_quick_tags(): void
     {
         $this->getJson('/api/v3/user/quick-tags')->assertStatus(401);

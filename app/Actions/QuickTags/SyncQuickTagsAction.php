@@ -97,6 +97,17 @@ class SyncQuickTagsAction
             if (($tag['type_id'] ?? null) === null && $mapping['type_id'] !== null) {
                 $tags[$i]['type_id'] = $mapping['type_id'];
             }
+
+            // A type the survivor pairing does not approve would make the preset unusable: every
+            // tag submitted from it is refused. Drop it, as the photo-tag remount does.
+            $typeId = $tags[$i]['type_id'] ?? null;
+
+            if ($typeId !== null && ! DB::table('category_object_types')
+                ->where('category_litter_object_id', $mapping['clo']->id)
+                ->where('litter_object_type_id', $typeId)
+                ->exists()) {
+                $tags[$i]['type_id'] = null;
+            }
         }
 
         if ($unmapped !== []) {

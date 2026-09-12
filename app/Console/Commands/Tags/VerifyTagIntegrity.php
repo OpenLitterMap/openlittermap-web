@@ -22,8 +22,11 @@ class VerifyTagIntegrity extends Command
         $stalePointers = $this->checkStalePointers();
         $invalidTypes = $this->checkInvalidTypes();
         $onTombstones = $this->checkRowsOnTombstones();
-        $quickTagsOnTombstones = $this->checkQuickTagsOnTombstones();
-        $cycles = $this->checkRetirementCycles();
+
+        // Quick tags and retirement chains are not per-photo state; a --photo-id diagnostic
+        // must not fail on them.
+        $quickTagsOnTombstones = $this->option('photo-id') ? 0 : $this->checkQuickTagsOnTombstones();
+        $cycles = $this->option('photo-id') ? 0 : $this->checkRetirementCycles();
 
         $total = $unsanctioned + $stalePointers + $invalidTypes + $onTombstones + $quickTagsOnTombstones + $cycles;
 
@@ -47,8 +50,8 @@ class VerifyTagIntegrity extends Command
             + $this->stalePointers()->count()
             + $this->invalidTypes()->count()
             + $this->rowsOnTombstones()->count()
-            + $this->quickTagsOnTombstones()->count()
-            + $this->retirementCycles();
+            + ($this->option('photo-id') ? 0 : $this->quickTagsOnTombstones()->count())
+            + ($this->option('photo-id') ? 0 : $this->retirementCycles());
 
         if ($remaining > 0) {
             $this->error("{$remaining} issue(s) remain after repair.");
@@ -68,7 +71,6 @@ class VerifyTagIntegrity extends Command
      * the pairing, so nothing can derive a CLO for it. Not auto-repairable — creating the pivot is
      * a taxonomy decision that belongs to an approved migration, never to a repair command.
      */
-    /** Object tags whose (category_id, litter_object_id) pairing has no pivot. */
     private function unsanctionedPairings(): Builder
     {
         return $this->scopeToPhoto(
@@ -96,12 +98,23 @@ class VerifyTagIntegrity extends Command
         );
     }
 
-    /** Typed rows whose type is not approved for their pairing's CLO. */
+    /**
+     * Typed rows whose type is not approved for their pairing's CLO. Rows whose pairing has no
+     * pivot are excluded: they are already reported as needing a taxonomy decision, and judging
+     * their type against a pivot that does not exist yet would clear a type the eventual pairing
+     * may approve.
+     */
     private function invalidTypes(): Builder
     {
         return $this->scopeToPhoto(
             DB::table('photo_tags as pt')
                 ->whereNotNull('pt.litter_object_type_id')
+                ->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('category_litter_object as clo')
+                        ->whereColumn('clo.category_id', 'pt.category_id')
+                        ->whereColumn('clo.litter_object_id', 'pt.litter_object_id');
+                })
                 ->whereNotExists(function ($sub) {
                     $sub->select(DB::raw(1))
                         ->from('category_litter_object as clo')

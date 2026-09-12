@@ -95,6 +95,39 @@ class VerifyTagIntegrityTest extends TestCase
         return [$source, $target];
     }
 
+    /**
+     * A typed row on a pairing with no pivot is already reported as "needs a taxonomy decision".
+     * Judging its type against a pivot that does not exist yet would clear a type the eventual
+     * pairing may well approve — a repair run before the seeder would destroy data.
+     */
+    public function test_fix_does_not_clear_the_type_on_a_pairing_that_has_no_pivot(): void
+    {
+        $orphan = LitterObject::create(['key' => 'shadowObject']);
+        $type = \App\Models\Litter\Tags\LitterObjectType::firstOrCreate(['key' => 'water']);
+        $tag = PhotoTag::create([
+            'photo_id' => $this->photo->id,
+            'category_id' => $this->category->id,
+            'litter_object_id' => $orphan->id,
+            'litter_object_type_id' => $type->id,
+            'quantity' => 1,
+        ]);
+
+        $this->artisan('olm:verify-tag-integrity', ['--fix' => true])
+            ->expectsOutputToContain('Type references: OK')
+            ->assertExitCode(1);
+
+        $this->assertSame($type->id, $tag->fresh()->litter_object_type_id, 'type must survive until the pairing is decided');
+    }
+
+    public function test_photo_id_scoping_ignores_global_checks(): void
+    {
+        [$source, $target] = $this->tombstonedPairing();
+        $target->update(['merged_into_clo_id' => $source->id]);
+
+        $this->artisan('olm:verify-tag-integrity', ['--photo-id' => $this->photo->id])
+            ->assertExitCode(0);
+    }
+
     public function test_a_null_pointer_on_a_sanctioned_pairing_is_not_an_integrity_error(): void
     {
         $clo = CategoryObject::where('category_id', $this->category->id)->firstOrFail();

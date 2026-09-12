@@ -952,7 +952,8 @@
             "graffiti": "Graffiti",
             "mattress": "Mattress",
             "paintCan": "Paint Can",
-            "umbrella": "Umbrella"
+            "umbrella": "Umbrella",
+            "plastic_bag": "Plastic Bag"
         },
         "presence": {
             "picked-up": "I picked it up!",

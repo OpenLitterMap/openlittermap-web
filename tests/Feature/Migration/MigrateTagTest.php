@@ -390,12 +390,6 @@ class MigrateTagTest extends TestCase
     }
 
     /**
-     * The v5 migration routed v4 `bags_litter` onto a shadow key with no special XP, so the
-     * survivor is worth 10 XP and the retired key 1. Repointing the rows re-scores every tag, so
-     * the guard refuses by default — an XP change reaches the leaderboard and must be a decision,
-     * never a side effect of a naming fix.
-     */
-    /**
      * The shadow objects came from a migration that created pairings nobody declared. A survivor
      * pairing missing from the taxonomy is a decision for TagsConfig and the seeder, so the run
      * refuses rather than inventing it in place.
@@ -620,6 +614,12 @@ class MigrateTagTest extends TestCase
         $this->assertSame($final->id, $this->tag->fresh()->litter_object_id);
     }
 
+    /**
+     * The v5 migration routed v4 `bags_litter` onto a shadow key with no special XP, so the
+     * survivor is worth 10 XP and the retired key 1. Repointing the rows re-scores every tag, so
+     * the guard refuses by default — an XP change reaches the leaderboard and must be a decision,
+     * never a side effect of a naming fix.
+     */
     public function test_a_mapping_that_changes_xp_is_refused_by_default(): void
     {
         $this->approveXpDifferentSurvivor();
