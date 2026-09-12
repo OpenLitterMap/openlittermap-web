@@ -84,6 +84,15 @@ class MigrateTag extends Command
         $this->report($entry, $change, !$this->option('apply'));
 
         if (!$this->option('apply')) {
+            // A dry run rehearses every apply-time check, so a manifest rehearsal proves something.
+            try {
+                $this->planRetirement((int) $retired->id, (int) $desired->id);
+            } catch (\RuntimeException $e) {
+                $this->error('Would fail: ' . $e->getMessage());
+
+                return self::FAILURE;
+            }
+
             return self::SUCCESS;
         }
 
@@ -385,10 +394,134 @@ class MigrateTag extends Command
         return true;
     }
 
+    /**
+     * Every validation the apply performs, with no writes, so a dry run rehearses the same checks:
+     * survivor pairing declared and active, immutable recorded mappings, no interrupted earlier
+     * mapping left with rows, approved type. Throws RuntimeException on the first failure.
+     *
+     * @return array{
+     *     pivots: array<int, int>,
+     *     tombstones: array<int, array{retired_clo_id: int, desired_clo_id: int}>,
+     *     backfills: array<int, array{category_id: int, desired_clo_id: int}>
+     * } pivots: category id => survivor CLO id
+     */
+    private function planRetirement(int $retiredId, int $desiredId): array
+    {
+        $categoryIds = DB::table('category_litter_object')
+            ->where('litter_object_id', $retiredId)
+            ->pluck('category_id')
+            ->merge(DB::table('photo_tags')
+                ->where('litter_object_id', $retiredId)
+                ->whereNotNull('category_id')
+                ->pluck('category_id'))
+            ->unique()
+            ->map('intval');
+        $pivots = [];
+        $tombstones = [];
+        $backfills = [];
+
+        foreach ($categoryIds as $categoryId) {
+            $retiredClo = DB::table('category_litter_object')
+                ->where('category_id', $categoryId)
+                ->where('litter_object_id', $retiredId)
+                ->first(['id', 'merged_into_clo_id', 'merged_into_type_id']);
+
+            // A category move lands on a fixed target pairing; otherwise the survivor stays
+            // in the category the rows are already in.
+            $targetCategoryId = $this->targetCategoryId ?? $categoryId;
+
+            // A recorded mapping is immutable. A tombstone left by an earlier, different
+            // mapping is skipped — its chain continues through the survivor it recorded. A
+            // tombstone from this same mapping is resumed. One that disagrees with the
+            // requested category or type is a conflicting retry and aborts the run.
+            if ($retiredClo?->merged_into_clo_id !== null) {
+                $recorded = DB::table('category_litter_object')
+                    ->where('id', $retiredClo->merged_into_clo_id)
+                    ->first(['id', 'category_id', 'litter_object_id']);
+
+                if ((int) $recorded->litter_object_id !== $desiredId) {
+                    // Only a finished mapping may be skipped. Rows or presets still on the
+                    // pairing mean that mapping stopped part-way; retiring the object now
+                    // would strand them and make the earlier mapping impossible to re-run.
+                    $rowsLeft = DB::table('photo_tags')
+                        ->where('category_id', $categoryId)
+                        ->where('litter_object_id', $retiredId)
+                        ->count();
+                    $quickTagsLeft = DB::table('user_quick_tags')->where('clo_id', $retiredClo->id)->count();
+
+                    if ($rowsLeft > 0 || $quickTagsLeft > 0) {
+                        throw new \RuntimeException(sprintf(
+                            'Pairing %d was mapped into pivot %d by an earlier mapping, but %d row(s) and %d quick tag(s) remain on it; re-run that mapping first.',
+                            $retiredClo->id,
+                            $recorded->id,
+                            $rowsLeft,
+                            $quickTagsLeft
+                        ));
+                    }
+
+                    continue;
+                }
+
+                $recordedTypeId = $retiredClo->merged_into_type_id === null ? null : (int) $retiredClo->merged_into_type_id;
+
+                if ((int) $recorded->category_id !== $targetCategoryId || $recordedTypeId !== $this->typeId) {
+                    throw new \RuntimeException(sprintf(
+                        'Pairing %d is already mapped to pivot %d (category %d, type %s); recorded mappings are immutable.',
+                        $retiredClo->id,
+                        $recorded->id,
+                        $recorded->category_id,
+                        $recordedTypeId ?? 'none'
+                    ));
+                }
+            }
+
+            $desiredClo = DB::table('category_litter_object')
+                ->where('category_id', $targetCategoryId)
+                ->where('litter_object_id', $desiredId)
+                ->first(['id', 'merged_into_clo_id']);
+            $categoryKey = $this->targetCategoryKey
+                ?? (string) DB::table('categories')->where('id', $categoryId)->value('key');
+
+            // The survivor pairing can itself have been retired by an earlier category move.
+            // Rows landed on a tombstone pass the existence check and are stranded.
+            if ($desiredClo?->merged_into_clo_id !== null) {
+                throw new \RuntimeException(sprintf(
+                    'The replacement pairing in category %s is retired (pivot %d moved into pivot %d); map onto the active pairing instead.',
+                    $categoryKey,
+                    $desiredClo->id,
+                    $desiredClo->merged_into_clo_id
+                ));
+            }
+
+            if ($desiredClo === null) {
+                // Taxonomy is declared in TagsConfig and created by the seeder. A migration
+                // that invents the survivor pairing is how the shadow objects were made.
+                throw new \RuntimeException(
+                    "No approved pivot for the replacement tag in category {$categoryKey}. "
+                    . 'Declare the pairing in TagsConfig and run the seeder, or move the rows with --category.'
+                );
+            }
+
+            $desiredCloId = (int) $desiredClo->id;
+            $pivots[$categoryId] = $desiredCloId;
+            $backfills[] = ['category_id' => $targetCategoryId, 'desired_clo_id' => $desiredCloId];
+
+            if ($retiredClo !== null && (int) $retiredClo->id !== $desiredCloId && $retiredClo->merged_into_clo_id === null) {
+                $tombstones[] = ['retired_clo_id' => (int) $retiredClo->id, 'desired_clo_id' => $desiredCloId];
+            }
+        }
+
+        $this->assertTypeIsApproved($pivots);
+
+        return ['pivots' => $pivots, 'tombstones' => $tombstones, 'backfills' => $backfills];
+    }
+
     /** @return array<int, int> category id => replacement CLO id */
     private function prepareRetirement(int $retiredId, int $desiredId): array
     {
         return DB::transaction(function () use ($retiredId, $desiredId): array {
+            $plan = $this->planRetirement($retiredId, $desiredId);
+
             // Only a mapping that replaces the object retires it. A category move keeps the same
             // object in active use on a different shelf.
             if ($retiredId !== $desiredId) {
@@ -401,148 +534,48 @@ class MigrateTag extends Command
                     ]);
             }
 
-            $categoryIds = DB::table('category_litter_object')
-                ->where('litter_object_id', $retiredId)
-                ->pluck('category_id')
-                ->merge(DB::table('photo_tags')
-                    ->where('litter_object_id', $retiredId)
-                    ->whereNotNull('category_id')
-                    ->pluck('category_id'))
-                ->unique()
-                ->map('intval');
-            $pivots = [];
-
-            foreach ($categoryIds as $categoryId) {
-                $retiredClo = DB::table('category_litter_object')
-                    ->where('category_id', $categoryId)
-                    ->where('litter_object_id', $retiredId)
-                    ->first(['id', 'merged_into_clo_id', 'merged_into_type_id']);
-                $retiredCloId = $retiredClo?->id;
-
-                // A category move lands on a fixed target pairing; otherwise the survivor stays
-                // in the category the rows are already in.
-                $targetCategoryId = $this->targetCategoryId ?? $categoryId;
-
-                // A recorded mapping is immutable. A tombstone left by an earlier, different
-                // mapping is skipped — its chain continues through the survivor it recorded. A
-                // tombstone from this same mapping is resumed. One that disagrees with the
-                // requested category or type is a conflicting retry and aborts the run.
-                if ($retiredClo?->merged_into_clo_id !== null) {
-                    $recorded = DB::table('category_litter_object')
-                        ->where('id', $retiredClo->merged_into_clo_id)
-                        ->first(['id', 'category_id', 'litter_object_id']);
-
-                    if ((int) $recorded->litter_object_id !== $desiredId) {
-                        // Only a finished mapping may be skipped. Rows or presets still on the
-                        // pairing mean that mapping stopped part-way; retiring the object now
-                        // would strand them and make the earlier mapping impossible to re-run.
-                        $rowsLeft = DB::table('photo_tags')
-                            ->where('category_id', $categoryId)
-                            ->where('litter_object_id', $retiredId)
-                            ->count();
-                        $quickTagsLeft = DB::table('user_quick_tags')->where('clo_id', $retiredClo->id)->count();
-
-                        if ($rowsLeft > 0 || $quickTagsLeft > 0) {
-                            throw new \RuntimeException(sprintf(
-                                'Pairing %d was mapped into pivot %d by an earlier mapping, but %d row(s) and %d quick tag(s) remain on it; re-run that mapping first.',
-                                $retiredClo->id,
-                                $recorded->id,
-                                $rowsLeft,
-                                $quickTagsLeft
-                            ));
-                        }
-
-                        continue;
-                    }
-
-                    $recordedTypeId = $retiredClo->merged_into_type_id === null ? null : (int) $retiredClo->merged_into_type_id;
-
-                    if ((int) $recorded->category_id !== $targetCategoryId || $recordedTypeId !== $this->typeId) {
-                        throw new \RuntimeException(sprintf(
-                            'Pairing %d is already mapped to pivot %d (category %d, type %s); recorded mappings are immutable.',
-                            $retiredClo->id,
-                            $recorded->id,
-                            $recorded->category_id,
-                            $recordedTypeId ?? 'none'
-                        ));
-                    }
-                }
-
-                $desiredClo = DB::table('category_litter_object')
-                    ->where('category_id', $targetCategoryId)
-                    ->where('litter_object_id', $desiredId)
-                    ->first(['id', 'merged_into_clo_id']);
-                $desiredCloId = $desiredClo?->id;
-
-                // The survivor pairing can itself have been retired by an earlier category move.
-                // Rows landed on a tombstone pass the existence check and are stranded.
-                if ($desiredClo?->merged_into_clo_id !== null) {
-                    throw new \RuntimeException(sprintf(
-                        'The replacement pairing in category %s is retired (pivot %d moved into pivot %d); map onto the active pairing instead.',
-                        $this->targetCategoryKey ?? (string) DB::table('categories')->where('id', $categoryId)->value('key'),
-                        $desiredClo->id,
-                        $desiredClo->merged_into_clo_id
-                    ));
-                }
-
-                if ($desiredCloId === null) {
-                    // Taxonomy is declared in TagsConfig and created by the seeder. A migration
-                    // that invents the survivor pairing is how the shadow objects were made.
-                    $targetCategoryKey = $this->targetCategoryKey
-                        ?? (string) DB::table('categories')->where('id', $categoryId)->value('key');
-
-                    throw new \RuntimeException(
-                        "No approved pivot for the replacement tag in category {$targetCategoryKey}. "
-                        . 'Declare the pairing in TagsConfig and run the seeder, or move the rows with --category.'
-                    );
-                }
-
-                $pivots[$categoryId] = (int) $desiredCloId;
-
-                // Rows written onto the desired object before it had a pivot carry a null CLO.
-                // They never reference the retired object, so the per-photo loop below cannot
-                // reach them; quick tags and team tag editing follow the stored pointer and
-                // skip them until it is set. Matched on the target category so the backfilled
-                // pointer always agrees with the row's own pairing.
+            // Rows written onto the desired object before it had a pivot carry a null CLO.
+            // They never reference the retired object, so the per-photo loop cannot reach
+            // them; quick tags and team tag editing follow the stored pointer and skip them
+            // until it is set. Matched on the target category so the backfilled pointer
+            // always agrees with the row's own pairing.
+            foreach ($plan['backfills'] as $backfill) {
                 DB::table('photo_tags')
-                    ->where('category_id', $targetCategoryId)
+                    ->where('category_id', $backfill['category_id'])
                     ->where('litter_object_id', $desiredId)
                     ->whereNull('category_litter_object_id')
-                    ->update(['category_litter_object_id' => $desiredCloId]);
-
-                if ($retiredCloId !== null && (int) $retiredCloId !== (int) $desiredCloId && $retiredClo->merged_into_clo_id === null) {
-                    // The approved mapping is a triple — survivor object, category and type —
-                    // and a retirement can span categories with a different survivor in each,
-                    // so it is recorded on the source pivot, not the object. Stale clients and
-                    // saved quick tags resolve the exact pairing and subtype from here.
-                    DB::table('category_litter_object')
-                        ->where('id', $retiredCloId)
-                        ->update([
-                            'merged_into_clo_id' => $desiredCloId,
-                            'merged_into_type_id' => $this->typeId,
-                            'updated_at' => now(),
-                        ]);
-
-                    $quickTagUpdate = ['clo_id' => $desiredCloId, 'updated_at' => now()];
-
-                    if ($this->typeId !== null) {
-                        $quickTagUpdate['type_id'] = $this->typeId;
-                    }
-
-                    DB::table('user_quick_tags')
-                        ->where('clo_id', $retiredCloId)
-                        ->update($quickTagUpdate);
-                }
+                    ->update(['category_litter_object_id' => $backfill['desired_clo_id']]);
             }
 
-            $this->assertTypeIsApproved($pivots);
+            // The approved mapping is a triple — survivor object, category and type — and a
+            // retirement can span categories with a different survivor in each, so it is
+            // recorded on the source pivot, not the object. Stale clients and saved quick tags
+            // resolve the exact pairing and subtype from here.
+            foreach ($plan['tombstones'] as $tombstone) {
+                DB::table('category_litter_object')
+                    ->where('id', $tombstone['retired_clo_id'])
+                    ->update([
+                        'merged_into_clo_id' => $tombstone['desired_clo_id'],
+                        'merged_into_type_id' => $this->typeId,
+                        'updated_at' => now(),
+                    ]);
+
+                $quickTagUpdate = ['clo_id' => $tombstone['desired_clo_id'], 'updated_at' => now()];
+
+                if ($this->typeId !== null) {
+                    $quickTagUpdate['type_id'] = $this->typeId;
+                }
+
+                DB::table('user_quick_tags')
+                    ->where('clo_id', $tombstone['retired_clo_id'])
+                    ->update($quickTagUpdate);
+            }
 
             // Summaries are regenerated later in this same process and derive the CLO from
-            // (category_id, litter_object_id). A map memoised before the inserts above would
-            // still answer "no pivot" for the survivor.
+            // (category_id, litter_object_id); a map memoised earlier could be stale.
             CategoryObject::flushResolverCache();
 
-            return $pivots;
+            return $plan['pivots'];
         });
     }
 }

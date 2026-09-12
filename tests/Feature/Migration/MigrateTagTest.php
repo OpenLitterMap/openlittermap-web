@@ -570,6 +570,34 @@ class MigrateTagTest extends TestCase
         return $dumping;
     }
 
+    /**
+     * A rehearsal is only a rehearsal if the dry run performs the same validation the apply
+     * does. Pivot existence, destination state, type approval and mapping immutability were
+     * checked only on the apply path, so a manifest dry run could pass and the apply then abort.
+     */
+    public function test_a_dry_run_reports_a_missing_survivor_pairing(): void
+    {
+        CategoryObject::where('category_id', $this->category->id)
+            ->where('litter_object_id', $this->desired->id)
+            ->delete();
+        CategoryObject::flushResolverCache();
+
+        $this->migrate()
+            ->expectsOutputToContain('No approved pivot')
+            ->assertExitCode(1);
+
+        $this->assertNull($this->retired->fresh()->retired_at);
+    }
+
+    public function test_a_dry_run_reports_an_unapproved_type(): void
+    {
+        LitterObjectType::firstOrCreate(['key' => 'beer']);
+
+        $this->migrate(['--type' => 'beer'])
+            ->expectsOutputToContain('not approved')
+            ->assertExitCode(1);
+    }
+
     public function test_a_mapping_that_changes_xp_is_refused_by_default(): void
     {
         $this->approveXpDifferentSurvivor();
