@@ -11,11 +11,12 @@ use Illuminate\Validation\ValidationException;
 class SyncQuickTagsAction
 {
     /**
-     * Bulk-replace all quick tags for a user.
-     * Deletes existing rows and inserts new ones in a transaction.
+     * - Replace the user's saved quick tags in one transaction.
+     * - Resolve retired CLOs before deleting existing quick tags.
+     * - Example: an empty tags array clears the user's saved quick tags.
      *
      * @param User $user
-     * @param array $tags Validated array of tag presets
+     * @param array $tags Validated quick tags
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function run(User $user, array $tags)
@@ -53,8 +54,10 @@ class SyncQuickTagsAction
     }
 
     /**
-     * Replace retired clo_id with an existing approved active CLO. Normal API writes never
-     * create category/object relationships; a missing target is refused before the bulk delete.
+     * - Resolve each quick tag's clo_id and type_id through CategoryObject::resolveForWrite().
+     * - Example: {clo_id: 10} becomes {clo_id: 20} if CLO 10 was retired into CLO 20.
+     * - Return 422 if resolution fails; the user's existing quick tags remain unchanged.
+     * - Never create category/object CLOs while saving quick tags.
      *
      * @param  array<int, array{clo_id: int}>  $tags
      * @return array<int, array{clo_id: int}>

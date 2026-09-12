@@ -21,17 +21,16 @@ class PhotoTagsController extends Controller
     }
 
     /**
-     * Receive the tag request and delegate saving to AddTagsToPhotoAction.
-     * The action handles pairing IDs, separate object/category fields, and extra-only tags.
+     * - Receive POST /api/v3/tags and save through AddTagsToPhotoAction.
+     * - Accept CLO IDs, object/category fields and standalone extra tags.
+     * - Example: {photo_id: 123, tags: [{category_litter_object_id: 42, quantity: 2}]}.
      */
     public function store(PhotoTagsRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
 
-        // Idempotent guard: a photo that already has a summary is already tagged.
-        // POST appends, so a retried POST (e.g. a client that lost the first
-        // response) would double-count. Return the existing tags as an idempotent
-        // success instead of re-adding them.
+        // - A photo with a summary is already tagged; return its existing tags.
+        // - Example: retrying POST after a lost response must not add the same tags twice.
         $photo = Photo::find($validatedData['photo_id']);
         if ($photo && $photo->summary !== null) {
             return response()->json([

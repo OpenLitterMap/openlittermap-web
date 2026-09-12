@@ -5,13 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Makes retirement an explicit fact rather than an accident of a missing pivot row.
- *
- * Before this, an object was invisible to the tag picker only because
- * GetTagsController::getAllTags() filters on whereHas('categories') — so a pivotless object
- * happened to be unselectable. The retirement process deliberately creates pivots, so that
- * side effect stops holding. retired_at lets the picker be filtered explicitly, gives the
- * verifier something to assert, and lets firstOrCreate paths refuse to resurrect a retired key.
+ * - Add retired_at to mark an object as retired and merged_into_id to identify its replacement.
+ * - Example: plasticBags records plastic_bag's object ID as its replacement.
+ * - The tag picker can exclude retired objects while requests using old IDs can resolve them.
+ * - Adding these columns does not retire or move any tags.
  *
  * @see readme/PostTagMigrationClean.md
  */

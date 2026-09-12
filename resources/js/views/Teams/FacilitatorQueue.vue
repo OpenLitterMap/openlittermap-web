@@ -740,7 +740,7 @@ const buildTagsPayload = () => {
             ...common,
             object: { id: tag.object.id, key: tag.object.key },
             litter_object_type_id: tag.typeId || null,
-            // Send the recorded category so the API can reject invalid pairings instead of guessing.
+            // - Keep the recorded category, e.g. a bottle tagged as marine stays in marine.
             ...(tag.categoryId ? { category_id: tag.categoryId } : {}),
         };
     });

@@ -44,13 +44,11 @@ class CategoryObject extends Pivot
     private static ?array $resolverCache = null;
 
     /**
-     * The CLO for a category/object pairing, or null when the taxonomy does not sanction it.
-     *
-     * `photo_tags` records an observation as `category_id` + `litter_object_id`; the CLO is a
-     * taxonomy row derived from that pairing, not an independent fact. A unique index on
-     * (category_id, litter_object_id) makes the lookup a bijection. Prefer this over reading
-     * `photo_tags.category_litter_object_id`, which is deprecated and null on rows written
-     * before their pivot existed.
+     * - Find the CLO ID from category_id and litter_object_id; return null if no CLO exists.
+     * - Example: the same bottle object has different CLO IDs in alcohol and softdrinks.
+     * - Use these two IDs from photo_tags; its stored category_litter_object_id is deprecated
+     *   and can be null even when the category/object has a CLO.
+     * - Cache the lookup for this process; clear it after CLO rows change.
      */
     public static function resolveId(?int $categoryId, ?int $objectId): ?int
     {
@@ -71,9 +69,8 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Drop the memoised map. Required after creating a pivot in a process that goes on to resolve
-     * pairings — `MigrateTag` creates the survivor pivot and then regenerates summaries in the
-     * same run.
+     * - Clear the cached CLO IDs after CLO rows change.
+     * - Example: create a CLO, clear this cache, then generate a photo summary using its ID.
      */
     public static function flushResolverCache(): void
     {
@@ -81,11 +78,10 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Category-object pairings available for new tags.
-     *
-     * Setting `merged_into_clo_id` retires a pairing and records its replacement pairing ID.
-     * Keep the old row so clients submitting its ID can be redirected to the replacement.
-     * The object itself can remain active when only its category changes.
+     * - Return CLOs with no merged_into_clo_id.
+     * - A category move retires the old CLO but can leave the object active.
+     * - Example: moving an object from other to dumping gives it a new active CLO.
+     * - Keep the old CLO row so requests using its ID can find the replacement.
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -93,7 +89,8 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Whether this pairing has been retired into another, regardless of the object's state.
+     * - A CLO is retired when merged_into_clo_id points to its replacement.
+     * - The object can still be active, e.g. when only its category changed.
      */
     public function isRetired(): bool
     {
@@ -101,7 +98,8 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * The CLO this write should land on.
+     * - Return the final active CLO, or null if the replacement cannot be resolved.
+     * - Example: CLO 10 → 20 → 30 returns CLO 30.
      *
      * @see resolveActiveMapping()
      */
@@ -111,12 +109,12 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Find the final replacement pairing and the subtype recorded along the way.
-     *
-     * - Follow pairing redirects, including category moves.
-     * - Fall back to object replacements for older retirement records.
-     * - Carry forward the latest subtype specified by a mapping.
-     * - Return null for missing destinations or cycles; never create a pairing.
+     * - Follow merged_into_clo_id to the final active CLO.
+     * - If a retired object has no CLO redirect, follow its merged_into_id instead.
+     * - Keep the latest merged_into_type_id set along the redirects.
+     * - Example: CLO 10 → 20 → 30 returns CLO 30 and the type set on the last typed redirect.
+     * - Return null for a missing replacement or a loop, e.g. CLO 10 → 20 → 10.
+     * - Never create a CLO while resolving a tag.
      *
      * @return array{clo: self, type_id: int|null}|null
      */
@@ -146,8 +144,8 @@ class CategoryObject extends Pivot
                 return ['clo' => $clo, 'type_id' => $typeId === null ? null : (int) $typeId];
             }
 
-            // Older retirements may have only an object replacement.
-            // Its pairing can also have moved, so continue through the same loop.
+            // - This object is retired but its CLO has no redirect.
+            // - Follow merged_into_id, then check the replacement CLO for further redirects.
             $active = $object->activeObject();
             $clo = $active === null ? null : static::where('category_id', $clo->category_id)
                 ->where('litter_object_id', $active->id)->first();
@@ -157,12 +155,12 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Resolve the pairing and subtype for a photo tag or saved preset.
-     *
-     * - Follow every recorded replacement.
-     * - Use the migration's subtype when the client omitted one.
-     * - Drop a stale subtype only when the pairing changed.
-     * - Reject invalid types on an unchanged pairing and unresolved retirements.
+     * - Resolve the active CLO and type for photo tags and quick tags.
+     * - If the request has no type, use the type recorded by the migration.
+     * - Example: beer_can → can with type beer adds beer when the request omitted it.
+     * - If the CLO changed, clear a type that is not allowed on the new CLO.
+     * - If the CLO did not change, reject an invalid type with 422.
+     * - Also return 422 when the retired CLO has no valid replacement.
      *
      * @return array{clo: self, type_id: int|null}
      */

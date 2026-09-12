@@ -5,16 +5,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Completes the retirement record.
- *
- * `litter_objects.merged_into_id` records only the survivor object. An approved mapping is a
- * triple — survivor object, survivor category, survivor type — and a retirement can span several
- * categories with a different survivor pairing in each (`straws` retired into `softdrinks/straw`
- * and `marine/straw`). The mapping therefore belongs on the source pivot, not the object.
- *
- * With these two columns a retired pairing answers "where does this land now?" directly, so stale
- * clients and saved quick tags keep the approved subtype and land in the approved category
- * instead of searching the original category and losing both.
+ * - Store the replacement CLO ID and optional type on the old CLO row.
+ * - merged_into_clo_id identifies both the replacement category and object.
+ * - merged_into_type_id keeps the type, e.g. beer_can → can with type beer.
+ * - A category move can retire the old CLO while keeping the object active.
+ * - Requests using the old CLO ID can follow the recorded replacement.
+ * - Adding these columns does not move any photo tags or quick tags.
  */
 return new class extends Migration
 {

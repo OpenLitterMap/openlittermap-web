@@ -59,10 +59,11 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Choose how to save each tag based on the fields supplied.
-     *
-     * A pairing ID identifies the category and object together. Some callers still send
-     * the object and category separately. Brand/material/custom-only tags have no object.
+     * - Choose the save method from the fields in each tag.
+     * - CLO ID (category_litter_object_id): {category_litter_object_id: 42, quantity: 2}.
+     * - Without a CLO ID, web tagging, admin review and the facilitator queue send
+     *   object and category separately, e.g. {object: "butts", category: "smoking"}.
+     * - Standalone extras have no object, e.g. {custom: true, key: "found on bench"}.
      *
      * @throws \Exception
      */
@@ -86,12 +87,12 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Normalise extra tags before any rows are created.
-     *
-     * - Materials and brands accept IDs or objects containing an ID.
-     * - Custom tags accept text, {key: text}, or the older {tag: text} format.
-     * - Materials and custom tags inherit the parent quantity; brands keep their own.
-     * - Reject malformed entries instead of silently losing them during replacement.
+     * - Convert extra tags to one format and validate them before creating rows.
+     * - Materials/brands: [10] becomes [{id: 10}]. Brand quantity defaults to 1.
+     * - Custom tags: "found on bench" and {tag: "found on bench"} become {key: "found on bench"}.
+     * - Materials and custom tags use the photo tag's quantity; brands have their own quantity.
+     * - Example: 3 bottles with glass and 1 brand count as 3 glass items and 1 brand tag.
+     * - Invalid entries return 422; conflicting key/tag values are rejected.
      */
     protected function normalizeTags(array $tags): array
     {
@@ -164,7 +165,8 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Reject a retired tag when no valid replacement can be found.
+     * - Return 422 when a retired object has no valid replacement.
+     * - Example: retired_at is set but merged_into_id is missing.
      *
      * @throws ValidationException
      */
@@ -176,7 +178,8 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Check if this tag payload contains only extra tags (no object).
+     * - Identify standalone brand, material or custom tags.
+     * - Example: {custom: true, key: "found on bench"} needs no object or CLO ID.
      */
     protected function isExtraTagOnly(array $tag): bool
     {
@@ -186,7 +189,9 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Create a PhotoTag with no object — only extra tags (brand, material, or custom tag).
+     * - Create a PhotoTag with null category_id, litter_object_id and CLO ID.
+     * - Attach the standalone brand, material or custom tag, plus any extra tags.
+     * - Example: {material_only: true, material: {id: 10}, quantity: 3}.
      */
     protected function createExtraTagOnly(int $userId, int $photoId, array $tag): PhotoTag
     {
@@ -230,7 +235,9 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Save a tag using its category-object pairing ID (category_litter_object_id).
+     * - Save a tag using its CLO ID (category_litter_object_id).
+     * - Follow recorded redirects and check litter_object_type_id on the final CLO.
+     * - Example: {category_litter_object_id: 42, quantity: 2, materials: [10]}.
      *
      * @throws \Exception
      */
@@ -276,12 +283,12 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Resolve an object-format tag, then save it through createTagFromClo.
-     *
-     * - Web/admin fallbacks and older clients send object and category separately.
-     * - Use the supplied category; infer one only when there is a single choice.
-     * - Reject undeclared pairings and follow recorded replacements.
-     * - Keep this adapter until every object tag is submitted with a pairing ID.
+     * - Web tagging (AddTags.vue), AdminQueue and FacilitatorQueue use this fallback
+     *   when a tag has no CLO ID (category_litter_object_id).
+     * - Example: {object: "butts", category: "smoking", quantity: 2}.
+     * - Find the CLO for the supplied object and category, then call createTagFromClo().
+     * - Use an omitted category only when the object has exactly one available category.
+     * - Return 422 if the category/object has no CLO and no recorded replacement.
      *
      * @throws ValidationException
      */
@@ -291,9 +298,9 @@ class AddTagsToPhotoAction
         $clo = CategoryObject::where('category_id', $category->id)
             ->where('litter_object_id', $object->id)->first();
 
-        // - Prefer the recorded category/object pairing.
-        // - Older retirements may have only an object replacement.
-        // - Both paths use the same redirect and subtype checks when saving.
+        // - Look up the category/object's CLO first.
+        // - If it has no CLO, a retired object may still have merged_into_id.
+        // - Find that replacement's CLO in the same category, then follow its redirects too.
         if ($clo === null && $object->isRetired()) {
             $active = $object->activeObject();
             $clo = $active === null ? null : CategoryObject::where('category_id', $category->id)
@@ -315,7 +322,8 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Attach material extras to a PhotoTag.
+     * - Attach each material once; its stored extra-tag quantity is 1.
+     * - Summary and XP use the photo tag's quantity, e.g. 3 bottles + glass = 3 glass items.
      */
     protected function attachMaterials(PhotoTag $photoTag, array $materialIds): void
     {
@@ -338,7 +346,8 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Attach brand extras to a PhotoTag.
+     * - Attach brands with their own quantities, defaulting to 1.
+     * - Example: [{id: 10, quantity: 2}] records 2 tags for that brand.
      */
     protected function attachBrands(PhotoTag $photoTag, array $brands): void
     {
@@ -362,7 +371,10 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Attach custom tag extras to a PhotoTag.
+     * - Save custom text in custom_tags_new and attach it to the PhotoTag.
+     * - Remove HTML and surrounding whitespace, then limit the key to 255 characters.
+     * - Example: "  <b>found on bench</b>  " becomes "found on bench".
+     * - Skip blank text; each custom tag uses the photo tag's quantity in summary and XP.
      */
     protected function attachCustomTags(int $userId, PhotoTag $photoTag, array $customTags): void
     {
@@ -376,13 +388,11 @@ class AddTagsToPhotoAction
                 ? ($customTagData['key'] ?? '')
                 : $customTagData;
 
-            // Sanitize and accept — strip HTML, trim, cap to the key column length
-            // (custom_tags_new.key is varchar(255)). Punctuation like & . ' / is
-            // legitimate in brand/product names, so there is no allowlist and no throw.
+            // - Keep punctuation, e.g. "Black & Mild"; only HTML and surrounding spaces are removed.
+            // - custom_tags_new.key holds up to 255 characters.
             $cleanTag = mb_substr(trim(strip_tags($customTagKey)), 0, 255);
 
-            // Skip empties instead of throwing — one cosmetically-bad custom tag
-            // must never abort the whole POST or roll back the user's valid tags.
+            // - Skip text that is empty after cleaning; keep the other valid tags.
             if ($cleanTag === '') {
                 continue;
             }
@@ -402,8 +412,10 @@ class AddTagsToPhotoAction
 
 
     /**
-     * Look up the supplied object and category by ID or key.
-     * Require a category when the object has more than one pairing.
+     * - Look up object and category by key or ID, e.g. "butts" or {id: 5}.
+     * - Keep the category the caller supplied.
+     * - If category is omitted, require exactly one available category for that object.
+     * - Example: an object available in both alcohol and softdrinks needs a category.
      */
     protected function resolveTag(array $tag): array
     {
@@ -437,12 +449,11 @@ class AddTagsToPhotoAction
             ]);
         }
 
-        // Never substitute another category for one the caller supplied.
-        // When none was supplied, infer it only if there is exactly one choice.
+        // - Choose a category only when the caller omitted it and there is exactly one choice.
         if (! $categoryProvided) {
             $categories = $object->categories()
-                // A live object's old category redirects are no longer choices.
-                // A retired object still needs its source pairing to resolve the replacement.
+                // - Active objects use only active CLOs when choosing a category.
+                // - Retired objects keep their old CLOs so the recorded redirects can be followed.
                 ->when(! $object->isRetired(), fn ($query) => $query->whereNull('category_litter_object.merged_into_clo_id'))
                 ->limit(2)
                 ->get();
@@ -465,11 +476,9 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Calculate XP from PhotoTag records using XpScore enum multipliers.
-     *
-     * Upload=5, Object=1 (special objects override), Brand=3, Material=2, CustomTag=1.
-     * Materials and custom tags use the parent tag's quantity (set membership).
-     * Brands use their own independent quantity.
+     * - Calculate tag XP using XpScore; upload XP is handled separately.
+     * - Materials and custom tags use the photo tag's quantity; brands use their own quantity.
+     * - Example: 3 items with a material add 3 × 2 = 6 material XP.
      */
     protected function calculateXp(array $photoTags): int
     {
@@ -503,11 +512,10 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Set verification status and dispatch metrics event.
-     *
-     * All users get immediate leaderboard credit via TagsVerifiedByAdmin → ProcessPhotoMetrics.
-     * Only trusted users get ADMIN_APPROVED (photos visible on map).
-     * School students wait for teacher approval (safeguarding pipeline).
+     * - Users who do not require verification receive ADMIN_APPROVED.
+     * - School students who require verification receive VERIFIED and wait for teacher approval.
+     * - Other users fire TagsVerifiedByAdmin so MetricsService can update their metrics.
+     * - Example: a school student's tags get summary and XP, but no leaderboard credit until approval.
      */
     protected function updateVerification(int $userId, Photo $photo): void
     {
@@ -532,8 +540,8 @@ class AddTagsToPhotoAction
 
         $photo->save();
 
-        // Process metrics for all users except school students (teacher must approve first).
-        // Non-trusted users' photos stay at verified=0 (not on map) but still get leaderboard XP.
+        // - School students wait for teacher approval before metrics are processed.
+        // - Other users receive leaderboard credit through TagsVerifiedByAdmin.
         if (! $isSchoolStudent) {
             event(new TagsVerifiedByAdmin(
                 $photo->id,

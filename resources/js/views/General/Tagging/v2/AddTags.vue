@@ -592,9 +592,9 @@ onMounted(async () => {
 
     const stored = localStorage.getItem('recentTags');
     if (stored) {
-        // Drop entries from before category disambiguation was added (no cloId at all), and —
-        // once the tag list has loaded — entries whose cloId the API no longer offers, which is
-        // what a retired object leaves behind. Keeping one would submit a tag the server refuses.
+        // - Remove recent object tags with no CLO ID.
+        // - Once the tag list loads, remove CLO IDs the picker no longer offers.
+        // - Example: a retired CLO should no longer appear as a recent choice.
         const canCheckClos = tagsStore.categoryObjects.length > 0;
         const parsed = JSON.parse(stored).filter((t) => {
             if (t.type !== 'object') return true;
@@ -982,7 +982,7 @@ const submitTags = async () => {
             };
         }
 
-        // Legacy format fallback for brand-only, material-only, custom-only
+        // - Standalone brand, material and custom tags do not need a CLO ID.
         if (tag.custom) {
             const payload = {
                 custom: true,
@@ -1012,7 +1012,7 @@ const submitTags = async () => {
         } else {
             return {
                 object: { id: tag.object.id, key: tag.object.key },
-                // Send the recorded category so the API can reject invalid pairings instead of guessing.
+                // - Keep the recorded category, e.g. a bottle tagged as marine stays in marine.
                 ...(tag.categoryId ? { category_id: tag.categoryId } : {}),
                 quantity: tag.quantity,
                 picked_up: tag.pickedUp,

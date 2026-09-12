@@ -23,8 +23,7 @@ class VerifyTagIntegrity extends Command
         $invalidTypes = $this->checkInvalidTypes();
         $onTombstones = $this->checkRowsOnTombstones();
 
-        // Quick tags and retirement chains are not per-photo state; a --photo-id diagnostic
-        // must not fail on them.
+        // - --photo-id checks that photo only; skip account-wide quick tags and CLO redirect loops.
         $quickTagsOnTombstones = $this->option('photo-id') ? 0 : $this->checkQuickTagsOnTombstones();
         $cycles = $this->option('photo-id') ? 0 : $this->checkRetirementCycles();
 
@@ -44,8 +43,8 @@ class VerifyTagIntegrity extends Command
             return self::FAILURE;
         }
 
-        // A deployment check that exits 0 with defects present is worse than no check.
-        // Unsanctioned pairings are unrepairable by design, so recount after repairing.
+        // - Recount after --fix and return failure if any issues remain.
+        // - Example: --fix cannot resolve a missing CLO or finish an object retirement.
         $remaining = $this->unsanctionedPairings()->count()
             + $this->stalePointers()->count()
             + $this->invalidTypes()->count()
@@ -65,11 +64,9 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Object tags whose (category_id, litter_object_id) pairing has no row in the pivot.
-     *
-     * This is the real integrity gap: the observation is valid but the taxonomy never sanctioned
-     * the pairing, so nothing can derive a CLO for it. Not auto-repairable — creating the pivot is
-     * a taxonomy decision that belongs to an approved migration, never to a repair command.
+     * - Find photo tags whose category_id and litter_object_id have no matching CLO.
+     * - Example: a tag records an object in a category where no CLO was declared.
+     * - Report these for an approved cleanup decision; --fix does not create CLOs.
      */
     private function unsanctionedPairings(): Builder
     {
@@ -85,7 +82,10 @@ class VerifyTagIntegrity extends Command
         );
     }
 
-    /** Rows whose deprecated pointer disagrees with their pairing. */
+    /**
+     * - Find stored CLO IDs that disagree with the photo tag's category or object.
+     * - Example: category_litter_object_id points to alcohol/bottle but the tag records softdrinks/bottle.
+     */
     private function stalePointers(): Builder
     {
         return $this->scopeToPhoto(
@@ -99,10 +99,9 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Typed rows whose type is not approved for their pairing's CLO. Rows whose pairing has no
-     * pivot are excluded: they are already reported as needing a taxonomy decision, and judging
-     * their type against a pivot that does not exist yet would clear a type the eventual pairing
-     * may approve.
+     * - Find photo tags whose type is not allowed on their category/object's CLO.
+     * - Example: a tag has type beer but its CLO has no beer entry in category_object_types.
+     * - Skip missing CLOs; they are reported separately and need an approved cleanup decision.
      */
     private function invalidTypes(): Builder
     {
@@ -127,9 +126,9 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Object tags still sitting on a pairing whose pivot records a survivor. The pairing is
-     * sanctioned, so the pivot check passes, but the mapping that retired it did not finish (or a
-     * write slipped in after it). Not auto-repairable: the mapping has to be re-run.
+     * - Find photo tags still using the category/object of a retired CLO.
+     * - Example: CLO 10 redirects to 20, but a photo tag still uses CLO 10's category/object.
+     * - Report these so the mapping can be rerun; --fix does not move them.
      */
     private function rowsOnTombstones(): Builder
     {
@@ -143,7 +142,10 @@ class VerifyTagIntegrity extends Command
         );
     }
 
-    /** Saved presets that still point at a retired pairing. */
+    /**
+     * - Find saved quick tags whose clo_id still references a retired CLO.
+     * - Example: CLO 10 redirects to 20, but the quick tag still stores clo_id = 10.
+     */
     private function quickTagsOnTombstones(): Builder
     {
         return DB::table('user_quick_tags as uqt')
@@ -152,8 +154,8 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Retired pairings whose redirects form a cycle instead of reaching an active pairing.
-     * Write requests reject cycles with a 422 response, so affected tags cannot be saved.
+     * - Count CLO redirects that lead into a loop, e.g. CLO 10 → 20 → 10.
+     * - Save requests return 422 for these loops because no active CLO can be reached.
      */
     private function retirementCycles(): int
     {
@@ -206,11 +208,10 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Rows whose deprecated `category_litter_object_id` disagrees with the pairing.
-     *
-     * `category_id` + `litter_object_id` are the source of truth, so the repair rebuilds the
-     * pointer from them — never the reverse. A null pointer is not counted: the column is
-     * deprecated and unset is a valid state for it.
+     * - Report stored category_litter_object_id values that disagree with the tag's category/object.
+     * - With --fix, rebuild that deprecated ID from category_id and litter_object_id.
+     * - Never change the category or object to match the stored CLO ID.
+     * - Ignore null stored CLO IDs; they are valid for this deprecated column.
      */
     private function checkStalePointers(): int
     {
@@ -245,8 +246,8 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Type ids not valid for the tag's category/object pairing. The valid-type set hangs off the
-     * CLO, so the pairing is resolved to a CLO first rather than trusting the deprecated pointer.
+     * - Report photo tags that remain on retired CLOs.
+     * - Ask for the mapping to be rerun; this check does not move tags or change types.
      */
     private function checkRowsOnTombstones(): int
     {

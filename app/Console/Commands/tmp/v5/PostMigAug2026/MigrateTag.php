@@ -15,8 +15,10 @@ use Illuminate\Support\Facades\Redis;
 use Throwable;
 
 /**
- * Applies one approved tag mapping. The object is retired into a replacement when the mapping
- * changes it; a mapping that only moves the pairing to another category leaves the object in use.
+ * - Apply one approved object or category change.
+ * - Example: plasticBags → plastic_bag retires the old object.
+ * - A category-only move retires the old CLO and keeps the object active.
+ * - Dry-run by default; --apply writes the changes.
  */
 class MigrateTag extends Command
 {
@@ -30,12 +32,12 @@ class MigrateTag extends Command
 
     protected $description = 'Retire one litter object and move its data to another.';
 
-    /** Set on the migrated rows when the approved mapping is a type split. */
+    /** - Type ID to set on migrated tags, e.g. beer for beer_can → can. */
     private ?int $typeId = null;
 
     private ?string $typeKey = null;
 
-    /** Set when the approved mapping moves the pairing to another category. */
+    /** - Target category ID for a category move, e.g. --category=dumping. */
     private ?int $targetCategoryId = null;
 
     private ?string $targetCategoryKey = null;
@@ -90,7 +92,7 @@ class MigrateTag extends Command
         $this->report($entry, $change, !$this->option('apply'));
 
         if (!$this->option('apply')) {
-            // A dry run rehearses every apply-time check, so a manifest rehearsal proves something.
+            // - Run the same mapping checks in dry-run and --apply.
             try {
                 $this->planRetirement((int) $retired->id, (int) $desired->id);
             } catch (\RuntimeException $e) {
@@ -112,9 +114,10 @@ class MigrateTag extends Command
     }
 
     /**
-     * A manifest replay must be safe. A mapping that finished — object retired into this
-     * survivor, every source pairing retired, no rows or presets left — has nothing to do,
-     * even when the survivor has since retired into something else.
+     * - Return true only when this object retirement has finished as requested.
+     * - No photo tags or quick tags may remain on the retired object or its old CLOs.
+     * - Keep redirects recorded by earlier category moves.
+     * - Example: after A → B and B → C finish, running A → B again does nothing.
      */
     private function alreadyApplied(object $retired, object $desired): bool
     {
@@ -151,9 +154,10 @@ class MigrateTag extends Command
     }
 
     /**
-     * - Preserve redirects made by an earlier mapping to a different object.
-     * - For this mapping, the recorded category and subtype must match exactly.
-     * - A missing destination never counts as a completed mapping.
+     * - Keep an earlier redirect to a different object.
+     * - For this object retirement, the recorded category and type must match the request.
+     * - Example: repeating a mapping with --type=wine after --type=beer is a conflict.
+     * - A missing replacement CLO never counts as a completed mapping.
      */
     private function recordedMappingAgrees(object $source, ?object $target, int $desiredId, int $categoryId): bool
     {
@@ -172,8 +176,8 @@ class MigrateTag extends Command
 
     private function mappingIsValid(string $retiredKey, object $retired, string $desiredKey, object $desired): bool
     {
-        // A pure category move keeps the object and only changes its shelf, so the two keys are
-        // legitimately the same there. Without a target category it is a no-op mapping.
+        // - The object keys can match when --category moves the object to another category.
+        // - Without --category, matching keys would change nothing.
         if ((int) $retired->id === (int) $desired->id && $this->targetCategoryId === null) {
             $this->error('The retired and replacement tags must be different.');
 
@@ -192,8 +196,8 @@ class MigrateTag extends Command
             return false;
         }
 
-        // Repointing rows re-scores every tag, so a mapping across an XP boundary reaches the
-        // leaderboard. That has to be an approved decision, never a side effect of a naming fix.
+        // - Moving tags recalculates their XP and can change leaderboard totals.
+        // - Require --allow-xp-change when the old and new objects have different XP values.
         if (XpScore::getObjectXp($retiredKey) !== XpScore::getObjectXp($desiredKey)
             && !$this->option('allow-xp-change')) {
             $this->error(sprintf(
@@ -218,10 +222,9 @@ class MigrateTag extends Command
     }
 
     /**
-     * v4 composite keys carry their subtype in the object name (`beer_can` = `can` + type
-     * `beer`), so the split has to set a type as part of the same operation. Only the key is
-     * resolved here; whether the type is approved for the survivor pairing is checked against
-     * `category_object_types` once the survivor CLOs are known.
+     * - Look up the litter_object_type_id requested by --type.
+     * - Example: beer_can → can with --type=beer keeps the beer information.
+     * - Check that the type is allowed on the replacement CLOs in assertTypeIsApproved().
      */
     private function resolveType(): bool
     {
@@ -246,9 +249,9 @@ class MigrateTag extends Command
     }
 
     /**
-     * Some approved mappings move the pairing to another category (`other/dump` becomes
-     * `dumping/dumping`). Without an explicit target the run would repoint the object and leave
-     * `category_id` alone, landing on a pairing nobody approved.
+     * - Look up the category requested by --category.
+     * - Example: other/dump → dumping/dumping needs --category=dumping.
+     * - Without this option, tags stay in their current categories.
      */
     private function resolveTargetCategory(): bool
     {
@@ -273,11 +276,11 @@ class MigrateTag extends Command
     }
 
     /**
-     * Refuse a type the taxonomy has not approved for the survivor pairing. Attaching it here
-     * would make a migration invent a taxonomy relationship, which is how the shadow objects
-     * were created in the first place.
+     * - Require the requested type to exist in category_object_types for every replacement CLO.
+     * - Example: --type=beer requires beer to be allowed on the replacement can CLO.
+     * - Do not add allowed types while moving photo tags.
      *
-     * @param array<int, int> $pivots category id => survivor CLO id
+     * @param array<int, int> $pivots category ID => replacement CLO ID
      */
     private function assertTypeIsApproved(array $pivots): void
     {
@@ -389,8 +392,7 @@ class MigrateTag extends Command
                                 'category_litter_object_id' => $desiredCloId,
                             ];
 
-                            // Object and type move together: repointing a v4 composite key
-                            // without its subtype would discard the distinction silently.
+                            // - Move object and type together, e.g. beer_can → can with type beer.
                             if ($this->typeId !== null) {
                                 $update['litter_object_type_id'] = $this->typeId;
                             }
@@ -406,8 +408,8 @@ class MigrateTag extends Command
                                 ->update($update);
                         }
 
-                        // Rows with no category still belong to the object: they take the same
-                        // object and type, and land on the target pairing when the mapping moves.
+                        // - Tags with no category still receive the replacement object and type.
+                        // - Set the target category and CLO when --category is supplied.
                         $uncategorised = ['litter_object_id' => $desiredId];
 
                         if ($this->typeId !== null) {
@@ -460,15 +462,17 @@ class MigrateTag extends Command
     }
 
     /**
-     * Every validation the apply performs, with no writes, so a dry run rehearses the same checks:
-     * survivor pairing declared and active, immutable recorded mappings, no interrupted earlier
-     * mapping left with rows, approved type. Throws RuntimeException on the first failure.
+     * - Check the mapping without changing data; dry-run and --apply use these checks.
+     * - Require active replacement CLOs and an allowed type when --type is supplied.
+     * - Refuse conflicts with recorded redirects and unfinished earlier mappings.
+     * - Example: if tags remain on an earlier retired CLO, finish that mapping first.
+     * - Throw RuntimeException on the first failure.
      *
      * @return array{
      *     pivots: array<int, int>,
      *     tombstones: array<int, array{retired_clo_id: int, desired_clo_id: int}>,
      *     backfills: array<int, array{category_id: int, desired_clo_id: int}>
-     * } pivots: category id => survivor CLO id
+     * } pivots: category ID => replacement CLO ID
      */
     private function planRetirement(int $retiredId, int $desiredId): array
     {
@@ -491,14 +495,12 @@ class MigrateTag extends Command
                 ->where('litter_object_id', $retiredId)
                 ->first(['id', 'merged_into_clo_id', 'merged_into_type_id']);
 
-            // A category move lands on a fixed target pairing; otherwise the survivor stays
-            // in the category the rows are already in.
+            // - Use --category when supplied; otherwise keep the tag's current category.
             $targetCategoryId = $this->targetCategoryId ?? $categoryId;
 
-            // A recorded mapping is immutable. A redirect recorded by an earlier, different
-            // mapping is skipped — its chain continues through the survivor it recorded. A
-            // redirect from this same mapping is resumed. One that disagrees with the
-            // requested category or type is a conflicting retry and aborts the run.
+            // - Keep redirects from earlier mappings.
+            // - Resume this mapping only if its recorded category and type match.
+            // - Example: a recorded beer type cannot be replaced with wine by rerunning the command.
             if ($retiredClo?->merged_into_clo_id !== null) {
                 $recorded = DB::table('category_litter_object')
                     ->where('id', $retiredClo->merged_into_clo_id)
@@ -512,9 +514,8 @@ class MigrateTag extends Command
                 }
 
                 if ((int) $recorded->litter_object_id !== $desiredId) {
-                    // Only a finished mapping may be skipped. Rows or presets still on the
-                    // pairing mean that mapping stopped part-way; retiring the object now
-                    // would strand them and make the earlier mapping impossible to re-run.
+                    // - Skip an earlier mapping only after its photo tags and quick tags have moved.
+                    // - If any remain on its old CLO, require that mapping to finish first.
                     $rowsLeft = DB::table('photo_tags')
                         ->where('category_id', $categoryId)
                         ->where('litter_object_id', $retiredId)
@@ -542,8 +543,8 @@ class MigrateTag extends Command
             $categoryKey = $this->targetCategoryKey
                 ?? (string) DB::table('categories')->where('id', $categoryId)->value('key');
 
-            // The survivor pairing can itself have been retired by an earlier category move.
-            // Rows landed on a retired pairing pass the existence check and are stranded.
+            // - The replacement CLO must be active, not just present.
+            // - Example: an old other CLO may already redirect to dumping.
             if ($desiredClo?->merged_into_clo_id !== null) {
                 throw new \RuntimeException(sprintf(
                     'The replacement pairing in category %s is retired (pivot %d moved into pivot %d); map onto the active pairing instead.',
@@ -554,8 +555,8 @@ class MigrateTag extends Command
             }
 
             if ($desiredClo === null) {
-                // Taxonomy is declared in TagsConfig and created by the seeder. A migration
-                // that invents the survivor pairing is how the shadow objects were made.
+                // - Declare the replacement CLO in TagsConfig and create it with the tags seeder.
+                // - This command moves tags; it does not create missing CLOs.
                 throw new \RuntimeException(
                     "No approved pivot for the replacement tag in category {$categoryKey}. "
                     . 'Declare the pairing in TagsConfig and run the seeder, or move the rows with --category.'
@@ -582,8 +583,8 @@ class MigrateTag extends Command
         return DB::transaction(function () use ($retiredId, $desiredId): array {
             $plan = $this->planRetirement($retiredId, $desiredId);
 
-            // Only a mapping that replaces the object retires it. A category move keeps the same
-            // object in active use on a different shelf.
+            // - Retire the object only when its replacement is a different object.
+            // - A category-only move keeps the object active and retires its old CLO.
             if ($retiredId !== $desiredId) {
                 DB::table('litter_objects')
                     ->where('id', $retiredId)
@@ -594,11 +595,9 @@ class MigrateTag extends Command
                     ]);
             }
 
-            // Rows written onto the desired object before it had a pivot carry a null CLO.
-            // They never reference the retired object, so the per-photo loop cannot reach
-            // them; quick tags and team tag editing follow the stored pointer and skip them
-            // until it is set. Matched on the target category so the backfilled pointer
-            // always agrees with the row's own pairing.
+            // - Fill missing stored CLO IDs on photo tags already using the replacement object.
+            // - Match both category_id and litter_object_id; leave those source fields unchanged.
+            // - This updates the deprecated stored ID; it does not move these photo tags.
             foreach ($plan['backfills'] as $backfill) {
                 DB::table('photo_tags')
                     ->where('category_id', $backfill['category_id'])
@@ -607,10 +606,9 @@ class MigrateTag extends Command
                     ->update(['category_litter_object_id' => $backfill['desired_clo_id']]);
             }
 
-            // The approved mapping is a triple — survivor object, category and type — and a
-            // retirement can span categories with a different survivor in each, so it is
-            // recorded on the source pivot, not the object. Stale clients and saved quick tags
-            // resolve the exact pairing and subtype from here.
+            // - Record the replacement CLO ID and optional type on each old CLO.
+            // - Example: beer_can's old CLO points to can's CLO with merged_into_type_id = beer's ID.
+            // - Requests using the old CLO ID and saved quick tags follow this redirect.
             foreach ($plan['tombstones'] as $tombstone) {
                 DB::table('category_litter_object')
                     ->where('id', $tombstone['retired_clo_id'])
@@ -631,8 +629,7 @@ class MigrateTag extends Command
                     ->update($quickTagUpdate);
             }
 
-            // Summaries are regenerated later in this same process and derive the CLO from
-            // (category_id, litter_object_id); a map memoised earlier could be stale.
+            // - Clear cached CLO IDs before regenerating summaries from category_id and litter_object_id.
             CategoryObject::flushResolverCache();
 
             return $plan['pivots'];

@@ -122,15 +122,12 @@ class TeamPhotosController extends Controller
     }
 
     /**
-     * Update tags on a team photo (teacher edit before approval).
-     *
-     * PATCH /api/teams/photos/{photo}/tags
-     *
-     * Accepts a pairing ID or an object with its recorded category.
-     * Deletes existing tags, resets summary/xp/verified, then delegates
-     * to AddTagsToPhotoAction to recreate tags with proper summary + XP.
-     *
-     * Only the team leader (teacher) or users with 'manage school team' permission.
+     * - PATCH /api/teams/photos/{photo}/tags replaces tags on a team photo.
+     * - Allow the team leader or a user with "manage school team" permission.
+     * - Accept CLO IDs, object/category fields or standalone extras through AddTagsToPhotoAction.
+     * - Example: {tags: [{custom: true, key: "found on bench", quantity: 2}]}.
+     * - Delete old tags and rebuild summary/XP in one transaction; failures restore the old data.
+     * - School photos remain private until teacher approval.
      */
     public function updateTags(Request $request, Photo $photo): JsonResponse
     {

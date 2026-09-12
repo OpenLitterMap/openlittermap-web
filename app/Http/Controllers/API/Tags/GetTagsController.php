@@ -54,8 +54,8 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        // The web picker builds its category chips from this array, so retired pairings are
-        // filtered here as well as in `category_objects` below.
+        // - The picker uses this category list and category_objects below.
+        // - Hide retired CLOs in both, e.g. an old other CLO moved to dumping.
         $litterObjects = LitterObject::with(['categories' => fn ($q) => $q
                 ->select('categories.id', 'categories.key')
                 ->wherePivotNull('merged_into_clo_id')])

@@ -664,7 +664,7 @@ const buildTagsPayload = () => {
             };
         }
 
-        // Legacy format fallback for brand-only, material-only, custom-only
+        // - Standalone brand, material and custom tags do not need a CLO ID.
         if (tag.custom) {
             return {
                 custom: true,
@@ -689,7 +689,7 @@ const buildTagsPayload = () => {
         } else {
             return {
                 object: { id: tag.object.id, key: tag.object.key },
-                // Send the recorded category so the API can reject invalid pairings instead of guessing.
+                // - Keep the recorded category, e.g. a bottle tagged as marine stays in marine.
                 ...(tag.categoryId ? { category_id: tag.categoryId } : {}),
                 quantity: tag.quantity,
                 picked_up: tag.pickedUp,
