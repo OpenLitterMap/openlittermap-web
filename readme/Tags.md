@@ -87,7 +87,7 @@ reason to keep a non-conforming one.
 A key is changed by **retiring the old object into a new one** with `olm:migrate-tag`, never by
 updating `litter_objects.key` in place. Renaming is cheaper — no rows move — but it rewrites what
 historical observations say they were, and leaves no record that the old name ever existed.
-Retirement keeps the old object as a tombstone with `merged_into_id` pointing at the survivor, so
+Retirement keeps the retired object with `merged_into_id` pointing at the survivor, so
 the audit trail survives and stale clients can still resolve the old CLO id.
 
 The precise mapping is recorded on the **source pivot**, not the object: each retired
@@ -314,14 +314,14 @@ XP details and level thresholds: see `readme/XP.md`.
 
 `AddTagsToPhotoAction::run($userId, $photoId, $tags, $skipVerification = false)` is the single entry point for adding tags. Everything runs inside a `DB::transaction()`:
 
-1. **Create rows** — `addTagsToPhoto()` iterates the payload, detecting the format per tag:
+1. **Validate and create rows** — the shared action normalises extra-tag formats and validates IDs before creating rows, then detects the format per tag:
    - `createTagFromClo()` when `category_litter_object_id` is present (resolves denormalised `category_id`/`litter_object_id` from the CLO).
    - `createExtraTagOnly()` when the tag is brand-only / material-only / custom-only (null CLO fields).
-   - `createTagFromObject()` for `{ object: {id, key}, category_id?, category?, … }` payloads. Infers an omitted category only when the object has exactly one pairing.
+   - `createTagFromObject()` for `{ object: {id, key}, category_id?, category?, … }` payloads. For an active object, infers an omitted category only when exactly one active pairing exists, then delegates to `createTagFromClo()`.
 2. **Generate summary + XP** — `$photo->generateSummary()` calls `GeneratePhotoSummaryService`, populating `summary`, `xp`, `total_tags`, `total_brands`.
 3. **Verification** — unless `skipVerification` is true, `updateVerification()` runs. For trusted/non-school users it fires `TagsVerifiedByAdmin`, which drives `ProcessPhotoMetrics → MetricsService::processPhoto()`. Admin controllers pass `skipVerification = true` because they handle verification + metrics atomically themselves.
 
-The object-based format is an older request shape, not an old storage format. Current web/admin editors still use it when no pairing ID is available, and include the original `category_id`. `PhotoTagsController::store()` and `update()` handle HTTP requests; the shared action also serves admin/team editing. Standalone extras use their own helper.
+The object-based format is an older request shape, not an old storage format. Current web/admin/facilitator editors still use it when no pairing ID is available, and include the original `category_id`. `PhotoTagsController::store()` and `update()` handle HTTP requests; the shared action also serves admin/team editing. Standalone extras use their own helper. `CategoryObject::resolveForWrite()` follows replacements and validates the final subtype for both photo tags and quick tags. A changed pairing drops a subtype the destination no longer supports; an unchanged pairing rejects an invalid subtype.
 
 **Compatibility change:** Saves no longer silently reclassify undeclared category/object pairings. Explicit categories are preserved and only approved retirement mappings can redirect them. Ambiguous object-only input returns 422. A rejected replacement rolls back, preserving the existing observations, extras and summary. Clients must send the intended category or pairing ID; historical taxonomy gaps still require approved cleanup before those tags can be saved.
 
@@ -346,7 +346,7 @@ A null summary (zero tags) yields zero metrics. Summary + XP are generated regar
 - object rows whose (category, object) pairing has no pivot — never auto-repaired, a taxonomy decision;
 - pointers that disagree with their pairing — `--fix` rebuilds them from the pairing;
 - type ids not approved for the pairing — `--fix` clears them;
-- rows and quick tags still sitting on a tombstoned pairing (a mapping that did not finish) — re-run the mapping;
+- rows and quick tags still sitting on a retired pairing (a mapping that did not finish) — re-run the mapping;
 - retirement chains that form a cycle.
 
 It exits non-zero while anything remains, with or without `--fix`. Until every undecided pairing has been declared or moved, the pivot-less check keeps the exit code at 1, so treat the per-check lines as the signal during the migration and the exit code as the gate once the manifest is complete.
@@ -515,7 +515,7 @@ Materials are sent as a flat array of IDs (set membership, quantity always 1). B
 
 The action also accepts the **legacy per-tag formats** the current Vue frontend still uses:
 
-1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. Category may be omitted only when the object has exactly one pairing. For objects with multiple pairings, send `category_id` or `category`. An unknown category or undeclared pairing returns 422 instead of selecting another category.
+1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. For an active object, category may be omitted only when exactly one active pairing exists. Retired object IDs still resolve through their recorded source pairing and replacement. For objects with multiple pairings, send `category_id` or `category`. An unknown category or undeclared pairing returns 422 instead of selecting another category.
 2. **Custom-only** — `{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }`. Creates a `CustomTagNew` from `key` and a loose PhotoTag (null CLO).
 3. **Brand-only** — `{ "brand_only": true, "brand": {"id": 1, "key": "coca-cola"}, "quantity": 1, "picked_up": null }`. Loose PhotoTag with the brand as an extra tag.
 4. **Material-only** — `{ "material_only": true, "material": {"id": 2, "key": "plastic"}, "quantity": 1, "picked_up": null }`. Same loose-PhotoTag pattern.

@@ -63,57 +63,16 @@ class SyncQuickTagsAction
      */
     private function repointToActiveClos(array $tags): array
     {
-        $cloIds = array_unique(array_map(static fn (array $tag): int => (int) $tag['clo_id'], $tags));
-
-        if ($cloIds === []) {
-            return $tags;
-        }
-
-        $clos = CategoryObject::withRetirementState($cloIds);
-
-        $unmapped = [];
-
         foreach ($tags as $i => $tag) {
-            $clo = $clos->get((int) $tag['clo_id']);
-
-            // A pairing can be retired while its object stays live (a pure category move), so
-            // the pivot's own retirement is checked, not only the object's.
-            if ($clo === null || (! $clo->isRetired() && ! $clo->litterObject?->isRetired())) {
-                continue;
+            $clo = CategoryObject::find($tag['clo_id']);
+            if ($clo === null) {
+                throw ValidationException::withMessages([
+                    'tags' => ['This tag is no longer available — refresh your tag list.'],
+                ]);
             }
-
-            $mapping = $clo->resolveActiveMapping();
-
-            if ($mapping === null) {
-                $unmapped[] = $clo->litterObject->key;
-
-                continue;
-            }
-
+            $mapping = $clo->resolveForWrite($tag['type_id'] ?? null);
             $tags[$i]['clo_id'] = $mapping['clo']->id;
-
-            // A v4 composite key split into object + type: a preset saved before the split has no
-            // type of its own, so it takes the approved subtype recorded on the chain.
-            if (($tag['type_id'] ?? null) === null && $mapping['type_id'] !== null) {
-                $tags[$i]['type_id'] = $mapping['type_id'];
-            }
-
-            // A type the survivor pairing does not approve would make the preset unusable: every
-            // tag submitted from it is refused. Drop it, as the photo-tag remount does.
-            $typeId = $tags[$i]['type_id'] ?? null;
-
-            if ($typeId !== null && ! DB::table('category_object_types')
-                ->where('category_litter_object_id', $mapping['clo']->id)
-                ->where('litter_object_type_id', $typeId)
-                ->exists()) {
-                $tags[$i]['type_id'] = null;
-            }
-        }
-
-        if ($unmapped !== []) {
-            throw ValidationException::withMessages([
-                'tags' => ['Retired and can no longer be saved as a quick tag: ' . implode(', ', array_unique($unmapped)) . '.'],
-            ]);
+            $tags[$i]['type_id'] = $mapping['type_id'];
         }
 
         return $tags;

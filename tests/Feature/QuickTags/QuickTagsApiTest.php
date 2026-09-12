@@ -441,6 +441,10 @@ class QuickTagsApiTest extends TestCase
         $user = User::factory()->create();
         $clo = $this->createClo();
         $typeId = $this->createType();
+        DB::table('category_object_types')->insert([
+            'category_litter_object_id' => $clo,
+            'litter_object_type_id' => $typeId,
+        ]);
 
         $this->actingAs($user)
             ->putJson('/api/v3/user/quick-tags', [
@@ -807,5 +811,20 @@ class QuickTagsApiTest extends TestCase
 
         $this->assertCount(1, $rows);
         $this->assertSame($keptClo, (int) $rows->first()->clo_id);
+    }
+    public function test_an_unapproved_type_on_an_active_pairing_does_not_replace_presets(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+        $this->actingAs($user)->putJson('/api/v3/user/quick-tags', [
+            'tags' => [$this->makeTagPayload($clo)],
+        ])->assertOk();
+        $before = DB::table('user_quick_tags')->where('user_id', $user->id)->get()->toJson();
+
+        $this->putJson('/api/v3/user/quick-tags', [
+            'tags' => [$this->makeTagPayload($clo, ['type_id' => $this->createType()])],
+        ])->assertUnprocessable();
+
+        $this->assertSame($before, DB::table('user_quick_tags')->where('user_id', $user->id)->get()->toJson());
     }
 }

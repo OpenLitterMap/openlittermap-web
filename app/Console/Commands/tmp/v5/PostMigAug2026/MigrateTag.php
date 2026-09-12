@@ -138,25 +138,36 @@ class MigrateTag extends Command
             return false;
         }
 
-        // "Applied" means applied as requested: a replay that names a different category or type
-        // is a conflicting retry, which the immutability check must refuse, not a no-op.
-        $disagreeing = DB::table('category_litter_object as source')
-            ->join('category_litter_object as target', 'target.id', '=', 'source.merged_into_clo_id')
-            ->where('source.litter_object_id', $retired->id)
-            ->where(function ($q) use ($desired) {
-                $q->where('target.litter_object_id', '!=', $desired->id)
-                    ->orWhere('target.category_id', '!=', $this->targetCategoryId === null
-                        ? DB::raw('source.category_id')
-                        : $this->targetCategoryId)
-                    ->orWhere(function ($q) {
-                        $this->typeId === null
-                            ? $q->whereNotNull('source.merged_into_type_id')
-                            : $q->whereNull('source.merged_into_type_id')->orWhere('source.merged_into_type_id', '!=', $this->typeId);
-                    });
-            })
-            ->exists();
+        // Earlier category moves keep their redirects. Check them by the same rule as planning.
+        $sources = DB::table('category_litter_object')->where('litter_object_id', $retired->id)->get();
+        foreach ($sources as $source) {
+            $target = DB::table('category_litter_object')->where('id', $source->merged_into_clo_id)->first();
+            if (! $this->recordedMappingAgrees($source, $target, (int) $desired->id, (int) $source->category_id)) {
+                return false;
+            }
+        }
 
-        return !$disagreeing;
+        return true;
+    }
+
+    /**
+     * - Preserve redirects made by an earlier mapping to a different object.
+     * - For this mapping, the recorded category and subtype must match exactly.
+     * - A missing destination never counts as a completed mapping.
+     */
+    private function recordedMappingAgrees(object $source, ?object $target, int $desiredId, int $categoryId): bool
+    {
+        if ($target === null) {
+            return false;
+        }
+        if ((int) $target->litter_object_id !== $desiredId) {
+            return true;
+        }
+
+        $recordedTypeId = $source->merged_into_type_id === null ? null : (int) $source->merged_into_type_id;
+
+        return (int) $target->category_id === ($this->targetCategoryId ?? $categoryId)
+            && $recordedTypeId === $this->typeId;
     }
 
     private function mappingIsValid(string $retiredKey, object $retired, string $desiredKey, object $desired): bool
@@ -493,6 +504,13 @@ class MigrateTag extends Command
                     ->where('id', $retiredClo->merged_into_clo_id)
                     ->first(['id', 'category_id', 'litter_object_id']);
 
+                if (! $this->recordedMappingAgrees($retiredClo, $recorded, $desiredId, $categoryId)) {
+                    throw new \RuntimeException(sprintf(
+                        'Pairing %d is already mapped to a missing or conflicting destination; recorded mappings are immutable.',
+                        $retiredClo->id
+                    ));
+                }
+
                 if ((int) $recorded->litter_object_id !== $desiredId) {
                     // Only a finished mapping may be skipped. Rows or presets still on the
                     // pairing mean that mapping stopped part-way; retiring the object now
@@ -514,18 +532,6 @@ class MigrateTag extends Command
                     }
 
                     continue;
-                }
-
-                $recordedTypeId = $retiredClo->merged_into_type_id === null ? null : (int) $retiredClo->merged_into_type_id;
-
-                if ((int) $recorded->category_id !== $targetCategoryId || $recordedTypeId !== $this->typeId) {
-                    throw new \RuntimeException(sprintf(
-                        'Pairing %d is already mapped to pivot %d (category %d, type %s); recorded mappings are immutable.',
-                        $retiredClo->id,
-                        $recorded->id,
-                        $recorded->category_id,
-                        $recordedTypeId ?? 'none'
-                    ));
                 }
             }
 

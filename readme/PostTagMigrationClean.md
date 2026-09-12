@@ -33,14 +33,16 @@ For one entry, the command:
    (the approved subtype, when `--type` is given). This is what stale clients and saved quick tags
    resolve from, so a v4 composite key keeps its subtype and an object+category move lands in the
    right category. A marked pivot is excluded from the picker by `CategoryObject::active()`.
-   Recorded mappings are immutable: a tombstone left by an earlier, different mapping is left
-   alone (its chain continues through the survivor it recorded), a tombstone from the same mapping
-   is resumed, and a retry that disagrees on category or type aborts. A tombstone from an earlier
+   Recorded mappings are immutable: a redirect recorded by an earlier, different mapping is left
+   alone (its chain continues through the survivor it recorded), a redirect from the same mapping
+   is resumed, and a retry that disagrees on category or type aborts. A retired pairing from an earlier
    mapping that still has rows or quick tags on it aborts the run too ("re-run that mapping
    first"): the object is not retired until the earlier mapping has finished. The survivor pairing
    must be active, not merely present — a pairing an earlier category move already retired is
    refused. A replay of a mapping that finished exactly as requested exits 0 with "Already
-   applied", even after its survivor has itself retired.
+   applied", even after an earlier category move or a later retirement of its survivor.
+   Planning and replay use the same mapping-agreement check; conflicting category/type retries
+   and incomplete earlier mappings remain refused.
 4. Backfills `photo_tags.category_litter_object_id` on rows already sitting on Tag B with a null CLO.
 5. Repoints `photo_tags` and `user_quick_tags` from A to B, carrying the approved type onto quick
    tags when `--type` is given.
@@ -57,7 +59,7 @@ Surfaces that derive the pivot from `(category_id, litter_object_id)` — the CS
 either way; surfaces that follow the stored pointer — quick tags, team tag editing — skip them
 until it is set. For `plastic_bag → plasticBags` that is 10,051 rows carrying 12,946 items.
 
-The old object and its pivots remain as tombstones so stale clients can resolve the retirement.
+The old object and its pivots remain with redirects so older clients can find the replacement.
 Photos are processed in atomic batches of 200. A failed batch rolls back and can be rerun.
 
 The command refuses self-migrations, retired replacements, conflicting existing retirements,
@@ -105,6 +107,25 @@ php artisan olm:migrate-tag plasticBags plastic_bag --apply
 
 During apply, a progress bar shows the number of durably migrated rows.
 
+## Editing impact and staged rollout
+
+Deploying this code does not apply any tag mappings. It does change saves immediately: a photo
+cannot be re-saved with an undeclared category/object pairing left in its submitted tags. The API
+returns 422 and preserves its existing observations, extras and summary. This affects ordinary
+users, admins and teachers. Unknown objects and ambiguous object-only submissions also return 422.
+An explicit correction or removal remains possible; the API never chooses a new category for them.
+
+Before deployment, record the affected pairing and photo counts from the current production clone.
+The earlier audit's roughly seventy pairings are historical evidence, not a current count. Rehearse
+the approved mappings and either apply them before reopening tag writes, or explicitly accept that
+photos with unresolved pairings will temporarily reject unchanged saves. Include this impact in
+the release plan; do not deploy assuming the guard repairs existing data.
+
+Mappings can still be applied one at a time. Completing one restores valid saves for its affected
+tags; unrelated valid tags continue to work. Other undeclared pairings remain blocked until their
+own approved cleanup. A photo containing any unresolved tag still fails a whole-photo replacement.
+Do not run unapproved mappings merely to obtain a zero integrity-check exit code.
+
 ## Before applying
 
 - Update `TagsConfig`, `BrandsConfig`, translations, and documentation for the approved mapping.
@@ -124,10 +145,12 @@ During apply, a progress bar shows the number of durably migrated rows.
 
 Check that:
 
-- `php artisan olm:verify-tag-integrity` reports no rows or quick tags left on a tombstoned pairing
-  (the mapping did not finish — re-run it) and no retirement chain cycles. Its exit code stays 1
-  while any undecided pairing still has no pivot, so the full manifest must be applied, and the
-  remaining pairings declared or moved, before the gate exits 0.
+- `php artisan olm:verify-tag-integrity` reports no rows or quick tags left on a retired pairing
+  (the mapping did not finish — re-run it) and no retirement chain cycles. During a staged rollout,
+  its exit code can remain 1 for previously recorded undeclared pairings. Compare the report with
+  the pre-run baseline and require the applied mapping's issues to be resolved with no new issues.
+  Do not treat an unexplained non-zero exit as success. The global check reaches 0 only after all
+  remaining issues have been addressed through approved cleanup.
 - Tag A is retired and points to Tag B.
 - No `photo_tags` or quick tags still reference Tag A.
 - Affected summaries and Redis object counts use Tag B.

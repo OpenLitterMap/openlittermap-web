@@ -2,14 +2,15 @@
 
 namespace App\Models\Litter\Tags;
 
-use Illuminate\Database\Eloquent\Builder;
 use App\Traits\ManagesTaggables;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class CategoryObject extends Pivot
 {
@@ -80,20 +81,6 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * CLOs by id to decide retirement.
-     * @param  array<int, int>  $cloIds
-     * @return Collection<int, self>
-     */
-    public static function withRetirementState(array $cloIds): Collection
-    {
-        return static::query()
-            ->whereIn('id', $cloIds)
-            ->with('litterObject:id,key,retired_at,merged_into_id')
-            ->get()
-            ->keyBy('id');
-    }
-
-    /**
      * Category-object pairings available for new tags.
      *
      * Setting `merged_into_clo_id` retires a pairing and records its replacement pairing ID.
@@ -124,15 +111,12 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Where a write against this pivot should land, and with which subtype.
+     * Find the final replacement pairing and the subtype recorded along the way.
      *
-     * A retired pivot records its survivor directly (`merged_into_clo_id`), so the answer is
-     * exact even when the survivor lives in another category. Chains are followed with a cycle
-     * guard, and the approved subtype is carried forward from whichever hop introduced it — a
-     * stale client holding the first CLO cannot know about a split made two mappings later.
-     * Older object retirements without a pairing redirect follow the object replacement instead.
-     * API writes never create category-object pairings. If no replacement can be resolved,
-     * return null so the caller can reject the request with a 422 response.
+     * - Follow pairing redirects, including category moves.
+     * - Fall back to object replacements for older retirement records.
+     * - Carry forward the latest subtype specified by a mapping.
+     * - Return null for missing destinations or cycles; never create a pairing.
      *
      * @return array{clo: self, type_id: int|null}|null
      */
@@ -142,49 +126,69 @@ class CategoryObject extends Pivot
         $typeId = null;
         $seen = [];
 
-        while ($clo->merged_into_clo_id !== null) {
+        while ($clo !== null) {
             if (isset($seen[$clo->id])) {
                 return null;
             }
-
             $seen[$clo->id] = true;
-            $typeId = $clo->merged_into_type_id ?? $typeId;
-            $clo = static::find($clo->merged_into_clo_id);
 
-            if ($clo === null) {
+            if ($clo->isRetired()) {
+                $typeId = $clo->merged_into_type_id ?? $typeId;
+                $clo = static::find($clo->merged_into_clo_id);
+                continue;
+            }
+
+            $object = $clo->litterObject;
+            if ($object === null) {
                 return null;
             }
+            if (! $object->isRetired()) {
+                return ['clo' => $clo, 'type_id' => $typeId === null ? null : (int) $typeId];
+            }
+
+            // Older retirements may have only an object replacement.
+            // Its pairing can also have moved, so continue through the same loop.
+            $active = $object->activeObject();
+            $clo = $active === null ? null : static::where('category_id', $clo->category_id)
+                ->where('litter_object_id', $active->id)->first();
         }
 
-        if ($clo !== $this) {
-            return ['clo' => $clo, 'type_id' => $typeId === null ? null : (int) $typeId];
+        return null;
+    }
+
+    /**
+     * Resolve the pairing and subtype for a photo tag or saved preset.
+     *
+     * - Follow every recorded replacement.
+     * - Use the migration's subtype when the client omitted one.
+     * - Drop a stale subtype only when the pairing changed.
+     * - Reject invalid types on an unchanged pairing and unresolved retirements.
+     *
+     * @return array{clo: self, type_id: int|null}
+     */
+    public function resolveForWrite(?int $typeId = null): array
+    {
+        $mapping = $this->resolveActiveMapping();
+        if ($mapping === null) {
+            throw ValidationException::withMessages([
+                'tags' => ["Litter object '{$this->litterObject?->key}' is retired and can no longer be tagged."],
+            ]);
         }
 
-        $litterObject = $this->relationLoaded('litterObject')
-            ? $this->litterObject
-            : $this->litterObject()->first();
-
-        if ($litterObject === null || ! $litterObject->isRetired()) {
-            return ['clo' => $this, 'type_id' => null];
+        $typeId ??= $mapping['type_id'];
+        $destination = $mapping['clo'];
+        if ($typeId !== null && ! DB::table('category_object_types')
+            ->where('category_litter_object_id', $destination->id)
+            ->where('litter_object_type_id', $typeId)->exists()) {
+            if ((int) $destination->id === (int) $this->id) {
+                throw ValidationException::withMessages([
+                    'tags' => ["Type {$typeId} is not valid for CLO {$this->id}"],
+                ]);
+            }
+            $typeId = null;
         }
 
-        $activeLitterObject = $litterObject->activeObject();
-
-        if ($activeLitterObject === null) {
-            return null;
-        }
-
-        if ($activeLitterObject->id === (int) $this->litter_object_id) {
-            return ['clo' => $this, 'type_id' => null];
-        }
-
-        $survivor = static::where('category_id', $this->category_id)
-            ->where('litter_object_id', $activeLitterObject->id)
-            ->first();
-
-        // The survivor pairing may itself have been moved since the object retired. Its object is
-        // active, so this recursion only follows pairing redirects and terminates on their guard.
-        return $survivor?->resolveActiveMapping();
+        return ['clo' => $destination, 'type_id' => $typeId];
     }
 
     /**

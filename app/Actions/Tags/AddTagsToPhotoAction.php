@@ -17,6 +17,7 @@ use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class AddTagsToPhotoAction
@@ -24,8 +25,17 @@ class AddTagsToPhotoAction
     public function __construct() {}
 
     /**
-     * Save tags, update the photo's summary and XP, and handle verification.
-     * Shared by photo tagging, admin editing and team editing.
+     * Add tags to a photo, generate summary, calculate XP, and handle verification.
+     *
+     * After this runs:
+     * - photo_tags rows and any supplied extra tags exist
+     * - photo.summary JSON is populated
+     * - photo.xp is calculated
+     *
+     * Unless skipVerification is true:
+     * - Verification status is updated
+     * - School students await teacher approval
+     * - Other users fire TagsVerifiedByAdmin so metrics are processed
      *
      * @throws \Exception
      */
@@ -58,7 +68,7 @@ class AddTagsToPhotoAction
      */
     protected function addTagsToPhoto(int $userId, int $photoId, array $tags): array
     {
-        $tags = $this->repointToActiveClos($tags);
+        $tags = $this->normalizeTags($tags);
 
         $photoTags = [];
 
@@ -76,68 +86,79 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Redirect retired pairing IDs to their recorded replacements.
+     * Normalise extra tags before any rows are created.
      *
-     * Clients with an older tag list can still submit retired IDs. A recorded replacement
-     * can change the object, category or subtype. Reject unresolved retirements with 422;
-     * saving a tag must never create a category-object pairing.
-     *
-     * @param  array<int, array<string, mixed>>  $tags
-     * @return array<int, array<string, mixed>>
-     *
-     * @throws ValidationException
+     * - Materials and brands accept IDs or objects containing an ID.
+     * - Custom tags accept text, {key: text}, or the older {tag: text} format.
+     * - Materials and custom tags inherit the parent quantity; brands keep their own.
+     * - Reject malformed entries instead of silently losing them during replacement.
      */
-    protected function repointToActiveClos(array $tags): array
+    protected function normalizeTags(array $tags): array
     {
-        $cloIds = array_values(array_unique(array_filter(array_column($tags, 'category_litter_object_id'))));
-
-        if ($cloIds === []) {
-            return $tags;
-        }
-
-        $clos = CategoryObject::withRetirementState($cloIds);
-
-        foreach ($tags as $i => $tag) {
-            $cloId = $tag['category_litter_object_id'] ?? null;
-
-            if ($cloId === null || ! $clos->has($cloId)) {
+        foreach ($tags as $i => &$tag) {
+            if (! is_array($tag)) {
                 continue;
             }
-
-            $clo = $clos[$cloId];
-
-            // Check both: moving an object to another category retires only its old pairing.
-            if (! $clo->isRetired() && ! $clo->litterObject?->isRetired()) {
-                continue;
-            }
-
-            $mapping = $clo->resolveActiveMapping();
-
-            if ($mapping === null) {
-                $this->rejectRetiredObject($clo->litterObject->key);
-            }
-
-            $activeClo = $mapping['clo'];
-            $tags[$i]['category_litter_object_id'] = $activeClo->id;
-
-            // Older clients may omit a subtype introduced by the migration. Use the recorded one.
-            if (($tag['litter_object_type_id'] ?? null) === null && $mapping['type_id'] !== null) {
-                $tags[$i]['litter_object_type_id'] = $mapping['type_id'];
-            }
-
-            $typeId = $tags[$i]['litter_object_type_id'] ?? null;
-
-            if ($typeId && $activeClo->id !== (int) $cloId) {
-                $valid = DB::table('category_object_types')
-                    ->where('category_litter_object_id', $activeClo->id)
-                    ->where('litter_object_type_id', $typeId)
-                    ->exists();
-
-                if (! $valid) {
-                    $tags[$i]['litter_object_type_id'] = null;
+            foreach (['materials', 'brands', 'custom_tags'] as $field) {
+                if (($tag[$field] ?? null) === null) {
+                    $tag[$field] = [];
                 }
+                if (! is_array($tag[$field])) {
+                    continue;
+                }
+                foreach ($tag[$field] as $j => &$extra) {
+                    if ($field !== 'custom_tags') {
+                        $extra = is_array($extra) ? $extra : ['id' => $extra];
+                        continue;
+                    }
+                    if (! is_array($extra)) {
+                        $extra = ['key' => $extra];
+                    } elseif (array_key_exists('tag', $extra)) {
+                        if (array_key_exists('key', $extra) && $extra['key'] !== $extra['tag']) {
+                            throw ValidationException::withMessages([
+                                "tags.{$i}.custom_tags.{$j}" => ['Supply one custom tag value.'],
+                            ]);
+                        }
+                        $extra['key'] = $extra['tag'];
+                        unset($extra['tag']);
+                    }
+                }
+                unset($extra);
             }
         }
+        unset($tag);
+
+        $namedTag = static function ($attribute, $value, $fail): void {
+            if (! is_string($value) && (! is_array($value)
+                || filter_var($value['id'] ?? null, FILTER_VALIDATE_INT) === false)) {
+                $fail('Supply a tag key or an object containing an integer id.');
+            }
+        };
+        Validator::make(['tags' => $tags], [
+            'tags.*' => 'array',
+            'tags.*.category_litter_object_id' => 'sometimes|integer|exists:category_litter_object,id',
+            'tags.*.litter_object_type_id' => 'nullable|integer|exists:litter_object_types,id',
+            'tags.*.category_id' => 'sometimes|integer|exists:categories,id',
+            'tags.*.object' => ['nullable', $namedTag],
+            'tags.*.category' => ['nullable', $namedTag],
+            'tags.*.quantity' => 'sometimes|integer|min:1',
+            'tags.*.picked_up' => 'nullable|boolean',
+            'tags.*.materials' => 'array',
+            'tags.*.materials.*.id' => 'required|integer|exists:materials,id',
+            'tags.*.brands' => 'array',
+            'tags.*.brands.*.id' => 'required|integer|exists:brandslist,id',
+            'tags.*.brands.*.quantity' => 'sometimes|integer|min:1',
+            'tags.*.custom_tags' => 'array',
+            'tags.*.custom_tags.*.key' => 'present|nullable|string',
+            'tags.*.brand_only' => 'sometimes|boolean',
+            'tags.*.brand' => 'required_if:tags.*.brand_only,true|array',
+            'tags.*.brand.id' => 'required_with:tags.*.brand|integer|exists:brandslist,id',
+            'tags.*.material_only' => 'sometimes|boolean',
+            'tags.*.material' => 'required_if:tags.*.material_only,true|array',
+            'tags.*.material.id' => 'required_with:tags.*.material|integer|exists:materials,id',
+            'tags.*.custom' => 'sometimes|boolean',
+            'tags.*.key' => 'sometimes|string',
+        ])->validate();
 
         return $tags;
     }
@@ -224,23 +245,12 @@ class AddTagsToPhotoAction
             ]);
         }
 
+        $mapping = $clo->resolveForWrite($tag['litter_object_type_id'] ?? null);
+        $clo = $mapping['clo'];
+        $cloId = $clo->id;
+        $typeId = $mapping['type_id'];
         $quantity = max(1, (int) ($tag['quantity'] ?? 1));
         $pickedUp = $tag['picked_up'] ?? null;
-
-        // Validate type if provided
-        $typeId = $tag['litter_object_type_id'] ?? null;
-        if ($typeId) {
-            $validType = DB::table('category_object_types')
-                ->where('category_litter_object_id', $cloId)
-                ->where('litter_object_type_id', $typeId)
-                ->exists();
-
-            if (! $validType) {
-                throw ValidationException::withMessages([
-                    'tags' => ["Type {$typeId} is not valid for CLO {$cloId}"],
-                ]);
-            }
-        }
 
         // Create the PhotoTag
         $photoTag = PhotoTag::create([
@@ -266,112 +276,42 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Save a tag sent as an object and category, for example {object: "butts", category: "smoking"}.
+     * Resolve an object-format tag, then save it through createTagFromClo.
      *
-     * Current web/admin fallbacks and older clients still send this format without a pairing ID.
-     * Look up the pairing, follow any approved replacement, then save the tag.
-     * Keep this helper until all object tags are submitted with category_litter_object_id.
+     * - Web/admin fallbacks and older clients send object and category separately.
+     * - Use the supplied category; infer one only when there is a single choice.
+     * - Reject undeclared pairings and follow recorded replacements.
+     * - Keep this adapter until every object tag is submitted with a pairing ID.
      *
-     * Reject invalid pairings. Infer a missing category only when there is exactly one choice.
-     *
-     * @throws \Exception
+     * @throws ValidationException
      */
     protected function createTagFromObject(int $userId, int $photoId, array $tag): PhotoTag
     {
-        [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
+        [$category, $object] = $this->resolveTag($tag);
+        $clo = CategoryObject::where('category_id', $category->id)
+            ->where('litter_object_id', $object->id)->first();
 
-        // Use the requested pairing first. Older migrations may record a replacement only
-        // on the object; use that only when the requested pairing has no database row.
-        $clo = null;
-        $typeId = null;
-
-        if ($category && $object) {
-            $named = CategoryObject::where('category_id', $category->id)
-                ->where('litter_object_id', $object->id)
-                ->first();
-
-            if ($named !== null) {
-                $mapping = $named->resolveActiveMapping();
-
-                if ($mapping === null) {
-                    $this->rejectRetiredObject($object->key);
-                }
-
-                $clo = $mapping['clo'];
-                $typeId = $mapping['type_id'];
-            } elseif ($object->isRetired()) {
-                $active = $object->activeObject();
-
-                if ($active === null) {
-                    $this->rejectRetiredObject($object->key);
-                }
-
-                $clo = CategoryObject::where('category_id', $category->id)
-                    ->where('litter_object_id', $active->id)
-                    ->first();
-
-                if (! $clo) {
-                    $this->rejectRetiredObject($object->key);
-                }
-            } else {
-                throw ValidationException::withMessages([
-                    'tags' => ["The tag '{$object->key}' is not available in '{$category->key}'. Choose a valid tag in that category before saving."],
-                ]);
+        // - Prefer the recorded category/object pairing.
+        // - Older retirements may have only an object replacement.
+        // - Both paths use the same redirect and subtype checks when saving.
+        if ($clo === null && $object->isRetired()) {
+            $active = $object->activeObject();
+            $clo = $active === null ? null : CategoryObject::where('category_id', $category->id)
+                ->where('litter_object_id', $active->id)->first();
+            if ($clo === null) {
+                $this->rejectRetiredObject($object->key);
             }
         }
 
-        $photoTag = PhotoTag::create([
-            'photo_id' => $photoId,
-            'category_litter_object_id' => $clo?->id,
-            'category_id' => $clo?->category_id,
-            'litter_object_id' => $clo?->litter_object_id,
-            'litter_object_type_id' => $typeId,
-            'quantity' => $quantity,
-            'picked_up' => $pickedUp,
-        ]);
-
-        // TODO: Re-enable CheckLocationTypeAward when badge system is ready
-        // if ($object?->key === 'bags_litter' && $pickedUp) {
-        //     $this->checkLocationTypeAward->checkLandUseAward($userId, $photoTag);
-        // }
-
-        // Custom tag as primary (legacy format: { custom: true, key: "..." })
-        if (isset($tag['custom']) && $tag['custom'] && isset($tag['key'])) {
-            $customTagModel = CustomTagNew::firstOrCreate(['key' => $tag['key']]);
-
-            if ($customTagModel->wasRecentlyCreated) {
-                $customTagModel->created_by = $userId;
-                $customTagModel->save();
-            }
-
-            $photoTag->attachExtraTags([['id' => $customTagModel->id]], 'custom_tag');
+        if ($clo === null) {
+            throw ValidationException::withMessages([
+                'tags' => ["The tag '{$object->key}' is not available in '{$category->key}'. Choose a valid tag in that category before saving."],
+            ]);
         }
 
-        // Materials as extra tags
-        if (! empty($tag['materials'])) {
-            $materialExtras = collect($tag['materials'])->map(fn($m) => [
-                'id' => is_array($m) ? $m['id'] : $m,
-            ])->all();
+        $tag['category_litter_object_id'] = $clo->id;
 
-            $photoTag->attachExtraTags($materialExtras, 'material');
-        }
-
-        // Custom tags as extra tags
-        if (! empty($tag['custom_tags'])) {
-            $this->attachCustomTags($userId, $photoTag, $tag['custom_tags']);
-        }
-
-        // Brands as extra tags
-        if (! empty($tag['brands'])) {
-            $brandExtras = collect($tag['brands'])->map(fn($b) => [
-                'id' => $b['id'],
-                'quantity' => $b['quantity'] ?? 1,
-            ])->all();
-
-            $photoTag->attachExtraTags($brandExtras, 'brand');
-        }
-
-        return $photoTag;
+        return $this->createTagFromClo($userId, $photoId, $tag);
     }
 
     /**
@@ -500,7 +440,12 @@ class AddTagsToPhotoAction
         // Never substitute another category for one the caller supplied.
         // When none was supplied, infer it only if there is exactly one choice.
         if (! $categoryProvided) {
-            $categories = $object->categories()->limit(2)->get();
+            $categories = $object->categories()
+                // A live object's old category redirects are no longer choices.
+                // A retired object still needs its source pairing to resolve the replacement.
+                ->when(! $object->isRetired(), fn ($query) => $query->whereNull('category_litter_object.merged_into_clo_id'))
+                ->limit(2)
+                ->get();
 
             if ($categories->count() !== 1) {
                 throw ValidationException::withMessages([

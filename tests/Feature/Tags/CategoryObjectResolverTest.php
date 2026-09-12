@@ -140,6 +140,31 @@ class CategoryObjectResolverTest extends TestCase
         $this->assertSame($survivorInDumping->id, $mapping['clo']->id, 'fallback must not stop at a retired pairing');
     }
 
+    public function test_pairing_redirects_continue_through_a_later_object_only_retirement(): void
+    {
+        $source = $this->pivotFor('mixed_source');
+        $middle = $this->pivotFor('mixed_middle');
+        $destination = $this->pivotFor('mixed_destination');
+        $source->update(['merged_into_clo_id' => $middle->id]);
+        LitterObject::whereKey($middle->litter_object_id)->update([
+            'retired_at' => now(), 'merged_into_id' => $destination->litter_object_id,
+        ]);
+
+        $this->assertSame($destination->id, $source->fresh()->resolveForWrite()['clo']->id);
+    }
+
+    public function test_a_cycle_across_pairing_and_object_redirects_is_refused(): void
+    {
+        $source = $this->pivotFor('mixed_source');
+        $middle = $this->pivotFor('mixed_middle');
+        $source->update(['merged_into_clo_id' => $middle->id]);
+        LitterObject::whereKey($middle->litter_object_id)->update([
+            'retired_at' => now(), 'merged_into_id' => $source->litter_object_id,
+        ]);
+
+        $this->assertNull($source->fresh()->resolveActiveMapping());
+    }
+
     private function pivotFor(string $objectKey): CategoryObject
     {
         $clo = CategoryObject::firstOrCreate([

@@ -126,7 +126,7 @@ class TeamPhotosController extends Controller
      *
      * PATCH /api/teams/photos/{photo}/tags
      *
-     * Accepts CLO-based payload (same format as PhotoTagsController::store).
+     * Accepts a pairing ID or an object with its recorded category.
      * Deletes existing tags, resets summary/xp/verified, then delegates
      * to AddTagsToPhotoAction to recreate tags with proper summary + XP.
      *
@@ -143,19 +143,9 @@ class TeamPhotosController extends Controller
 
         $request->validate([
             'tags' => 'required|array|min:1',
-            'tags.*.category_litter_object_id' => 'required|exists:category_litter_object,id',
-            'tags.*.litter_object_type_id' => 'nullable|exists:litter_object_types,id',
+            'tags.*' => 'array',
             'tags.*.quantity' => 'required|integer|min:1',
-            'tags.*.picked_up' => 'nullable|boolean',
-            'tags.*.materials' => 'nullable|array',
-            'tags.*.materials.*.id' => 'required|exists:materials,id',
-            'tags.*.materials.*.quantity' => 'required|integer|min:1',
-            'tags.*.brands' => 'nullable|array',
-            'tags.*.brands.*.id' => 'required|exists:brands,id',
-            'tags.*.brands.*.quantity' => 'required|integer|min:1',
-            'tags.*.custom_tags' => 'nullable|array',
-            'tags.*.custom_tags.*.tag' => 'required|string|max:100',
-            'tags.*.custom_tags.*.quantity' => 'required|integer|min:1',
+            // The shared action normalises and validates object tags and standalone extras.
         ]);
 
         DB::transaction(function () use ($request, $photo, $user) {

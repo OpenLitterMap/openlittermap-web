@@ -10,6 +10,8 @@ use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\CategoryObject;
+use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
@@ -68,7 +70,7 @@ class AddNewTagsToPhotosTest extends TestCase
                     ['id' => $materials[1]->id, 'key' => $materials[1]->key]
                 ],
                 'brands' => [
-                    $brand
+                    $brand->toArray()
                 ],
                 'custom_tags' => [
                     'new tag 1',
@@ -438,6 +440,57 @@ class AddNewTagsToPhotosTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('tags');
 
         $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
+    }
+
+    public function test_object_only_input_ignores_an_active_objects_retired_pairings(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        $user = User::factory()->create();
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+        $object = LitterObject::create(['key' => 'moved_object']);
+        $sourceCategory = Category::where('key', 'other')->firstOrFail();
+        $targetCategory = Category::where('key', 'dumping')->firstOrFail();
+        $target = CategoryObject::create(['category_id' => $targetCategory->id, 'litter_object_id' => $object->id]);
+        CategoryObject::create([
+            'category_id' => $sourceCategory->id, 'litter_object_id' => $object->id,
+            'merged_into_clo_id' => $target->id,
+        ]);
+        CategoryObject::flushResolverCache();
+
+        $this->actingAs($user)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id, 'tags' => [['object' => $object->key, 'quantity' => 2]],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('photo_tags', [
+            'photo_id' => $photo->id, 'category_id' => $targetCategory->id,
+            'category_litter_object_id' => $target->id, 'quantity' => 2,
+        ]);
+    }
+
+    public function test_object_only_input_keeps_a_retired_objects_redirect_and_subtype(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        $user = User::factory()->create();
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+        $category = Category::where('key', 'alcohol')->firstOrFail();
+        $can = LitterObject::where('key', 'can')->firstOrFail();
+        $type = LitterObjectType::where('key', 'beer')->firstOrFail();
+        $targetId = $this->getCloId($category->id, $can->id);
+        $old = LitterObject::create(['key' => 'old_beer_can', 'retired_at' => now(), 'merged_into_id' => $can->id]);
+        CategoryObject::create([
+            'category_id' => $category->id, 'litter_object_id' => $old->id,
+            'merged_into_clo_id' => $targetId, 'merged_into_type_id' => $type->id,
+        ]);
+        CategoryObject::flushResolverCache();
+
+        $this->actingAs($user)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id, 'tags' => [['object' => $old->key, 'quantity' => 1]],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('photo_tags', [
+            'photo_id' => $photo->id, 'category_litter_object_id' => $targetId,
+            'litter_object_id' => $can->id, 'litter_object_type_id' => $type->id,
+        ]);
     }
 
     /**

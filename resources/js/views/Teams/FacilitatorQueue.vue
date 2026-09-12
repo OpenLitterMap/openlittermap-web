@@ -711,49 +711,38 @@ onUnmounted(() => {
 
 const buildTagsPayload = () => {
     return activeTags.value.map((tag) => {
+        const common = {
+            quantity: tag.quantity,
+            picked_up: tag.pickedUp,
+            materials: tag.materials?.map((material) => material.id) || [],
+            brands: tag.brands?.map((brand) => ({ id: brand.id, quantity: brand.quantity || 1 })) || [],
+            custom_tags: tag.customTags || [],
+        };
+
         if (tag.cloId) {
             return {
+                ...common,
                 category_litter_object_id: tag.cloId,
                 litter_object_type_id: tag.typeId || null,
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-                materials: tag.materials?.map((m) => m.id) || [],
-                brands: tag.brands?.map((b) => ({ id: b.id, quantity: b.quantity || 1 })) || [],
-                custom_tags: tag.customTags || [],
             };
+        }
+        if (tag.custom) {
+            return { ...common, custom: true, key: tag.key };
+        }
+        if (tag.type === 'brand-only') {
+            return { ...common, brand_only: true, brand: { id: tag.brand.id, key: tag.brand.key } };
+        }
+        if (tag.type === 'material-only') {
+            return { ...common, material_only: true, material: { id: tag.material.id, key: tag.material.key } };
         }
 
-        if (tag.custom) {
-            return {
-                custom: true,
-                key: tag.key,
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else if (tag.type === 'brand-only') {
-            return {
-                brand_only: true,
-                brand: { id: tag.brand.id, key: tag.brand.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else if (tag.type === 'material-only') {
-            return {
-                material_only: true,
-                material: { id: tag.material.id, key: tag.material.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else {
-            return {
-                object: { id: tag.object.id, key: tag.object.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-                materials: tag.materials?.map((m) => ({ id: m.id, key: m.key })) || [],
-                brands: tag.brands?.map((b) => ({ id: b.id, key: b.key })) || [],
-                custom_tags: tag.customTags || [],
-            };
-        }
+        return {
+            ...common,
+            object: { id: tag.object.id, key: tag.object.key },
+            litter_object_type_id: tag.typeId || null,
+            // Send the recorded category so the API can reject invalid pairings instead of guessing.
+            ...(tag.categoryId ? { category_id: tag.categoryId } : {}),
+        };
     });
 };
 </script>
