@@ -115,6 +115,31 @@ class CategoryObjectResolverTest extends TestCase
         $this->assertNull($mapping['type_id']);
     }
 
+    /**
+     * Retirements made before the pivot-level record exist only on the object. The fallback finds
+     * the survivor pairing by walking the object, but that pairing may since have been moved to
+     * another category; the walk has to continue through the survivor's own tombstone.
+     */
+    public function test_the_object_walk_fallback_follows_the_survivor_pairings_own_tombstone(): void
+    {
+        $dumping = Category::where('key', 'dumping')->firstOrFail();
+        $old = $this->pivotFor('walk_old');
+        $survivorInOther = $this->pivotFor('walk_new');
+        $survivorInDumping = CategoryObject::firstOrCreate([
+            'category_id' => $dumping->id,
+            'litter_object_id' => $survivorInOther->litter_object_id,
+        ]);
+        LitterObject::whereKey($old->litter_object_id)->update([
+            'retired_at' => now(),
+            'merged_into_id' => $survivorInOther->litter_object_id,
+        ]);
+        $survivorInOther->update(['merged_into_clo_id' => $survivorInDumping->id]);
+
+        $mapping = $old->fresh()->resolveActiveMapping();
+
+        $this->assertSame($survivorInDumping->id, $mapping['clo']->id, 'fallback must not stop at a retired pairing');
+    }
+
     private function pivotFor(string $objectKey): CategoryObject
     {
         $clo = CategoryObject::firstOrCreate([

@@ -180,7 +180,9 @@ class CategoryObject extends Pivot
             ->where('litter_object_id', $activeLitterObject->id)
             ->first();
 
-        return $survivor === null ? null : ['clo' => $survivor, 'type_id' => null];
+        // The survivor pairing may itself have been moved since the object retired. Its object is
+        // active, so this recursion only follows pivot tombstones and terminates on their guard.
+        return $survivor?->resolveActiveMapping();
     }
 
     /**
