@@ -433,6 +433,25 @@ class MigrateTag extends Command
                         ->first(['id', 'category_id', 'litter_object_id']);
 
                     if ((int) $recorded->litter_object_id !== $desiredId) {
+                        // Only a finished mapping may be skipped. Rows or presets still on the
+                        // pairing mean that mapping stopped part-way; retiring the object now
+                        // would strand them and make the earlier mapping impossible to re-run.
+                        $rowsLeft = DB::table('photo_tags')
+                            ->where('category_id', $categoryId)
+                            ->where('litter_object_id', $retiredId)
+                            ->count();
+                        $quickTagsLeft = DB::table('user_quick_tags')->where('clo_id', $retiredClo->id)->count();
+
+                        if ($rowsLeft > 0 || $quickTagsLeft > 0) {
+                            throw new \RuntimeException(sprintf(
+                                'Pairing %d was mapped into pivot %d by an earlier mapping, but %d row(s) and %d quick tag(s) remain on it; re-run that mapping first.',
+                                $retiredClo->id,
+                                $recorded->id,
+                                $rowsLeft,
+                                $quickTagsLeft
+                            ));
+                        }
+
                         continue;
                     }
 
@@ -449,10 +468,22 @@ class MigrateTag extends Command
                     }
                 }
 
-                $desiredCloId = DB::table('category_litter_object')
+                $desiredClo = DB::table('category_litter_object')
                     ->where('category_id', $targetCategoryId)
                     ->where('litter_object_id', $desiredId)
-                    ->value('id');
+                    ->first(['id', 'merged_into_clo_id']);
+                $desiredCloId = $desiredClo?->id;
+
+                // The survivor pairing can itself have been retired by an earlier category move.
+                // Rows landed on a tombstone pass the existence check and are stranded.
+                if ($desiredClo?->merged_into_clo_id !== null) {
+                    throw new \RuntimeException(sprintf(
+                        'The replacement pairing in category %s is retired (pivot %d moved into pivot %d); map onto the active pairing instead.',
+                        $this->targetCategoryKey ?? (string) DB::table('categories')->where('id', $categoryId)->value('key'),
+                        $desiredClo->id,
+                        $desiredClo->merged_into_clo_id
+                    ));
+                }
 
                 if ($desiredCloId === null) {
                     // Taxonomy is declared in TagsConfig and created by the seeder. A migration

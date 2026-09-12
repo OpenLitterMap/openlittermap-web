@@ -481,6 +481,95 @@ class MigrateTagTest extends TestCase
         $this->assertSame($targetClo->id, $tag->category_litter_object_id);
     }
 
+    /**
+     * The survivor pairing can itself have been retired by an earlier category move. Landing rows
+     * on a tombstone would pass the pivot-existence check and leave them stranded, so the
+     * destination must be active, not merely present.
+     */
+    public function test_a_mapping_onto_a_retired_destination_pairing_fails_without_changes(): void
+    {
+        $dumping = Category::where('key', 'dumping')->firstOrFail();
+        $survivorInOther = CategoryObject::where('category_id', $this->category->id)
+            ->where('litter_object_id', $this->desired->id)
+            ->firstOrFail();
+        CategoryObject::create([
+            'category_id' => $dumping->id,
+            'litter_object_id' => $this->desired->id,
+            'merged_into_clo_id' => $survivorInOther->id,
+        ]);
+        CategoryObject::flushResolverCache();
+
+        $this->migrate(['--apply' => true, '--category' => 'dumping'])
+            ->expectsOutputToContain('retired')
+            ->assertExitCode(1);
+
+        $this->assertNull($this->retired->fresh()->retired_at);
+        $this->assertSame($this->category->id, $this->tag->fresh()->category_id);
+        $this->assertNull(CategoryObject::find($this->retiredClo->id)->merged_into_clo_id);
+    }
+
+    /**
+     * A category move that stopped mid-batch leaves its tombstone recorded and its rows in place.
+     * A later object retirement must not skip that tombstone as "someone else's mapping": doing so
+     * retires the object, strands the rows, and makes the earlier move impossible to re-run.
+     */
+    public function test_a_later_mapping_refuses_to_skip_a_tombstone_that_still_has_rows(): void
+    {
+        $this->prepareInterruptedCategoryMove();
+
+        $this->migrate(['--apply' => true])
+            ->expectsOutputToContain('re-run')
+            ->assertExitCode(1);
+
+        $this->assertNull($this->retired->fresh()->retired_at, 'object must not be retired while rows are stranded');
+        $this->assertSame($this->category->id, $this->tag->fresh()->category_id);
+        $this->assertSame($this->retired->id, $this->tag->fresh()->litter_object_id);
+    }
+
+    public function test_re_running_the_interrupted_mapping_first_lets_the_later_one_proceed(): void
+    {
+        $dumping = $this->prepareInterruptedCategoryMove();
+
+        $this->artisan('olm:migrate-tag', [
+            'retired' => 'plastic_bag', 'desired' => 'plastic_bag', '--category' => 'dumping', '--apply' => true,
+        ])->assertExitCode(0);
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+
+        $tag = $this->tag->fresh();
+
+        $this->assertSame($dumping->id, $tag->category_id);
+        $this->assertSame($this->desired->id, $tag->litter_object_id);
+        $this->assertNotNull($this->retired->fresh()->retired_at);
+    }
+
+    /** Category move `other → dumping` whose first batch fails after the tombstone is recorded. */
+    private function prepareInterruptedCategoryMove(): Category
+    {
+        $dumping = Category::where('key', 'dumping')->firstOrFail();
+        CategoryObject::firstOrCreate(['category_id' => $dumping->id, 'litter_object_id' => $this->retired->id]);
+        CategoryObject::firstOrCreate(['category_id' => $dumping->id, 'litter_object_id' => $this->desired->id]);
+        CategoryObject::flushResolverCache();
+
+        $this->app->instance(GeneratePhotoSummaryService::class, new class extends GeneratePhotoSummaryService
+        {
+            public function run(Photo $photo): Photo
+            {
+                throw new \RuntimeException('summary failed');
+            }
+        });
+
+        $this->artisan('olm:migrate-tag', [
+            'retired' => 'plastic_bag', 'desired' => 'plastic_bag', '--category' => 'dumping', '--apply' => true,
+        ])->assertExitCode(1);
+
+        $this->app->instance(GeneratePhotoSummaryService::class, new GeneratePhotoSummaryService());
+
+        $this->assertNotNull(CategoryObject::find($this->retiredClo->id)->merged_into_clo_id, 'fixture: tombstone recorded');
+        $this->assertSame($this->category->id, $this->tag->fresh()->category_id, 'fixture: rows not moved');
+
+        return $dumping;
+    }
+
     public function test_a_mapping_that_changes_xp_is_refused_by_default(): void
     {
         $this->approveXpDifferentSurvivor();
