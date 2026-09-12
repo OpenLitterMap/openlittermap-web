@@ -142,7 +142,7 @@ class AddNewTagsToPhotosTest extends TestCase
         ]);
     }
 
-    public function test_it_falls_back_when_object_does_not_match_category(): void
+    public function test_it_rejects_an_object_that_does_not_match_the_supplied_category(): void
     {
         $this->seed(GenerateTagsSeeder::class);
 
@@ -154,7 +154,6 @@ class AddNewTagsToPhotosTest extends TestCase
         // "butts" belongs only to "smoking", not "alcohol"
         $object = LitterObject::where('key', 'butts')->first();
         $wrongCategory = Category::where('key', CategoryKey::Alcohol->value)->first();
-        $correctCategory = $object->categories()->first();
 
         $response = $this->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
@@ -166,14 +165,8 @@ class AddNewTagsToPhotosTest extends TestCase
             ]
         ]);
 
-        $response->assertOk();
-
-        // Falls back to the correct category (smoking) instead of erroring
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $correctCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+        $response->assertUnprocessable()->assertJsonValidationErrors('tags');
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 
     public function test_it_fails_to_upload_if_the_user_does_not_own_the_photo (): void
@@ -263,7 +256,7 @@ class AddNewTagsToPhotosTest extends TestCase
 
     /**
      * When category_id is provided explicitly, use it instead of auto-resolving
-     * from object->categories()->first(). This lets mobile send the user's
+     * from the object. This lets mobile send the user's
      * intended category for multi-category objects like bottle, can, etc.
      */
     public function test_explicit_category_id_overrides_auto_resolution(): void
@@ -276,12 +269,12 @@ class AddNewTagsToPhotosTest extends TestCase
         $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
 
         // "bottle" belongs to both "alcohol" and "soft_drinks".
-        // Without explicit category_id, auto-resolution picks the first (alcohol).
+        // Without an explicit category, this object is ambiguous.
         $object = LitterObject::where('key', 'bottle')->first();
         $categories = $object->categories()->orderBy('categories.id')->get();
         $this->assertGreaterThanOrEqual(2, $categories->count(), 'bottle must belong to 2+ categories');
 
-        // Pick the second category (not the auto-resolved first one)
+        // Pick the second category to ensure the submitted selection is respected
         $secondCategory = $categories[1];
 
         $response = $this->postJson('/api/v3/tags', [
@@ -303,7 +296,7 @@ class AddNewTagsToPhotosTest extends TestCase
             'litter_object_id' => $object->id,
         ]);
 
-        // Verify it did NOT use the first (auto-resolved) category
+        // Verify it did NOT use the first category
         $firstCategory = $categories[0];
         $this->assertDatabaseMissing('photo_tags', [
             'photo_id' => $photo->id,
@@ -349,9 +342,9 @@ class AddNewTagsToPhotosTest extends TestCase
     }
 
     /**
-     * Multi-category object with no category sent falls back to first().
+     * Multi-category objects require an explicit category; their first pairing is not a default.
      */
-    public function test_multi_category_object_falls_back_when_no_category_sent(): void
+    public function test_multi_category_object_requires_a_category(): void
     {
         $this->seed(GenerateTagsSeeder::class);
 
@@ -362,8 +355,7 @@ class AddNewTagsToPhotosTest extends TestCase
 
         // "bottle" belongs to "alcohol" and "soft_drinks"
         $object = LitterObject::where('key', 'bottle')->first();
-        $firstCategory = $object->categories()->first();
-        $this->assertNotNull($firstCategory);
+        $this->assertGreaterThan(1, $object->categories()->count());
 
         $response = $this->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
@@ -375,19 +367,14 @@ class AddNewTagsToPhotosTest extends TestCase
             ],
         ]);
 
-        $response->assertOk();
-
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $firstCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+        $response->assertUnprocessable()->assertJsonValidationErrors('tags');
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 
     /**
-     * Multi-category object with WRONG category sent falls back to first().
+     * An explicit category must never be replaced by another category.
      */
-    public function test_multi_category_object_falls_back_when_wrong_category_sent(): void
+    public function test_multi_category_object_rejects_the_wrong_category(): void
     {
         $this->seed(GenerateTagsSeeder::class);
 
@@ -399,7 +386,6 @@ class AddNewTagsToPhotosTest extends TestCase
         // "bottle" belongs to "alcohol" and "soft_drinks" — NOT "smoking"
         $object = LitterObject::where('key', 'bottle')->first();
         $wrongCategory = Category::where('key', CategoryKey::Smoking->value)->first();
-        $firstCategory = $object->categories()->first();
 
         // Verify smoking is not a valid category for bottle
         $this->assertFalse(
@@ -418,20 +404,40 @@ class AddNewTagsToPhotosTest extends TestCase
             ],
         ]);
 
-        $response->assertOk();
+        $response->assertUnprocessable()->assertJsonValidationErrors('tags');
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
+    }
 
-        // Should fall back to the first valid category, not the wrong one
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $firstCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+    public function test_an_unknown_category_is_not_treated_as_an_omitted_category(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        $user = User::factory()->create();
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
 
-        $this->assertDatabaseMissing('photo_tags', [
+        $this->actingAs($user)->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
-            'category_id' => $wrongCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+            'tags' => [['object' => 'butts', 'category' => 'unknown-category']],
+        ])->assertUnprocessable()->assertJsonValidationErrors('tags');
+
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
+    }
+
+    public function test_an_unknown_object_cannot_be_saved_as_an_extra_only_tag(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        $user = User::factory()->create();
+        $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
+
+        $this->actingAs($user)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [[
+                'object' => 'unknown-object',
+                'category' => 'alcohol',
+                'materials' => [['id' => Materials::firstOrFail()->id]],
+            ]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('tags');
+
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 
     /**

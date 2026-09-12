@@ -415,7 +415,7 @@ class MigrateTagTest extends TestCase
 
     /**
      * Mappings are applied one at a time and each is an approved decision. A later mapping on the
-     * same object must leave earlier tombstones alone: the pairing already moved, and its chain
+     * same object must leave earlier redirects unchanged: the pairing already moved, and its chain
      * continues through the survivor it recorded.
      */
     public function test_an_earlier_category_move_survives_a_later_object_retirement(): void
@@ -477,7 +477,7 @@ class MigrateTagTest extends TestCase
 
     /**
      * The survivor pairing can itself have been retired by an earlier category move. Landing rows
-     * on a tombstone would pass the pivot-existence check and leave them stranded, so the
+     * on a retired pairing would pass the pivot-existence check and leave them stranded, so the
      * destination must be active, not merely present.
      */
     public function test_a_mapping_onto_a_retired_destination_pairing_fails_without_changes(): void
@@ -503,8 +503,8 @@ class MigrateTagTest extends TestCase
     }
 
     /**
-     * A category move that stopped mid-batch leaves its tombstone recorded and its rows in place.
-     * A later object retirement must not skip that tombstone as "someone else's mapping": doing so
+     * A category move that stopped mid-batch leaves its redirect recorded and its rows in place.
+     * A later object retirement must not skip that pairing while it still has rows. Doing so
      * retires the object, strands the rows, and makes the earlier move impossible to re-run.
      */
     public function test_a_later_mapping_refuses_to_skip_a_tombstone_that_still_has_rows(): void
@@ -536,7 +536,7 @@ class MigrateTagTest extends TestCase
         $this->assertNotNull($this->retired->fresh()->retired_at);
     }
 
-    /** Category move `other → dumping` whose first batch fails after the tombstone is recorded. */
+    /** Category move `other → dumping` whose first batch fails after the redirect is recorded. */
     private function prepareInterruptedCategoryMove(): Category
     {
         $dumping = Category::where('key', 'dumping')->firstOrFail();

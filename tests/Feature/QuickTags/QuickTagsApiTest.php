@@ -53,7 +53,7 @@ class QuickTagsApiTest extends TestCase
 
     /**
      * A pure category move retires the pairing, not the object. The sync used to check only the
-     * object and so re-saved the tombstoned pairing, restoring what the migration had emptied.
+     * object and so re-saved the retired pairing, restoring what the migration had emptied.
      */
     public function test_sync_repoints_a_quick_tag_whose_pairing_moved_to_another_category(): void
     {

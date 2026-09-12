@@ -43,7 +43,7 @@ class GetAllTagsObjectTypesTest extends TestCase
 
     /**
      * The web picker builds its category chips from `objects[].categories`, not from
-     * `category_objects`, so a tombstoned pairing has to be filtered out of that array too or
+     * `category_objects`, so a retired pairing has to be filtered out of that array too or
      * a pure category move leaves the old shelf selectable.
      */
     public function test_objects_categories_exclude_a_tombstoned_pairing(): void

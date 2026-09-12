@@ -148,7 +148,8 @@ export const useAdminStore = defineStore('admin', {
                 return false;
             } catch (e) {
                 console.error('updateTagsAndApprove', e);
-                toast.error('Failed to update tags');
+                const validationMessage = e.response?.status === 422 ? e.response?.data?.errors?.tags?.[0] : null;
+                toast.error(validationMessage || 'Failed to update tags');
                 return false;
             } finally {
                 this.submitting = false;

@@ -54,7 +54,7 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        // The web picker builds its category chips from this array, so tombstoned pairings are
+        // The web picker builds its category chips from this array, so retired pairings are
         // filtered here as well as in `category_objects` below.
         $litterObjects = LitterObject::with(['categories' => fn ($q) => $q
                 ->select('categories.id', 'categories.key')

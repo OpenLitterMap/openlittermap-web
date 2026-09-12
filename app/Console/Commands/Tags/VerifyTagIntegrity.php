@@ -152,8 +152,8 @@ class VerifyTagIntegrity extends Command
     }
 
     /**
-     * Tombstones whose chain never reaches an active pivot. Every write path follows the chain
-     * with a cycle guard and 422s on one, so a cycle silently blocks tagging for that pairing.
+     * Retired pairings whose redirects form a cycle instead of reaching an active pairing.
+     * Write requests reject cycles with a 422 response, so affected tags cannot be saved.
      */
     private function retirementCycles(): int
     {

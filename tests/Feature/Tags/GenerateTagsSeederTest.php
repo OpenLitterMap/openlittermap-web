@@ -16,7 +16,7 @@ class GenerateTagsSeederTest extends TestCase
      * The v5 migration parked ~46k items on two camelCase keys that were never in TagsConfig, so
      * neither pairing had a pivot. Object keys are snake_case singular, so `plastic_bag` and
      * `random_litter` are the surviving keys; the camelCase objects are deprecated into them by
-     * `olm:migrate-tag`, which keeps the tombstone and the `merged_into_id` trail rather than
+     * `olm:migrate-tag`, which keeps the retired object and the `merged_into_id` trail rather than
      * rewriting what the old rows said. Seeding is what makes the survivors resolvable.
      *
      * @test

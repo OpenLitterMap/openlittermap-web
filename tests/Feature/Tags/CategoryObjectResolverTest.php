@@ -71,7 +71,7 @@ class CategoryObjectResolverTest extends TestCase
     /**
      * A retirement chain records its approved subtype on whichever hop introduced it. A stale
      * client holding the first CLO cannot know about a split made two mappings later, so the
-     * resolver has to carry the type forward from the hop that set it, not from the first tombstone.
+     * resolver has to carry the type forward from the redirect that introduced it.
      */
     public function test_it_resolves_a_chain_to_its_final_pivot_and_the_type_introduced_mid_chain(): void
     {
@@ -118,7 +118,7 @@ class CategoryObjectResolverTest extends TestCase
     /**
      * Retirements made before the pivot-level record exist only on the object. The fallback finds
      * the survivor pairing by walking the object, but that pairing may since have been moved to
-     * another category; the walk has to continue through the survivor's own tombstone.
+     * another category; the walk has to continue through the replacement pairing's own redirect.
      */
     public function test_the_object_walk_fallback_follows_the_survivor_pairings_own_tombstone(): void
     {

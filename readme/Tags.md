@@ -317,9 +317,13 @@ XP details and level thresholds: see `readme/XP.md`.
 1. **Create rows** — `addTagsToPhoto()` iterates the payload, detecting the format per tag:
    - `createTagFromClo()` when `category_litter_object_id` is present (resolves denormalised `category_id`/`litter_object_id` from the CLO).
    - `createExtraTagOnly()` when the tag is brand-only / material-only / custom-only (null CLO fields).
-   - `createTagLegacy()` for the legacy `{ object: {id, key}, … }` payload (auto-resolves category from the object).
+   - `createTagFromObject()` for `{ object: {id, key}, category_id?, category?, … }` payloads. Infers an omitted category only when the object has exactly one pairing.
 2. **Generate summary + XP** — `$photo->generateSummary()` calls `GeneratePhotoSummaryService`, populating `summary`, `xp`, `total_tags`, `total_brands`.
 3. **Verification** — unless `skipVerification` is true, `updateVerification()` runs. For trusted/non-school users it fires `TagsVerifiedByAdmin`, which drives `ProcessPhotoMetrics → MetricsService::processPhoto()`. Admin controllers pass `skipVerification = true` because they handle verification + metrics atomically themselves.
+
+The object-based format is an older request shape, not an old storage format. Current web/admin editors still use it when no pairing ID is available, and include the original `category_id`. `PhotoTagsController::store()` and `update()` handle HTTP requests; the shared action also serves admin/team editing. Standalone extras use their own helper.
+
+**Compatibility change:** Saves no longer silently reclassify undeclared category/object pairings. Explicit categories are preserved and only approved retirement mappings can redirect them. Ambiguous object-only input returns 422. A rejected replacement rolls back, preserving the existing observations, extras and summary. Clients must send the intended category or pairing ID; historical taxonomy gaps still require approved cleanup before those tags can be saved.
 
 A null summary (zero tags) yields zero metrics. Summary + XP are generated regardless of trust level; metrics processing is what's gated by trust/school status (see `readme/SchoolPipeline.md`).
 
@@ -511,7 +515,7 @@ Materials are sent as a flat array of IDs (set membership, quantity always 1). B
 
 The action also accepts the **legacy per-tag formats** the current Vue frontend still uses:
 
-1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. Category is auto-resolved from the object; it need not be sent.
+1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. Category may be omitted only when the object has exactly one pairing. For objects with multiple pairings, send `category_id` or `category`. An unknown category or undeclared pairing returns 422 instead of selecting another category.
 2. **Custom-only** — `{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }`. Creates a `CustomTagNew` from `key` and a loose PhotoTag (null CLO).
 3. **Brand-only** — `{ "brand_only": true, "brand": {"id": 1, "key": "coca-cola"}, "quantity": 1, "picked_up": null }`. Loose PhotoTag with the brand as an extra tag.
 4. **Material-only** — `{ "material_only": true, "material": {"id": 2, "key": "plastic"}, "quantity": 1, "picked_up": null }`. Same loose-PhotoTag pattern.

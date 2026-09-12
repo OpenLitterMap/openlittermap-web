@@ -94,9 +94,11 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * Pivots that may still be tagged. A pivot with `merged_into_clo_id` set is a tombstone: its
-     * rows moved to the recorded survivor, which may be a different category even when the
-     * object itself stayed live (a pure category move retires the pairing, not the object).
+     * Category-object pairings available for new tags.
+     *
+     * Setting `merged_into_clo_id` retires a pairing and records its replacement pairing ID.
+     * Keep the old row so clients submitting its ID can be redirected to the replacement.
+     * The object itself can remain active when only its category changes.
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -128,9 +130,9 @@ class CategoryObject extends Pivot
      * exact even when the survivor lives in another category. Chains are followed with a cycle
      * guard, and the approved subtype is carried forward from whichever hop introduced it — a
      * stale client holding the first CLO cannot know about a split made two mappings later.
-     * Older tombstones with no recorded survivor fall back to the object walk. API writes never
-     * create taxonomy relationships: an unrecorded, unresolvable retirement returns null so the
-     * caller can 422.
+     * Older object retirements without a pairing redirect follow the object replacement instead.
+     * API writes never create category-object pairings. If no replacement can be resolved,
+     * return null so the caller can reject the request with a 422 response.
      *
      * @return array{clo: self, type_id: int|null}|null
      */
@@ -181,7 +183,7 @@ class CategoryObject extends Pivot
             ->first();
 
         // The survivor pairing may itself have been moved since the object retired. Its object is
-        // active, so this recursion only follows pivot tombstones and terminates on their guard.
+        // active, so this recursion only follows pairing redirects and terminates on their guard.
         return $survivor?->resolveActiveMapping();
     }
 

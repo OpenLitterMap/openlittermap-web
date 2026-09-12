@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Schema;
  * categories with a different survivor pairing in each (`straws` retired into `softdrinks/straw`
  * and `marine/straw`). The mapping therefore belongs on the source pivot, not the object.
  *
- * With these two columns a tombstone pivot answers "where does this land now?" directly, so stale
+ * With these two columns a retired pairing answers "where does this land now?" directly, so stale
  * clients and saved quick tags keep the approved subtype and land in the approved category
  * instead of searching the original category and losing both.
  */

@@ -21,49 +21,43 @@ class ReplacePhotoTagsTest extends TestCase
         $this->seed(GenerateTagsSeeder::class);
     }
 
-    /**
-     * Characterisation test for a KNOWN, ACCEPTED risk — it asserts today's behaviour so the
-     * exposure is visible rather than discovered again later.
-     *
-     * An unsanctioned (category, object) pairing resolves to no CLO, so an edit round-trips on
-     * the legacy payload path, where the recorded category is replaced by
-     * `$object->categories()->first()`. Re-saving one of the ~179k historical tags on the 73
-     * unsanctioned pairings therefore reclassifies it.
-     *
-     * The fallback is not removable in isolation: `createTagLegacy` has no CLO to write without
-     * it, so dropping it turns the write into a 422 and breaks the legacy-client leniency that
-     * `AddNewTagsToPhotosTest` pins. Repairing the 73 pairings is what removes the exposure.
-     * When that lands, flip this test to assert the recorded category survives.
-     */
-    public function test_editing_an_unsanctioned_pairing_currently_reclassifies_it(): void
+    /** A rejected historical edit must preserve the observation, extras and photo summary. */
+    public function test_editing_an_unsanctioned_pairing_is_rejected_without_changing_the_photo(): void
     {
         $user = User::factory()->create(['verification_required' => false]);
-        $photo = Photo::factory()->create(['user_id' => $user->id]);
-
+        $photo = Photo::factory()->create(['user_id' => $user->id, 'summary' => ['existing' => true], 'xp' => 7]);
         $alcohol = Category::firstWhere('key', CategoryKey::Alcohol->value);
         $butts = LitterObject::firstWhere('key', 'butts');
+        $this->assertFalse($butts->categories()->where('categories.id', $alcohol->id)->exists());
 
-        // `butts` is sanctioned under smoking only, never alcohol — the shape of the unsanctioned
-        // gaps. (`marine/bottle` was the original fixture; it is now a declared pairing.)
-        $this->assertFalse(
-            $butts->categories()->where('categories.id', $alcohol->id)->exists(),
-            'fixture assumes alcohol/butts has no pivot'
-        );
+        $tag = PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $alcohol->id,
+            'litter_object_id' => $butts->id,
+            'category_litter_object_id' => null,
+            'quantity' => 2,
+            'picked_up' => false,
+        ]);
+        $extra = PhotoTagExtraTags::create([
+            'photo_tag_id' => $tag->id, 'tag_type' => 'brand', 'tag_type_id' => 1, 'quantity' => 2,
+        ]);
+        $beforePhoto = $photo->fresh()->getAttributes();
+        $beforeTag = $tag->fresh()->getAttributes();
+        $beforeExtra = $extra->fresh()->getAttributes();
 
         $this->actingAs($user)->putJson('/api/v3/tags', [
             'photo_id' => $photo->id,
             'tags' => [[
                 'category' => ['id' => $alcohol->id, 'key' => $alcohol->key],
                 'object' => ['id' => $butts->id, 'key' => $butts->key],
-                'quantity' => 2,
+                'quantity' => 3,
             ]],
-        ])->assertOk();
+        ])->assertUnprocessable()->assertJsonValidationErrors('tags');
 
-        $tag = PhotoTag::where('photo_id', $photo->id)->firstOrFail();
-
-        $this->assertSame($butts->id, $tag->litter_object_id);
-        $this->assertNotSame($alcohol->id, $tag->category_id, 'reclassification no longer happens — update this test');
-        $this->assertSame($butts->categories()->first()->id, $tag->category_id);
+        $this->assertSame($beforePhoto, $photo->fresh()->getAttributes());
+        $this->assertSame($beforeTag, $tag->fresh()->getAttributes());
+        $this->assertSame($beforeExtra, $extra->fresh()->getAttributes());
+        $this->assertDatabaseCount('photo_tags', 1);
     }
 
     /**
@@ -111,7 +105,7 @@ class ReplacePhotoTagsTest extends TestCase
     /**
      * Two mappings later, the stale client still submits the first CLO. The chain resolves to the
      * final survivor and the subtype has to come from the hop that introduced it, not from the
-     * first tombstone, which recorded no type.
+     * first recorded redirect, which recorded no type.
      */
     public function test_a_stale_clo_two_mappings_old_lands_on_the_final_survivor_with_the_type_introduced_later(): void
     {
@@ -149,7 +143,7 @@ class ReplacePhotoTagsTest extends TestCase
 
     /**
      * A legacy `{ object, category }` payload names the pairing by keys. After a pure category
-     * move that pairing is a tombstone; the write must follow it rather than re-populate the
+     * move that pairing is retired; the write must follow it rather than re-populate the
      * pairing the migration just emptied.
      */
     public function test_a_legacy_write_naming_a_moved_pairing_lands_on_the_target_category(): void

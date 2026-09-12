@@ -24,13 +24,8 @@ class AddTagsToPhotoAction
     public function __construct() {}
 
     /**
-     * Add tags to a photo, generate summary, calculate XP, and handle verification.
-     *
-     * After this runs:
-     * - photo_tags + extra_tags rows exist
-     * - photo.summary JSON is populated
-     * - photo.xp is set
-     * - If trusted user → TagsVerifiedByAdmin fires → MetricsService processes everything
+     * Save tags, update the photo's summary and XP, and handle verification.
+     * Shared by photo tagging, admin editing and team editing.
      *
      * @throws \Exception
      */
@@ -44,9 +39,7 @@ class AddTagsToPhotoAction
             $photo->generateSummary();
             $photo->refresh();
 
-            // Handle verification + dispatch TagsVerifiedByAdmin if trusted.
-            // Admin controllers pass skipVerification=true because they handle
-            // verification and metrics themselves (atomic approve + event/processPhoto).
+            // Admin controllers skip this because they handle approval and metrics themselves.
             if (! $skipVerification) {
                 $this->updateVerification($userId, $photo);
             }
@@ -56,11 +49,10 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Create PhotoTag records with extra tags (materials, brands, custom tags).
+     * Choose how to save each tag based on the fields supplied.
      *
-     * Accepts two payload formats:
-     * - New: { category_litter_object_id, litter_object_type_id?, ... }
-     * - Legacy: { object: {id, key}, category?, brand_only?, material_only?, ... }
+     * A pairing ID identifies the category and object together. Some callers still send
+     * the object and category separately. Brand/material/custom-only tags have no object.
      *
      * @throws \Exception
      */
@@ -71,13 +63,12 @@ class AddTagsToPhotoAction
         $photoTags = [];
 
         foreach ($tags as $tag) {
-            // Detect payload format
             if (isset($tag['category_litter_object_id'])) {
                 $photoTags[] = $this->createTagFromClo($userId, $photoId, $tag);
             } elseif ($this->isExtraTagOnly($tag)) {
                 $photoTags[] = $this->createExtraTagOnly($userId, $photoId, $tag);
             } else {
-                $photoTags[] = $this->createTagLegacy($userId, $photoId, $tag);
+                $photoTags[] = $this->createTagFromObject($userId, $photoId, $tag);
             }
         }
 
@@ -85,13 +76,11 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Replace retired category_litter_object_id with activeCloId.
+     * Redirect retired pairing IDs to their recorded replacements.
      *
-     * Stale clients (mobile caches `/api/tags/all` for 7 days and cannot ship) still submit a
-     * CLO whose litter object is retired. Remount onto an existing, approved CLO for the active
-     * object in the same category so the write lands on the living key. API writes never create
-     * taxonomy relationships. A retired object with no `merged_into_id`, or without an approved
-     * target CLO, still 422s.
+     * Clients with an older tag list can still submit retired IDs. A recorded replacement
+     * can change the object, category or subtype. Reject unresolved retirements with 422;
+     * saving a tag must never create a category-object pairing.
      *
      * @param  array<int, array<string, mixed>>  $tags
      * @return array<int, array<string, mixed>>
@@ -117,8 +106,7 @@ class AddTagsToPhotoAction
 
             $clo = $clos[$cloId];
 
-            // A pairing can be retired while its object stays live (a pure category move), so
-            // the pivot's own retirement is checked, not only the object's.
+            // Check both: moving an object to another category retires only its old pairing.
             if (! $clo->isRetired() && ! $clo->litterObject?->isRetired()) {
                 continue;
             }
@@ -132,8 +120,7 @@ class AddTagsToPhotoAction
             $activeClo = $mapping['clo'];
             $tags[$i]['category_litter_object_id'] = $activeClo->id;
 
-            // A v4 composite key split into object + type. The client cannot know the approved
-            // subtype, so a submission with no type takes the one recorded on the chain.
+            // Older clients may omit a subtype introduced by the migration. Use the recorded one.
             if (($tag['litter_object_type_id'] ?? null) === null && $mapping['type_id'] !== null) {
                 $tags[$i]['litter_object_type_id'] = $mapping['type_id'];
             }
@@ -156,8 +143,7 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * A retired litter object with nowhere active to send the write. Only reached once the
-     * remount has been tried and found no active object, so there is nothing to name.
+     * Reject a retired tag when no valid replacement can be found.
      *
      * @throws ValidationException
      */
@@ -223,7 +209,7 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * New CLO-based tag creation.
+     * Save a tag using its category-object pairing ID (category_litter_object_id).
      *
      * @throws \Exception
      */
@@ -280,18 +266,22 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Legacy format tag creation (backward compatibility for old frontend/mobile).
+     * Save a tag sent as an object and category, for example {object: "butts", category: "smoking"}.
+     *
+     * Current web/admin fallbacks and older clients still send this format without a pairing ID.
+     * Look up the pairing, follow any approved replacement, then save the tag.
+     * Keep this helper until all object tags are submitted with category_litter_object_id.
+     *
+     * Reject invalid pairings. Infer a missing category only when there is exactly one choice.
      *
      * @throws \Exception
      */
-    protected function createTagLegacy(int $userId, int $photoId, array $tag): PhotoTag
+    protected function createTagFromObject(int $userId, int $photoId, array $tag): PhotoTag
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
-        // Same lookup-only remount as the CLO path. The pairing the client named is resolved
-        // first: a tombstoned pivot records exactly where its rows went (possibly another
-        // category) and which subtype the split approved. Only a pairing with no pivot at all
-        // falls back to the object walk. Retired with no merge or no approved target still 422s.
+        // Use the requested pairing first. Older migrations may record a replacement only
+        // on the object; use that only when the requested pairing has no database row.
         $clo = null;
         $typeId = null;
 
@@ -325,11 +315,7 @@ class AddTagsToPhotoAction
                 }
             } else {
                 throw ValidationException::withMessages([
-                    'tags' => [[
-                        'msg' => 'Category does not contain object',
-                        'category' => $category->key,
-                        'object' => $object->key,
-                    ]],
+                    'tags' => ["The tag '{$object->key}' is not available in '{$category->key}'. Choose a valid tag in that category before saving."],
                 ]);
             }
         }
@@ -476,14 +462,14 @@ class AddTagsToPhotoAction
 
 
     /**
-     * Resolve category and object from tag input (legacy format).
-     * Accepts either { id: int } or string key for both.
-     * Auto-resolves category from object if not explicitly provided.
+     * Look up the supplied object and category by ID or key.
+     * Require a category when the object has more than one pairing.
      */
     protected function resolveTag(array $tag): array
     {
         $category = null;
         $object = null;
+        $categoryProvided = isset($tag['category_id']) || isset($tag['category']);
 
         if (isset($tag['category_id'])) {
             $category = Category::find($tag['category_id']);
@@ -493,31 +479,36 @@ class AddTagsToPhotoAction
                 : Category::where('key', $tag['category'])->first();
         }
 
+        if ($categoryProvided && $category === null) {
+            throw ValidationException::withMessages([
+                'tags' => ['The supplied category does not exist. Refresh the tag list before saving.'],
+            ]);
+        }
+
         if (isset($tag['object'])) {
             $object = is_array($tag['object']) && isset($tag['object']['id'])
                 ? LitterObject::find($tag['object']['id'])
                 : LitterObject::where('key', $tag['object'])->first();
+        }
 
-            if ($object) {
-                // Validate provided category belongs to this object, fall back otherwise.
-                //
-                // The fallback is deliberate leniency for legacy/mobile clients that send a
-                // category the taxonomy does not pair with the object — correcting beats a 422,
-                // and `createTagLegacy` has no CLO to write without it.
-                //
-                // KNOWN RISK while the 73 unsanctioned pairings survive: re-saving one of those
-                // ~179k historical tags reclassifies it here (marine/bottle becomes
-                // alcohol/bottle), because the edit round-trips on this path once the pairing
-                // resolves to no CLO. Repairing the pairings removes the exposure; see
-                // readme/PostTagMigrationClean.md.
-                if ($category && ! $object->categories()->where('categories.id', $category->id)->exists()) {
-                    $category = null;
-                }
+        if ($object === null) {
+            throw ValidationException::withMessages([
+                'tags' => ['The supplied object does not exist. Refresh the tag list before saving.'],
+            ]);
+        }
 
-                if (! $category) {
-                    $category = $object->categories()->first();
-                }
+        // Never substitute another category for one the caller supplied.
+        // When none was supplied, infer it only if there is exactly one choice.
+        if (! $categoryProvided) {
+            $categories = $object->categories()->limit(2)->get();
+
+            if ($categories->count() !== 1) {
+                throw ValidationException::withMessages([
+                    'tags' => ["Choose a category for '{$object->key}' before saving."],
+                ]);
             }
+
+            $category = $categories->first();
         }
 
         return [

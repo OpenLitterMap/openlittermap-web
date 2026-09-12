@@ -21,7 +21,8 @@ class PhotoTagsController extends Controller
     }
 
     /**
-     * Attach tags to a photo.
+     * Receive the tag request and delegate saving to AddTagsToPhotoAction.
+     * The action handles pairing IDs, separate object/category fields, and extra-only tags.
      */
     public function store(PhotoTagsRequest $request): JsonResponse
     {

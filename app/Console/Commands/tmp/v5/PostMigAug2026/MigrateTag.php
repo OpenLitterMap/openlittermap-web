@@ -113,7 +113,7 @@ class MigrateTag extends Command
 
     /**
      * A manifest replay must be safe. A mapping that finished — object retired into this
-     * survivor, every source pivot tombstoned, no rows or presets left — has nothing to do,
+     * survivor, every source pairing retired, no rows or presets left — has nothing to do,
      * even when the survivor has since retired into something else.
      */
     private function alreadyApplied(object $retired, object $desired): bool
@@ -484,9 +484,9 @@ class MigrateTag extends Command
             // in the category the rows are already in.
             $targetCategoryId = $this->targetCategoryId ?? $categoryId;
 
-            // A recorded mapping is immutable. A tombstone left by an earlier, different
+            // A recorded mapping is immutable. A redirect recorded by an earlier, different
             // mapping is skipped — its chain continues through the survivor it recorded. A
-            // tombstone from this same mapping is resumed. One that disagrees with the
+            // redirect from this same mapping is resumed. One that disagrees with the
             // requested category or type is a conflicting retry and aborts the run.
             if ($retiredClo?->merged_into_clo_id !== null) {
                 $recorded = DB::table('category_litter_object')
@@ -537,7 +537,7 @@ class MigrateTag extends Command
                 ?? (string) DB::table('categories')->where('id', $categoryId)->value('key');
 
             // The survivor pairing can itself have been retired by an earlier category move.
-            // Rows landed on a tombstone pass the existence check and are stranded.
+            // Rows landed on a retired pairing pass the existence check and are stranded.
             if ($desiredClo?->merged_into_clo_id !== null) {
                 throw new \RuntimeException(sprintf(
                     'The replacement pairing in category %s is retired (pivot %d moved into pivot %d); map onto the active pairing instead.',

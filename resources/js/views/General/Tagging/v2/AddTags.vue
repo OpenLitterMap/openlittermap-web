@@ -1012,6 +1012,8 @@ const submitTags = async () => {
         } else {
             return {
                 object: { id: tag.object.id, key: tag.object.key },
+                // Send the recorded category so the API can reject invalid pairings instead of guessing.
+                ...(tag.categoryId ? { category_id: tag.categoryId } : {}),
                 quantity: tag.quantity,
                 picked_up: tag.pickedUp,
                 materials: tag.materials?.map((m) => ({ id: m.id, key: m.key })) || [],

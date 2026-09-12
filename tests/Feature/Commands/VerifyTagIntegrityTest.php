@@ -81,7 +81,7 @@ class VerifyTagIntegrityTest extends TestCase
             ->assertExitCode(1);
     }
 
-    /** @return array{0: CategoryObject, 1: CategoryObject} source tombstone, survivor */
+    /** @return array{0: CategoryObject, 1: CategoryObject} retired source pairing, replacement pairing */
     private function tombstonedPairing(): array
     {
         $source = CategoryObject::create([
