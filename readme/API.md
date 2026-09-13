@@ -330,6 +330,8 @@ Side effects: S3 upload (full + bbox thumbnail), reverse geocoding via `ResolveL
 | `materials` | string | Comma-separated material keys |
 | `search` | string | Prefix search across all keys |
 
+Retired litter objects (`litter_objects.retired_at` set) are excluded, matching `/api/tags/all`. A retired object keeps its pivot row so a stale CLO id can remount onto the survivor — pivot existence alone does not mean an object is still offerable.
+
 **Response (200):**
 ```json
 {
@@ -459,13 +461,48 @@ When a user selects "wine", you submit `category_litter_object_id: 42, litter_ob
 |-------|------|-------|-------|
 | `photo_id` | int | required | Must exist (not soft-deleted), owned by user |
 | `tags` | array | required, min 1 | |
-| `tags.*.category_litter_object_id` | int | required | FK to `category_litter_object` — resolved from `category_objects` in `/api/tags/all` |
+| `tags.*.category_litter_object_id` | int | optional with object-format or extra-only tags | FK to `category_litter_object` — resolved from `category_objects` in `/api/tags/all` |
 | `tags.*.litter_object_type_id` | int/null | optional | FK to `litter_object_types` — this is what makes "bottle" → "wine bottle" |
 | `tags.*.quantity` | int | required, min 1 | |
 | `tags.*.picked_up` | bool/null | optional | |
 | `tags.*.materials` | int[]\|object[] | optional | Plain IDs `[50, 51]` or objects `[{"id": 50}]`. Quantity inherits from parent tag. |
 | `tags.*.brands` | int[]\|object[] | optional | Plain IDs `[10]` (qty=1) or objects `[{"id": 10, "quantity": 3}]` for per-brand quantity. |
-| `tags.*.custom_tags` | string[] | optional | Free text. Sanitized server-side (`strip_tags` + `trim`), accepts any characters incl. `& . ' /`, capped to 255 chars (`custom_tags_new.key`). Empty-after-sanitize entries are silently skipped — never rejected. |
+| `tags.*.custom_tags` | string[]\|object[] | optional | Text or `{ "key": "text" }`; older `{ "tag": "text" }` objects are also accepted. Conflicting `key`/`tag` values or missing text fields return 422. Sanitized server-side (`strip_tags` + `trim`), accepts any characters incl. `& . ' /`, capped to 255 chars (`custom_tags_new.key`). Empty-after-sanitize entries are silently skipped — never rejected. |
+
+**Retired pairings redirect to their recorded replacement.** A `category_litter_object` row retired by `olm:migrate-tag` carries `merged_into_clo_id` (the exact survivor pairing, which may be in another category) and `merged_into_type_id` (the approved subtype of a type split). POST/PUT `/api/v3/tags` and `PUT /api/v3/user/quick-tags` follow that chain to its end, so the stored `category_id` and `category_litter_object_id` can differ from what was submitted, and a submission with no `litter_object_type_id` receives the chain's approved type. A submitted type that is not approved on the survivor is dropped when the pairing changes. An invalid type on an unchanged pairing returns 422. API writes never create category/object relationships; a retirement with no recorded survivor returns 422. The picker (`/api/tags/all`) omits retired objects and retired pairings from `objects`, `objects[].categories` and `category_objects`; a stale mobile catalog (cached 7 days, cannot ship) keeps working through the remount. Quantity, materials, brands and custom tags are preserved.
+
+**Still 422:**
+
+- Retired with no survivor (`merged_into_id` null) — `errors.tags`: `Litter object '…' is retired and can no longer be tagged.`
+- Any other missing CLO id — `errors.tags.{i}.category_litter_object_id`: `This tag is no longer available — refresh your tag list.`
+
+`PUT /api/v3/tags` applies the identical contract. `PUT /api/v3/user/quick-tags` remounts `tags.*.clo_id` the same way; a no-survivor refusal is ahead of the delete so existing presets are left untouched.
+
+**Object-format compatibility:** Instead of a pairing ID, a tag may send `object` as a string key or `{ "id": 5 }`, with `category_id` or `category` (string key or `{ "id": 2 }`). The supplied category is never replaced by an inferred category. Approved retirement redirects can still change the destination.
+
+For an active object, an omitted category is inferred only when exactly one active pairing exists; retired pairings do not count as choices. Retired object IDs use their recorded source pairing and redirect when unambiguous. Zero or multiple choices require the client to send a category or pairing ID.
+
+**Validation errors (HTTP 422):** Object-format validation returns `errors.tags` as an **array of strings**, not an object containing `msg`, `category`, and `object`. Clients should display the string rather than parse its wording. Field-level request validation can use keys such as `tags.0.category_id` or `tags.0.category_litter_object_id`.
+
+| Condition | Result |
+|-----------|--------|
+| Unknown category key or object | Reject; never infer a substitute or create an object-less row. |
+| Declared category and object have no approved pairing | Reject; never switch to another category. |
+| Object-only input has no unambiguous category | Reject; request a category or pairing ID. |
+| Retired input has no resolvable replacement | Reject; never recreate the retired choice. |
+
+Example response for an undeclared pairing:
+
+```json
+{
+  "message": "The tag 'butts' is not available in 'alcohol'. Choose a valid tag in that category before saving.",
+  "errors": {
+    "tags": ["The tag 'butts' is not available in 'alcohol'. Choose a valid tag in that category before saving."]
+  }
+}
+```
+
+These rules also apply to `PUT /api/v3/tags` and to object-format admin/team edits. A rejected replacement rolls back: the existing photo, observations, extras and summary remain unchanged. Historical tags with undeclared pairings cannot be re-saved unchanged until their pairing is declared or an approved migration moves them. An explicit correction or removal is a separate user edit.
 
 **Standalone tag types** (no `category_litter_object_id`):
 
@@ -830,6 +867,8 @@ Toggling `is_public` on a verified (`>= ADMIN_APPROVED`) photo marks its cluster
 **Auth:** Required (Sanctum)
 
 Returns the authenticated user's most-tagged items grouped by CLO + type, ordered by total quantity. Used by mobile to populate Quick Tags with personal presets via "Use my top tags."
+
+Retired litter objects are excluded. A retired object keeps its tag history, so it can out-rank its survivor here — suggesting it would hand the user a preset that `PUT /api/v3/user/quick-tags` then rejects.
 
 **Query parameters:**
 - `limit` — integer, 1-30, default 20
@@ -1854,6 +1893,8 @@ The `new_tags` array contains CLO-based tags with full category/object/extra_tag
 
 **Auth:** Required (team member)
 
+Materials and custom tags inherit the parent quantity. Brands use their own quantity (default 1) and IDs from `brandslist`. Invalid extras return 422 and preserve existing tags, extras, summary and XP.
+
 **Response:** `{ "success": true, "photo": { ..., "new_tags": [...] } }`
 
 Same `new_tags` format as the index endpoint.
@@ -1895,7 +1936,7 @@ When safeguarding is off, `name` and `username` show real values.
 
 **Auth:** Required (team leader / `manage school team` permission)
 
-Accepts the same CLO-based format as `POST /api/v3/tags`. Deletes existing tags, resets summary/xp/verified, calls `AddTagsToPhotoAction` to recreate.
+Accepts a pairing ID, an object-format tag with its recorded `category_id`/`category`, or standalone brand/material/custom tags. Tag fields and extras use the same action validation as `/api/v3/tags`; team authorization remains separate. `tags` must be non-empty and each tag requires a positive integer quantity. The facilitator queue includes the category in its object fallback. Deletes existing tags, resets summary/xp/verified, and calls `AddTagsToPhotoAction` to recreate. The object-format 422 contract above applies; rejected edits preserve the original photo and tags. School photos remain private until approval.
 
 **Request:**
 ```json
@@ -1906,13 +1947,15 @@ Accepts the same CLO-based format as `POST /api/v3/tags`. Deletes existing tags,
       "litter_object_type_id": 1,
       "quantity": 3,
       "picked_up": true,
-      "materials": [{ "id": 10, "quantity": 1 }],
+      "materials": [10],
       "brands": [{ "id": 5, "quantity": 1 }],
-      "custom_tags": [{ "tag": "stained", "quantity": 1 }]
+      "custom_tags": ["stained"]
     }
   ]
 }
 ```
+
+Materials and custom tags inherit the parent quantity. Brands use their own quantity (default 1) and IDs from `brandslist`. Invalid extras return 422 and preserve existing tags, extras, summary and XP.
 
 **Response:** `{ "success": true, "photo": { ..., "new_tags": [...] } }`
 
@@ -2831,3 +2874,12 @@ CSRF-exempt, no auth. Verifies the SNS signature (`aws/aws-php-sns-message-valid
 | Complaint | Log `email_events` + suppress recipient (`reason=complained`) |
 
 Idempotent on `(sns_id, email)` — duplicate SNS deliveries are harmless. Always returns `200` for handled/ignored events so SNS stops retrying. Suppressions are the source of truth for the `olm:send-email-to-subscribed` dispatch guard; complaint outranks bounce and is never downgraded.
+
+### Staged tag cleanup and editor round trips
+
+- `PUT /api/v3/tags` accepts `category_id` alongside an object; an explicit category is preserved.
+- Historical CLOs (`is_selectable=false`) remain valid for explicit submissions and saved quick tags, while discovery excludes them. Object-only inference uses active selectable CLOs.
+- All photo editor serializers return tag-level `picked_up` as `true`, `false` or `null`, without a photo-level fallback.
+- Standalone `brand` supports an optional independent `quantity`; omitted quantity uses the observation quantity. Additional brands retain their own quantities.
+- Each submitted observation remains separate. Two custom observations with quantities 2 and 5 earn 7 custom XP; an existing combined observation remains combined.
+- Rejected replacements preserve photo fields, tags and extras. Admin and team replacements lock the photo row before reading/deleting its tags.

@@ -119,7 +119,7 @@ class AddTagsToPhotoTest extends TestCase
             'tags' => [
                 [
                     'category' => 'alcohol',
-                    'object' => 'beer_bottle',
+                    'object' => 'bottle',
                     'quantity' => 2,
                     'picked_up' => false,
                     'materials' => [
@@ -131,6 +131,7 @@ class AddTagsToPhotoTest extends TestCase
 
         $photoTag = PhotoTag::where('photo_id', $photo->id)->first();
         $this->assertNotNull($photoTag);
+        $this->assertSame('bottle', $photoTag->object->key);
 
         $materialExtras = $photoTag->extraTags()->where('tag_type', 'material')->get();
         $this->assertCount(1, $materialExtras);

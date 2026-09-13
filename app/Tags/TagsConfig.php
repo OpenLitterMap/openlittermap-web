@@ -9,7 +9,8 @@ class TagsConfig
     /**
      * Get the complete tags configuration.
      *
-     * Canonical objects per category. All keys are snake_case.
+     * Current and historical objects per category. Historical keys keep their recorded spelling;
+     * their observations stay editable while the picker never offers them again.
      * Categories are ordered alphabetically.
      * Types represent "what was in the container" (beer, water, soda, etc.)
      */
@@ -17,6 +18,13 @@ class TagsConfig
     {
         return [
             CategoryKey::Alcohol->value => [
+                'beer_bottle' => ['historical' => true],
+                'beer_can' => ['historical' => true],
+                'bottletops' => ['historical' => true],
+                'brokenglass' => ['historical' => true],
+                'spirits_bottle' => ['historical' => true],
+                'wine_bottle' => ['historical' => true],
+
                 'bottle' => [
                     'types' => ['beer', 'wine', 'spirits', 'cider', 'premixed', 'unknown'],
                     'materials' => ['glass', 'plastic'],
@@ -57,6 +65,8 @@ class TagsConfig
             ],
 
             CategoryKey::Art->value => [
+                'item' => ['historical' => true],
+
                 'graffiti' => [],
                 'mural' => [],
                 'other' => [],
@@ -135,6 +145,10 @@ class TagsConfig
             ],
 
             CategoryKey::Food->value => [
+                'crisp_large' => ['historical' => true],
+                'crisp_small' => ['historical' => true],
+                'glass_jar' => ['historical' => true],
+
                 'bag' => [
                     'materials' => ['plastic', 'paper', 'cloth', 'bioplastic'],
                 ],
@@ -205,6 +219,10 @@ class TagsConfig
             ],
 
             CategoryKey::Industrial->value => [
+                'chemical' => ['historical' => true],
+                'oil' => ['historical' => true],
+
+                'plastic' => [],
                 'oil_container' => [
                     'materials' => ['plastic', 'metal'],
                 ],
@@ -239,6 +257,14 @@ class TagsConfig
             ],
 
             CategoryKey::Marine->value => [
+                'balloons' => ['historical' => true],
+                'buoys' => ['historical' => true],
+                'fishing_nets' => ['historical' => true],
+                'lego' => ['historical' => true],
+                'mediumplastics' => ['historical' => true],
+                'shotgun_cartridges' => ['historical' => true],
+                'straws' => ['historical' => true],
+
                 'buoy' => [
                     'materials' => ['plastic', 'foam', 'metal'],
                 ],
@@ -263,6 +289,9 @@ class TagsConfig
                 'macroplastics' => [
                     'materials' => ['plastic'],
                 ],
+                'medium_plastic' => [
+                    'materials' => ['plastic'],
+                ],
                 'microplastics' => [
                     'materials' => ['plastic'],
                 ],
@@ -284,6 +313,21 @@ class TagsConfig
                 ],
                 'styrofoam' => [
                     'materials' => ['polystyrene'],
+                ],
+                'straw' => [
+                    'materials' => ['plastic', 'paper'],
+                ],
+                'balloon' => [
+                    'materials' => ['plastic', 'latex'],
+                ],
+                'bag' => [
+                    'materials' => ['plastic', 'paper', 'cloth', 'bioplastic'],
+                ],
+                'bottle' => [
+                    'materials' => ['glass', 'plastic'],
+                ],
+                'lighters' => [
+                    'materials' => ['plastic', 'metal'],
                 ],
                 'other' => [],
             ],
@@ -323,6 +367,29 @@ class TagsConfig
             ],
 
             CategoryKey::Other->value => [
+                'automobile' => ['historical' => true],
+                'bagsLitter' => ['historical' => true],
+                'balloons' => ['historical' => true],
+                'batteries' => ['historical' => true],
+                'books' => ['historical' => true],
+                'cableTie' => ['historical' => true],
+                'dogshit' => ['historical' => true],
+                'dogshit_in_bag' => ['historical' => true],
+                'dump' => ['historical' => true],
+                'ear_plugs' => ['historical' => true],
+                'elec_large' => ['historical' => true],
+                'elec_small' => ['historical' => true],
+                'hair_tie' => ['historical' => true],
+                'life_buoy' => ['historical' => true],
+                'magazine' => ['historical' => true],
+                'overflowingBins' => ['historical' => true],
+                'plasticBags' => ['historical' => true],
+                'posters' => ['historical' => true],
+                'randomLitter' => ['historical' => true],
+                'trafficCone' => ['historical' => true],
+                'tyre' => ['historical' => true],
+                'washingUp' => ['historical' => true],
+
                 'clothing' => [],
                 'bags_litter' => [],
                 'overflowing_bin' => [],
@@ -330,6 +397,7 @@ class TagsConfig
                 'traffic_cone' => [],
                 'metal' => [],
                 'plastic_bag' => [],
+                'random_litter' => [],
                 'paper' => [
                     'materials' => ['paper'],
                 ],
@@ -359,6 +427,15 @@ class TagsConfig
             ],
 
             CategoryKey::Sanitary->value => [
+                'condoms' => ['historical' => true],
+                'earSwabs' => ['historical' => true],
+                'facemask' => ['historical' => true],
+                'gloves' => ['historical' => true],
+                'menstrual' => ['historical' => true],
+                'sanitiser' => ['historical' => true],
+                'toothpick' => ['historical' => true],
+                'wetwipes' => ['historical' => true],
+
                 'wipes' => [
                     'materials' => ['polyester', 'plastic'],
                 ],
@@ -402,6 +479,13 @@ class TagsConfig
             ],
 
             CategoryKey::Smoking->value => [
+                'cigarette_box' => ['historical' => true],
+                'filters' => ['historical' => true],
+                'rollingPapers' => ['historical' => true],
+                'tobaccopouch' => ['historical' => true],
+                'vapeOil' => ['historical' => true],
+                'vapePen' => ['historical' => true],
+
                 'ashtray' => [
                     'materials' => ['glass', 'ceramic', 'metal'],
                 ],
@@ -436,6 +520,22 @@ class TagsConfig
             ],
 
             CategoryKey::Softdrinks->value => [
+                'brokenglass' => ['historical' => true],
+                'energy_can' => ['historical' => true],
+                'fizzy_bottle' => ['historical' => true],
+                'iceTea_bottle' => ['historical' => true],
+                'icedTea_can' => ['historical' => true],
+                'juice_bottle' => ['historical' => true],
+                'juice_carton' => ['historical' => true],
+                'milk_bottle' => ['historical' => true],
+                'milk_carton' => ['historical' => true],
+                'pullRing' => ['historical' => true],
+                'soda_can' => ['historical' => true],
+                'sports_bottle' => ['historical' => true],
+                'straw_packaging' => ['historical' => true],
+                'straws' => ['historical' => true],
+                'water_bottle' => ['historical' => true],
+
                 'bottle' => [
                     'materials' => ['plastic', 'glass'],
                     'types' => ['water', 'soda', 'juice', 'energy', 'sports', 'tea', 'milk', 'smoothie', 'unknown'],

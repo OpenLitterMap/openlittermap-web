@@ -44,7 +44,7 @@ class PhotoTagsRequest extends FormRequest
             'photo_id' => ['required', 'integer', Rule::exists('photos', 'id')->whereNull('deleted_at')],
             'tags' => 'required|array|min:1',
 
-            // New CLO-based format
+            // - CLO ID and extra-tag fields.
             'tags.*.category_litter_object_id' => 'sometimes|integer|exists:category_litter_object,id',
             'tags.*.litter_object_type_id' => 'nullable|integer|exists:litter_object_types,id',
             'tags.*.quantity' => 'sometimes|integer|min:1',
@@ -53,7 +53,7 @@ class PhotoTagsRequest extends FormRequest
             'tags.*.brands' => 'sometimes|array',
             'tags.*.custom_tags' => 'sometimes|array',
 
-            // Legacy format fields (backward compat — action handles validation)
+            // - Object/category fallback and standalone extras; the shared action validates them.
             'tags.*.category_id' => 'sometimes|integer|exists:categories,id',
             'tags.*.category' => 'sometimes',
             'tags.*.object' => 'sometimes',
@@ -63,6 +63,20 @@ class PhotoTagsRequest extends FormRequest
             'tags.*.material' => 'sometimes',
             'tags.*.custom' => 'sometimes',
             'tags.*.key' => 'sometimes',
+        ];
+    }
+
+    /**
+     * - A missing CLO ID returns 422 and asks the user to refresh the tag list.
+     * - Example: category_litter_object_id refers to a CLO row that no longer exists.
+     * - Normal retirement keeps the old CLO row; the tag action follows its redirect.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'tags.*.category_litter_object_id.exists' => 'This tag is no longer available — refresh your tag list.',
         ];
     }
 }

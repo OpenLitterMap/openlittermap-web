@@ -410,6 +410,15 @@ class AutoCreateBrandRelationships extends Command
         // Get or create object
         $object = LitterObject::firstOrCreate(['key' => $normalizedObjectKey]);
 
+        // Resurrection guard. This command firstOrCreates the object AND a pivot, so re-running
+        // it after a retirement would hand a retired key a fresh pivot and undo the cleanup.
+        // Retirement is now an explicit fact, so refuse rather than silently rebuild it.
+        if ($object->isRetired()) {
+            $this->warn("  skipped '{$normalizedObjectKey}' — object is retired (merged into {$object->merged_into_id})");
+
+            return;
+        }
+
         // Get or create CategoryObject pivot
         $categoryObject = CategoryObject::firstOrCreate([
             'category_id' => $category->id,

@@ -11,6 +11,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
 use App\Tags\TagsConfig;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -53,18 +54,23 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        $litterObjects = LitterObject::with(['categories:id,key'])
-            ->whereHas('categories')
+        // - The picker lists an object under its offerable categories only; category_objects below uses the same rule.
+        $litterObjects = LitterObject::with(['offerableCategories' => fn ($q) => $q->select('categories.id', 'categories.key')])
+            ->whereHas('offerableCategories')
+            ->active()
             ->select('id', 'key')
             ->orderBy('key')
             ->get()
-            ->map(function (LitterObject $obj) use ($objectTypesMap, $objectMaterialsMap) {
-                $data = $obj->toArray();
-                $data['types'] = $objectTypesMap[$obj->key] ?? [];
-                $data['suggested_materials'] = $objectMaterialsMap[$obj->key] ?? [];
-
-                return $data;
-            });
+            ->map(fn (LitterObject $obj) => [
+                'id' => $obj->id,
+                'key' => $obj->key,
+                'categories' => $obj->offerableCategories->map(fn (Category $category) => [
+                    'id' => $category->id,
+                    'key' => $category->key,
+                ])->all(),
+                'types' => $objectTypesMap[$obj->key] ?? [],
+                'suggested_materials' => $objectMaterialsMap[$obj->key] ?? [],
+            ]);
 
         $materials = Materials::select('id', 'key')->orderBy('key')->get();
 
@@ -72,7 +78,10 @@ class GetTagsController extends Controller
 
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
-        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')->get();
+        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')
+            ->offerable()
+            ->whereHas('litterObject', fn (Builder $q) => $q->active())
+            ->get();
 
         $categoryObjectTypes = DB::table('category_object_types')
             ->select('category_litter_object_id', 'litter_object_type_id')
@@ -99,7 +108,9 @@ class GetTagsController extends Controller
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        $query = CategoryObject::query();
+        $query = CategoryObject::query()
+            ->offerable()
+            ->whereHas('litterObject', fn (Builder $q) => $q->active());
 
         if ($categoryKey) {
             $query->whereHas('category', function($q) use ($categoryKey) {

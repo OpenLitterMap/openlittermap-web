@@ -20,8 +20,8 @@ I found [QUANTITY] × [OBJECT]
 
 | Dimension | Cardinality | Stored on |
 |-----------|-------------|-----------|
-| Category | 0 or 1 | `photo_tags.category_id` (derived from CLO). Null for extra-tag-only tags |
-| LitterObject | 0 or 1 | `photo_tags.litter_object_id` (derived from CLO). Null for extra-tag-only tags |
+| Category | 0 or 1 | `photo_tags.category_id` — source of truth. Null for extra-tag-only tags |
+| LitterObject | 0 or 1 | `photo_tags.litter_object_id` — source of truth. Null for extra-tag-only tags |
 | LitterObjectType | 0 or 1 | `photo_tags.litter_object_type_id` |
 | Material | 0 to many (set membership, qty=1 in DB, weighted by tag qty in metrics) | `photo_tag_extra_tags` |
 | Brand | 0 to many (independent quantities) | `photo_tag_extra_tags` |
@@ -34,12 +34,17 @@ I found [QUANTITY] × [OBJECT]
 ### Design principles
 
 1. **An object key represents the physical thing** — `bottle`, `can`, `cup` (not `beer_bottle`, `water_bottle`).
-2. **Product context is a separate dimension** — `beer`, `water`, `soda` via `LitterObjectType`.
-3. **Category + Object pairing is always explicit** via a `category_litter_object_id` (CLO) — no `categories()->first()` inference, which breaks when an object belongs to multiple categories.
-4. **Optional dimensions don't block data collection** — students can skip type/material/brand.
-5. **Extra-tag-only tags allow null CLO** — brand-only, material-only, and custom-only PhotoTags have nullable `category_id`, `litter_object_id`, and `category_litter_object_id`. They are not forced into `unclassified/other`.
-6. **Types are strictly "what was in it"** — beer, water, juice. Not container forms (pint, shot) or physical states (crushed, degraded).
-7. **Materials are set membership, not counted** — a bottle is glass, full stop. Only brands carry independent quantities.
+2. **An object key is singular** — `straw`, not `straws`; `bottle`, not `bottles`. The key names one
+   object; how many were seen lives in `photo_tags.quantity`. A plural key double-encodes count and
+   makes the same litter reachable under two names. See [Key naming](#key-naming).
+3. **Product context is a separate dimension** — `beer`, `water`, `soda` via `LitterObjectType`.
+4. **The pairing is `category_id` + `litter_object_id`** — the CLO is derived from them, never the
+   other way round. Do not infer a category with `categories()->first()`; it is arbitrary when an
+   object belongs to several categories.
+5. **Optional dimensions don't block data collection** — students can skip type/material/brand.
+6. **Extra-tag-only tags allow null CLO** — brand-only, material-only, and custom-only PhotoTags have nullable `category_id`, `litter_object_id`, and `category_litter_object_id`. They are not forced into `unclassified/other`.
+7. **Types are strictly "what was in it"** — beer, water, juice. Not container forms (pint, shot) or physical states (crushed, degraded).
+8. **Materials are set membership, not counted** — a bottle is glass, full stop. Only brands carry independent quantities.
 
 ### Tag hierarchy
 
@@ -57,7 +62,63 @@ Photo
         └── CustomTags    (user-defined notes)
 ```
 
-The category+object pairing is identified by a single `category_litter_object_id` (CLO). Each (category, object) combination is a row in the `category_litter_object` pivot with its own auto-increment ID, so `bottle` in alcohol (e.g. CLO id 42) is a different selection than `bottle` in beverages (e.g. CLO id 43). `category_id` and `litter_object_id` on `photo_tags` are denormalised from the CLO and resolved on write (see [Denormalisation](#denormalisation-integrity)).
+The category+object pairing is recorded on `photo_tags` as `category_id` + `litter_object_id`.
+Each combination also has a row in the `category_litter_object` pivot (the CLO) with its own
+auto-increment id, so `bottle` in alcohol is a different pairing from `bottle` in softdrinks. A
+unique index on `(category_id, litter_object_id)` makes the CLO a **derived** value: resolve it with
+`CategoryObject::resolveId()`, or join on the two columns. The picker still identifies a user's
+selection by CLO id on the way in, and the write resolves that to the pair.
+
+## Key naming
+
+**New object keys are singular.** `straw`, `bottle`, `wipe` — never `straws`, `bottles`, `wipes`. The
+key names one object; the count lives in `photo_tags.quantity`. Plural keys double-encode quantity
+and let the same litter be recorded under two names, which is how `straws` and `straw` ended up as
+separate objects with separate pivots.
+
+New keys use `snake_case`. Historical declarations retain exact legacy keys, including
+`plasticBags`, `randomLitter` and plural names, so saved observations remain editable before
+their mappings run. These CLOs have `is_selectable=false` and are hidden from suggestions.
+Seeding does not rename or retire them. Only `plasticBags → plastic_bag` is approved for the
+first window; other mappings require review in [the mapping register](audit/TagCleanupReview-2026-09-12.csv).
+
+### Deprecate, never rename
+
+A key is changed by **retiring the old object into a new one** with `olm:migrate-tag`, never by
+updating `litter_objects.key` in place. Renaming is cheaper — no rows move — but it rewrites what
+historical observations say they were, and leaves no record that the old name ever existed.
+Retirement keeps the retired object with `merged_into_id` pointing at the survivor, so
+the audit trail survives and stale clients can still resolve the old CLO id.
+
+The precise mapping is recorded on the **source pivot**, not the object: each retired
+`category_litter_object` row carries `merged_into_clo_id` (the survivor pairing, which may be in a
+different category) and `merged_into_type_id` (the approved subtype for a v4 composite-key split).
+`CategoryObject::resolveActiveClo()` follows that directly. `active()` excludes redirected CLOs;
+`offerable()` also excludes historical CLOs from suggestions. A category move can retire a CLO
+while leaving its object live. Object-level `merged_into_id` remains a compatibility fallback;
+new migrations require and record source CLO redirects.
+
+### Creating new taxonomy
+
+New categories, objects and pairings are **declared in config and created by the seeder** — never
+by a migration or an API write. `GenerateTagsSeeder` is idempotent and skips retired objects, so it
+is safe to re-run on deploy.
+
+| To create | Declare in |
+|-----------|------------|
+| Category | `App\Enums\CategoryKey` + a `TagsConfig` group |
+| Litter object | a `TagsConfig` entry under its category |
+| CLO (pairing) | implicit — the config nesting *is* the pairing |
+| Valid types / materials | the object's `TagsConfig` entry |
+
+Some `-s` keys are correct because the noun has no singular in this context: `macroplastics`,
+`microplastics`, `nurdles` (mass nouns), and `six_pack_rings`, `headphones`, `chopsticks` (the
+object *is* a set). These are not violations.
+
+The remainder are legacy and should be migrated to singular when their pairing is next touched:
+`butts`, `bricks`, `gloves`, `lighters`, `napkins`, `nappies`, `papers`, `wipes`, `ear_swabs`,
+`loose_cables`, `plasticBags`. Renaming a key is a retirement — use `olm:migrate-tag`, never an
+in-place `UPDATE`, so tag rows, quick tags, summaries and metrics all move with it.
 
 ## Database Schema
 
@@ -82,8 +143,8 @@ category_litter_object (
     litter_object_id    FK → litter_objects NOT NULL,
     UNIQUE(category_id, litter_object_id)
 )
--- Model: CategoryObject (Pivot). This IS the CLO. Each row's id is the
--- category_litter_object_id stored on photo_tags.
+-- Model: CategoryObject (Pivot). This IS the CLO. Resolve it from
+-- (category_id, litter_object_id); the UNIQUE index makes that a bijection.
 
 category_object_types (
     category_litter_object_id   FK → category_litter_object NOT NULL,
@@ -100,9 +161,9 @@ category_object_types (
 photo_tags (
     id                          BIGINT UNSIGNED AUTO_INCREMENT PK,
     photo_id                    FK → photos NOT NULL,
-    category_litter_object_id   FK → category_litter_object NULL,   -- null for extra-tag-only tags
-    category_id                 FK → categories NULL,                -- denormalised from CLO; null for extra-tag-only tags
-    litter_object_id            FK → litter_objects NULL,            -- denormalised from CLO; null for extra-tag-only tags
+    category_litter_object_id   FK → category_litter_object NULL,   -- DEPRECATED, do not read; null on ~189k historical rows
+    category_id                 FK → categories NULL,                -- source of truth; null for extra-tag-only tags
+    litter_object_id            FK → litter_objects NULL,            -- source of truth; null for extra-tag-only tags
     litter_object_type_id       FK → litter_object_types NULL,
     custom_tag_primary_id       FK → custom_tags_new NULL,           -- legacy custom-only support (see PostMigrationCleanup.md)
     quantity                    INT UNSIGNED NOT NULL DEFAULT 1,
@@ -121,7 +182,19 @@ photo_tag_extra_tags (
 -- Brands: independent count (e.g. 3 Heineken + 2 Coca-Cola out of 5 bottles).
 ```
 
-> **Denormalisation note:** `category_id` and `litter_object_id` are derived from `category_litter_object_id` and must always match. They are resolved from the CLO on write in `AddTagsToPhotoAction`. They exist because `MetricsService` and Redis keys reference `category_id`/`object_id` directly, avoiding joins in the hottest code path. See [Denormalisation integrity](#denormalisation-integrity).
+> **`photo_tags.category_litter_object_id` is deprecated — do not read it.** `category_id` and
+> `litter_object_id` are the observation and the source of truth; the CLO is a taxonomy row
+> *derived* from that pairing via `CategoryObject::resolveId($categoryId, $objectId)`, which a
+> unique index on `(category_id, litter_object_id)` makes a bijection. In SQL, join
+> `ON clo.category_id = pt.category_id AND clo.litter_object_id = pt.litter_object_id`.
+>
+> The column is still written on create so nothing breaks mid-deprecation, but it is null on
+> ~189k object tags that the v5 migration wrote before their pivot existed — reading it silently
+> drops a third of the platform's litter. Writes still *accept* a CLO id (the picker identifies a
+> selection that way) and resolve it to the pair; that request contract is unaffected.
+>
+> The resolver memoises the pivot table per process. Anything that creates a pivot and then
+> resolves in the same run must call `CategoryObject::flushResolverCache()` — `MigrateTag` does.
 
 > **Pending cleanup:** `custom_tag_primary_id` on `photo_tags` and the `brand_id` legacy column are slated for removal. See `readme/PostMigrationCleanup.md`.
 
@@ -242,12 +315,16 @@ XP details and level thresholds: see `readme/XP.md`.
 
 `AddTagsToPhotoAction::run($userId, $photoId, $tags, $skipVerification = false)` is the single entry point for adding tags. Everything runs inside a `DB::transaction()`:
 
-1. **Create rows** — `addTagsToPhoto()` iterates the payload, detecting the format per tag:
+1. **Validate and create rows** — the shared action normalises extra-tag formats and validates IDs before creating rows, then detects the format per tag:
    - `createTagFromClo()` when `category_litter_object_id` is present (resolves denormalised `category_id`/`litter_object_id` from the CLO).
    - `createExtraTagOnly()` when the tag is brand-only / material-only / custom-only (null CLO fields).
-   - `createTagLegacy()` for the legacy `{ object: {id, key}, … }` payload (auto-resolves category from the object).
+   - `createTagFromObject()` for `{ object: {id, key}, category_id?, category?, … }` payloads. For an active object, infers an omitted category only when exactly one active pairing exists, then delegates to `createTagFromClo()`.
 2. **Generate summary + XP** — `$photo->generateSummary()` calls `GeneratePhotoSummaryService`, populating `summary`, `xp`, `total_tags`, `total_brands`.
 3. **Verification** — unless `skipVerification` is true, `updateVerification()` runs. For trusted/non-school users it fires `TagsVerifiedByAdmin`, which drives `ProcessPhotoMetrics → MetricsService::processPhoto()`. Admin controllers pass `skipVerification = true` because they handle verification + metrics atomically themselves.
+
+The object-based format is an older request shape, not an old storage format. Current web/admin/facilitator editors still use it when no pairing ID is available, and include the original `category_id`. `PhotoTagsController::store()` and `update()` handle HTTP requests; the shared action also serves admin/team editing. Standalone extras use their own helper. `CategoryObject::resolveForWrite()` follows replacements and validates the final subtype for both photo tags and quick tags. A changed pairing drops a subtype the destination no longer supports; an unchanged pairing rejects an invalid subtype.
+
+**Compatibility change:** Saves no longer silently reclassify undeclared category/object pairings. Explicit categories are preserved and only approved retirement mappings can redirect them. Ambiguous object-only input returns 422. A rejected replacement rolls back, preserving the existing observations, extras and summary. Clients must send the intended category or pairing ID; historical taxonomy gaps still require approved cleanup before those tags can be saved.
 
 A null summary (zero tags) yields zero metrics. Summary + XP are generated regardless of trust level; metrics processing is what's gated by trust/school status (see `readme/SchoolPipeline.md`).
 
@@ -265,7 +342,17 @@ A null summary (zero tags) yields zero metrics. Summary + XP are generated regar
 
 ### Denormalisation integrity
 
-`category_id` and `litter_object_id` on `photo_tags` must match the referenced CLO. This is enforced on write in `AddTagsToPhotoAction` (resolved from the CLO). The `olm:verify-tag-integrity` artisan command detects and repairs CLO↔denorm drift — run it after migrations, seeders, and data scripts.
+`category_id` and `litter_object_id` on `photo_tags` are the source of truth; the deprecated `category_litter_object_id` pointer is derived from them. `olm:verify-tag-integrity` is the deployment gate after migrations, seeders, data scripts and every `olm:migrate-tag` run. It reports:
+
+- object rows whose (category, object) pairing has no pivot — never auto-repaired, a taxonomy decision;
+- pointers that disagree with their pairing — `--fix` rebuilds them from the pairing;
+- type ids not approved for the pairing — `--fix` clears them;
+- rows and quick tags still sitting on a retired pairing (a mapping that did not finish) — re-run the mapping;
+- retirement chains that form a cycle.
+
+It exits non-zero while anything remains, with or without `--fix`. Until every undecided pairing has been declared or moved, the pivot-less check keeps the exit code at 1, so treat the per-check lines as the signal during the migration and the exit code as the gate once the manifest is complete.
+
+Three places still touch the deprecated pointer on purpose: this verifier (to detect stale pointers), the `PhotoTag::categoryObject()` relationship it repairs through, and raw `PhotoTag` model serialisation. Every transformed API payload, summary, export and metric derives the CLO from the pairing instead.
 
 ### Deduplication & uniqueness
 
@@ -279,6 +366,18 @@ A null summary (zero tags) yields zero metrics. Summary + XP are generated regar
 The `unclassified` system category is NOT in `TagsConfig`; it is created by `GenerateTagsSeeder` and used by `ClassifyTagsService` / `UpdateTagsService` as the catch-all for legacy null-null tags. It is hidden from the UI.
 
 `TagsConfig` helper methods (use these instead of hardcoding lists): `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()`.
+
+### Retired objects
+
+`litter_objects.retired_at` marks a key we no longer want; `merged_into_id` names the object that replaced it. Retirement is an explicit fact. The retired object **keeps** its `category_litter_object` row so a stale CLO id can still be remounted.
+
+Consequences to respect anywhere you touch objects:
+
+- **Reads must filter.** Use `LitterObject::active()`, or `whereHas('litterObject', fn ($q) => $q->active())` when starting from `CategoryObject`. `/api/tags`, `/api/tags/all` (its `objects` and `category_objects` arrays) and `/api/v3/user/top-tags` all do. `category_object_types` is deliberately unfiltered: its rows are keyed by CLO, every consumer resolves the CLO through `category_objects` first, and rows for a retired pivot are therefore unreachable.
+- **Writes remount onto approved pivots only.** `AddTagsToPhotoAction` (CLO and legacy) and `SyncQuickTagsAction` rewrite a retired+merged id onto an existing survivor CLO in the same category. They never create category/object relationships; the approved migration owns survivor-pivot creation. Mobile cannot ship a catalog refresh and caches `/api/tags/all` for 7 days, but a missing survivor CLO or missing `merged_into_id` still 422s.
+- **`firstOrCreate` paths must not resurrect.** `AutoCreateBrandRelationships` and `GenerateTagsSeeder` skip retired keys — both create an object *and* a pivot, so either would silently undo a retirement.
+
+The retirement itself runs one approved mapping at a time through `olm:migrate-tag`. Process and production runbook: `readme/PostTagMigrationClean.md`.
 
 ### Shared objects (multi-category via pivot)
 
@@ -417,7 +516,7 @@ Materials are sent as a flat array of IDs (set membership, quantity always 1). B
 
 The action also accepts the **legacy per-tag formats** the current Vue frontend still uses:
 
-1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. Category is auto-resolved from the object; it need not be sent.
+1. **Object tag** — `{ "object": {"id": 5, "key": "butts"}, "quantity": 3, "picked_up": true, "materials": [{"id": 2, "key": "plastic"}], "brands": [{"id": 1, "key": "marlboro"}], "custom_tags": ["dirty-bench"] }`. For an active object, category may be omitted only when exactly one active pairing exists. Retired object IDs still resolve through their recorded source pairing and replacement. For objects with multiple pairings, send `category_id` or `category`. An unknown category or undeclared pairing returns 422 instead of selecting another category.
 2. **Custom-only** — `{ "custom": true, "key": "dirty-bench", "quantity": 1, "picked_up": null }`. Creates a `CustomTagNew` from `key` and a loose PhotoTag (null CLO).
 3. **Brand-only** — `{ "brand_only": true, "brand": {"id": 1, "key": "coca-cola"}, "quantity": 1, "picked_up": null }`. Loose PhotoTag with the brand as an extra tag.
 4. **Material-only** — `{ "material_only": true, "material": {"id": 2, "key": "plastic"}, "quantity": 1, "picked_up": null }`. Same loose-PhotoTag pattern.
@@ -590,4 +689,5 @@ The tagging frontend uses the dark-glass design system:
 - `readme/Upload.md` — upload/tagging architecture, metrics pipeline, Redis key alignment
 - `readme/Mobile.md` — mobile v4→v5 tag shim (`ConvertV4TagsAction`)
 - `readme/PostMigrationCleanup.md` — remaining post-migration code cleanup (legacy columns, orphaned rows)
+- `readme/PostTagMigrationClean.md` — litter object retirement process and production runbook
 - `readme/API.md` — full API endpoint reference (source of truth for request/response contracts)

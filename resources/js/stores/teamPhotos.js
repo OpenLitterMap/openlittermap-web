@@ -80,7 +80,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
         },
 
         /**
-         * Update tags on a photo (teacher edit, CLO format).
+         * Save teacher edits using pairing IDs or object/category fields.
          */
         async updateTags(photoId, tags) {
             this.errors = {};
@@ -108,7 +108,7 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 if (e?.response?.status === 422) {
                     this.errors = e.response.data.errors || {};
                 }
-                toast.error('Failed to update tags');
+                toast.error(this.errors.tags?.[0] || 'Failed to update tags');
                 return false;
             } finally {
                 this.submitting = false;
@@ -146,7 +146,8 @@ export const useTeamPhotosStore = defineStore('teamPhotos', {
                 return false;
             } catch (e) {
                 console.error('updateTagsAndApprove', e);
-                toast.error('Failed to save edits');
+                const validationMessage = e.response?.status === 422 ? e.response?.data?.errors?.tags?.[0] : null;
+                toast.error(validationMessage || 'Failed to save edits');
                 return false;
             } finally {
                 this.submitting = false;

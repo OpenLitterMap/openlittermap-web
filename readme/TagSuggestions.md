@@ -91,7 +91,7 @@ Bulk-replaces all quick tags. Deletes existing rows and inserts new ones in a DB
 
 **Response 200:** Same format as GET (returns newly saved tags with server-assigned IDs).
 
-**Response 422:** Validation error. Rejects entire payload if any `clo_id` is stale.
+**Response 422:** Validation error. Rejects the entire payload if any `clo_id` does not exist (`One or more of these tags is no longer available — refresh your tag list.`), names a retired object with no survivor, or has no existing approved survivor CLO in the submitted category. A retired+merged `clo_id` is remounted only onto an existing survivor CLO; API writes never create category/object relationships. The refusal runs inside the transaction, ahead of the delete, so existing presets are left untouched.
 
 **Clearing all tags:** Send `"tags": []` — returns empty array, deletes all rows.
 
@@ -125,3 +125,46 @@ The backend is the durable source of truth. Mobile sync works as follows:
 - **Transaction safety:** Delete + insert wrapped in `DB::transaction()` — no partial states.
 - **No Eloquent mass-assignment on insert:** Uses `UserQuickTag::insert()` for performance (single query for all rows). JSON fields are manually `json_encode()`d since `insert()` bypasses model casts.
 - **Duplicate CLOs allowed:** A user can have multiple quick tags referencing the same CLO (e.g. same object with different quantities or picked_up settings).
+
+---
+
+## Open ticket — rename QuickTags to FavouriteTags
+
+"Quick" describes how fast the tag is to apply, not what the thing is. These are a user's saved
+favourites and the name should say so. Agreed 2026-08-15, not scheduled.
+
+| What | From | To |
+|---|---|---|
+| Table | `user_quick_tags` | `user_favourite_tags` |
+| Model | `UserQuickTag` | `UserFavouriteTag` |
+| Relation | `User::quickTags()` | `User::favouriteTags()` |
+| Action | `Actions\QuickTags\SyncQuickTagsAction` | `Actions\FavouriteTags\SyncFavouriteTagsAction` |
+| Controller | `API\QuickTagsController` | `API\FavouriteTagsController` |
+| Request | `SyncQuickTagsRequest` | `SyncFavouriteTagsRequest` |
+| Routes | `/api/v3/user/quick-tags` | `/api/v3/user/favourite-tags` |
+| Pinia store | `stores/quickTags.js` | `stores/favouriteTags.js` |
+| Vue | `QuickTagsSection.vue`, plus hardcoded strings in `ProfileSettings.vue`, `OnboardingChips.vue`, `update27.vue` | |
+| Tests | `tests/Feature/QuickTags/` | `tests/Feature/FavouriteTags/` |
+| Docs | this file, `API.md`, `Mobile.md`, `Tags.md`, `CLAUDE.md` | |
+
+26 files here, plus the mobile app repo.
+
+**The route is the only hard part.** Shipped mobile builds call `/user/quick-tags` and cannot be
+made to update, so either the old paths stay as aliases onto the new controller until the install
+base turns over, or the rename stops at internal names and leaves the public route alone. Decide
+that before starting.
+
+**Order it after the tag retirements.** `olm:migrate-tag` reads and writes `user_quick_tags`
+through raw `DB::table()` in ten places; renaming the table mid-retirement breaks the command.
+
+No i18n keys are involved — the UI strings are hardcoded in the Vue components. Changelog entries
+and `readme/audit/` CSVs are historical record; do not rewrite them.
+
+**Next steps**
+
+1. **Decide the route question first** — aliases onto the new controller, or internal names only
+   and `/user/quick-tags` stays. Everything below is mechanical; this is the only judgement call,
+   and it sets whether the mobile repo is in scope at all.
+2. **Wait for the tag retirements to finish.** See the ordering note above.
+3. **Then the rename in one pass** — `Schema::rename` migration, the 26 files, and the mobile repo
+   if step 1 put it in scope. Web and mobile land together if the route moves.

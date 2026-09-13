@@ -30,6 +30,12 @@ export const useTagsStore = defineStore('tags', {
         },
 
         /**
+         * Is this CLO still offerable? A retired object's pivot is filtered out server-side, so
+         * a stored cloId that is no longer here points at something the API will refuse.
+         */
+        hasClo: (state) => (cloId) => state.categoryObjects.some((co) => co.id === cloId),
+
+        /**
          * Get valid types for a given CLO id.
          */
         getTypesForClo: (state) => (cloId) => {

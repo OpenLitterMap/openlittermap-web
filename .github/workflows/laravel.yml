@@ -102,5 +102,19 @@ jobs:
       - name: Run migrations
         run: php artisan migrate --force --no-interaction -vvv
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
+
+      - name: Build frontend
+        run: npm run build
+
       - name: PHPUnit
         run: vendor/bin/phpunit --colors=always

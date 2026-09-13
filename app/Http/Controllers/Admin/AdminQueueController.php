@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Photo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,10 +103,13 @@ class AdminQueueController extends Controller
         foreach ($photo->photoTags as $photoTag) {
             $tag = [
                 'id' => $photoTag->id,
-                'category_litter_object_id' => $photoTag->category_litter_object_id,
+                'category_litter_object_id' => CategoryObject::resolveId(
+                    $photoTag->category_id,
+                    $photoTag->litter_object_id
+                ),
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
-                'picked_up' => $photoTag->picked_up,
+                'picked_up' => $photoTag->picked_up === null ? null : (bool) $photoTag->picked_up,
             ];
 
             if ($photoTag->category) {

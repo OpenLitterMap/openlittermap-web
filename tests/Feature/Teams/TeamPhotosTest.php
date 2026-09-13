@@ -5,74 +5,37 @@ namespace Tests\Feature\Teams;
 use App\Enums\VerificationStatus;
 use App\Events\SchoolDataApproved;
 use App\Events\TagsVerifiedByAdmin;
-use App\Models\Photo;
+use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
+use App\Models\Litter\Tags\CustomTagNew;
 use App\Models\Litter\Tags\LitterObject;
+use App\Models\Litter\Tags\LitterObjectType;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\PhotoTag;
+use App\Models\Litter\Tags\PhotoTagExtraTags;
+use App\Models\Photo;
 use App\Models\Teams\Team;
 use App\Models\Teams\TeamType;
 use App\Models\Users\User;
 use App\Services\Metrics\MetricsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
+use Tests\Helpers\CreatesSchoolTeamTrait;
 use Tests\TestCase;
 
 class TeamPhotosTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected User $teacher;
-    protected User $student;
-    protected Team $schoolTeam;
+    use CreatesSchoolTeamTrait;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-
-        // Create school team type
-        $schoolType = TeamType::firstOrCreate(
-            ['team' => 'school'],
-            ['team' => 'school']
-        );
-
-        // Create teacher with school_manager role
-        $this->teacher = User::factory()->create();
-        $role = Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'manage school team', 'guard_name' => 'web']);
-        $role->givePermissionTo('manage school team');
-        $this->teacher->assignRole('school_manager');
-
-        // Create school team
-        $this->schoolTeam = Team::factory()->create([
-            'type_id' => $schoolType->id,
-            'leader' => $this->teacher->id,
-            'safeguarding' => true,
-        ]);
-
-        $this->schoolTeam->users()->attach($this->teacher->id);
-
-        // Create student
-        $this->student = User::factory()->create();
-        $this->schoolTeam->users()->attach($this->student->id);
-
-        // Tag taxonomy (needed for tag editing tests)
-        $smokingCat = Category::firstOrCreate(['key' => 'smoking']);
-        $alcoholCat = Category::firstOrCreate(['key' => 'alcohol']);
-        $unclassifiedCat = Category::firstOrCreate(['key' => 'unclassified']);
-        $cigaretteButt = LitterObject::firstOrCreate(['key' => 'cigarette_butt']);
-        $beerCan = LitterObject::firstOrCreate(['key' => 'beer_can']);
-        $otherObj = LitterObject::firstOrCreate(['key' => 'other']);
-
-        // CLO pivots for tag creation
-        CategoryObject::firstOrCreate(['category_id' => $smokingCat->id, 'litter_object_id' => $cigaretteButt->id]);
-        CategoryObject::firstOrCreate(['category_id' => $alcoholCat->id, 'litter_object_id' => $beerCan->id]);
-        CategoryObject::firstOrCreate(['category_id' => $unclassifiedCat->id, 'litter_object_id' => $otherObj->id]);
+        $this->setUpCreatesSchoolTeam();
     }
 
     // ─── Enum Tests ─────────────────────────────────
@@ -334,6 +297,68 @@ class TeamPhotosTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    public function test_teacher_can_save_an_object_format_tag_in_its_recorded_category(): void
+    {
+        $object = LitterObject::where('key', 'beer_can')->firstOrFail();
+        $category = Category::where('key', 'smoking')->firstOrFail();
+        $pairing = CategoryObject::create(['category_id' => $category->id, 'litter_object_id' => $object->id]);
+        CategoryObject::flushResolverCache();
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id, 'team_id' => $this->schoolTeam->id, 'is_public' => false,
+        ]);
+
+        $this->actingAs($this->teacher)->patchJson("/api/teams/photos/{$photo->id}/tags", [
+            'tags' => [[
+                'object' => ['id' => $object->id, 'key' => $object->key],
+                'category_id' => $category->id, 'quantity' => 3, 'picked_up' => false,
+                'materials' => [], 'brands' => [], 'custom_tags' => [],
+            ]],
+        ])->assertOk()->assertJsonPath('photo.new_tags.0.category.id', $category->id);
+
+        $this->assertDatabaseHas('photo_tags', [
+            'photo_id' => $photo->id, 'category_litter_object_id' => $pairing->id,
+            'category_id' => $category->id, 'litter_object_id' => $object->id, 'quantity' => 3,
+        ]);
+        $this->assertFalse((bool) $photo->fresh()->is_public);
+        $this->assertSame(VerificationStatus::VERIFIED, $photo->fresh()->verified);
+    }
+
+    public function test_teacher_cannot_reclassify_an_undeclared_pairing_by_saving(): void
+    {
+        $category = Category::where('key', 'smoking')->firstOrFail();
+        $object = LitterObject::where('key', 'beer_can')->firstOrFail();
+        $photo = Photo::factory()->create([
+            'user_id' => $this->student->id, 'team_id' => $this->schoolTeam->id,
+            'is_public' => false, 'summary' => ['existing' => true], 'xp' => 7,
+        ]);
+        $tag = PhotoTag::create([
+            'photo_id' => $photo->id, 'category_id' => $category->id,
+            'litter_object_id' => $object->id, 'quantity' => 2,
+        ]);
+        $extra = PhotoTagExtraTags::create([
+            'photo_tag_id' => $tag->id, 'tag_type' => 'brand', 'tag_type_id' => 1, 'quantity' => 2,
+        ]);
+        $before = [$photo->fresh()->getAttributes(), $tag->fresh()->getAttributes(), $extra->fresh()->getAttributes()];
+
+        $this->actingAs($this->teacher)->patchJson("/api/teams/photos/{$photo->id}/tags", [
+            'tags' => [[
+                'object' => ['id' => $object->id, 'key' => $object->key],
+                'category_id' => $category->id, 'quantity' => 3,
+            ]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('tags');
+
+        $this->assertSame($before, [$photo->fresh()->getAttributes(), $tag->fresh()->getAttributes(), $extra->fresh()->getAttributes()]);
+        $this->assertDatabaseCount('photo_tags', 1);
+    }
+
+    public function test_student_cannot_use_the_object_format_to_edit_team_tags(): void
+    {
+        $photo = Photo::factory()->create(['user_id' => $this->student->id, 'team_id' => $this->schoolTeam->id]);
+        $this->actingAs($this->student)->patchJson("/api/teams/photos/{$photo->id}/tags", [
+            'tags' => [['object' => 'beer_can', 'category' => 'alcohol', 'quantity' => 1]],
+        ])->assertForbidden();
     }
 
     public function test_student_cannot_edit_tags_on_team_photo()
@@ -1048,5 +1073,291 @@ class TeamPhotosTest extends TestCase
         $this->assertNull($props['social']);
         // Team name IS shown
         $this->assertEquals($this->schoolTeam->name, $props['team']);
+    }
+    private function schoolPhoto(): Photo
+    {
+        return Photo::factory()->create([
+            'user_id' => $this->student->id,
+            'team_id' => $this->schoolTeam->id,
+            'is_public' => false,
+        ]);
+    }
+
+    private function schoolTag(): array
+    {
+        $clo = CategoryObject::whereHas('category', fn ($query) => $query->where('key', 'smoking'))->firstOrFail();
+
+        return ['category_litter_object_id' => $clo->id, 'quantity' => 2, 'picked_up' => false];
+    }
+
+    private function patchTags(Photo $photo, array $tags)
+    {
+        Event::fake([TagsVerifiedByAdmin::class]);
+        $response = $this->actingAs($this->teacher)
+            ->patchJson("/api/teams/photos/{$photo->id}/tags", ['tags' => $tags]);
+
+        if ($response->status() === 200) {
+            $photo->refresh();
+            $this->assertFalse($photo->is_public);
+            $this->assertSame(VerificationStatus::VERIFIED, $photo->verified);
+            $this->assertNotNull($photo->summary);
+            $this->assertNull($photo->processed_at);
+            Event::assertNotDispatched(TagsVerifiedByAdmin::class);
+        }
+
+        return $response;
+    }
+
+    private function pair(string $objectKey, string $categoryKey = 'other'): CategoryObject
+    {
+        $object = LitterObject::firstOrCreate(['key' => $objectKey]);
+        $category = Category::firstOrCreate(['key' => $categoryKey]);
+        $pairing = CategoryObject::firstOrCreate([
+            'category_id' => $category->id,
+            'litter_object_id' => $object->id,
+        ]);
+        CategoryObject::flushResolverCache();
+
+        return $pairing;
+    }
+
+    private function migrateTag(string $source, string $destination, array $options = []): void
+    {
+        $command = new \App\Console\Commands\tmp\v5\PostMigAug2026\MigrateTag;
+        $command->setLaravel($this->app);
+        $output = new \Symfony\Component\Console\Output\BufferedOutput;
+        $input = new \Symfony\Component\Console\Input\ArrayInput(array_merge([
+            'retired' => $source, 'desired' => $destination, '--apply' => true,
+        ], $options));
+
+        $this->assertSame(0, $command->run($input, $output), $output->fetch());
+    }
+
+    public function test_facilitator_plain_pairing_control_saves(): void
+    {
+        $photo = $this->schoolPhoto();
+        $input = $this->schoolTag();
+        $this->patchTags($photo, [$input])->assertOk();
+        $this->assertDatabaseHas('photo_tags', ['photo_id' => $photo->id] + $input);
+    }
+
+    public function test_facilitator_current_brand_catalog_ids_save(): void
+    {
+        $photo = $this->schoolPhoto();
+        $brand = BrandList::firstOrCreate(['key' => 'audit_brand']);
+        $this->patchTags($photo, [array_merge($this->schoolTag(), [
+            'brands' => [['id' => $brand->id, 'quantity' => 3]],
+        ])])->assertOk();
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photo->photoTags()->sole()->id,
+            'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 3,
+        ]);
+    }
+
+    public function test_facilitator_material_payload_saves(): void
+    {
+        $photo = $this->schoolPhoto();
+        $material = Materials::firstOrCreate(['key' => 'audit_plastic']);
+        $this->patchTags($photo, [array_merge($this->schoolTag(), [
+            'materials' => [$material->id],
+        ])])->assertOk();
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photo->photoTags()->sole()->id,
+            'tag_type' => 'material', 'tag_type_id' => $material->id, 'quantity' => 1,
+        ]);
+        $this->assertSame(2, $photo->fresh()->summary['totals']['materials']);
+    }
+
+    public function test_facilitator_custom_string_payload_saves(): void
+    {
+        $photo = $this->schoolPhoto();
+        $this->patchTags($photo, [array_merge($this->schoolTag(), [
+            'custom_tags' => ['found-on-bench'],
+        ])])->assertOk();
+        $custom = CustomTagNew::where('key', 'found-on-bench')->sole();
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photo->photoTags()->sole()->id,
+            'tag_type' => 'custom_tag', 'tag_type_id' => $custom->id,
+        ]);
+    }
+
+    public function test_facilitator_object_fallback_with_brand_saves(): void
+    {
+        $photo = $this->schoolPhoto();
+        $brand = BrandList::firstOrCreate(['key' => 'audit_brand']);
+        $object = LitterObject::where('key', 'beer_can')->firstOrFail();
+        $category = Category::where('key', 'alcohol')->firstOrFail();
+        $this->patchTags($photo, [[
+            'object' => ['id' => $object->id, 'key' => $object->key],
+            'category_id' => $category->id, 'quantity' => 1,
+            'brands' => [['id' => $brand->id, 'key' => $brand->key]],
+        ]])->assertOk();
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photo->photoTags()->sole()->id,
+            'tag_type' => 'brand', 'tag_type_id' => $brand->id, 'quantity' => 1,
+        ]);
+    }
+
+    public function test_facilitator_standalone_custom_saves(): void
+    {
+        $photo = $this->schoolPhoto();
+        $this->patchTags($photo, [['custom' => true, 'key' => 'audit-bench', 'quantity' => 2]])->assertOk();
+        $this->assertNull($photo->photoTags()->sole()->litter_object_id);
+        $this->assertSame(2, $photo->fresh()->summary['totals']['custom_tags']);
+    }
+
+    public function test_documented_custom_object_is_not_silently_lost(): void
+    {
+        $photo = $this->schoolPhoto();
+        $input = $this->schoolTag();
+        $clo = CategoryObject::findOrFail($input['category_litter_object_id']);
+        $existing = PhotoTag::create([
+            'photo_id' => $photo->id, 'category_litter_object_id' => $clo->id,
+            'category_id' => $clo->category_id, 'litter_object_id' => $clo->litter_object_id, 'quantity' => 2,
+        ]);
+        $custom = CustomTagNew::firstOrCreate(['key' => 'audit-bench']);
+        $existing->attachExtraTags([['id' => $custom->id]], 'custom_tag');
+
+        $this->patchTags($photo, [array_merge($input, [
+            'custom_tags' => [['tag' => 'audit-bench', 'quantity' => 1]],
+        ])])->assertOk();
+        $this->assertDatabaseHas('photo_tag_extra_tags', [
+            'photo_tag_id' => $photo->photoTags()->sole()->id,
+            'tag_type' => 'custom_tag', 'tag_type_id' => $custom->id,
+        ]);
+        $this->assertSame(2, $photo->fresh()->summary['totals']['custom_tags']);
+    }
+
+    public function test_object_format_revalidates_type_at_final_destination(): void
+    {
+        $source = $this->pair('audit_a');
+        $middle = $this->pair('audit_b');
+        $destination = $this->pair('audit_c');
+        $type = LitterObjectType::firstOrCreate(['key' => 'audit_type'], ['name' => 'Audit type']);
+        DB::table('category_object_types')->insert([
+            'category_litter_object_id' => $middle->id, 'litter_object_type_id' => $type->id,
+        ]);
+        $this->migrateTag('audit_a', 'audit_b', ['--type' => 'audit_type']);
+        $this->migrateTag('audit_b', 'audit_c');
+
+        foreach ([['category_litter_object_id' => $source->id], ['object' => 'audit_a', 'category' => 'other']] as $input) {
+            $photo = Photo::factory()->create(['user_id' => $this->teacher->id]);
+            $this->actingAs($this->teacher)->postJson('/api/v3/tags', [
+                'photo_id' => $photo->id, 'tags' => [$input + ['quantity' => 1]],
+            ])->assertOk();
+            $tag = $photo->photoTags()->sole();
+            $this->assertSame($destination->id, $tag->category_litter_object_id);
+            $this->assertNull($tag->litter_object_type_id);
+        }
+    }
+
+    public function test_missing_source_pairing_follows_destination_redirect(): void
+    {
+        $middle = $this->pair('audit_b');
+        $destination = $this->pair('audit_b', 'dumping');
+        $old = LitterObject::create([
+            'key' => 'audit_old', 'retired_at' => now(), 'merged_into_id' => $middle->litter_object_id,
+        ]);
+        $this->migrateTag('audit_b', 'audit_b', ['--category' => 'dumping']);
+        $photo = Photo::factory()->create(['user_id' => $this->teacher->id]);
+        $this->actingAs($this->teacher)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [['object' => $old->key, 'category' => 'other', 'quantity' => 1]],
+        ])->assertOk();
+        $this->assertSame($destination->id, $photo->photoTags()->sole()->category_litter_object_id);
+    }
+
+    public function test_completed_replay_after_category_and_object_moves(): void
+    {
+        $this->pair('audit_a');
+        $this->pair('audit_a', 'dumping');
+        $this->pair('audit_b', 'dumping');
+        $this->pair('audit_c', 'dumping');
+        $this->migrateTag('audit_a', 'audit_a', ['--category' => 'dumping']);
+        $this->migrateTag('audit_a', 'audit_b');
+        $this->migrateTag('audit_b', 'audit_c');
+        $before = DB::table('category_litter_object')->orderBy('id')->get()->toJson();
+        $this->migrateTag('audit_a', 'audit_b');
+        $this->assertSame($before, DB::table('category_litter_object')->orderBy('id')->get()->toJson());
+    }
+
+    public function test_facilitator_standalone_brand_and_material_preserve_quantities(): void
+    {
+        $photo = $this->schoolPhoto();
+        $brand = BrandList::firstOrCreate(['key' => 'audit_brand']);
+        $material = Materials::firstOrCreate(['key' => 'audit_plastic']);
+        $this->patchTags($photo, [
+            ['brand_only' => true, 'brand' => ['id' => $brand->id], 'quantity' => 3],
+            ['material_only' => true, 'material' => ['id' => $material->id], 'quantity' => 4],
+        ])->assertOk();
+        $this->assertSame(2, $photo->photoTags()->whereNull('litter_object_id')->count());
+        $summary = $photo->fresh()->summary;
+        $this->assertSame(3, $summary['totals']['brands']);
+        $this->assertSame(4, $summary['totals']['materials']);
+    }
+
+    public function test_invalid_facilitator_extras_leave_the_photo_and_existing_tags_untouched(): void
+    {
+        $photo = $this->schoolPhoto();
+        $input = $this->schoolTag() + ['custom_tags' => ['keep-me']];
+        $this->patchTags($photo, [$input])->assertOk();
+        $beforePhoto = $photo->fresh()->getRawOriginal();
+        $beforeTags = $photo->photoTags()->with('extraTags')->get()->toJson();
+
+        foreach ([
+            ['brands' => [['id' => 2147483647]]],
+            ['materials' => [['id' => 2147483647]]],
+            ['custom_tags' => [['quantity' => 1]]],
+            ['custom_tags' => [['key' => 'one', 'tag' => 'another']]],
+            ['custom_tags' => [123]],
+        ] as $invalid) {
+            $this->patchTags($photo, [array_merge($input, $invalid)])->assertUnprocessable();
+            $this->assertSame($beforePhoto, $photo->fresh()->getRawOriginal());
+            $this->assertSame($beforeTags, $photo->photoTags()->with('extraTags')->get()->toJson());
+        }
+    }
+    public function test_custom_tag_formats_survive_v3_add_and_replace(): void
+    {
+        $photo = Photo::factory()->create(['user_id' => $this->teacher->id]);
+        $input = $this->schoolTag();
+        $this->actingAs($this->teacher)->postJson('/api/v3/tags', [
+            'photo_id' => $photo->id,
+            'tags' => [$input + ['custom_tags' => [['tag' => 'keep-me', 'quantity' => 1]]]],
+        ])->assertOk();
+        $custom = CustomTagNew::where('key', 'keep-me')->sole();
+
+        foreach (['keep-me', ['key' => 'keep-me'], ['tag' => 'keep-me', 'quantity' => 9]] as $value) {
+            $this->putJson('/api/v3/tags', [
+                'photo_id' => $photo->id, 'tags' => [$input + ['custom_tags' => [$value]]],
+            ])->assertOk();
+            $this->assertDatabaseHas('photo_tag_extra_tags', [
+                'photo_tag_id' => $photo->photoTags()->sole()->id,
+                'tag_type' => 'custom_tag', 'tag_type_id' => $custom->id, 'quantity' => 1,
+            ]);
+            $this->assertSame(2, $photo->fresh()->summary['totals']['custom_tags']);
+        }
+    }
+
+    public function test_facilitator_object_fallback_preserves_type_and_all_extras(): void
+    {
+        $photo = $this->schoolPhoto();
+        $pairing = $this->pair('typed_object');
+        $type = LitterObjectType::firstOrCreate(['key' => 'audit_type'], ['name' => 'Audit type']);
+        $brand = BrandList::firstOrCreate(['key' => 'audit_brand']);
+        $material = Materials::firstOrCreate(['key' => 'audit_plastic']);
+        DB::table('category_object_types')->insert([
+            'category_litter_object_id' => $pairing->id, 'litter_object_type_id' => $type->id,
+        ]);
+        $this->patchTags($photo, [[
+            'object' => ['id' => $pairing->litter_object_id], 'category_id' => $pairing->category_id,
+            'litter_object_type_id' => $type->id, 'quantity' => 4,
+            'materials' => [$material->id], 'brands' => [['id' => $brand->id, 'quantity' => 3]],
+            'custom_tags' => ['keep-me'],
+        ]])->assertOk();
+        $this->assertSame($type->id, $photo->photoTags()->sole()->litter_object_type_id);
+        $summary = $photo->fresh()->summary;
+        $this->assertSame(4, $summary['totals']['materials']);
+        $this->assertSame(3, $summary['totals']['brands']);
+        $this->assertSame(4, $summary['totals']['custom_tags']);
     }
 }

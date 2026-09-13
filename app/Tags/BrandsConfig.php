@@ -19,7 +19,7 @@ class BrandsConfig
 
         'aldi' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'amazon' => [
@@ -108,13 +108,13 @@ class BrandsConfig
         'centra' => [
             'food' => ['packaging', 'wrapper'],
             'coffee' => ['cup'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'circlek' => [
             'food' => ['packaging'],
             'coffee' => ['cup'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'coke' => [
@@ -145,7 +145,7 @@ class BrandsConfig
 
         'dunnes' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'duracell' => [
@@ -243,7 +243,7 @@ class BrandsConfig
 
         'lidl' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'lindenvillage' => [
@@ -316,7 +316,7 @@ class BrandsConfig
 
         'ok_' => [  // OK convenience store brand
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         // P
@@ -341,7 +341,7 @@ class BrandsConfig
         // S
         'sainsburys' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'samsung' => [
@@ -368,7 +368,7 @@ class BrandsConfig
 
         'spar' => [
             'food' => ['packaging', 'wrapper'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'sprite' => [
@@ -397,7 +397,7 @@ class BrandsConfig
 
         'supervalu' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         // T
@@ -407,7 +407,7 @@ class BrandsConfig
 
         'tesco' => [
             'food' => ['packaging', 'wrapper'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'thins' => [
@@ -427,7 +427,7 @@ class BrandsConfig
         // W
         'waitrose' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'walkers' => [
@@ -450,7 +450,7 @@ class BrandsConfig
 
         'woolworths' => [
             'food' => ['packaging'],
-            'other' => ['plasticBags'],
+            'other' => ['plastic_bag'],
         ],
 
         'wrigleys' => [

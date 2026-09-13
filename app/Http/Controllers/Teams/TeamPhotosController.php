@@ -122,15 +122,12 @@ class TeamPhotosController extends Controller
     }
 
     /**
-     * Update tags on a team photo (teacher edit before approval).
-     *
-     * PATCH /api/teams/photos/{photo}/tags
-     *
-     * Accepts CLO-based payload (same format as PhotoTagsController::store).
-     * Deletes existing tags, resets summary/xp/verified, then delegates
-     * to AddTagsToPhotoAction to recreate tags with proper summary + XP.
-     *
-     * Only the team leader (teacher) or users with 'manage school team' permission.
+     * - PATCH /api/teams/photos/{photo}/tags replaces tags on a team photo.
+     * - Allow the team leader or a user with "manage school team" permission.
+     * - Accept CLO IDs, object/category fields or standalone extras through AddTagsToPhotoAction.
+     * - Example: {tags: [{custom: true, key: "found on bench", quantity: 2}]}.
+     * - Delete old tags and rebuild summary/XP in one transaction; failures restore the old data.
+     * - School photos remain private until teacher approval.
      */
     public function updateTags(Request $request, Photo $photo): JsonResponse
     {
@@ -143,43 +140,41 @@ class TeamPhotosController extends Controller
 
         $request->validate([
             'tags' => 'required|array|min:1',
-            'tags.*.category_litter_object_id' => 'required|exists:category_litter_object,id',
-            'tags.*.litter_object_type_id' => 'nullable|exists:litter_object_types,id',
+            'tags.*' => 'array',
             'tags.*.quantity' => 'required|integer|min:1',
-            'tags.*.picked_up' => 'nullable|boolean',
-            'tags.*.materials' => 'nullable|array',
-            'tags.*.materials.*.id' => 'required|exists:materials,id',
-            'tags.*.materials.*.quantity' => 'required|integer|min:1',
-            'tags.*.brands' => 'nullable|array',
-            'tags.*.brands.*.id' => 'required|exists:brands,id',
-            'tags.*.brands.*.quantity' => 'required|integer|min:1',
-            'tags.*.custom_tags' => 'nullable|array',
-            'tags.*.custom_tags.*.tag' => 'required|string|max:100',
-            'tags.*.custom_tags.*.quantity' => 'required|integer|min:1',
+            // The shared action normalises and validates object tags and standalone extras.
         ]);
 
         DB::transaction(function () use ($request, $photo, $user) {
+            $photo = Photo::whereKey($photo->id)->lockForUpdate()->firstOrFail();
+            $wasApproved = $photo->is_public && $photo->team_approved_at !== null;
             // Delete existing tags (extra_tags cascade via FK)
             $photo->photoTags()->each(function ($tag) {
                 $tag->extraTags()->delete();
                 $tag->delete();
             });
 
-            // Reset summary and XP so AddTagsToPhotoAction regenerates them.
-            // Use VERIFIED (not UNVERIFIED) so school photos remain in the
-            // facilitator queue's pending filter (verified >= VERIFIED).
+            // - Rebuild summary and XP; retain approval on already-approved school photos.
+            // - Pending photos remain VERIFIED until the teacher approves them.
             $photo->update([
                 'summary' => null,
                 'xp' => 0,
-                'verified' => VerificationStatus::VERIFIED->value,
+                'verified' => $wasApproved ? $photo->verified : VerificationStatus::VERIFIED->value,
             ]);
 
             // Add new tags via the standard action (generates summary, XP)
             app(AddTagsToPhotoAction::class)->run(
                 $user->id,
                 $photo->id,
-                $request->tags
+                $request->tags,
+                skipVerification: $wasApproved
             );
+
+            // - Editing an approved photo keeps its approval and updates the owner's metrics.
+            // - Example: correcting 2 bags to 3 must not leave the public totals at 2.
+            if ($wasApproved) {
+                app(MetricsService::class)->processPhoto($photo);
+            }
         });
 
         // Reload with full relationships for response
@@ -635,10 +630,13 @@ class TeamPhotosController extends Controller
         foreach ($photo->photoTags as $photoTag) {
             $tag = [
                 'id' => $photoTag->id,
-                'category_litter_object_id' => $photoTag->category_litter_object_id,
+                'category_litter_object_id' => CategoryObject::resolveId(
+                    $photoTag->category_id,
+                    $photoTag->litter_object_id
+                ),
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
-                'picked_up' => $photoTag->picked_up,
+                'picked_up' => $photoTag->picked_up === null ? null : (bool) $photoTag->picked_up,
             ];
 
             if ($photoTag->category) {

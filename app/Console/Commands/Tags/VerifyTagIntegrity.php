@@ -2,30 +2,38 @@
 
 namespace App\Console\Commands\Tags;
 
-use App\Models\Litter\Tags\CategoryObject;
 use Illuminate\Console\Command;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class VerifyTagIntegrity extends Command
 {
     protected $signature = 'olm:verify-tag-integrity
-        {--fix : Auto-repair mismatched denorm fields}
+        {--fix : Rebuild stale CLO pointers and clear invalid type ids}
         {--photo-id= : Check a specific photo only}';
 
-    protected $description = 'Detect and optionally repair CLO ↔ denorm field drift on photo_tags';
+    protected $description = 'Detect taxonomy gaps, stale CLO pointers, rows and quick tags left on tombstoned pairings, and broken retirement chains';
 
     public function handle(): int
     {
         $this->info('Verifying photo_tags integrity...');
 
-        $orphanedClo = $this->checkOrphanedClo();
-        $denormMismatches = $this->checkDenormMismatches();
-        $invalidTypes = $this->checkInvalidTypes();
+        $this->reportHistorical();
 
-        $total = $orphanedClo + $denormMismatches + $invalidTypes;
+        $unsanctioned = $this->checkUnsanctionedPairings();
+        $stalePointers = $this->checkStalePointers();
+        $invalidTypes = $this->checkInvalidTypes();
+        $onTombstones = $this->checkRowsOnTombstones();
+
+        // - --photo-id checks that photo only; skip account-wide quick tags and CLO redirect loops.
+        $quickTagsOnTombstones = $this->option('photo-id') ? 0 : $this->checkQuickTagsOnTombstones();
+        $cycles = $this->option('photo-id') ? 0 : $this->checkRetirementCycles();
+
+        $total = $unsanctioned + $stalePointers + $invalidTypes + $onTombstones + $quickTagsOnTombstones + $cycles;
 
         if ($total === 0) {
             $this->info('All photo_tags are valid. 0 issues found.');
+
             return self::SUCCESS;
         }
 
@@ -33,118 +41,315 @@ class VerifyTagIntegrity extends Command
 
         if (! $this->option('fix')) {
             $this->line('Run with --fix to auto-repair.');
+
             return self::FAILURE;
         }
+
+        // - Recount after --fix and return failure if any issues remain.
+        // - Example: --fix cannot resolve a missing CLO or finish an object retirement.
+        $remaining = $this->unsanctionedPairings()->count()
+            + $this->stalePointers()->count()
+            + $this->invalidTypes()->count()
+            + $this->rowsOnTombstones()->count()
+            + ($this->option('photo-id') ? 0 : $this->quickTagsOnTombstones()->count())
+            + ($this->option('photo-id') ? 0 : $this->retirementCycles());
+
+        if ($remaining > 0) {
+            $this->error("{$remaining} issue(s) remain after repair.");
+
+            return self::FAILURE;
+        }
+
+        $this->info('All repairable issues fixed.');
 
         return self::SUCCESS;
     }
 
     /**
-     * Check for photo_tags referencing non-existent CLO ids.
+     * - Count observations and quick tags on historical CLOs: valid rows awaiting a later migration.
+     * - Informational only; they never affect the exit code.
      */
-    private function checkOrphanedClo(): int
+    private function reportHistorical(): void
     {
-        $query = DB::table('photo_tags as pt')
-            ->leftJoin('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
-            ->whereNull('clo.id');
+        $this->info("Historical photo tags: {$this->historicalPhotoTags()->count()} (informational)");
 
-        if ($this->option('photo-id')) {
-            $query->where('pt.photo_id', $this->option('photo-id'));
+        if (! $this->option('photo-id')) {
+            $this->info("Historical quick tags: {$this->historicalQuickTags()->count()} (informational)");
         }
+    }
 
-        $count = $query->count();
+    private function historicalPhotoTags(): Builder
+    {
+        return $this->onHistoricalClo($this->scopeToPhoto(
+            DB::table('photo_tags as pt')->join('category_litter_object as clo', function ($join) {
+                $join->on('clo.category_id', '=', 'pt.category_id')
+                    ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+            })
+        ));
+    }
 
-        if ($count > 0) {
-            $this->error("{$count} photo_tags reference non-existent CLO ids.");
-        } else {
-            $this->info('CLO references: OK');
-        }
+    private function historicalQuickTags(): Builder
+    {
+        return $this->onHistoricalClo(
+            DB::table('user_quick_tags as uqt')->join('category_litter_object as clo', 'clo.id', '=', 'uqt.clo_id')
+        );
+    }
 
-        return $count;
+    /** - A historical CLO is not redirected, not selectable, and its object is still live. */
+    private function onHistoricalClo(Builder $query): Builder
+    {
+        return $query->join('litter_objects as lo', 'lo.id', '=', 'clo.litter_object_id')
+            ->where('clo.is_selectable', false)
+            ->whereNull('clo.merged_into_clo_id')
+            ->whereNull('lo.retired_at');
     }
 
     /**
-     * Check that category_id and litter_object_id match the referenced CLO.
+     * - Find photo tags whose category_id and litter_object_id have no matching CLO.
+     * - Example: a tag records an object in a category where no CLO was declared.
+     * - Report these for an approved cleanup decision; --fix does not create CLOs.
      */
-    private function checkDenormMismatches(): int
+    private function unsanctionedPairings(): Builder
     {
-        $query = DB::table('photo_tags as pt')
-            ->join('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
-            ->where(function ($q) {
-                $q->whereColumn('pt.category_id', '!=', 'clo.category_id')
-                    ->orWhereColumn('pt.litter_object_id', '!=', 'clo.litter_object_id');
-            });
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->leftJoin('category_litter_object as clo', function ($join) {
+                    $join->on('clo.category_id', '=', 'pt.category_id')
+                        ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+                })
+                ->whereNotNull('pt.litter_object_id')
+                ->whereNotNull('pt.category_id')
+                ->whereNull('clo.id')
+        );
+    }
 
-        if ($this->option('photo-id')) {
-            $query->where('pt.photo_id', $this->option('photo-id'));
-        }
+    /**
+     * - Find stored CLO IDs that disagree with the photo tag's category or object.
+     * - Example: category_litter_object_id points to alcohol/bottle but the tag records softdrinks/bottle.
+     */
+    private function stalePointers(): Builder
+    {
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->join('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
+                ->where(function ($q) {
+                    $q->whereColumn('pt.category_id', '!=', 'clo.category_id')
+                        ->orWhereColumn('pt.litter_object_id', '!=', 'clo.litter_object_id');
+                })
+        );
+    }
 
-        $count = $query->count();
+    /**
+     * - Find photo tags whose type is not allowed on their category/object's CLO.
+     * - Example: a tag has type beer but its CLO has no beer entry in category_object_types.
+     * - Skip missing CLOs; they are reported separately and need an approved cleanup decision.
+     */
+    private function invalidTypes(): Builder
+    {
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->whereNotNull('pt.litter_object_type_id')
+                ->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('category_litter_object as clo')
+                        ->whereColumn('clo.category_id', 'pt.category_id')
+                        ->whereColumn('clo.litter_object_id', 'pt.litter_object_id');
+                })
+                ->whereNotExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('category_litter_object as clo')
+                        ->join('category_object_types as cot', 'cot.category_litter_object_id', '=', 'clo.id')
+                        ->whereColumn('clo.category_id', 'pt.category_id')
+                        ->whereColumn('clo.litter_object_id', 'pt.litter_object_id')
+                        ->whereColumn('cot.litter_object_type_id', 'pt.litter_object_type_id');
+                })
+        );
+    }
 
-        if ($count > 0) {
-            $this->error("{$count} photo_tags have denorm fields that don't match their CLO.");
+    /**
+     * - Find photo tags still using the category/object of a retired CLO.
+     * - Example: CLO 10 redirects to 20, but a photo tag still uses CLO 10's category/object.
+     * - Report these so the mapping can be rerun; --fix does not move them.
+     */
+    private function rowsOnTombstones(): Builder
+    {
+        return $this->scopeToPhoto(
+            DB::table('photo_tags as pt')
+                ->join('category_litter_object as clo', function ($join) {
+                    $join->on('clo.category_id', '=', 'pt.category_id')
+                        ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+                })
+                ->whereNotNull('clo.merged_into_clo_id')
+        );
+    }
 
-            if ($this->option('fix')) {
-                $this->info('Repairing denorm mismatches...');
+    /**
+     * - Find saved quick tags whose clo_id still references a retired CLO.
+     * - Example: CLO 10 redirects to 20, but the quick tag still stores clo_id = 10.
+     */
+    private function quickTagsOnTombstones(): Builder
+    {
+        return DB::table('user_quick_tags as uqt')
+            ->join('category_litter_object as clo', 'clo.id', '=', 'uqt.clo_id')
+            ->whereNotNull('clo.merged_into_clo_id');
+    }
 
-                $fixed = DB::update("
-                    UPDATE photo_tags pt
-                    JOIN category_litter_object clo ON clo.id = pt.category_litter_object_id
-                    SET pt.category_id = clo.category_id,
-                        pt.litter_object_id = clo.litter_object_id
-                    WHERE pt.category_id != clo.category_id
-                       OR pt.litter_object_id != clo.litter_object_id
-                ");
+    /**
+     * - Count CLO redirects that lead into a loop, e.g. CLO 10 → 20 → 10.
+     * - Save requests return 422 for these loops because no active CLO can be reached.
+     */
+    private function retirementCycles(): int
+    {
+        $next = DB::table('category_litter_object')
+            ->whereNotNull('merged_into_clo_id')
+            ->pluck('merged_into_clo_id', 'id')
+            ->map('intval')
+            ->all();
+        $broken = 0;
 
-                $this->info("Fixed {$fixed} rows.");
+        foreach (array_keys($next) as $start) {
+            $seen = [];
+            $clo = $start;
+
+            while (isset($next[$clo])) {
+                if (isset($seen[$clo])) {
+                    $broken++;
+                    break;
+                }
+
+                $seen[$clo] = true;
+                $clo = $next[$clo];
             }
+        }
+
+        return $broken;
+    }
+
+    private function scopeToPhoto(Builder $query): Builder
+    {
+        if ($this->option('photo-id')) {
+            $query->where('pt.photo_id', $this->option('photo-id'));
+        }
+
+        return $query;
+    }
+
+    private function checkUnsanctionedPairings(): int
+    {
+        $count = $this->unsanctionedPairings()->count();
+
+        if ($count > 0) {
+            $this->error("{$count} photo_tags have a (category, object) pairing with no CLO pivot.");
+            $this->line('  Each pairing needs an approved migration — --fix will not invent taxonomy.');
         } else {
-            $this->info('Denorm fields: OK');
+            $this->info('Category/object pairings: OK');
         }
 
         return $count;
     }
 
     /**
-     * Check that litter_object_type_id is valid for the referenced CLO.
+     * - Report stored category_litter_object_id values that disagree with the tag's category/object.
+     * - With --fix, rebuild that deprecated ID from category_id and litter_object_id.
+     * - Never change the category or object to match the stored CLO ID.
+     * - Ignore null stored CLO IDs; they are valid for this deprecated column.
      */
+    private function checkStalePointers(): int
+    {
+        $count = $this->stalePointers()->count();
+
+        if ($count === 0) {
+            $this->info('CLO pointers: OK');
+
+            return 0;
+        }
+
+        $this->error("{$count} photo_tags have a CLO pointer that disagrees with their pairing.");
+
+        if ($this->option('fix')) {
+            $this->info('Rebuilding stale pointers from (category_id, litter_object_id)...');
+
+            $photoFilter = $this->option('photo-id') ? ' AND pt.photo_id = ?' : '';
+            $bindings = $this->option('photo-id') ? [(int) $this->option('photo-id')] : [];
+            $fixed = DB::update('
+                UPDATE photo_tags pt
+                JOIN category_litter_object stale ON stale.id = pt.category_litter_object_id
+                JOIN category_litter_object correct
+                    ON correct.category_id = pt.category_id
+                   AND correct.litter_object_id = pt.litter_object_id
+                SET pt.category_litter_object_id = correct.id
+                WHERE (pt.category_id != stale.category_id
+                   OR pt.litter_object_id != stale.litter_object_id)
+            ' . $photoFilter, $bindings);
+
+            $this->info("Rebuilt {$fixed} pointer(s).");
+        }
+
+        return $count;
+    }
+
+    /**
+     * - Report photo tags that remain on retired CLOs.
+     * - Ask for the mapping to be rerun; this check does not move tags or change types.
+     */
+    private function checkRowsOnTombstones(): int
+    {
+        $count = $this->rowsOnTombstones()->count();
+
+        if ($count > 0) {
+            $this->error("{$count} photo_tags remain on a tombstoned pairing.");
+            $this->line('  Re-run the mapping that retired it — the migration did not finish.');
+        } else {
+            $this->info('Rows on tombstoned pairings: OK');
+        }
+
+        return $count;
+    }
+
+    private function checkQuickTagsOnTombstones(): int
+    {
+        $count = $this->quickTagsOnTombstones()->count();
+
+        if ($count > 0) {
+            $this->error("{$count} quick tag(s) still point at a tombstoned pairing.");
+        } else {
+            $this->info('Quick tags on tombstoned pairings: OK');
+        }
+
+        return $count;
+    }
+
+    private function checkRetirementCycles(): int
+    {
+        $count = $this->retirementCycles();
+
+        if ($count > 0) {
+            $this->error("{$count} retirement chain(s) form a cycle and never reach an active pairing.");
+        } else {
+            $this->info('Retirement chains: OK');
+        }
+
+        return $count;
+    }
+
     private function checkInvalidTypes(): int
     {
-        $query = DB::table('photo_tags as pt')
-            ->whereNotNull('pt.litter_object_type_id')
-            ->whereNotExists(function ($sub) {
-                $sub->select(DB::raw(1))
-                    ->from('category_object_types as cot')
-                    ->whereColumn('cot.category_litter_object_id', 'pt.category_litter_object_id')
-                    ->whereColumn('cot.litter_object_type_id', 'pt.litter_object_type_id');
-            });
+        $count = $this->invalidTypes()->count();
 
-        if ($this->option('photo-id')) {
-            $query->where('pt.photo_id', $this->option('photo-id'));
+        if ($count === 0) {
+            $this->info('Type references: OK');
+
+            return 0;
         }
 
-        $count = $query->count();
+        $this->error("{$count} photo_tags have a type_id not valid for their category/object pairing.");
 
-        if ($count > 0) {
-            $this->error("{$count} photo_tags have type_id not valid for their CLO.");
+        if ($this->option('fix')) {
+            $this->info('Clearing invalid type ids...');
 
-            if ($this->option('fix')) {
-                $this->info('Clearing invalid type_ids...');
+            $fixed = $this->invalidTypes()->update(['litter_object_type_id' => null]);
 
-                $fixed = DB::table('photo_tags as pt')
-                    ->whereNotNull('pt.litter_object_type_id')
-                    ->whereNotExists(function ($sub) {
-                        $sub->select(DB::raw(1))
-                            ->from('category_object_types as cot')
-                            ->whereColumn('cot.category_litter_object_id', 'pt.category_litter_object_id')
-                            ->whereColumn('cot.litter_object_type_id', 'pt.litter_object_type_id');
-                    })
-                    ->update(['litter_object_type_id' => null]);
-
-                $this->info("Cleared type_id on {$fixed} rows.");
-            }
-        } else {
-            $this->info('Type references: OK');
+            $this->info("Cleared type_id on {$fixed} rows.");
         }
 
         return $count;

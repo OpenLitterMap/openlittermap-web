@@ -33,6 +33,37 @@ class GeneratePhotoSummaryTest extends TestCase
         $this->generatePhotoSummaryService = app(GeneratePhotoSummaryService::class);
     }
 
+    /**
+     * A third of object tags carry a null `category_litter_object_id` because the v5 migration
+     * wrote them before their pivot existed. The pairing is still described by `category_id` and
+     * `litter_object_id`, so the summary must derive the CLO rather than copy the stale column.
+     *
+     * @test
+     */
+    public function summary_derives_the_clo_when_the_deprecated_column_is_null(): void
+    {
+        $category = Category::where('key', 'other')->firstOrFail();
+        $object = \App\Models\Litter\Tags\LitterObject::create(['key' => 'shadowBags']);
+        $clo = \App\Models\Litter\Tags\CategoryObject::create([
+            'category_id' => $category->id,
+            'litter_object_id' => $object->id,
+        ]);
+        \App\Models\Litter\Tags\CategoryObject::flushResolverCache();
+
+        $photo = Photo::factory()->create();
+        \App\Models\Litter\Tags\PhotoTag::create([
+            'photo_id' => $photo->id,
+            'category_id' => $category->id,
+            'litter_object_id' => $object->id,
+            'category_litter_object_id' => null,
+            'quantity' => 4,
+        ]);
+
+        $this->generatePhotoSummaryService->run($photo);
+
+        $this->assertSame($clo->id, $photo->fresh()->summary['tags'][0]['clo_id']);
+    }
+
     /** @test */
     public function summary_empty_when_no_tags(): void
     {

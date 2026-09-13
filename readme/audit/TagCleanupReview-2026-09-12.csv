@@ -1,0 +1,75 @@
+source_category,source_object,tag_rows,items,photos,destination_category,destination_object,type,allow_xp_change,object_xp_before,object_xp_after,item_xp_delta,status,approved_by,review
+alcohol,beer_bottle,7337,18074,7337,alcohol,bottle,beer,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type beer; destination must approve this type."
+alcohol,beer_can,19275,26488,19275,alcohol,can,beer,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type beer; destination must approve this type."
+alcohol,bottletops,4902,13018,4902,alcohol,bottle_cap,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+alcohol,brokenglass,3370,8015,3370,alcohol,broken_glass,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+alcohol,spirits_bottle,2661,3457,2661,alcohol,bottle,spirits,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type spirits; destination must approve this type."
+alcohol,wine_bottle,638,863,638,alcohol,bottle,wine,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type wine; destination must approve this type."
+art,item,42,43,42,art,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""item"" becomes generic other"
+food,crisp_large,431,469,431,food,crisp_packet,,no,1,1,0,DISPUTED,,Do not execute. Destination may remove size/material detail or infer a different object; review or declare a more precise object.
+food,crisp_small,4654,5037,4654,food,crisp_packet,,no,1,1,0,DISPUTED,,Do not execute. Destination may remove size/material detail or infer a different object; review or declare a more precise object.
+food,glass_jar,131,188,131,food,jar,,no,1,1,0,DISPUTED,,Do not execute. Destination may remove size/material detail or infer a different object; review or declare a more precise object.
+industrial,chemical,27,36,27,industrial,chemical_container,,no,1,1,0,DISPUTED,,Do not execute. Destination may remove size/material detail or infer a different object; review or declare a more precise object.
+industrial,oil,57,69,57,industrial,oil_container,,no,1,1,0,DISPUTED,,Do not execute. Destination may remove size/material detail or infer a different object; review or declare a more precise object.
+industrial,plastic,666,2937,666,industrial,plastic,,no,1,1,0,KEEP,,Already declared in this category; preparation resolves these rows without migrating them.
+marine,bag,1161,1662,1161,marine,bag,,no,1,1,0,KEEP,,Already declared in this category; preparation resolves these rows without migrating them.
+marine,balloons,450,635,450,marine,balloon,,no,1,1,0,PENDING,,Same object and category; all categories must be approved together for one command.
+marine,bottle,741,1070,741,marine,bottle,,no,1,1,0,KEEP,,Already declared in this category; preparation resolves these rows without migrating them.
+marine,buoys,145,189,145,marine,buoy,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+marine,fishing_nets,894,1154,893,marine,fishing_net,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+marine,lego,3,3,3,other,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""lego"" becomes generic other; category reassigned marine->other Category changes from marine to other."
+marine,lighters,46,60,46,marine,lighters,,no,1,1,0,KEEP,,Already declared in this category; preparation resolves these rows without migrating them.
+marine,mediumplastics,1564,4004,1564,marine,medium_plastic,,no,1,1,0,PENDING,,Preserve the middle size class; never merge into macroplastics.
+marine,shotgun_cartridges,493,725,493,marine,shotgun_cartridge,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+marine,straws,175,226,175,marine,straw,,no,1,1,0,PENDING,,Same object and category; all categories must be approved together for one command.
+other,automobile,794,987,794,vehicles,car_part,,no,1,1,0,DISPUTED,,Do not execute. category reassigned other->vehicles Category changes from other to vehicles.
+other,bagsLitter,1041,2239,1041,other,bags_litter,,no,1,10,20151,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. XP change requires explicit approval."
+other,balloons,1730,1856,1730,other,balloon,,no,1,1,0,PENDING,,Same object and category; all categories must be approved together for one command.
+other,batteries,291,363,291,electronics,battery,,no,1,1,0,PENDING,,category reassigned other->electronics Category changes from other to electronics.
+other,books,38,71,38,other,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""books"" becomes generic other"
+other,cableTie,1021,1203,1021,other,cable_tie,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+other,dogshit,1146,1383,1146,pets,dogshit,,no,1,1,0,PENDING,,category reassigned other->pets Category changes from other to pets.
+other,dogshit_in_bag,506,649,506,pets,dogshit_in_bag,,no,1,1,0,PENDING,,category reassigned other->pets Category changes from other to pets.
+other,dump,1875,9733,1875,dumping,dumping,,no,1,1,0,PENDING,,category reassigned other->dumping Category changes from other to dumping.
+other,ear_plugs,26,46,26,sanitary,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""ear_plugs"" becomes generic other; category reassigned other->sanitary Category changes from other to sanitary."
+other,elec_large,60,100,60,electronics,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""elec_large"" becomes generic other; category reassigned other->electronics Category changes from other to electronics."
+other,elec_small,291,385,291,electronics,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""elec_small"" becomes generic other; category reassigned other->electronics Category changes from other to electronics."
+other,hair_tie,515,546,515,sanitary,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""hair_tie"" becomes generic other; category reassigned other->sanitary Category changes from other to sanitary."
+other,life_buoy,6,11,6,marine,buoy,,no,1,1,0,PENDING,,category reassigned other->marine Category changes from other to marine.
+other,magazine,93,124,93,other,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""magazine"" becomes generic other"
+other,overflowingBins,517,524,517,other,overflowing_bin,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+other,plasticBags,10051,12946,10051,other,plastic_bag,,no,1,1,0,APPROVED,User: plastic bags first,"Spelling change only. First window approved by user; no category, type or XP change."
+other,posters,208,268,206,other,poster,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+other,randomLitter,12821,33801,12821,other,random_litter,,no,1,1,0,PENDING,,Preserve random-litter meaning; proposed spelling change needs final mapping approval.
+other,trafficCone,116,136,116,other,traffic_cone,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+other,tyre,202,436,202,vehicles,tyre,,no,1,1,0,PENDING,,category reassigned other->vehicles Category changes from other to vehicles.
+other,washingUp,79,102,79,other,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""washingUp"" becomes generic other"
+sanitary,condoms,190,366,190,sanitary,condom,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+sanitary,earSwabs,172,294,172,sanitary,ear_swabs,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+sanitary,facemask,7742,7910,7742,medical,face_mask,,no,1,1,0,PENDING,,category reassigned sanitary->medical Category changes from sanitary to medical.
+sanitary,gloves,2422,2562,2422,medical,gloves,,no,1,1,0,PENDING,,category reassigned sanitary->medical Category changes from sanitary to medical.
+sanitary,menstrual,179,201,179,sanitary,sanitary_pad,,no,1,1,0,DISPUTED,,Do not execute. Destination may remove size/material detail or infer a different object; review or declare a more precise object.
+sanitary,sanitiser,42,53,42,medical,sanitiser,,no,1,1,0,PENDING,,category reassigned sanitary->medical Category changes from sanitary to medical.
+sanitary,toothpick,284,309,284,sanitary,other,,no,1,1,0,DISPUTED,,"Do not execute. LOSSY: ""toothpick"" becomes generic other"
+sanitary,wetwipes,3326,6052,3326,sanitary,wipes,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+smoking,cigarette_box,9803,10245,9803,smoking,box,cigarette,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type cigarette; destination must approve this type."
+smoking,filters,603,852,602,smoking,rolling_filter,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+smoking,rollingPapers,525,546,525,smoking,papers,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+smoking,tobaccopouch,408,434,408,smoking,pouch,tobacco,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type tobacco; destination must approve this type."
+smoking,vapeOil,63,74,63,smoking,vape,e_liquid_bottle,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type e_liquid_bottle; destination must approve this type."
+smoking,vapePen,484,582,484,smoking,vape,pen,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type pen; destination must approve this type."
+softdrinks,brokenglass,42,145,42,softdrinks,broken_glass,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+softdrinks,energy_can,20498,20931,20498,softdrinks,can,energy,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type energy; destination must approve this type."
+softdrinks,fizzy_bottle,6448,7831,6448,softdrinks,bottle,soda,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type soda; destination must approve this type."
+softdrinks,iceTea_bottle,829,851,829,softdrinks,bottle,tea,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type tea; destination must approve this type."
+softdrinks,icedTea_can,588,607,588,softdrinks,can,iced_tea,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type iced_tea; destination must approve this type."
+softdrinks,juice_bottle,1862,1940,1862,softdrinks,bottle,juice,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type juice; destination must approve this type."
+softdrinks,juice_carton,2243,2327,2243,softdrinks,carton,juice,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type juice; destination must approve this type."
+softdrinks,milk_bottle,901,935,901,softdrinks,bottle,milk,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type milk; destination must approve this type."
+softdrinks,milk_carton,827,874,827,softdrinks,carton,milk,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type milk; destination must approve this type."
+softdrinks,pullRing,758,1168,758,softdrinks,pull_ring,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+softdrinks,soda_can,16462,18034,16462,softdrinks,can,soda,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type soda; destination must approve this type."
+softdrinks,sports_bottle,2931,3277,2931,softdrinks,bottle,sports,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type sports; destination must approve this type."
+softdrinks,straw_packaging,1039,1111,1039,softdrinks,straw_wrapper,,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged."
+softdrinks,straws,7368,8438,7368,softdrinks,straw,,no,1,1,0,PENDING,,Same object and category; all categories must be approved together for one command.
+softdrinks,water_bottle,17189,21889,17189,softdrinks,bottle,water,no,1,1,0,PENDING,,"Review meaning; quantity, extras and collection status must remain unchanged. Object encodes type water; destination must approve this type."

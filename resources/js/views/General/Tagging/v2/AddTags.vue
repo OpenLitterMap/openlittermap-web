@@ -206,6 +206,16 @@
 </template>
 
 <script setup>
+import {
+    addCardDetail,
+    cardsFromApiTags,
+    hasUnresolvedCards,
+    payloadFromCards,
+    removeCardDetail,
+    setCardQuantity,
+    setCardType,
+    typeKeyFor,
+} from '@/composables/useTagEditorState.js';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -421,10 +431,7 @@ const calculateXP = computed(() => {
     return calculateTotalXp(activeTags.value);
 });
 
-// Validation: check if any object tag is missing its CLO id
-const hasUnresolvedTags = computed(() => {
-    return activeTags.value.some((tag) => tag.object && !tag.cloId);
-});
+const hasUnresolvedTags = computed(() => hasUnresolvedCards(activeTags.value));
 
 const canSubmit = computed(() => {
     if (isSubmitting.value || hasUnresolvedTags.value) return false;
@@ -441,108 +448,6 @@ const ensurePhotoTags = () => {
         tagsByPhoto.value[photoId] = [];
     }
     return photoId;
-};
-
-// Convert API new_tags format to frontend tag format
-const convertExistingTags = (photo) => {
-    if (!photo.new_tags?.length) return [];
-
-    return photo.new_tags.map((apiTag) => {
-        const tagId = Math.random().toString(16).slice(2);
-
-        // Extra-tag-only (no object) — classify by primary extra type
-        if (!apiTag.object && apiTag.extra_tags?.length) {
-            const brands = [];
-            const materials = [];
-            const customTags = [];
-
-            apiTag.extra_tags.forEach((extra) => {
-                if (extra.type === 'brand' && extra.tag) {
-                    brands.push({ id: extra.tag.id, key: extra.tag.key, quantity: extra.quantity || 1 });
-                } else if (extra.type === 'material' && extra.tag) {
-                    materials.push({ id: extra.tag.id, key: extra.tag.key });
-                } else if (extra.type === 'custom_tag' && extra.tag) {
-                    customTags.push(extra.tag.key);
-                }
-            });
-
-            // Single brand with no other extras → brand-only card
-            if (brands.length === 1 && !materials.length && !customTags.length) {
-                return {
-                    id: tagId,
-                    brand: brands[0],
-                    quantity: apiTag.quantity || 1,
-                    pickedUp: apiTag.picked_up,
-                    type: 'brand-only',
-                };
-            }
-            // Single material with no other extras → material-only card
-            if (materials.length === 1 && !brands.length && !customTags.length) {
-                return {
-                    id: tagId,
-                    material: materials[0],
-                    quantity: apiTag.quantity || 1,
-                    pickedUp: apiTag.picked_up,
-                    type: 'material-only',
-                };
-            }
-            // Single custom tag with no other extras → custom tag card
-            if (customTags.length === 1 && !brands.length && !materials.length) {
-                return {
-                    id: tagId,
-                    custom: true,
-                    key: customTags[0],
-                    quantity: apiTag.quantity || 1,
-                    pickedUp: apiTag.picked_up,
-                };
-            }
-            // Mixed extras or multiple of same type → custom card with all details
-            return {
-                id: tagId,
-                custom: true,
-                key: customTags[0] || brands[0]?.key || materials[0]?.key || 'custom tag',
-                quantity: apiTag.quantity || 1,
-                pickedUp: apiTag.picked_up,
-                brands,
-                materials,
-                customTags: customTags.slice(1),
-            };
-        }
-
-        // Standard object tag
-        const cloId = apiTag.category_litter_object_id || tagsStore.getCloId(apiTag.category?.id, apiTag.object?.id);
-
-        const brands = [];
-        const materials = [];
-        const customTags = [];
-
-        apiTag.extra_tags?.forEach((extra) => {
-            if (extra.type === 'brand' && extra.tag) {
-                brands.push({ id: extra.tag.id, key: extra.tag.key, quantity: extra.quantity || 1 });
-            } else if (extra.type === 'material' && extra.tag) {
-                materials.push({ id: extra.tag.id, key: extra.tag.key });
-            } else if (extra.type === 'custom_tag' && extra.tag) {
-                customTags.push(extra.tag.key);
-            }
-        });
-
-        return {
-            id: tagId,
-            object: apiTag.object,
-            cloId: cloId,
-            categoryId: apiTag.category?.id || null,
-            categoryKey: apiTag.category?.key || null,
-            typeId: apiTag.litter_object_type_id || null,
-            typeKey: apiTag.litter_object_type_id
-                ? tagsStore.types.find((t) => t.id === apiTag.litter_object_type_id)?.key || null
-                : null,
-            quantity: apiTag.quantity || 1,
-            pickedUp: apiTag.picked_up ?? true,
-            brands,
-            materials,
-            customTags,
-        };
-    });
 };
 
 // Initialize
@@ -574,7 +479,7 @@ onMounted(async () => {
             // Only enter edit mode if photo already has tags (replace vs add)
             if (photo.new_tags?.length > 0) {
                 isEditMode.value = true;
-                tagsByPhoto.value[photo.id] = convertExistingTags(photo);
+                tagsByPhoto.value[photo.id] = cardsFromApiTags(photo.new_tags, tagsStore);
             }
         }
     } else {
@@ -592,8 +497,15 @@ onMounted(async () => {
 
     const stored = localStorage.getItem('recentTags');
     if (stored) {
-        // Filter out stale entries from before category disambiguation was added
-        const parsed = JSON.parse(stored).filter((t) => t.type !== 'object' || t.cloId);
+        // - Remove recent object tags with no CLO ID.
+        // - Once the tag list loads, remove CLO IDs the picker no longer offers.
+        // - Example: a retired CLO should no longer appear as a recent choice.
+        const canCheckClos = tagsStore.categoryObjects.length > 0;
+        const parsed = JSON.parse(stored).filter((t) => {
+            if (t.type !== 'object') return true;
+            if (!t.cloId) return false;
+            return !canCheckClos || tagsStore.hasClo(t.cloId);
+        });
         recentTags.value = parsed.slice(0, 5);
         localStorage.setItem('recentTags', JSON.stringify(recentTags.value));
     }
@@ -771,7 +683,7 @@ const handleTagSelection = (selected) => {
     }
 
     if (existing) {
-        existing.quantity = Math.min(100, existing.quantity + 1);
+        setCardQuantity(existing, existing.quantity + 1);
         updateRecentTags(selected);
         return;
     }
@@ -787,7 +699,7 @@ const handleTagSelection = (selected) => {
             categoryId: selected.categoryId || null,
             categoryKey: selected.categoryKey || null,
             typeId: resolvedTypeId,
-            typeKey: resolvedTypeId ? tagsStore.types.find((t) => t.id === resolvedTypeId)?.key || null : null,
+            typeKey: typeKeyFor(tagsStore, resolvedTypeId),
             quantity: 1,
             pickedUp: defaultPickedUp.value,
             brands: [],
@@ -822,7 +734,7 @@ const handleCustomTag = (customTag) => {
     const tags = tagsByPhoto.value[photoId];
     const existing = tags.find((t) => t.custom && t.key === customTag.key);
     if (existing) {
-        existing.quantity = Math.min(100, existing.quantity + 1);
+        setCardQuantity(existing, existing.quantity + 1);
         return;
     }
 
@@ -849,7 +761,7 @@ const updateRecentTags = (tag) => {
 // Tag modifications
 const updateTagQuantity = (tagId, quantity) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (tag) tag.quantity = Math.max(1, Math.min(100, quantity));
+    if (tag) setCardQuantity(tag, quantity);
 };
 
 const setPickedUp = (tagId, value) => {
@@ -859,51 +771,17 @@ const setPickedUp = (tagId, value) => {
 
 const setTagType = (tagId, typeId) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (!tag) return;
-    tag.typeId = typeId;
-    tag.typeKey = typeId ? tagsStore.types.find((t) => t.id === typeId)?.key || null : null;
+    if (tag) setCardType(tag, typeId, tagsStore);
 };
 
 const addTagDetail = (tagId, detail) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (!tag) return;
-
-    if (detail.type === 'brand') {
-        if (!tag.brands) tag.brands = [];
-        if (!tag.brands.some((b) => b.id === detail.value.id)) {
-            tag.brands.push(detail.value);
-        }
-    } else if (detail.type === 'material') {
-        if (!tag.materials) tag.materials = [];
-        if (!tag.materials.some((m) => m.id === detail.value.id)) {
-            tag.materials.push(detail.value);
-        }
-    } else if (detail.type === 'object') {
-        if (!tag.objects) tag.objects = [];
-        if (!tag.objects.some((o) => o.id === detail.value.id)) {
-            tag.objects.push(detail.value);
-        }
-    } else if (detail.type === 'custom') {
-        if (!tag.customTags) tag.customTags = [];
-        if (!tag.customTags.includes(detail.value)) {
-            tag.customTags.push(detail.value);
-        }
-    }
+    if (tag) addCardDetail(tag, detail);
 };
 
 const removeTagDetail = (tagId, detail) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (!tag) return;
-
-    if (detail.type === 'brand') {
-        tag.brands = tag.brands?.filter((b) => b.id !== detail.value.id) || [];
-    } else if (detail.type === 'material') {
-        tag.materials = tag.materials?.filter((m) => m.id !== detail.value.id) || [];
-    } else if (detail.type === 'object') {
-        tag.objects = tag.objects?.filter((o) => o.id !== detail.value.id) || [];
-    } else if (detail.type === 'custom') {
-        tag.customTags = tag.customTags?.filter((c) => c !== detail.value) || [];
-    }
+    if (tag) removeCardDetail(tag, detail);
 };
 
 const removeTag = (tagId) => {
@@ -933,86 +811,7 @@ const submitTags = async () => {
     const submittedXp = calculateXP.value;
     const submittedTags = [...activeTags.value];
 
-    // Consolidate standalone custom tags into a single payload
-    const rawTags = activeTags.value;
-    const standaloneCustom = rawTags.filter((t) => t.custom && !t.cloId);
-    const nonCustom = rawTags.filter((t) => !t.custom || t.cloId);
-
-    const consolidated = [...nonCustom];
-    if (standaloneCustom.length > 0) {
-        // Merge all standalone custom tags into one entry
-        const allKeys = [];
-        const allBrands = [];
-        const allMaterials = [];
-        standaloneCustom.forEach((t) => {
-            allKeys.push(t.key);
-            if (t.brands?.length) allBrands.push(...t.brands);
-            if (t.materials?.length) allMaterials.push(...t.materials);
-            if (t.customTags?.length) allKeys.push(...t.customTags);
-        });
-        consolidated.push({
-            custom: true,
-            key: allKeys[0],
-            customTags: allKeys.slice(1),
-            brands: allBrands,
-            materials: allMaterials,
-            quantity: standaloneCustom[0].quantity,
-            pickedUp: standaloneCustom[0].pickedUp,
-        });
-    }
-
-    const tagsForUpload = consolidated.map((tag) => {
-        // Use CLO-based payload when we have a CLO id
-        if (tag.cloId) {
-            return {
-                category_litter_object_id: tag.cloId,
-                litter_object_type_id: tag.typeId || null,
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-                materials: tag.materials?.map((m) => m.id) || [],
-                brands: tag.brands?.map((b) => ({ id: b.id, quantity: b.quantity || 1 })) || [],
-                custom_tags: tag.customTags || [],
-            };
-        }
-
-        // Legacy format fallback for brand-only, material-only, custom-only
-        if (tag.custom) {
-            const payload = {
-                custom: true,
-                key: tag.key,
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-            // Include extras if the custom card has detail tags
-            if (tag.brands?.length) payload.brands = tag.brands.map((b) => ({ id: b.id, quantity: b.quantity || 1 }));
-            if (tag.materials?.length) payload.materials = tag.materials.map((m) => m.id);
-            if (tag.customTags?.length) payload.custom_tags = tag.customTags;
-            return payload;
-        } else if (tag.type === 'brand-only') {
-            return {
-                brand_only: true,
-                brand: { id: tag.brand.id, key: tag.brand.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else if (tag.type === 'material-only') {
-            return {
-                material_only: true,
-                material: { id: tag.material.id, key: tag.material.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else {
-            return {
-                object: { id: tag.object.id, key: tag.object.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-                materials: tag.materials?.map((m) => ({ id: m.id, key: m.key })) || [],
-                brands: tag.brands?.map((b) => ({ id: b.id, key: b.key })) || [],
-                custom_tags: tag.customTags || [],
-            };
-        }
-    });
+    const tagsForUpload = payloadFromCards(activeTags.value);
 
     try {
         if (isEditMode.value) {

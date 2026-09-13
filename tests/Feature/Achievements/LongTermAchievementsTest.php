@@ -29,11 +29,6 @@ class LongTermAchievementsTest extends TestCase
     {
         parent::setUp();
 
-        // Complete Redis flush
-        Redis::flushall();
-        Cache::flush();
-        TagKeyCache::forgetAll();
-
         $this->setupLocationData();
         $this->setupTagUniverse();
 
@@ -42,11 +37,6 @@ class LongTermAchievementsTest extends TestCase
         $this->seed(AchievementsSeeder::class);
 
         $this->engine = app(AchievementEngine::class);
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
     }
 
     private function setupLocationData(): void

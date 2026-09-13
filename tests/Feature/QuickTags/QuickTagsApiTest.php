@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\QuickTags;
 
+use App\Actions\QuickTags\SyncQuickTagsAction;
 use App\Models\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class QuickTagsApiTest extends TestCase
@@ -47,6 +49,63 @@ class QuickTagsApiTest extends TestCase
             'materials' => [],
             'brands' => [],
         ], $overrides);
+    }
+
+    /**
+     * A pure category move retires the pairing, not the object. The sync used to check only the
+     * object and so re-saved the retired pairing, restoring what the migration had emptied.
+     */
+    public function test_sync_repoints_a_quick_tag_whose_pairing_moved_to_another_category(): void
+    {
+        $user = User::factory()->create();
+        $objId = DB::table('litter_objects')->insertGetId(['key' => 'moved_' . uniqid()]);
+        $sourceCloId = $this->getCloId(DB::table('categories')->insertGetId(['key' => 'from_' . uniqid()]), $objId);
+        $targetCloId = $this->getCloId(DB::table('categories')->insertGetId(['key' => 'to_' . uniqid()]), $objId);
+        DB::table('category_litter_object')->where('id', $sourceCloId)->update(['merged_into_clo_id' => $targetCloId]);
+
+        $saved = app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($sourceCloId)]);
+
+        $this->assertSame($targetCloId, $saved->first()->clo_id, 'sync must not restore the retired pairing');
+    }
+
+    public function test_sync_carries_the_approved_type_when_repointing_a_split_object(): void
+    {
+        $user = User::factory()->create();
+        $catId = DB::table('categories')->insertGetId(['key' => 'cat_' . uniqid()]);
+        $newObjId = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $oldObjId = DB::table('litter_objects')->insertGetId([
+            'key' => 'old_' . uniqid(), 'retired_at' => now(), 'merged_into_id' => $newObjId,
+        ]);
+        $oldCloId = $this->getCloId($catId, $oldObjId);
+        $newCloId = $this->getCloId($catId, $newObjId);
+        $typeId = $this->createType();
+        DB::table('category_object_types')->insert(['category_litter_object_id' => $newCloId, 'litter_object_type_id' => $typeId]);
+        DB::table('category_litter_object')->where('id', $oldCloId)->update(['merged_into_clo_id' => $newCloId, 'merged_into_type_id' => $typeId]);
+
+        $saved = app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($oldCloId)]);
+
+        $this->assertSame($newCloId, $saved->first()->clo_id);
+        $this->assertSame($typeId, $saved->first()->type_id, 'sync must keep the approved subtype');
+    }
+
+    public function test_sync_drops_a_preset_type_the_survivor_does_not_approve(): void
+    {
+        $user = User::factory()->create();
+        $catId = DB::table('categories')->insertGetId(['key' => 'cat_' . uniqid()]);
+        $newObjId = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $oldObjId = DB::table('litter_objects')->insertGetId([
+            'key' => 'old_' . uniqid(), 'retired_at' => now(), 'merged_into_id' => $newObjId,
+        ]);
+        $oldCloId = $this->getCloId($catId, $oldObjId);
+        $newCloId = $this->getCloId($catId, $newObjId);
+        $oldOnlyType = $this->createType();
+        DB::table('category_object_types')->insert(['category_litter_object_id' => $oldCloId, 'litter_object_type_id' => $oldOnlyType]);
+        DB::table('category_litter_object')->where('id', $oldCloId)->update(['merged_into_clo_id' => $newCloId]);
+
+        $saved = app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($oldCloId, ['type_id' => $oldOnlyType])]);
+
+        $this->assertSame($newCloId, $saved->first()->clo_id);
+        $this->assertNull($saved->first()->type_id, 'a type not approved on the survivor must not ride along');
     }
 
     public function test_guest_cannot_access_quick_tags(): void
@@ -382,6 +441,10 @@ class QuickTagsApiTest extends TestCase
         $user = User::factory()->create();
         $clo = $this->createClo();
         $typeId = $this->createType();
+        DB::table('category_object_types')->insert([
+            'category_litter_object_id' => $clo,
+            'litter_object_type_id' => $typeId,
+        ]);
 
         $this->actingAs($user)
             ->putJson('/api/v3/user/quick-tags', [
@@ -646,5 +709,122 @@ class QuickTagsApiTest extends TestCase
         $this->assertCount(2, $brands);
         $this->assertEquals($brand1, $brands[0]['id']);
         $this->assertEquals(3, $brands[1]['quantity']);
+    }
+
+    // ── Retirement remount ───────────────────────────────────────────────────
+
+    private function retireObjectBehind(int $cloId, ?int $mergedIntoId = null): void
+    {
+        $objectId = DB::table('category_litter_object')->where('id', $cloId)->value('litter_object_id');
+
+        DB::table('litter_objects')->where('id', $objectId)->update([
+            'retired_at' => now(),
+            'merged_into_id' => $mergedIntoId,
+        ]);
+    }
+
+    public function test_sync_remounts_a_preset_on_a_retired_object_onto_the_survivor(): void
+    {
+        $user = User::factory()->create();
+        $catId = DB::table('categories')->insertGetId(['key' => 'smoking_' . uniqid()]);
+        $retiredObj = DB::table('litter_objects')->insertGetId(['key' => 'old_' . uniqid()]);
+        $survivorObj = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $retiredClo = $this->getCloId($catId, $retiredObj);
+        $survivorClo = $this->getCloId($catId, $survivorObj);
+
+        $this->retireObjectBehind($retiredClo, $survivorObj);
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($retiredClo)],
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('user_quick_tags', [
+            'user_id' => $user->id,
+            'clo_id' => $survivorClo,
+        ]);
+        $this->assertDatabaseMissing('user_quick_tags', [
+            'user_id' => $user->id,
+            'clo_id' => $retiredClo,
+        ]);
+    }
+
+    public function test_sync_cannot_create_a_missing_survivor_clo(): void
+    {
+        $user = User::factory()->create();
+        $keptClo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($keptClo)],
+            ])->assertOk();
+
+        $catId = DB::table('categories')->insertGetId(['key' => 'smoking_' . uniqid()]);
+        $retiredObj = DB::table('litter_objects')->insertGetId(['key' => 'old_' . uniqid()]);
+        $survivorObj = DB::table('litter_objects')->insertGetId(['key' => 'new_' . uniqid()]);
+        $retiredClo = $this->getCloId($catId, $retiredObj);
+
+        $this->retireObjectBehind($retiredClo, $survivorObj);
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($retiredClo)],
+            ])
+            ->assertStatus(422);
+
+        $this->assertDatabaseMissing('category_litter_object', [
+            'category_id' => $catId,
+            'litter_object_id' => $survivorObj,
+        ]);
+
+        $rows = DB::table('user_quick_tags')->where('user_id', $user->id)->get();
+        $this->assertCount(1, $rows);
+        $this->assertSame($keptClo, (int) $rows->first()->clo_id);
+    }
+
+    /**
+     * Retired with no survivor still 422s, and that refusal is ahead of the
+     * delete so a bulk-replace cannot wipe the user's existing presets.
+     */
+    public function test_action_refuses_a_retired_clo_without_a_survivor_without_destroying_existing_presets(): void
+    {
+        $user = User::factory()->create();
+        $keptClo = $this->createClo();
+        $retiredClo = $this->createClo();
+
+        $this->actingAs($user)
+            ->putJson('/api/v3/user/quick-tags', [
+                'tags' => [$this->makeTagPayload($keptClo)],
+            ])->assertOk();
+
+        $this->retireObjectBehind($retiredClo);
+
+        try {
+            app(SyncQuickTagsAction::class)->run($user, [$this->makeTagPayload($retiredClo)]);
+            $this->fail('Expected the action to refuse a retired CLO with no survivor.');
+        } catch (ValidationException $e) {
+            // expected
+        }
+
+        $rows = DB::table('user_quick_tags')->where('user_id', $user->id)->get();
+
+        $this->assertCount(1, $rows);
+        $this->assertSame($keptClo, (int) $rows->first()->clo_id);
+    }
+    public function test_an_unapproved_type_on_an_active_pairing_does_not_replace_presets(): void
+    {
+        $user = User::factory()->create();
+        $clo = $this->createClo();
+        $this->actingAs($user)->putJson('/api/v3/user/quick-tags', [
+            'tags' => [$this->makeTagPayload($clo)],
+        ])->assertOk();
+        $before = DB::table('user_quick_tags')->where('user_id', $user->id)->get()->toJson();
+
+        $this->putJson('/api/v3/user/quick-tags', [
+            'tags' => [$this->makeTagPayload($clo, ['type_id' => $this->createType()])],
+        ])->assertUnprocessable();
+
+        $this->assertSame($before, DB::table('user_quick_tags')->where('user_id', $user->id)->get()->toJson());
     }
 }

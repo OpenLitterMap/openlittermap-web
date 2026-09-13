@@ -12,6 +12,114 @@ use Tests\TestCase;
 
 class GenerateTagsSeederTest extends TestCase
 {
+    /**
+     * The v5 migration parked ~46k items on two camelCase keys that were never in TagsConfig, so
+     * neither pairing had a pivot. Object keys are snake_case singular, so `plastic_bag` and
+     * `random_litter` are the surviving keys; the camelCase objects are deprecated into them by
+     * `olm:migrate-tag`, which keeps the retired object and the `merged_into_id` trail rather than
+     * rewriting what the old rows said. Seeding is what makes the survivors resolvable.
+     *
+     * @test
+     */
+    public function test_it_seeds_the_snake_case_survivors_for_the_camel_case_keys(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        CategoryObject::flushResolverCache();
+
+        $category = Category::where('key', CategoryKey::Other->value)->firstOrFail();
+
+        foreach (['plastic_bag', 'random_litter'] as $key) {
+            $object = LitterObject::where('key', $key)->firstOrFail();
+
+            $this->assertNotNull(
+                CategoryObject::resolveId($category->id, $object->id),
+                "{$key} must resolve to a CLO under other"
+            );
+        }
+    }
+
+    /**
+     * `straws` and `balloons` carry rows under marine as well as their home category. Retiring
+     * either object sweeps every category at once, so the marine pairing needs a declared pivot
+     * before the migration runs — otherwise the command would invent one. The reviewer's note on
+     * both marine entries says exactly this: add a canonical pivot rather than collapsing them
+     * into generic `other`.
+     *
+     * @test
+     */
+    public function test_it_seeds_the_marine_pairings_needed_before_the_sweep(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        CategoryObject::flushResolverCache();
+
+        $marine = Category::where('key', CategoryKey::Marine->value)->firstOrFail();
+
+        foreach (['straw', 'balloon'] as $key) {
+            $object = LitterObject::where('key', $key)->firstOrFail();
+
+            $this->assertNotNull(
+                CategoryObject::resolveId($marine->id, $object->id),
+                "marine/{$key} must resolve to a CLO"
+            );
+        }
+    }
+
+    /**
+     * The manifest proposed folding `mediumplastics` into `macroplastics`, which would have
+     * collapsed the middle size class into the largest one — and into an object holding a fifth of
+     * its data. The size classes are the measurement, so the middle one gets its own object rather
+     * than being merged away.
+     *
+     * @test
+     */
+    public function test_it_seeds_the_middle_marine_size_class(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        CategoryObject::flushResolverCache();
+
+        $marine = Category::where('key', CategoryKey::Marine->value)->firstOrFail();
+
+        foreach (['macroplastics', 'medium_plastic', 'microplastics'] as $key) {
+            $object = LitterObject::where('key', $key)->firstOrFail();
+
+            $this->assertNotNull(
+                CategoryObject::resolveId($marine->id, $object->id),
+                "marine/{$key} must resolve to a CLO"
+            );
+        }
+    }
+
+    /**
+     * Marine is a context, not a product class — a bottle found on a beach is both a bottle and
+     * marine litter, so the pairing is declared rather than the tag being moved into alcohol.
+     * Same for industrial plastic. Declaring the pivot resolves these with no tag rows moved.
+     *
+     * @test
+     */
+    public function test_it_seeds_the_context_pairings_that_were_kept_in_place(): void
+    {
+        $this->seed(GenerateTagsSeeder::class);
+        CategoryObject::flushResolverCache();
+
+        $expected = [
+            CategoryKey::Marine->value => ['bag', 'bottle', 'lighters'],
+            CategoryKey::Industrial->value => ['plastic'],
+        ];
+
+        foreach ($expected as $categoryKey => $objectKeys) {
+            $category = Category::where('key', $categoryKey)->firstOrFail();
+
+            foreach ($objectKeys as $objectKey) {
+                $object = LitterObject::where('key', $objectKey)->firstOrFail();
+
+                $this->assertNotNull(
+                    CategoryObject::resolveId($category->id, $object->id),
+                    "{$categoryKey}/{$objectKey} must resolve to a CLO"
+                );
+            }
+        }
+    }
+
     /** @test */
     public function test_it_seeds_categories(): void
     {

@@ -920,7 +920,6 @@
             "plastic": "Unidentified Plastic",
             "dump": "Illegal Dumping",
             "metal": "Metal Object",
-            "plastic_bags": "Plastic Bags",
             "election_posters": "Election Posters",
             "forsale_posters": "For Sale Posters",
             "books": "Books",
@@ -953,7 +952,8 @@
             "graffiti": "Graffiti",
             "mattress": "Mattress",
             "paintCan": "Paint Can",
-            "umbrella": "Umbrella"
+            "umbrella": "Umbrella",
+            "plastic_bag": "Plastic Bag"
         },
         "presence": {
             "picked-up": "I picked it up!",

@@ -24,21 +24,12 @@ class RedisMetricsCollectorLocationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Redis::flushall();
-        TagKeyCache::forgetAll();
 
         // Seed brands for tests that need them
         $this->seed(GenerateBrandsSeeder::class);
 
         // Preload tag cache
         TagKeyCache::preloadAll();
-    }
-
-    protected function tearDown(): void
-    {
-        Redis::flushall();
-        TagKeyCache::forgetAll();
-        parent::tearDown();
     }
 
     /**

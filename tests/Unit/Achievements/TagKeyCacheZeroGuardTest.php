@@ -6,7 +6,6 @@ namespace Tests\Unit\Achievements;
 use App\Enums\Dimension;
 use App\Services\Achievements\Tags\TagKeyCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
@@ -15,18 +14,8 @@ class TagKeyCacheZeroGuardTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Start from a completely cold state
-        TagKeyCache::forgetAll();
-        Cache::flush();
-        Redis::flushall();
-
-        // *** Intentionally DO NOT pre-insert 'alcohol' ***
-        // We want getOrCreateId() to exercise the full upsert path.
-    }
+    // - The base TestCase starts every test cold; 'alcohol' is intentionally NOT pre-inserted so
+    //   getOrCreateId() exercises the full upsert path.
 
     /** @test */
     public function get_or_create_id_never_returns_zero_and_is_consistent(): void

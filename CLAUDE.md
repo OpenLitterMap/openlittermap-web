@@ -39,9 +39,9 @@ php artisan horizon
 
 ## Tech Stack
 
-- **Backend:** PHP 8.2, Laravel 11
+- **Backend:** PHP 8.3, Laravel 11
 - **Frontend:** Vue 3 (Composition API + `<script setup>`), Pinia, Vue Router 4, Tailwind CSS 3.4, Vite 6
-- **Database:** MySQL 5.7+, Redis 7+
+- **Database:** MySQL 8.0 (CI), Redis 7+
 - **Auth:** Laravel Passport (OAuth2) + Sanctum
 - **Storage:** AWS S3 (prod), MinIO (dev)
 - **Real-time:** Laravel Reverb / Pusher + Echo
@@ -109,8 +109,8 @@ tests/
 
 ## CI (GitHub Actions)
 
-Runs on push to `master`, `staging`, `upgrade/tagging-2025` and PRs.
-Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, phpunit.
+Pipeline: PHP 8.3, Node 22, MySQL 8.0, Redis 7 — composer install, migrations, npm ci, npm run build, PHPUnit (including the pure ESM editor bridge).
+Push and PR target triggers: `master` and `upgrade/tagging-2025`. Release candidates on other branches need a PR targeting one of these branches.
 
 ## Current State (v5 — shipped to `master`)
 
@@ -138,7 +138,8 @@ Built by a single developer over 17 years.
 - `VerificationStatus` enum cast is on Photo model — use `->value` for `>=`/`<` comparisons, direct enum for `===`
 - `Photo.geom` column is binary spatial data — hidden from JSON via `$hidden` array
 - `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns. All three (`category_litter_object_id`, `category_id`, `litter_object_id`) are **nullable** — extra-tag-only PhotoTags have null CLO
-- `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
+- `photo_tags.category_litter_object_id` is **deprecated — never read it**. A null there does NOT mean extra-tag-only: ~189k object tags carry null because the v5 migration wrote them before their pivot existed. `category_id` + `litter_object_id` are the source of truth; derive the CLO with `CategoryObject::resolveId()`, or in SQL join `ON clo.category_id = pt.category_id AND clo.litter_object_id = pt.litter_object_id`. Use `litter_object_id IS NULL` to detect extra-tag-only. The column is still written on create; API requests still accept a CLO id. Anything creating a pivot then resolving in the same process must call `CategoryObject::flushResolverCache()`. Known exceptions that still touch the column: `olm:verify-tag-integrity` reads it deliberately to detect stale pointers, `PhotoTag::categoryObject()` remains defined for that repair path, raw `PhotoTag` model output still serialises the column (transformed API payloads derive it), and `olm:migrate-tag` backfills it on rows already sitting on the survivor
+- `AddTagsToPhotoAction` preserves explicit categories. For an active object without a category, inference requires exactly one active, selectable CLO. Editors send the recorded category when no CLO ID is available. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
 - Replace tags (`PUT /api/v3/tags`) accepts empty `tags: []` to clear all tags from a photo
 - `TagsConfig` provides helper methods: `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()` — use these instead of hardcoding lists
 - Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only
@@ -197,6 +198,7 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/PostMigrationCleanup.md` — Post-migration cleanup tasks (pending v4 code removal; links the v5 migration tooling)
 - `readme/SchoolPipeline.md` — School approval pipeline (critical data flow)
 - `readme/Tags.md` — Tagging system and categories
+- `readme/PostTagMigrationClean.md` — Litter object retirement (`retired_at`/`merged_into_id`, `olm:migrate-tag`, the production write-freeze runbook)
 - `readme/Teams.md` — Teams architecture, permissions, safeguarding, API routes
 - `readme/Upload.md` — Photo upload pipeline
 - `readme/Admin.md` — Admin verification system, queue UI, roles/permissions
@@ -215,19 +217,43 @@ Fully deployed. 1010+ tests passing. Facilitator queue (3-panel admin-like UI fo
 - `readme/ExportData.md` — CSV data export system (user/team/location exports, column layout, date filters, S3 pipeline)
 - `readme/ViteUpgradePlan.md` — Vite 8 / Rolldown upgrade plan (why the 6→8 bump was reverted, CJS/UMD interop root cause, at-risk deps, fix options, de-risk path, readiness checklist)
 
-## Daily Changelog
-After every change in a session, append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (create the file if it doesn't exist for today's date). Group entries by session. This is the running record of all work done each day.
+## Changelog
 
-### `## Public` block (what OLMbot posts)
-A changelog file MAY include a single `## Public` block — curated, plain-language release notes that the `twitter:changelog` bot posts to the social feeds (Bluesky; X gated off). Rules:
-- **Audience:** OLM users, educators/schools, the citizen-science community, funders. NOT contributors — they read the PR. No file paths, class/function names, route/throttle internals. If a teacher couldn't follow it, rewrite it.
-- **0–3 plain-language points written as tight prose** (not a bullet list). The whole post must fit ONE Bluesky post (300 chars) — write to that ceiling. If it genuinely needs more it threads, but one post under 300 is the default unit.
-- **Lead with what matters most to an observer:** privacy/safeguarding and access changes first, usability/speed after.
-- **One `## Public` per release, on the day the release lands.** A multi-day feature gets a single public post on its completion day — do NOT fragment it across each day the work spanned (that re-buries the headline change). When the release day arrives, consolidate the user-facing story into one block and leave the earlier days' blocks absent.
-- **Silence is correct and expected.** Most days are internal-only — leave the block absent and the bot posts nothing. Only add it when something is genuinely user-facing. The detailed session entries above stay as the internal record regardless.
-- The block runs from the `## Public` heading to the next heading; place it directly under the `# YYYY-MM-DD` title. See `readme/changelog/2026-06-27.md`, `2026-06-28.md`, `2026-05-04.md` for worked examples.
+Use `readme/changelog/YYYY-MM-DD.md`, dated when the deliverable lands.
+Deliverables landing on the same day share a file. Keep multi-day work
+together; do not create daily progress entries.
 
-The mobile app (react-native) repo follows the same `## Public` convention in its own changelog; the bot fetches that file and adds a second post on days both have content (mobile after web). Mobile blocks self-label (e.g. "OpenLitterMap app update 📱…").
+### Change entries
+
+Add one `## Session — <short title> (vX.Y.Z)` section per deliverable.
+
+- Write one bullet per meaningful change, usually 15 words or fewer.
+- Describe what changed in simple, concrete language.
+- Combine related changes and describe the final result.
+- Put the version in the heading only.
+- Omit rationale, implementation details, measurements, file paths,
+  tests, and review notes.
+- For breaking changes, migrations, or manual deployment steps, include
+  the required action and distinguish automatic changes from separate steps.
+- Put supporting detail in the relevant `readme/*.md` document; link once
+  when useful.
+- Record completed changes only.
+
+### Public notes
+
+For a user-facing release, add one `## Public` block directly below the
+date title on release day.
+
+- Summarise the changes in 1–3 short, plain-language sentences.
+- Keep the entire block within 300 characters, including any links.
+- Lead with the most significant change.
+- Avoid jargon, version numbers, implementation details, and promotional language.
+- Include only changes available to users that day.
+- Combine the day's released changes into one block.
+- Omit the block for internal-only work.
+
+The mobile repo follows the same convention. Its public block must identify
+itself as a mobile update within the same character limit.
 
 ## Versioning
 - The single source of truth for the app version is `package.json` `"version"` field
@@ -237,13 +263,13 @@ The mobile app (react-native) repo follows the same `## Public` convention in it
 - **Minor bump** (`5.0.25` → `5.1.0`): new user-facing features (new page, new command, new API endpoint, new UI component, new email campaign, new integration). Resets patch to 0
 - **Major bump**: reserved for full platform rewrites (v5 → v6). Only bump on explicit user request
 - If unsure whether a change is patch or minor, **ask the user**
-- Include the version number in each `readme/changelog/YYYY-MM-DD.md` entry
+- Include the version number in each deliverable's changelog section heading
 
 ## BOOP
 When the user says "BOOP", perform all of the following:
 1. Determine if the change is a new feature (minor bump) or a fix/improvement (patch bump). Ask if unsure
 2. Bump the appropriate version in `package.json`
-3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date). If the work is user-facing, also add/extend the day's `## Public` block (see Daily Changelog) — otherwise leave it absent
+3. Append a one-line entry to `readme/changelog/YYYY-MM-DD.md` (today's date). If the work is user-facing, also add/extend the day's `## Public` block (see Changelog) — otherwise leave it absent
 4. Update any readme docs (`readme/*.md`) affected by the changes
 5. Update any skills files affected by the changes
 4. Update any skills files affected by the changes

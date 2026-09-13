@@ -167,6 +167,7 @@ class AdminController extends Controller
 
         // Replace tags inside a transaction
         DB::transaction(function () use ($request, $photo) {
+            $photo = Photo::whereKey($photo->id)->lockForUpdate()->firstOrFail();
             // Delete existing tags
             PhotoTag::where('photo_id', $photo->id)->delete();
 
