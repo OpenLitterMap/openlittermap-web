@@ -54,23 +54,23 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        // - The picker uses this category list and category_objects below.
-        // - Hide retired CLOs in both, e.g. an old other CLO moved to dumping.
-        $litterObjects = LitterObject::with(['categories' => fn ($q) => $q
-                ->select('categories.id', 'categories.key')
-                ->wherePivotNull('merged_into_clo_id')])
-            ->whereHas('categories', fn (Builder $q) => $q->whereNull('category_litter_object.merged_into_clo_id'))
+        // - The picker lists an object under its offerable categories only; category_objects below uses the same rule.
+        $litterObjects = LitterObject::with(['offerableCategories' => fn ($q) => $q->select('categories.id', 'categories.key')])
+            ->whereHas('offerableCategories')
             ->active()
             ->select('id', 'key')
             ->orderBy('key')
             ->get()
-            ->map(function (LitterObject $obj) use ($objectTypesMap, $objectMaterialsMap) {
-                $data = $obj->toArray();
-                $data['types'] = $objectTypesMap[$obj->key] ?? [];
-                $data['suggested_materials'] = $objectMaterialsMap[$obj->key] ?? [];
-
-                return $data;
-            });
+            ->map(fn (LitterObject $obj) => [
+                'id' => $obj->id,
+                'key' => $obj->key,
+                'categories' => $obj->offerableCategories->map(fn (Category $category) => [
+                    'id' => $category->id,
+                    'key' => $category->key,
+                ])->all(),
+                'types' => $objectTypesMap[$obj->key] ?? [],
+                'suggested_materials' => $objectMaterialsMap[$obj->key] ?? [],
+            ]);
 
         $materials = Materials::select('id', 'key')->orderBy('key')->get();
 
@@ -79,7 +79,7 @@ class GetTagsController extends Controller
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
         $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')
-            ->active()
+            ->offerable()
             ->whereHas('litterObject', fn (Builder $q) => $q->active())
             ->get();
 
@@ -109,7 +109,7 @@ class GetTagsController extends Controller
         $searchQuery   = $request['search'] ?? null;
 
         $query = CategoryObject::query()
-            ->active()
+            ->offerable()
             ->whereHas('litterObject', fn (Builder $q) => $q->active());
 
         if ($categoryKey) {

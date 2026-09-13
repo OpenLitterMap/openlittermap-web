@@ -28,43 +28,30 @@ function getObjectXp(tag) {
  * Calculate XP for a single tag (excludes upload bonus).
  */
 export function calculateTagXp(tag) {
-    const qty = tag.quantity || 1;
-    const objectXp = getObjectXp(tag);
-    let xp = 0;
+    return xpParts(tag).reduce((total, part) => total + part.xp, 0);
+}
 
-    if (tag.type === 'brand-only') {
-        xp += qty * 3;
-    } else if (tag.type === 'material-only') {
-        xp += qty * 2;
-    } else if (tag.custom) {
-        xp += qty; // primary custom tag key
-        if (tag.brands?.length) {
-            tag.brands.forEach((b) => (xp += (b.quantity || 1) * 3));
-        }
-        if (tag.materials?.length) {
-            xp += tag.materials.length * qty * 2;
-        }
-        if (tag.customTags?.length) {
-            xp += tag.customTags.length * qty;
-        }
-    } else {
-        xp += qty * objectXp;
-        if (tag.brands?.length) {
-            tag.brands.forEach((b) => (xp += (b.quantity || 1) * 3));
-        }
-        if (tag.materials?.length) {
-            xp += tag.materials.length * qty * 2;
-        }
-        if (tag.customTags?.length) {
-            xp += tag.customTags.length * qty;
-        }
+// - Count every extra, including extras attached to a standalone brand or material.
+// - Brand quantities are independent; materials and custom tags use the observation quantity.
+function xpParts(tag) {
+    const qty = tag.quantity ?? 1;
+    const parts = [];
+    if (tag.object) parts.push({ label: formatKey(tag.object.key), xp: qty * getObjectXp(tag) });
+    const brands = [...(tag.brands || [])];
+    if (tag.type === 'brand-only') brands.unshift({ ...tag.brand, quantity: tag.brand.quantity ?? qty });
+    const materials = [...(tag.materials || [])];
+    if (tag.type === 'material-only') materials.unshift(tag.material);
+    const customs = [...(tag.customTags || [])];
+    if (tag.custom) customs.unshift(tag.key);
+    for (const brand of new Map(brands.map((item) => [item.id, item])).values()) {
+        parts.push({ label: formatKey(brand.key) || 'Brand', xp: (brand.quantity ?? 1) * 3 });
     }
-
-    if (tag.pickedUp && !tag.custom && tag.type !== 'brand-only' && tag.type !== 'material-only') {
-        xp += qty * 5;
+    for (const material of new Map(materials.map((item) => [item.id, item])).values()) {
+        parts.push({ label: formatKey(material.key) || 'Material', xp: qty * 2 });
     }
-
-    return xp;
+    for (const key of new Set(customs)) parts.push({ label: key, xp: qty });
+    if (tag.object && tag.pickedUp === true) parts.push({ label: 'Picked up', xp: qty * 5 });
+    return parts;
 }
 
 /**
@@ -78,149 +65,18 @@ export function calculateTotalXp(tags) {
 
 /**
  * Get a compact breakdown string for a single tag (no upload bonus).
- * e.g. "×1 · picked up +5" or "×1 · 2 materials (+4) · picked up +5"
+ * e.g. "×2 · Butts (+2) · Marlboro (+3) · Picked up (+10)"
  */
 export function getTagBreakdownParts(tag) {
-    const parts = [];
-    const qty = tag.quantity || 1;
-    const objectXp = getObjectXp(tag);
-
-    if (tag.type === 'brand-only') {
-        parts.push(`×${qty}`);
-        parts.push(`brand (+${qty * 3})`);
-    } else if (tag.type === 'material-only') {
-        parts.push(`×${qty}`);
-        parts.push(`material (+${qty * 2})`);
-    } else if (tag.custom) {
-        parts.push(`×${qty}`);
-        parts.push(`custom (+${qty})`);
-
-        const brandCount = tag.brands?.length || 0;
-        if (brandCount > 0) {
-            let brandXp = 0;
-            tag.brands.forEach((b) => (brandXp += (b.quantity || 1) * 3));
-            parts.push(`${brandCount} brand${brandCount > 1 ? 's' : ''} (+${brandXp})`);
-        }
-
-        const matCount = tag.materials?.length || 0;
-        if (matCount > 0) {
-            parts.push(`${matCount} material${matCount > 1 ? 's' : ''} (+${matCount * qty * 2})`);
-        }
-
-        const customCount = tag.customTags?.length || 0;
-        if (customCount > 0) {
-            parts.push(`${customCount} more custom (+${customCount * qty})`);
-        }
-    } else {
-        if (objectXp > 1) {
-            parts.push(`×${qty} @ +${objectXp}`);
-        } else {
-            parts.push(`×${qty}`);
-        }
-
-        const brandCount = tag.brands?.length || 0;
-        if (brandCount > 0) {
-            let brandXp = 0;
-            tag.brands.forEach((b) => (brandXp += (b.quantity || 1) * 3));
-            parts.push(`${brandCount} brand${brandCount > 1 ? 's' : ''} (+${brandXp})`);
-        }
-
-        const matCount = tag.materials?.length || 0;
-        if (matCount > 0) {
-            parts.push(`${matCount} material${matCount > 1 ? 's' : ''} (+${matCount * qty * 2})`);
-        }
-
-        const customCount = tag.customTags?.length || 0;
-        if (customCount > 0) {
-            parts.push(`${customCount} custom (+${customCount * qty})`);
-        }
-    }
-
-    if (tag.pickedUp && !tag.custom && tag.type !== 'brand-only' && tag.type !== 'material-only') {
-        parts.push(`picked up (+${qty * 5})`);
-    }
-
-    return parts;
+    return [`×${tag.quantity ?? 1}`, ...xpParts(tag).map((part) => `${part.label} (+${part.xp})`)];
 }
 
 /**
  * Get breakdown lines for the header hover panel.
- * Returns [{ label, xp }] — one line per tag + aggregated extras.
+ * Returns [{ label, xp }] — one line per object, extra and collection bonus across all tags.
  */
 export function getHeaderBreakdown(tags) {
-    const lines = [];
-
-    tags.forEach((tag) => {
-        const qty = tag.quantity || 1;
-        const objectXp = getObjectXp(tag);
-
-        if (tag.type === 'brand-only') {
-            lines.push({ label: `${formatKey(tag.brand?.key)} (×${qty})`, xp: qty * 3 });
-        } else if (tag.type === 'material-only') {
-            lines.push({ label: `${formatKey(tag.material?.key)} (×${qty})`, xp: qty * 2 });
-        } else if (tag.custom) {
-            lines.push({ label: `"${tag.key}" (×${qty})`, xp: qty });
-        } else {
-            lines.push({ label: `${formatKey(tag.object?.key)} (×${qty})`, xp: qty * objectXp });
-        }
-    });
-
-    // Aggregate materials across all standard object tags
-    let totalMaterialXp = 0;
-    let totalMaterialCount = 0;
-    tags.forEach((t) => {
-        if (t.materials?.length && t.type !== 'material-only') {
-            totalMaterialCount += t.materials.length;
-            totalMaterialXp += t.materials.length * (t.quantity || 1) * 2;
-        }
-    });
-    if (totalMaterialCount > 0) {
-        lines.push({ label: `Materials (${totalMaterialCount})`, xp: totalMaterialXp });
-    }
-
-    // Aggregate brands
-    let totalBrandXp = 0;
-    let totalBrandCount = 0;
-    tags.forEach((t) => {
-        if (t.brands?.length && t.type !== 'brand-only') {
-            t.brands.forEach((b) => {
-                totalBrandCount++;
-                totalBrandXp += (b.quantity || 1) * 3;
-            });
-        }
-    });
-    if (totalBrandCount > 0) {
-        lines.push({ label: `Brands (${totalBrandCount})`, xp: totalBrandXp });
-    }
-
-    // Aggregate custom tags
-    let totalCustomXp = 0;
-    let totalCustomCount = 0;
-    tags.forEach((t) => {
-        if (t.customTags?.length) {
-            totalCustomCount += t.customTags.length;
-            totalCustomXp += t.customTags.length * (t.quantity || 1);
-        }
-    });
-    if (totalCustomCount > 0) {
-        lines.push({ label: `Custom tags (${totalCustomCount})`, xp: totalCustomXp });
-    }
-
-    // Aggregate picked up — per-object quantity, excludes brand-only/material-only/custom
-    let pickedUpXp = 0;
-    let pickedUpObjects = 0;
-    tags.forEach((t) => {
-        if (t.pickedUp && !t.custom && t.type !== 'brand-only' && t.type !== 'material-only') {
-            const qty = t.quantity || 1;
-            pickedUpXp += qty * 5;
-            pickedUpObjects += qty;
-        }
-    });
-    if (pickedUpObjects > 0) {
-        lines.push({ label: `Picked up (${pickedUpObjects} object${pickedUpObjects > 1 ? 's' : ''})`, xp: pickedUpXp });
-    }
-
-    return lines;
+    return tags.flatMap((tag) => xpParts(tag));
 }
 
 /**

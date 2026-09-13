@@ -72,6 +72,15 @@ class LitterObject extends Model
     }
 
     /**
+     * - Categories this object may be offered in: pairings that are not redirected and are selectable.
+     * - Historical pairings are excluded here but still resolve through categories().
+     */
+    public function offerableCategories(): BelongsToMany
+    {
+        return $this->categories()->wherePivotNull('merged_into_clo_id')->wherePivot('is_selectable', true);
+    }
+
+    /**
      * Do we need to call the function materials() to get the materials?
      *
      * @return mixed

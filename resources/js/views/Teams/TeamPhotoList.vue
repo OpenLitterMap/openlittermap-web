@@ -169,10 +169,8 @@ const memberStats = computed(() => store.memberStats);
 const onApplyFilters = (filters) => {
     currentFilters.value = filters;
 
-    // Extract status for the store's filter state
-    if (filters.status) {
-        store.setFilter(filters.status);
-    }
+    // - All photos must reset a pending filter left by the facilitator queue.
+    store.setFilter(filters.status || 'all');
 
     store.fetchPhotos(props.teamId, 1, filters);
 };
@@ -232,6 +230,9 @@ const verificationLabel = (v) => VERIFICATION_LABELS[v] ?? 'Unknown';
 const verificationClass = (v) => VERIFICATION_CLASSES[v] ?? VERIFICATION_CLASSES[0];
 
 onMounted(() => {
+    // - Reopening Photos resets the controls, so reload results with the same defaults.
+    // - Example: a previous tag filter must not hide photos after its field becomes empty.
+    onApplyFilters({ status: 'all' });
     // Load member stats for the member filter dropdown
     if (store.memberStats.length === 0) {
         store.fetchMemberStats(props.teamId);

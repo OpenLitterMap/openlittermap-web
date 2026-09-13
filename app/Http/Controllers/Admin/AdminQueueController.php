@@ -109,7 +109,7 @@ class AdminQueueController extends Controller
                 ),
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
-                'picked_up' => $photoTag->picked_up,
+                'picked_up' => $photoTag->picked_up === null ? null : (bool) $photoTag->picked_up,
             ];
 
             if ($photoTag->category) {

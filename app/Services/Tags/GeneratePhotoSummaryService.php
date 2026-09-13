@@ -69,14 +69,13 @@ class GeneratePhotoSummaryService
             'custom_tags' => [],
         ];
 
-        // XP tracking
+        // XP tracking — objects are priced per observation (their type can change the weight); extras per id.
+        $objectXp = 0;
         $xpTags = [
-            'objects' => [],
             'materials' => [],
             'brands' => [],
             'custom_tags' => [],
         ];
-        $objectIdToKey = [];
 
         foreach ($photoTags as $pt) {
             $qty = $pt->quantity;
@@ -96,15 +95,19 @@ class GeneratePhotoSummaryService
             }
             if ($objectId > 0 && $pt->object) {
                 $keyMap['objects'][$objectId] = $pt->object->key;
-                $objectIdToKey[$objectId] = $pt->object->key;
             }
             if ($typeId && $pt->type) {
                 $keyMap['types'][$typeId] = $pt->type->key;
             }
 
-            // XP: objects
+            // - Object XP with the type weight, e.g. dumping + small earns 10 per item; +5 per item when collected.
             if ($objectId > 0) {
-                $xpTags['objects'][$objectId] = ($xpTags['objects'][$objectId] ?? 0) + $qty;
+                $objectXp += $qty * ($pt->object
+                    ? XpScore::getObjectXp($pt->object->key, $pt->type?->key)
+                    : XpScore::Object->xp());
+                if ($pt->picked_up) {
+                    $objectXp += $qty * XpScore::PickedUp->xp();
+                }
             }
 
             // Process extras
@@ -184,15 +187,7 @@ class GeneratePhotoSummaryService
             $summary['keys'] = $keyMap;
         }
 
-        // Calculate XP
-        $xp = XpCalculator::calculateFromTags($xpTags, $objectIdToKey);
-
-        // +5 XP per object that was picked up — per-tag granularity
-        foreach ($photoTags as $pt) {
-            if ($pt->picked_up && $pt->litter_object_id) {
-                $xp += XpScore::PickedUp->xp() * $pt->quantity;
-            }
-        }
+        $xp = $objectXp + XpCalculator::calculateFromTags($xpTags);
 
         // Generate result_string for map display
         $resultString = '';

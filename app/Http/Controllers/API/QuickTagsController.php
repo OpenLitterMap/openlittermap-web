@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Litter\Tags\CategoryObject;
 use App\Actions\QuickTags\SyncQuickTagsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SyncQuickTagsRequest;
@@ -66,6 +67,7 @@ class QuickTagsController extends Controller
             ->leftJoin('litter_object_types as lot', 'lot.id', '=', 'pt.litter_object_type_id')
             ->where('p.user_id', $userId)
             ->whereNull('lo.retired_at')
+            ->whereIn('clo.id', CategoryObject::offerable()->select('id'))
             ->select(
                 'clo.id as clo_id',
                 'c.key as category_key',

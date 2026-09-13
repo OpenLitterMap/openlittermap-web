@@ -123,6 +123,17 @@
 </template>
 
 <script setup>
+import {
+    addCardDetail,
+    buildSearchableTags,
+    cardFromCustomTag,
+    cardFromSelection,
+    cardsFromApiTags,
+    payloadFromCards,
+    removeCardDetail,
+    setCardQuantity,
+    setCardType,
+} from '@/composables/useTagEditorState.js';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useAdminStore } from '@stores/admin.js';
 import { useTagsStore } from '@stores/tags/index.js';
@@ -167,147 +178,12 @@ const hasEdits = computed(() => {
     return current !== (originalTagsJson.value[photoId] || '[]');
 });
 
-const searchableTags = computed(() => {
-    const tags = [];
-
-    // Objects: one entry per (object, category) pair for CLO disambiguation
-    tagsStore.objects.forEach((obj) => {
-        if (obj.categories?.length) {
-            obj.categories.forEach((cat) => {
-                const cloId = tagsStore.getCloId(cat.id, obj.id);
-                tags.push({
-                    id: `obj-${obj.id}-cat-${cat.id}`,
-                    key: obj.key,
-                    lowerKey: obj.key.toLowerCase(),
-                    text: obj.key,
-                    type: 'object',
-                    categoryId: cat.id,
-                    categoryKey: cat.key,
-                    cloId: cloId,
-                    raw: obj,
-                });
-            });
-        } else {
-            tags.push({
-                id: `obj-${obj.id}`,
-                key: obj.key,
-                lowerKey: obj.key.toLowerCase(),
-                text: obj.key,
-                type: 'object',
-                categoryId: null,
-                categoryKey: null,
-                cloId: null,
-                raw: obj,
-            });
-        }
-    });
-
-    // Types
-    tagsStore.categoryObjectTypes.forEach((cot) => {
-        const typeObj = tagsStore.types.find((t) => t.id === cot.litter_object_type_id);
-        if (!typeObj) return;
-
-        const clo = tagsStore.categoryObjects.find((co) => co.id === cot.category_litter_object_id);
-        if (!clo) return;
-
-        const obj = tagsStore.objects.find((o) => o.id === clo.litter_object_id);
-        const cat = tagsStore.categories.find((c) => c.id === clo.category_id);
-        if (!obj || !cat) return;
-
-        tags.push({
-            id: `type-${cot.category_litter_object_id}-${cot.litter_object_type_id}`,
-            key: typeObj.key,
-            lowerKey: typeObj.key.toLowerCase(),
-            text: typeObj.key,
-            type: 'type',
-            cloId: clo.id,
-            typeId: typeObj.id,
-            objectKey: obj.key,
-            categoryKey: cat.key,
-            raw: { type: typeObj, object: obj, category: cat, clo: clo },
-        });
-    });
-
-    tagsStore.brands.forEach((brand) => {
-        tags.push({
-            id: `brand-${brand.id}`,
-            key: brand.key,
-            lowerKey: brand.key.toLowerCase(),
-            text: brand.key,
-            type: 'brand',
-            raw: brand,
-        });
-    });
-    tagsStore.materials.forEach((material) => {
-        tags.push({
-            id: `mat-${material.id}`,
-            key: material.key,
-            lowerKey: material.key.toLowerCase(),
-            text: material.key,
-            type: 'material',
-            raw: material,
-        });
-    });
-    return tags;
-});
+const searchableTags = computed(() => buildSearchableTags(tagsStore));
 
 const brandsList = computed(() => tagsStore.brands || []);
 const materialsList = computed(() => tagsStore.materials || []);
 
 // ─── Tag Hydration ─────────────────────────────────────
-
-/**
- * Convert API new_tags format to TagCard format.
- *
- * API:     { id, object: {id, key}, category: {id, key}, quantity, picked_up, extra_tags: [{type, tag: {id, key}}] }
- * TagCard: { id, object: {id, key}, quantity, pickedUp, brands: [{id, key}], materials: [{id, key}], customTags: [] }
- */
-const hydrateTagsForPhoto = (photo) => {
-    if (!photo?.new_tags?.length) return [];
-
-    return photo.new_tags.map((apiTag) => {
-        const tag = {
-            id: `existing-${apiTag.id}`,
-            quantity: apiTag.quantity || 1,
-            pickedUp: apiTag.picked_up === true ? true : apiTag.picked_up === false ? false : null,
-            cloId: apiTag.category_litter_object_id || null,
-            categoryId: apiTag.category?.id || null,
-            categoryKey: apiTag.category?.key || null,
-            typeId: apiTag.litter_object_type_id || null,
-            brands: [],
-            materials: [],
-            customTags: [],
-        };
-
-        // Primary tag type
-        if (apiTag.object) {
-            tag.object = { id: apiTag.object.id, key: apiTag.object.key };
-
-            // Resolve cloId from tagsStore if not in API response
-            if (!tag.cloId && tag.categoryId) {
-                tag.cloId = tagsStore.getCloId(tag.categoryId, apiTag.object.id);
-            }
-        } else if (apiTag.primary_custom_tag) {
-            tag.custom = true;
-            tag.key = apiTag.primary_custom_tag.key;
-        }
-
-        // Extra tags → brands, materials, custom
-        if (apiTag.extra_tags) {
-            apiTag.extra_tags.forEach((extra) => {
-                if (extra.type === 'brand' && extra.tag) {
-                    tag.brands.push({ id: extra.tag.id, key: extra.tag.key });
-                } else if (extra.type === 'material' && extra.tag) {
-                    tag.materials.push({ id: extra.tag.id, key: extra.tag.key });
-                } else if (extra.type === 'custom_tag' && extra.tag) {
-                    tag.customTags.push(extra.tag.key);
-                }
-            });
-        }
-
-        return tag;
-    });
-};
 
 // ─── Init ──────────────────────────────────────────────
 
@@ -333,7 +209,7 @@ const hydrateCurrentPhoto = () => {
 
     // Only hydrate if not already present (user edits preserved)
     if (!tagsByPhoto.value[photo.id]) {
-        const hydrated = hydrateTagsForPhoto(photo);
+        const hydrated = cardsFromApiTags(photo.new_tags, tagsStore);
         tagsByPhoto.value[photo.id] = hydrated;
         originalTagsJson.value[photo.id] = JSON.stringify(hydrated);
     }
@@ -438,77 +314,19 @@ const ensurePhotoTags = () => {
 };
 
 const handleTagSelection = (selected) => {
-    if (!selected || !selected.raw) return;
     const photoId = ensurePhotoTags();
-    if (!photoId) return;
-
-    const tagId = Math.random().toString(16).slice(2);
-
-    if (selected.type === 'object') {
-        tagsByPhoto.value[photoId].push({
-            id: tagId,
-            object: selected.raw,
-            cloId: selected.cloId || null,
-            categoryId: selected.categoryId || null,
-            categoryKey: selected.categoryKey || null,
-            typeId: null,
-            quantity: 1,
-            pickedUp: true,
-            brands: [],
-            materials: [],
-            customTags: [],
-        });
-    } else if (selected.type === 'type') {
-        const parentObject = selected.raw?.object;
-        tagsByPhoto.value[photoId].push({
-            id: tagId,
-            object: parentObject,
-            cloId: selected.cloId,
-            categoryId: selected.raw?.category?.id || null,
-            categoryKey: selected.raw?.category?.key || null,
-            typeId: selected.typeId,
-            quantity: 1,
-            pickedUp: true,
-            brands: [],
-            materials: [],
-            customTags: [],
-        });
-    } else if (selected.type === 'brand') {
-        tagsByPhoto.value[photoId].push({
-            id: tagId,
-            brand: selected.raw,
-            quantity: 1,
-            pickedUp: null,
-            type: 'brand-only',
-        });
-    } else if (selected.type === 'material') {
-        tagsByPhoto.value[photoId].push({
-            id: tagId,
-            material: selected.raw,
-            quantity: 1,
-            pickedUp: null,
-            type: 'material-only',
-        });
-    }
+    const card = selected?.raw && photoId ? cardFromSelection(selected, tagsStore) : null;
+    if (card) tagsByPhoto.value[photoId].push(card);
 };
 
 const handleCustomTag = (customTag) => {
     const photoId = ensurePhotoTags();
-    if (!photoId) return;
-
-    const tagId = Math.random().toString(16).slice(2);
-    tagsByPhoto.value[photoId].push({
-        id: tagId,
-        custom: true,
-        key: customTag.key,
-        quantity: 1,
-        pickedUp: null,
-    });
+    if (photoId) tagsByPhoto.value[photoId].push(cardFromCustomTag(customTag));
 };
 
 const updateTagQuantity = (tagId, quantity) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (tag) tag.quantity = Math.max(1, Math.min(100, quantity));
+    if (tag) setCardQuantity(tag, quantity);
 };
 
 const setPickedUp = (tagId, value) => {
@@ -518,42 +336,17 @@ const setPickedUp = (tagId, value) => {
 
 const setTagType = (tagId, typeId) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (tag) tag.typeId = typeId;
+    if (tag) setCardType(tag, typeId, tagsStore);
 };
 
 const addTagDetail = (tagId, detail) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (!tag) return;
-
-    if (detail.type === 'brand') {
-        if (!tag.brands) tag.brands = [];
-        if (!tag.brands.some((b) => b.id === detail.value.id)) {
-            tag.brands.push(detail.value);
-        }
-    } else if (detail.type === 'material') {
-        if (!tag.materials) tag.materials = [];
-        if (!tag.materials.some((m) => m.id === detail.value.id)) {
-            tag.materials.push(detail.value);
-        }
-    } else if (detail.type === 'custom') {
-        if (!tag.customTags) tag.customTags = [];
-        if (!tag.customTags.includes(detail.value)) {
-            tag.customTags.push(detail.value);
-        }
-    }
+    if (tag) addCardDetail(tag, detail);
 };
 
 const removeTagDetail = (tagId, detail) => {
     const tag = activeTags.value.find((t) => t.id === tagId);
-    if (!tag) return;
-
-    if (detail.type === 'brand') {
-        tag.brands = tag.brands?.filter((b) => b.id !== detail.value.id) || [];
-    } else if (detail.type === 'material') {
-        tag.materials = tag.materials?.filter((m) => m.id !== detail.value.id) || [];
-    } else if (detail.type === 'custom') {
-        tag.customTags = tag.customTags?.filter((c) => c !== detail.value) || [];
-    }
+    if (tag) removeCardDetail(tag, detail);
 };
 
 const removeTag = (tagId) => {
@@ -649,55 +442,5 @@ onUnmounted(() => {
 
 // ─── Build upload payload ──────────────────────────────
 
-const buildTagsPayload = () => {
-    return activeTags.value.map((tag) => {
-        // Use CLO-based payload when we have a CLO id (matches AddTags.vue)
-        if (tag.cloId) {
-            return {
-                category_litter_object_id: tag.cloId,
-                litter_object_type_id: tag.typeId || null,
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-                materials: tag.materials?.map((m) => m.id) || [],
-                brands: tag.brands?.map((b) => ({ id: b.id, quantity: b.quantity || 1 })) || [],
-                custom_tags: tag.customTags || [],
-            };
-        }
-
-        // - Standalone brand, material and custom tags do not need a CLO ID.
-        if (tag.custom) {
-            return {
-                custom: true,
-                key: tag.key,
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else if (tag.type === 'brand-only') {
-            return {
-                brand_only: true,
-                brand: { id: tag.brand.id, key: tag.brand.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else if (tag.type === 'material-only') {
-            return {
-                material_only: true,
-                material: { id: tag.material.id, key: tag.material.key },
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-            };
-        } else {
-            return {
-                object: { id: tag.object.id, key: tag.object.key },
-                // - Keep the recorded category, e.g. a bottle tagged as marine stays in marine.
-                ...(tag.categoryId ? { category_id: tag.categoryId } : {}),
-                quantity: tag.quantity,
-                picked_up: tag.pickedUp,
-                materials: tag.materials?.map((m) => ({ id: m.id, key: m.key })) || [],
-                brands: tag.brands?.map((b) => ({ id: b.id, key: b.key })) || [],
-                custom_tags: tag.customTags || [],
-            };
-        }
-    });
-};
+const buildTagsPayload = () => payloadFromCards(activeTags.value);
 </script>

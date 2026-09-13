@@ -39,9 +39,9 @@ php artisan horizon
 
 ## Tech Stack
 
-- **Backend:** PHP 8.2, Laravel 11
+- **Backend:** PHP 8.3, Laravel 11
 - **Frontend:** Vue 3 (Composition API + `<script setup>`), Pinia, Vue Router 4, Tailwind CSS 3.4, Vite 6
-- **Database:** MySQL 5.7+, Redis 7+
+- **Database:** MySQL 8.0 (CI), Redis 7+
 - **Auth:** Laravel Passport (OAuth2) + Sanctum
 - **Storage:** AWS S3 (prod), MinIO (dev)
 - **Real-time:** Laravel Reverb / Pusher + Echo
@@ -109,8 +109,8 @@ tests/
 
 ## CI (GitHub Actions)
 
-Runs on push to `master`, `staging`, `upgrade/tagging-2025` and PRs.
-Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, phpunit.
+Pipeline: PHP 8.3, Node 22, MySQL 8.0, Redis 7 — composer install, migrations, npm ci, npm run build, PHPUnit (including the pure ESM editor bridge).
+Push and PR target triggers: `master` and `upgrade/tagging-2025`. Release candidates on other branches need a PR targeting one of these branches.
 
 ## Current State (v5 — shipped to `master`)
 
@@ -139,7 +139,7 @@ Built by a single developer over 17 years.
 - `Photo.geom` column is binary spatial data — hidden from JSON via `$hidden` array
 - `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns. All three (`category_litter_object_id`, `category_id`, `litter_object_id`) are **nullable** — extra-tag-only PhotoTags have null CLO
 - `photo_tags.category_litter_object_id` is **deprecated — never read it**. A null there does NOT mean extra-tag-only: ~189k object tags carry null because the v5 migration wrote them before their pivot existed. `category_id` + `litter_object_id` are the source of truth; derive the CLO with `CategoryObject::resolveId()`, or in SQL join `ON clo.category_id = pt.category_id AND clo.litter_object_id = pt.litter_object_id`. Use `litter_object_id IS NULL` to detect extra-tag-only. The column is still written on create; API requests still accept a CLO id. Anything creating a pivot then resolving in the same process must call `CategoryObject::flushResolverCache()`. Known exceptions that still touch the column: `olm:verify-tag-integrity` reads it deliberately to detect stale pointers, `PhotoTag::categoryObject()` remains defined for that repair path, raw `PhotoTag` model output still serialises the column (transformed API payloads derive it), and `olm:migrate-tag` backfills it on rows already sitting on the survivor
-- `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
+- `AddTagsToPhotoAction` preserves explicit categories. For an active object without a category, inference requires exactly one active, selectable CLO. Editors send the recorded category when no CLO ID is available. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
 - Replace tags (`PUT /api/v3/tags`) accepts empty `tags: []` to clear all tags from a photo
 - `TagsConfig` provides helper methods: `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()` — use these instead of hardcoding lists
 - Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only

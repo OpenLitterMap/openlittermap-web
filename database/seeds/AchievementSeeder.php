@@ -55,7 +55,7 @@ class AchievementsSeeder extends Seeder
                         'tag_id' => null,
                         'threshold' => $milestone,
                     ],
-                    [
+                    fn (bool $exists) => $exists ? [] : [
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]
@@ -107,7 +107,7 @@ class AchievementsSeeder extends Seeder
                             'tag_id' => $tag->id,
                             'threshold' => $milestone,
                         ],
-                        [
+                        fn (bool $exists) => $exists ? [] : [
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]

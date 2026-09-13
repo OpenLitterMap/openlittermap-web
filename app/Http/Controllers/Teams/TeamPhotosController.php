@@ -146,27 +146,35 @@ class TeamPhotosController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $photo, $user) {
+            $photo = Photo::whereKey($photo->id)->lockForUpdate()->firstOrFail();
+            $wasApproved = $photo->is_public && $photo->team_approved_at !== null;
             // Delete existing tags (extra_tags cascade via FK)
             $photo->photoTags()->each(function ($tag) {
                 $tag->extraTags()->delete();
                 $tag->delete();
             });
 
-            // Reset summary and XP so AddTagsToPhotoAction regenerates them.
-            // Use VERIFIED (not UNVERIFIED) so school photos remain in the
-            // facilitator queue's pending filter (verified >= VERIFIED).
+            // - Rebuild summary and XP; retain approval on already-approved school photos.
+            // - Pending photos remain VERIFIED until the teacher approves them.
             $photo->update([
                 'summary' => null,
                 'xp' => 0,
-                'verified' => VerificationStatus::VERIFIED->value,
+                'verified' => $wasApproved ? $photo->verified : VerificationStatus::VERIFIED->value,
             ]);
 
             // Add new tags via the standard action (generates summary, XP)
             app(AddTagsToPhotoAction::class)->run(
                 $user->id,
                 $photo->id,
-                $request->tags
+                $request->tags,
+                skipVerification: $wasApproved
             );
+
+            // - Editing an approved photo keeps its approval and updates the owner's metrics.
+            // - Example: correcting 2 bags to 3 must not leave the public totals at 2.
+            if ($wasApproved) {
+                app(MetricsService::class)->processPhoto($photo);
+            }
         });
 
         // Reload with full relationships for response
@@ -628,7 +636,7 @@ class TeamPhotosController extends Controller
                 ),
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
-                'picked_up' => $photoTag->picked_up,
+                'picked_up' => $photoTag->picked_up === null ? null : (bool) $photoTag->picked_up,
             ];
 
             if ($photoTag->category) {

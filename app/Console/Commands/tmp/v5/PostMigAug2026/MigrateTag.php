@@ -127,11 +127,9 @@ class MigrateTag extends Command
             return false;
         }
 
+        $sources = $this->sourceClos((int) $retired->id);
         $rowsLeft = DB::table('photo_tags')->where('litter_object_id', $retired->id)->exists();
-        $pivotsLeft = DB::table('category_litter_object')
-            ->where('litter_object_id', $retired->id)
-            ->whereNull('merged_into_clo_id')
-            ->exists();
+        $pivotsLeft = $sources->isEmpty() || $sources->contains(fn (object $clo) => $clo->merged_into_clo_id === null);
         $quickTagsLeft = DB::table('user_quick_tags as uqt')
             ->join('category_litter_object as clo', 'clo.id', '=', 'uqt.clo_id')
             ->where('clo.litter_object_id', $retired->id)
@@ -142,7 +140,6 @@ class MigrateTag extends Command
         }
 
         // Earlier category moves keep their redirects. Check them by the same rule as planning.
-        $sources = DB::table('category_litter_object')->where('litter_object_id', $retired->id)->get();
         foreach ($sources as $source) {
             $target = DB::table('category_litter_object')->where('id', $source->merged_into_clo_id)->first();
             if (! $this->recordedMappingAgrees($source, $target, (int) $desired->id, (int) $source->category_id)) {
@@ -151,6 +148,12 @@ class MigrateTag extends Command
         }
 
         return true;
+    }
+
+    /** @return \Illuminate\Support\Collection<int, object> every CLO row of the retired object */
+    private function sourceClos(int $objectId): \Illuminate\Support\Collection
+    {
+        return DB::table('category_litter_object')->where('litter_object_id', $objectId)->get();
     }
 
     /**
@@ -187,6 +190,13 @@ class MigrateTag extends Command
         if ($desired->retired_at !== null) {
             $this->error("Replacement tag {$desiredKey} is already retired.");
 
+            return false;
+        }
+
+        // - A retired object whose CLO redirects are incomplete cannot prove what an earlier run recorded.
+        if ($retired->retired_at !== null
+            && $this->sourceClos((int) $retired->id)->contains(fn (object $clo) => $clo->merged_into_clo_id === null)) {
+            $this->error('The retired object has incomplete CLO redirects; this retry cannot be verified.');
             return false;
         }
 
@@ -485,6 +495,9 @@ class MigrateTag extends Command
                 ->pluck('category_id'))
             ->unique()
             ->map('intval');
+        if ($categoryIds->isEmpty() || DB::table('photo_tags')->where('litter_object_id', $retiredId)->whereNull('category_id')->exists()) {
+            throw new \RuntimeException('Source categories cannot be verified. Prepare historical CLOs before migrating.');
+        }
         $pivots = [];
         $tombstones = [];
         $backfills = [];
@@ -494,6 +507,10 @@ class MigrateTag extends Command
                 ->where('category_id', $categoryId)
                 ->where('litter_object_id', $retiredId)
                 ->first(['id', 'merged_into_clo_id', 'merged_into_type_id']);
+
+            if ($retiredClo === null) {
+                throw new \RuntimeException('Missing source CLO. Declare the historical combination in TagsConfig and run GenerateTagsSeeder first.');
+            }
 
             // - Use --category when supplied; otherwise keep the tag's current category.
             $targetCategoryId = $this->targetCategoryId ?? $categoryId;
@@ -539,7 +556,7 @@ class MigrateTag extends Command
             $desiredClo = DB::table('category_litter_object')
                 ->where('category_id', $targetCategoryId)
                 ->where('litter_object_id', $desiredId)
-                ->first(['id', 'merged_into_clo_id']);
+                ->first(['id', 'merged_into_clo_id', 'is_selectable']);
             $categoryKey = $this->targetCategoryKey
                 ?? (string) DB::table('categories')->where('id', $categoryId)->value('key');
 
@@ -561,6 +578,10 @@ class MigrateTag extends Command
                     "No approved pivot for the replacement tag in category {$categoryKey}. "
                     . 'Declare the pairing in TagsConfig and run the seeder, or move the rows with --category.'
                 );
+            }
+
+            if (! $desiredClo->is_selectable) {
+                throw new \RuntimeException('The replacement CLO is historical and not selectable. Choose an approved current replacement.');
             }
 
             $desiredCloId = (int) $desiredClo->id;

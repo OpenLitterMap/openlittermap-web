@@ -1,168 +1,88 @@
 # Post-Migration Tag Cleanup
 
-`olm:migrate-tag` retires one litter object and moves its data to an approved replacement.
+`olm:migrate-tag plasticBags plastic_bag` is the first approved migration. Later mappings run separately.
+Deploying the application does not execute any mapping. Do not rerun `olm:v5` or edit its historical conversion services.
 
-## Mapping list
+## Preparation and staged editing
 
-The command receives the two approved keys (plus `--type` / `--category` where the approval says
-so) directly and never chooses or reverses a mapping. Survivors use snake_case singular keys
-declared in `TagsConfig`; shadow keys such as `plasticBags` and `randomLitter` are the retired side
-(`plasticBags → plastic_bag`, `randomLitter → random_litter`).
+`TagsConfig` declares current and historical category/object combinations. `GenerateTagsSeeder` creates historical CLOs with `is_selectable=false`, without changing observations, extras, summaries, quick tags or XP. It preserves redirects and never restores retired objects. CSV files record review and execution; they do not define taxonomy.
 
-**Before the production run, the approved list must be committed** to
-`readme/audit/TagRetirements-2026-08.csv`, one row per mapping with its type and category options,
-in the order it will be applied. That file currently holds a single voided rehearsal row; the
-approvals so far live in the tag-pairings register. `readme/audit/TagPairMigrationManifest-2026-08.csv`
-is the audit inventory (every pairing, `PROPOSED`/`PENDING`), not the approved list.
+Historical observations remain editable using their recorded category and object or CLO ID. They are absent from object suggestions, object category lists, CLO lists, search and generated top tags. Saved quick tags and exports still resolve them. Object-only category inference counts only active selectable CLOs. For example, historical sanitary/gloves does not prevent ordinary gloves submissions resolving to medical/gloves.
 
-Explicitly excluded from production although rehearsed on a clone, because the mapping is
-semantically wrong: `automobile → car_part`, `menstrual → sanitary_pad`, `crisp_small → crisp_packet`.
+After preparation, a photo containing plasticBags and randomLitter can be edited before and after the plastic-bag migration. Changing the plastic-bag quantity does not require migrating randomLitter. Unknown category/object combinations still return 422 atomically; the API never substitutes a category.
 
-## What the command does
+`photo_tags.category_id` and `litter_object_id` are authoritative. The deprecated `category_litter_object_id` may remain null. This command retains its existing destination-pointer backfill; exports and serializers resolve the authoritative IDs.
 
-For one entry, the command:
+## Mapping review
 
-1. Sets `retired_at` on Tag A and points `merged_into_id` to Tag B (skipped for a pure
-   category move, where the object stays live).
-2. Requires Tag B's pairing to already exist in every category Tag A's rows sit in (or in the
-   `--category` target). Taxonomy is declared in `TagsConfig` and created by the seeder; the run
-   never invents a pivot and aborts before any change when one is missing. Rows on an unsanctioned
-   source pairing therefore need a decision first: declare the pairing, or move them with `--category`.
-3. Records the full approved mapping on each of Tag A's source pivots:
-   `category_litter_object.merged_into_clo_id` (the survivor pairing) and `merged_into_type_id`
-   (the approved subtype, when `--type` is given). This is what stale clients and saved quick tags
-   resolve from, so a v4 composite key keeps its subtype and an object+category move lands in the
-   right category. A marked pivot is excluded from the picker by `CategoryObject::active()`.
-   Recorded mappings are immutable: a redirect recorded by an earlier, different mapping is left
-   alone (its chain continues through the survivor it recorded), a redirect from the same mapping
-   is resumed, and a retry that disagrees on category or type aborts. A retired pairing from an earlier
-   mapping that still has rows or quick tags on it aborts the run too ("re-run that mapping
-   first"): the object is not retired until the earlier mapping has finished. The survivor pairing
-   must be active, not merely present — a pairing an earlier category move already retired is
-   refused. A replay of a mapping that finished exactly as requested exits 0 with "Already
-   applied", even after an earlier category move or a later retirement of its survivor.
-   Planning and replay use the same mapping-agreement check; conflicting category/type retries
-   and incomplete earlier mappings remain refused.
-4. Backfills `photo_tags.category_litter_object_id` on rows already sitting on Tag B with a null CLO.
-5. Repoints `photo_tags` and `user_quick_tags` from A to B, carrying the approved type onto quick
-   tags when `--type` is given.
-6. Regenerates affected photo summaries.
-7. Reprocesses metrics for affected live, previously processed photos.
+[The review register](audit/TagCleanupReview-2026-09-12.csv) covers 74 combinations across 71 source objects, with observed counts, proposed destinations, category/type changes, XP effects and approval state. These counts describe the inspected local baseline, not a fresh production measurement.
 
-The mapping lives on the **pivot**, not the object, because a retirement can span categories with
-a different survivor in each (`straws` → `softdrinks/straw` and `marine/straw`).
-`litter_objects.merged_into_id` alone names only the survivor object and cannot express that.
+- Four combinations are already declared as current and need no migration.
+- Only plasticBags → plastic_bag is approved for the first window.
+- Pending and disputed mappings are not executable. Information-losing proposals require a decision or a more precise destination.
+- Both categories for balloons, brokenglass and straws must be reviewed together. One whole-object command sweeps all its categories; 74 combinations do not imply 74 executions.
+- XP effects shown in the register concern object XP; quantity, extras and collection status must also be checked during rehearsal.
 
-Step 3 exists because the v5 migration wrote rows straight onto shadow objects before any pivot
-existed for them. Those rows never reference Tag A, so the per-photo loop cannot reach them.
-Surfaces that derive the pivot from `(category_id, litter_object_id)` — the CSV export — read them
-either way; surfaces that follow the stored pointer — quick tags, team tag editing — skip them
-until it is set. For `plastic_bag → plasticBags` that is 10,051 rows carrying 12,946 items.
+`TagPairMigrationManifest-2026-08.csv` and `TagRetirements-2026-08.csv` remain archived audit records. The old voided reverse-direction rehearsal is not an execution instruction.
 
-The old object and its pivots remain with redirects so older clients can find the replacement.
-Photos are processed in atomic batches of 200. A failed batch rolls back and can be rerun.
+## Command guarantees
 
-The command refuses self-migrations, retired replacements, conflicting existing retirements,
-different XP weights, and source rows that already carry a type.
+- Default execution is a read-only dry run; `--apply` writes.
+- Every source category must have a CLO before retirement. Missing source CLOs or unverifiable old retirements are refused.
+- Every destination must be declared, active and selectable. An optional `--type` must be approved for it.
+- `--category` explicitly changes category; otherwise each category is retained.
+- The retirement transaction records destination CLO and optional type before photo batches begin. Late requests and quick tags follow these redirects, including chains.
+- Conflicting retries are refused. Matching completed runs are no-ops; interrupted batches can resume.
+- Photos are processed in atomic batches of 200. Summaries, XP and processed-photo metrics are recalculated.
+- Redis is not part of the MySQL transaction. Inspect both after any interruption.
 
-## Type splits (`--type`)
+## Disposable rehearsal
 
-v4 baked the subtype into the object key — `beer_can` is `can` plus type `beer`. Repointing the
-object alone would discard the subtype, and the "already carries a type" guard does **not** catch
-this: the source rows have no type yet, so the guard never fires. `--type` makes the split one
-approved operation, setting `litter_object_type_id` in the same batched update as the repoint.
+Keep `olm_postmig_6` read-only. Copy it into a dedicated `olm_rehearsal_*` database. Use Redis database 3 and cache database 4 for rehearsal; never share production or PHPUnit Redis. Confirm those databases are dedicated before using them.
+
+Run the exact candidate commit with production-compatible PHP and MySQL. Apply schema migrations, then run only:
 
 ```bash
-php artisan olm:migrate-tag beer_can can --type=beer --apply
+php artisan db:seed --class='Database\Seeders\Tags\GenerateTagsSeeder' --force
+php artisan olm:verify-tag-integrity
 ```
 
-The type must already be approved for the survivor pairing in `category_object_types`. The run
-refuses otherwise rather than attaching it, because a migration inventing a taxonomy relationship
-is what produced the shadow objects in the first place. Types are approved on the survivor pairing
-by `TagsConfig` and the seeder before the run.
+Record the post-preparation integrity baseline: **zero errors**, plus historical photo-tag and quick-tag counts. Historical counts are informational. A non-zero error exit is a hold, even when unrelated to plastic bags. `--photo-id` reports only that photo and omits account-wide quick-tag counts. Do not run `--fix` without reviewing the defects it proposes to change.
 
-## Usage
+`rehearse-first-tag.php` prepares and checks the plastic-bag window on a disposable copy, saving a checkpoint under the system temporary directory. Use `--resume` after interruption, or `--verify` to repeat its post-run checks. Keep the checkpoint with the rehearsal evidence. It refuses the protected baseline.
 
-The default is a read-only dry run:
+The rehearsal runner reads structured fields and calls Artisan without shell evaluation. It refuses non-disposable databases, incomplete approval, omitted source categories and conflicting whole-object plans. Set database and Redis environment variables explicitly:
 
 ```bash
-php artisan olm:migrate-tag plasticBags plastic_bag
+DB_DATABASE=olm_rehearsal_NAME REDIS_DB=3 REDIS_CACHE_DB=4 php readme/audit/run-approved-tag-migrations.php --database=olm_rehearsal_NAME --source=plasticBags
+DB_DATABASE=olm_rehearsal_NAME REDIS_DB=3 REDIS_CACHE_DB=4 php readme/audit/run-approved-tag-migrations.php --database=olm_rehearsal_NAME --source=plasticBags --apply
 ```
 
-It reports the mapping, affected row count, total tag quantity, and up to five example photo IDs, then
-runs every apply-time validation and exits 1 with "Would fail: …" if any would abort:
+Measure each approved mapping separately. Capture source rows, extras, quick tags, summaries, photo/user XP, MySQL metrics, Redis changes, replay and CSV exports. Test editing a mixed historical photo after the first mapping. Rehearse interruption/resume. Never extrapolate all timings from plastic bags.
 
-```text
-DRY RUN: plasticBags (149) → plastic_bag (92)
-Rows: 10051
-Tags: 12946
-Example photo IDs: 123, 456, 789
-```
+## First production window
 
-Apply the migration with:
+1. Record the candidate commit, approved arguments, database host/name, backup reference and verified restore procedure. Check Forge deploy ordering before starting.
+2. Freeze writes on every node, drain in-flight requests and stop/drain workers. Confirm no active jobs or supervisors can restart them. `horizon:terminate` alone is insufficient.
+3. Deploy the candidate while writes remain frozen; apply all pending schema migrations before serving new code.
+4. Run `GenerateTagsSeeder` directly. **Never use `composer seed:tags` during this window**: it also runs achievements.
+5. Record the post-preparation integrity and historical-count baseline; require zero integrity errors.
+6. Dry-run and apply only `olm:migrate-tag plasticBags plastic_bag --apply` after checking dry-run counts and examples.
+7. Verify source/extra/quick-tag preservation, summaries, XP, MySQL metrics, Redis deltas, replay, CSV exports and mixed historical editing. Require zero integrity errors and explain remaining historical counts.
+8. Resume traffic and workers only after verification. Run `AchievementsSeeder` separately off-peak to insert missing definitions; existing achievement timestamps and earned achievements remain unchanged.
 
-```bash
-php artisan olm:migrate-tag plasticBags plastic_bag --apply
-```
+An interruption keeps writes paused until inspected and resumed. Keep the full freeze for this first window. Reduced restrictions for later windows need evidence and a separate decision.
 
-During apply, a progress bar shows the number of durably migrated rows.
+## Additional editor corrections
 
-## Editing impact and staged rollout
+Approved school-photo edits retain verification and approval, and refresh the owner’s metrics. The Photos tab resets the facilitator queue’s pending filter. Typed dumping observations now use the existing small/medium/large XP weights during summary generation; this corrects XP when those photos are edited or regenerated. The inspected baseline contains 35 such observations, none on plastic-bag migration photos.
 
-Deploying this code does not apply any tag mappings. It does change saves immediately: a photo
-cannot be re-saved with an undeclared category/object pairing left in its submitted tags. The API
-returns 422 and preserves its existing observations, extras and summary. This affects ordinary
-users, admins and teachers. Unknown objects and ambiguous object-only submissions also return 422.
-An explicit correction or removal remains possible; the API never chooses a new category for them.
+## Release coverage
 
-Before deployment, record the affected pairing and photo counts from the current production clone.
-The earlier audit's roughly seventy pairings are historical evidence, not a current count. Rehearse
-the approved mappings and either apply them before reopening tag writes, or explicitly accept that
-photos with unresolved pairings will temporarily reject unchanged saves. Include this impact in
-the release plan; do not deploy assuming the guard repairs existing data.
+Required: endpoint → pure editor adapter → save endpoint → database regression tests, migration/retry tests, catalogue and achievement idempotency, scoped repairs, sequential replacements, full PHPUnit and frontend build. CI uses PHP 8.3, MySQL 8.0, Redis 7 and Node 22. Open the release PR against `master` or `upgrade/tagging-2025`; these are the configured branch triggers.
 
-Mappings can still be applied one at a time. Completing one restores valid saves for its affected
-tags; unrelated valid tags continue to work. Other undeclared pairings remain blocked until their
-own approved cleanup. A photo containing any unresolved tag still fails a whole-photo replacement.
-Do not run unapproved mappings merely to obtain a zero integrity-check exit code.
+Mounted-browser automation is deferred infrastructure. Record focused manual checks of all four editors separately; endpoint tests are not browser tests. Confirm the supported mobile build displays null collection status as unknown before shipping. Report whether real concurrent HTTP replacements were reproduced, rather than inferring that from row-lock code alone.
 
-## Before applying
+Tests must clear only their configured Redis database with `flushdb()`. Never use `flushall()`; it also deletes local application and rehearsal caches.
 
-- Update `TagsConfig`, `BrandsConfig`, translations, and documentation for the approved mapping.
-- Deploy the code, run `php artisan migrate`, then run the tags seeder (`composer seed:tags`, which
-  calls `GenerateTagsSeeder`) so every declared survivor pairing exists. The command never creates a
-  pivot, so a mapping whose survivor pairing is missing aborts. New code reads the `retired_at`,
-  `merged_into_id` and `merged_into_*` columns on hot paths, so migrate before traffic resumes.
-- Put every web node into maintenance mode and drain in-flight tag writes.
-- Back up MySQL and run the dry run against the exact database and code being deployed. The dry
-  run performs every apply-time check (survivor declared and active, type approved, recorded
-  mappings consistent, no interrupted earlier mapping) and exits 1 with "Would fail: …" on any
-  of them, so a clean dry run of the whole manifest is meaningful.
-- Confirm Redis is available; `--apply` also checks it before starting and before every batch.
-- Confirm the reported counts and example photos match the approved mapping.
-
-## After applying
-
-Check that:
-
-- `php artisan olm:verify-tag-integrity` reports no rows or quick tags left on a retired pairing
-  (the mapping did not finish — re-run it) and no retirement chain cycles. During a staged rollout,
-  its exit code can remain 1 for previously recorded undeclared pairings. Compare the report with
-  the pre-run baseline and require the applied mapping's issues to be resolved with no new issues.
-  Do not treat an unexplained non-zero exit as success. The global check reaches 0 only after all
-  remaining issues have been addressed through approved cleanup.
-- Tag A is retired and points to Tag B.
-- No `photo_tags` or quick tags still reference Tag A.
-- Affected summaries and Redis object counts use Tag B.
-- Picker, location, profile, and export surfaces no longer expose Tag A.
-
-The dry run counts only rows sitting on Tag A. It does not report the rows that step 4 backfills,
-so a small or zero row count is not evidence of a small change.
-
-The command intentionally has no lifecycle manager, snapshot files, repair mode, or verification mode. If an apply fails, inspect the database and Redis before rerunning it. MySQL batches are resumable, but Redis is not transactionally coupled to MySQL and still requires the checks above.
-
-## Scope
-
-This command performs an object retirement. Type expansion, category reassignment, row deduplication, and deciding future mappings are separate work.
-
-`ClassifyTagsService` remains unchanged because it records the historical v5 migration.
+The final report must name the tested commit (or explicitly identify an uncommitted patch), approved mappings, exact checks, historical counts and deferred coverage. Passing local tests is not a claim of zero production risk.

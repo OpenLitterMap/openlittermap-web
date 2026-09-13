@@ -23,63 +23,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
+use Tests\Helpers\CreatesSchoolTeamTrait;
 use Tests\TestCase;
 
 class TeamPhotosTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected User $teacher;
-    protected User $student;
-    protected Team $schoolTeam;
+    use CreatesSchoolTeamTrait;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-
-        // Create school team type
-        $schoolType = TeamType::firstOrCreate(
-            ['team' => 'school'],
-            ['team' => 'school']
-        );
-
-        // Create teacher with school_manager role
-        $this->teacher = User::factory()->create();
-        $role = Role::firstOrCreate(['name' => 'school_manager', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'manage school team', 'guard_name' => 'web']);
-        $role->givePermissionTo('manage school team');
-        $this->teacher->assignRole('school_manager');
-
-        // Create school team
-        $this->schoolTeam = Team::factory()->create([
-            'type_id' => $schoolType->id,
-            'leader' => $this->teacher->id,
-            'safeguarding' => true,
-        ]);
-
-        $this->schoolTeam->users()->attach($this->teacher->id);
-
-        // Create student
-        $this->student = User::factory()->create();
-        $this->schoolTeam->users()->attach($this->student->id);
-
-        // Tag taxonomy (needed for tag editing tests)
-        $smokingCat = Category::firstOrCreate(['key' => 'smoking']);
-        $alcoholCat = Category::firstOrCreate(['key' => 'alcohol']);
-        $unclassifiedCat = Category::firstOrCreate(['key' => 'unclassified']);
-        $cigaretteButt = LitterObject::firstOrCreate(['key' => 'cigarette_butt']);
-        $beerCan = LitterObject::firstOrCreate(['key' => 'beer_can']);
-        $otherObj = LitterObject::firstOrCreate(['key' => 'other']);
-
-        // CLO pivots for tag creation
-        CategoryObject::firstOrCreate(['category_id' => $smokingCat->id, 'litter_object_id' => $cigaretteButt->id]);
-        CategoryObject::firstOrCreate(['category_id' => $alcoholCat->id, 'litter_object_id' => $beerCan->id]);
-        CategoryObject::firstOrCreate(['category_id' => $unclassifiedCat->id, 'litter_object_id' => $otherObj->id]);
+        $this->setUpCreatesSchoolTeam();
     }
 
     // ─── Enum Tests ─────────────────────────────────

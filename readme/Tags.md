@@ -71,16 +71,16 @@ selection by CLO id on the way in, and the write resolves that to the pair.
 
 ## Key naming
 
-**Object keys are singular.** `straw`, `bottle`, `wipe` — never `straws`, `bottles`, `wipes`. The
+**New object keys are singular.** `straw`, `bottle`, `wipe` — never `straws`, `bottles`, `wipes`. The
 key names one object; the count lives in `photo_tags.quantity`. Plural keys double-encode quantity
 and let the same litter be recorded under two names, which is how `straws` and `straw` ended up as
 separate objects with separate pivots.
 
-Keys are `snake_case`. There are no camelCase keys: the two the v5 migration created
-(`plasticBags`, `randomLitter`) are deprecated into `plastic_bag` and `random_litter`. An earlier
-decision kept the data-heavy camelCase key to avoid moving ~46k items; that was decided on volume
-rather than naming and has been reversed — the conforming key wins, and the row count is not a
-reason to keep a non-conforming one.
+New keys use `snake_case`. Historical declarations retain exact legacy keys, including
+`plasticBags`, `randomLitter` and plural names, so saved observations remain editable before
+their mappings run. These CLOs have `is_selectable=false` and are hidden from suggestions.
+Seeding does not rename or retire them. Only `plasticBags → plastic_bag` is approved for the
+first window; other mappings require review in [the mapping register](audit/TagCleanupReview-2026-09-12.csv).
 
 ### Deprecate, never rename
 
@@ -93,9 +93,10 @@ the audit trail survives and stale clients can still resolve the old CLO id.
 The precise mapping is recorded on the **source pivot**, not the object: each retired
 `category_litter_object` row carries `merged_into_clo_id` (the survivor pairing, which may be in a
 different category) and `merged_into_type_id` (the approved subtype for a v4 composite-key split).
-`CategoryObject::resolveActiveClo()` follows that directly and `CategoryObject::active()` hides
-marked pivots from the picker. A pure category move retires the *pairing* this way while leaving
-the object live. Object-level `merged_into_id` is kept as the fallback for anything unrecorded.
+`CategoryObject::resolveActiveClo()` follows that directly. `active()` excludes redirected CLOs;
+`offerable()` also excludes historical CLOs from suggestions. A category move can retire a CLO
+while leaving its object live. Object-level `merged_into_id` remains a compatibility fallback;
+new migrations require and record source CLO redirects.
 
 ### Creating new taxonomy
 

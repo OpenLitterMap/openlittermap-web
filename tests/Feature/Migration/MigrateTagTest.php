@@ -33,8 +33,8 @@ class MigrateTagTest extends TestCase
         $this->seed(GenerateTagsSeeder::class);
 
         $this->category = Category::where('key', 'other')->firstOrFail();
-        $this->retired = LitterObject::firstOrCreate(['key' => 'plastic_bag']);
-        $this->desired = LitterObject::firstOrCreate(['key' => 'plasticBags']);
+        $this->retired = LitterObject::firstOrCreate(['key' => 'plasticBags']);
+        $this->desired = LitterObject::firstOrCreate(['key' => 'plastic_bag']);
         $this->retiredClo = CategoryObject::firstOrCreate([
             'category_id' => $this->category->id,
             'litter_object_id' => $this->retired->id,
@@ -66,7 +66,7 @@ class MigrateTagTest extends TestCase
     public function test_dry_run_reports_the_change_without_applying_it(): void
     {
         $this->migrate()
-            ->expectsOutputToContain("DRY RUN: plastic_bag ({$this->retired->id}) → plasticBags ({$this->desired->id})")
+            ->expectsOutputToContain("DRY RUN: plasticBags ({$this->retired->id}) → plastic_bag ({$this->desired->id})")
             ->expectsOutputToContain('Rows: 1')
             ->expectsOutputToContain('Tags: 7')
             ->expectsOutputToContain("Example photo IDs: {$this->photo->id}")
@@ -79,7 +79,7 @@ class MigrateTagTest extends TestCase
     public function test_apply_retires_a_into_b_and_updates_the_tag_data(): void
     {
         $this->migrate(['--apply' => true])
-            ->expectsOutputToContain('APPLY: plastic_bag')
+            ->expectsOutputToContain('APPLY: plasticBags')
             ->expectsOutputToContain('1/1 rows')
             ->assertExitCode(0);
 
@@ -105,7 +105,7 @@ class MigrateTagTest extends TestCase
         $objects = $this->photo->fresh()->summary['keys']['objects'];
 
         $this->assertArrayNotHasKey($this->retired->id, $objects);
-        $this->assertSame('plasticBags', $objects[$this->desired->id]);
+        $this->assertSame('plastic_bag', $objects[$this->desired->id]);
     }
 
     public function test_apply_updates_quick_tags(): void
@@ -351,8 +351,8 @@ class MigrateTagTest extends TestCase
         CategoryObject::flushResolverCache();
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag',
-            'desired' => 'plastic_bag',
+            'retired' => 'plasticBags',
+            'desired' => 'plasticBags',
             '--category' => 'dumping',
             '--apply' => true,
         ])->assertExitCode(0);
@@ -426,7 +426,7 @@ class MigrateTagTest extends TestCase
         CategoryObject::flushResolverCache();
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag', 'desired' => 'plastic_bag', '--category' => 'dumping', '--apply' => true,
+            'retired' => 'plasticBags', 'desired' => 'plasticBags', '--category' => 'dumping', '--apply' => true,
         ])->assertExitCode(0);
         $this->migrate(['--apply' => true])->assertExitCode(0);
 
@@ -452,27 +452,13 @@ class MigrateTagTest extends TestCase
         $this->assertSame($beer->id, CategoryObject::find($this->retiredClo->id)->merged_into_type_id, 'recorded mapping is immutable');
     }
 
-    /**
-     * Rows with no category still belong to the retired object. They take the same object, type
-     * and target category as every other row, or a type split leaves them half-migrated.
-     */
-    public function test_rows_without_a_category_take_the_type_and_target_category_too(): void
+    public function test_rows_without_a_category_are_refused_without_changes(): void
     {
-        $dumping = Category::where('key', 'dumping')->firstOrFail();
-        $targetClo = CategoryObject::firstOrCreate(['category_id' => $dumping->id, 'litter_object_id' => $this->desired->id]);
-        $beer = LitterObjectType::firstOrCreate(['key' => 'beer']);
-        DB::table('category_object_types')->insertOrIgnore(['category_litter_object_id' => $targetClo->id, 'litter_object_type_id' => $beer->id]);
-        CategoryObject::flushResolverCache();
         $this->tag->update(['category_id' => null, 'category_litter_object_id' => null]);
-
-        $this->migrate(['--apply' => true, '--type' => 'beer', '--category' => 'dumping'])->assertExitCode(0);
-
-        $tag = $this->tag->fresh();
-
-        $this->assertSame($this->desired->id, $tag->litter_object_id);
-        $this->assertSame($beer->id, $tag->litter_object_type_id, 'type split must reach category-less rows');
-        $this->assertSame($dumping->id, $tag->category_id);
-        $this->assertSame($targetClo->id, $tag->category_litter_object_id);
+        $this->migrate(['--apply' => true, '--category' => 'dumping'])
+            ->expectsOutputToContain('Source categories cannot be verified')->assertExitCode(1);
+        $this->assertSame($this->retired->id, $this->tag->fresh()->litter_object_id);
+        $this->assertNull($this->retired->fresh()->retired_at);
     }
 
     /**
@@ -525,7 +511,7 @@ class MigrateTagTest extends TestCase
         $dumping = $this->prepareInterruptedCategoryMove();
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag', 'desired' => 'plastic_bag', '--category' => 'dumping', '--apply' => true,
+            'retired' => 'plasticBags', 'desired' => 'plasticBags', '--category' => 'dumping', '--apply' => true,
         ])->assertExitCode(0);
         $this->migrate(['--apply' => true])->assertExitCode(0);
 
@@ -553,7 +539,7 @@ class MigrateTagTest extends TestCase
         });
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag', 'desired' => 'plastic_bag', '--category' => 'dumping', '--apply' => true,
+            'retired' => 'plasticBags', 'desired' => 'plasticBags', '--category' => 'dumping', '--apply' => true,
         ])->assertExitCode(1);
 
         $this->app->instance(GeneratePhotoSummaryService::class, new GeneratePhotoSummaryService());
@@ -599,12 +585,12 @@ class MigrateTagTest extends TestCase
      */
     public function test_replaying_a_completed_mapping_is_a_no_op_after_its_survivor_retires(): void
     {
-        $final = LitterObject::firstOrCreate(['key' => 'plastic_bag_final']);
+        $final = LitterObject::firstOrCreate(['key' => 'plasticBags_final']);
         CategoryObject::firstOrCreate(['category_id' => $this->category->id, 'litter_object_id' => $final->id]);
         CategoryObject::flushResolverCache();
 
         $this->migrate(['--apply' => true])->assertExitCode(0);
-        $this->artisan('olm:migrate-tag', ['retired' => 'plasticBags', 'desired' => 'plastic_bag_final', '--apply' => true])
+        $this->artisan('olm:migrate-tag', ['retired' => 'plastic_bag', 'desired' => 'plasticBags_final', '--apply' => true])
             ->assertExitCode(0);
 
         $this->migrate(['--apply' => true])
@@ -625,7 +611,7 @@ class MigrateTagTest extends TestCase
         $this->approveXpDifferentSurvivor();
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag',
+            'retired' => 'plasticBags',
             'desired' => 'bags_litter',
             '--apply' => true,
         ])->expectsOutputToContain('different XP values')->assertExitCode(1);
@@ -645,7 +631,7 @@ class MigrateTagTest extends TestCase
         $xpBefore = (int) User::find($this->photo->user_id)->xp;
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag',
+            'retired' => 'plasticBags',
             'desired' => 'bags_litter',
             '--apply' => true,
             '--allow-xp-change' => true,
@@ -757,8 +743,8 @@ class MigrateTagTest extends TestCase
         CategoryObject::flushResolverCache();
 
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag',
-            'desired' => 'plastic_bag',
+            'retired' => 'plasticBags',
+            'desired' => 'plasticBags',
             '--category' => 'dumping',
             '--apply' => true,
         ])->assertExitCode(0);
@@ -774,8 +760,8 @@ class MigrateTagTest extends TestCase
     public function test_invalid_mappings_fail_without_changes(): void
     {
         $this->artisan('olm:migrate-tag', [
-            'retired' => 'plastic_bag',
-            'desired' => 'plastic_bag',
+            'retired' => 'plasticBags',
+            'desired' => 'plasticBags',
             '--apply' => true,
         ])->assertExitCode(1);
 
@@ -790,15 +776,67 @@ class MigrateTagTest extends TestCase
     {
         $this->artisan('olm:migrate-tag', [
             'retired' => 'missing',
-            'desired' => 'plasticBags',
+            'desired' => 'plastic_bag',
         ])->assertExitCode(1);
+    }
+
+    public function test_missing_source_clo_is_refused_before_retirement(): void
+    {
+        $this->tag->update(['category_litter_object_id' => null]);
+        $this->retiredClo->delete();
+        $this->migrate(['--apply' => true])->expectsOutputToContain('Missing source CLO')->assertExitCode(1);
+        $this->assertNull($this->retired->fresh()->retired_at);
+        $this->assertSame($this->retired->id, $this->tag->fresh()->litter_object_id);
+    }
+
+    public function test_historical_destination_is_refused_before_retirement(): void
+    {
+        CategoryObject::where('litter_object_id', $this->desired->id)->update(['is_selectable' => false]);
+        $this->migrate(['--apply' => true])->expectsOutputToContain('historical and not selectable')->assertExitCode(1);
+        $this->assertNull($this->retired->fresh()->retired_at);
+    }
+
+    public function test_old_retirement_without_clo_redirect_is_not_an_agreed_retry(): void
+    {
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+        $this->migrate(['--apply' => true])->expectsOutputToContain('cannot be verified')->assertExitCode(1);
+        $this->assertNull($this->retiredClo->fresh()->merged_into_clo_id);
+    }
+
+    public function test_late_object_submission_keeps_the_recorded_type(): void
+    {
+        [$type, $target] = $this->approveTypeOnDesiredClo('beer');
+        $this->migrate(['--apply' => true, '--type' => 'beer'])->assertExitCode(0);
+        $owner = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $owner->id]);
+        $this->actingAs($owner)->postJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => [[
+            'object' => ['id' => $this->retired->id], 'category_id' => $this->category->id, 'quantity' => 3,
+        ]]])->assertOk();
+        $tag = $photo->photoTags()->sole();
+        $this->assertSame($type->id, $tag->litter_object_type_id);
+        $this->assertSame($this->desired->id, $tag->litter_object_id);
+    }
+
+    public function test_plastic_bags_first_leaves_other_historical_tags_editable(): void
+    {
+        $random = LitterObject::where('key', 'randomLitter')->sole();
+        $otherTag = PhotoTag::create(['photo_id' => $this->photo->id, 'category_id' => $this->category->id,
+            'litter_object_id' => $random->id, 'quantity' => 2, 'picked_up' => null]);
+        $this->migrate(['--apply' => true])->assertExitCode(0);
+        $this->assertNull($random->fresh()->retired_at);
+        $this->assertSame($random->id, $otherTag->fresh()->litter_object_id);
+        $this->actingAs($this->photo->user)->putJson('/api/v3/tags', ['photo_id' => $this->photo->id, 'tags' => [
+            ['object' => ['id' => $this->desired->id], 'category_id' => $this->category->id, 'quantity' => 3],
+            ['object' => ['id' => $random->id], 'category_id' => $this->category->id, 'quantity' => 2],
+        ]])->assertOk();
+        $this->assertSame(2, $this->photo->photoTags()->where('litter_object_id', $random->id)->sole()->quantity);
     }
 
     private function migrate(array $options = []): \Illuminate\Testing\PendingCommand
     {
         return $this->artisan('olm:migrate-tag', array_merge([
-            'retired' => 'plastic_bag',
-            'desired' => 'plasticBags',
+            'retired' => 'plasticBags',
+            'desired' => 'plastic_bag',
         ], $options));
     }
 }

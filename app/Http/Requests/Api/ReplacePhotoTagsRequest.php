@@ -35,7 +35,9 @@ class ReplacePhotoTagsRequest extends FormRequest
             'tags.*.brands' => 'sometimes|array',
             'tags.*.custom_tags' => 'sometimes|array',
 
-            // - Object/category fallback and standalone extras; the shared action validates them.
+            // - Object/category fallback and standalone extras; listed so validated() keeps them,
+            //   the shared action validates them.
+            'tags.*.category_id' => 'sometimes|integer|exists:categories,id',
             'tags.*.category' => 'sometimes',
             'tags.*.object' => 'sometimes',
             'tags.*.brand_only' => 'sometimes',

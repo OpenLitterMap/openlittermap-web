@@ -3,7 +3,6 @@
 namespace App\Actions\Tags;
 
 use App\Enums\VerificationStatus;
-use App\Enums\XpScore;
 use App\Events\TagsVerifiedByAdmin;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
@@ -153,6 +152,7 @@ class AddTagsToPhotoAction
             'tags.*.custom_tags.*.key' => 'present|nullable|string',
             'tags.*.brand_only' => 'sometimes|boolean',
             'tags.*.brand' => 'required_if:tags.*.brand_only,true|array',
+            'tags.*.brand.quantity' => 'sometimes|integer|min:1',
             'tags.*.brand.id' => 'required_with:tags.*.brand|integer|exists:brandslist,id',
             'tags.*.material_only' => 'sometimes|boolean',
             'tags.*.material' => 'required_if:tags.*.material_only,true|array',
@@ -209,7 +209,7 @@ class AddTagsToPhotoAction
             if (! $brandModel) {
                 throw new \Exception("Brand {$tag['brand']['key']} not found.");
             }
-            $photoTag->attachExtraTags([['id' => $brandModel->id, 'quantity' => $quantity]], 'brand');
+            $photoTag->attachExtraTags([['id' => $brandModel->id, 'quantity' => $tag['brand']['quantity'] ?? $quantity]], 'brand');
         } elseif (! empty($tag['material_only']) && isset($tag['material'])) {
             $materialModel = Materials::find($tag['material']['id']);
             if (! $materialModel) {
@@ -451,10 +451,9 @@ class AddTagsToPhotoAction
 
         // - Choose a category only when the caller omitted it and there is exactly one choice.
         if (! $categoryProvided) {
-            $categories = $object->categories()
-                // - Active objects use only active CLOs when choosing a category.
-                // - Retired objects keep their old CLOs so the recorded redirects can be followed.
-                ->when(! $object->isRetired(), fn ($query) => $query->whereNull('category_litter_object.merged_into_clo_id'))
+            // - Active objects choose among offerable CLOs only.
+            // - Retired objects keep their old CLOs so the recorded redirects can be followed.
+            $categories = ($object->isRetired() ? $object->categories() : $object->offerableCategories())
                 ->limit(2)
                 ->get();
 
@@ -475,41 +474,6 @@ class AddTagsToPhotoAction
         ];
     }
 
-    /**
-     * - Calculate tag XP using XpScore; upload XP is handled separately.
-     * - Materials and custom tags use the photo tag's quantity; brands use their own quantity.
-     * - Example: 3 items with a material add 3 × 2 = 6 material XP.
-     */
-    protected function calculateXp(array $photoTags): int
-    {
-        $xp = 0; // Tag XP only — upload XP is awarded separately by UploadPhotoController
-
-        foreach ($photoTags as $photoTag) {
-            // Object XP — only if there's an actual object
-            $objectKey = $photoTag->object?->key;
-            if ($objectKey) {
-                $typeKey = $photoTag->type?->key;
-                $objectXp = XpScore::getObjectXp($objectKey, $typeKey);
-                $xp += $photoTag->quantity * $objectXp;
-            }
-
-            // Reload extra tags if not already loaded
-            if (! $photoTag->relationLoaded('extraTags')) {
-                $photoTag->load('extraTags');
-            }
-
-            foreach ($photoTag->extraTags as $extraTag) {
-                $xp += match ($extraTag->tag_type) {
-                    'brand'      => $extraTag->quantity * XpScore::Brand->xp(),
-                    'material'   => $photoTag->quantity * XpScore::Material->xp(),
-                    'custom_tag' => $photoTag->quantity * XpScore::CustomTag->xp(),
-                    default      => $extraTag->quantity,
-                };
-            }
-        }
-
-        return $xp;
-    }
 
     /**
      * - Users who do not require verification receive ADMIN_APPROVED.

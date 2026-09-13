@@ -27,6 +27,7 @@ class GenerateTagsSeeder extends Seeder
             $this->seedCategoryObjectRelationships();
             $this->seedCustomTags();
         });
+        CategoryObject::flushResolverCache();
     }
 
     /**
@@ -101,10 +102,16 @@ class GenerateTagsSeeder extends Seeder
                     continue;
                 }
 
+                $selectable = ! ($attributes['historical'] ?? false);
                 $pivot = CategoryObject::firstOrCreate([
                     'category_id' => $category->id,
                     'litter_object_id' => $litterObject->id,
-                ]);
+                ], ['is_selectable' => $selectable]);
+
+                // - Seeding may change discovery, but never remove a recorded redirect.
+                if (! $pivot->isRetired() && (bool) $pivot->is_selectable !== $selectable) {
+                    $pivot->update(['is_selectable' => $selectable]);
+                }
 
                 // Attach materials if present
                 if (!empty($attributes['materials'])) {

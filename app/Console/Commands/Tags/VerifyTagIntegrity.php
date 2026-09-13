@@ -18,6 +18,8 @@ class VerifyTagIntegrity extends Command
     {
         $this->info('Verifying photo_tags integrity...');
 
+        $this->reportHistorical();
+
         $unsanctioned = $this->checkUnsanctionedPairings();
         $stalePointers = $this->checkStalePointers();
         $invalidTypes = $this->checkInvalidTypes();
@@ -61,6 +63,45 @@ class VerifyTagIntegrity extends Command
         $this->info('All repairable issues fixed.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * - Count observations and quick tags on historical CLOs: valid rows awaiting a later migration.
+     * - Informational only; they never affect the exit code.
+     */
+    private function reportHistorical(): void
+    {
+        $this->info("Historical photo tags: {$this->historicalPhotoTags()->count()} (informational)");
+
+        if (! $this->option('photo-id')) {
+            $this->info("Historical quick tags: {$this->historicalQuickTags()->count()} (informational)");
+        }
+    }
+
+    private function historicalPhotoTags(): Builder
+    {
+        return $this->onHistoricalClo($this->scopeToPhoto(
+            DB::table('photo_tags as pt')->join('category_litter_object as clo', function ($join) {
+                $join->on('clo.category_id', '=', 'pt.category_id')
+                    ->on('clo.litter_object_id', '=', 'pt.litter_object_id');
+            })
+        ));
+    }
+
+    private function historicalQuickTags(): Builder
+    {
+        return $this->onHistoricalClo(
+            DB::table('user_quick_tags as uqt')->join('category_litter_object as clo', 'clo.id', '=', 'uqt.clo_id')
+        );
+    }
+
+    /** - A historical CLO is not redirected, not selectable, and its object is still live. */
+    private function onHistoricalClo(Builder $query): Builder
+    {
+        return $query->join('litter_objects as lo', 'lo.id', '=', 'clo.litter_object_id')
+            ->where('clo.is_selectable', false)
+            ->whereNull('clo.merged_into_clo_id')
+            ->whereNull('lo.retired_at');
     }
 
     /**
@@ -228,6 +269,8 @@ class VerifyTagIntegrity extends Command
         if ($this->option('fix')) {
             $this->info('Rebuilding stale pointers from (category_id, litter_object_id)...');
 
+            $photoFilter = $this->option('photo-id') ? ' AND pt.photo_id = ?' : '';
+            $bindings = $this->option('photo-id') ? [(int) $this->option('photo-id')] : [];
             $fixed = DB::update('
                 UPDATE photo_tags pt
                 JOIN category_litter_object stale ON stale.id = pt.category_litter_object_id
@@ -235,9 +278,9 @@ class VerifyTagIntegrity extends Command
                     ON correct.category_id = pt.category_id
                    AND correct.litter_object_id = pt.litter_object_id
                 SET pt.category_litter_object_id = correct.id
-                WHERE pt.category_id != stale.category_id
-                   OR pt.litter_object_id != stale.litter_object_id
-            ');
+                WHERE (pt.category_id != stale.category_id
+                   OR pt.litter_object_id != stale.litter_object_id)
+            ' . $photoFilter, $bindings);
 
             $this->info("Rebuilt {$fixed} pointer(s).");
         }

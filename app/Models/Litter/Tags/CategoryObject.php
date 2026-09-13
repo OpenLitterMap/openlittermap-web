@@ -89,9 +89,33 @@ class CategoryObject extends Pivot
     }
 
     /**
-     * - A CLO is retired when merged_into_clo_id points to its replacement.
-     * - The object can still be active, e.g. when only its category changed.
+     * - Hide historical CLOs from suggestions; existing observations still resolve them.
+     * - Example: sanitary/gloves stays editable while medical/gloves is offered for new tags.
      */
+    public function scopeSelectable(Builder $query): Builder
+    {
+        return $query->where('is_selectable', true);
+    }
+
+    /**
+     * - A CLO the picker, search and suggestions may offer: not redirected and selectable.
+     * - Every discovery path uses this one rule.
+     */
+    public function scopeOfferable(Builder $query): Builder
+    {
+        return $query->active()->selectable();
+    }
+
+    /**
+     * - A historical CLO: declared only so saved observations stay editable, on a live object.
+     * - Example: sanitary/gloves after medical/gloves became the current choice.
+     */
+    public function scopeHistorical(Builder $query): Builder
+    {
+        return $query->active()->where('is_selectable', false)
+            ->whereHas('litterObject', fn (Builder $object) => $object->active());
+    }
+
     public function isRetired(): bool
     {
         return $this->merged_into_clo_id !== null;

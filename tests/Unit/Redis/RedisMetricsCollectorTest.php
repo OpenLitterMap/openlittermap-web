@@ -19,18 +19,6 @@ class RedisMetricsCollectorTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        Redis::flushall();
-    }
-
-    protected function tearDown(): void
-    {
-        Redis::flushall();
-        parent::tearDown();
-    }
-
     /**
      * Test basic photo creation
      */

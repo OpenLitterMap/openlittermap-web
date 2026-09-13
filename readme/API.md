@@ -2874,3 +2874,12 @@ CSRF-exempt, no auth. Verifies the SNS signature (`aws/aws-php-sns-message-valid
 | Complaint | Log `email_events` + suppress recipient (`reason=complained`) |
 
 Idempotent on `(sns_id, email)` — duplicate SNS deliveries are harmless. Always returns `200` for handled/ignored events so SNS stops retrying. Suppressions are the source of truth for the `olm:send-email-to-subscribed` dispatch guard; complaint outranks bounce and is never downgraded.
+
+### Staged tag cleanup and editor round trips
+
+- `PUT /api/v3/tags` accepts `category_id` alongside an object; an explicit category is preserved.
+- Historical CLOs (`is_selectable=false`) remain valid for explicit submissions and saved quick tags, while discovery excludes them. Object-only inference uses active selectable CLOs.
+- All photo editor serializers return tag-level `picked_up` as `true`, `false` or `null`, without a photo-level fallback.
+- Standalone `brand` supports an optional independent `quantity`; omitted quantity uses the observation quantity. Additional brands retain their own quantities.
+- Each submitted observation remains separate. Two custom observations with quantities 2 and 5 earn 7 custom XP; an existing combined observation remains combined.
+- Rejected replacements preserve photo fields, tags and extras. Admin and team replacements lock the photo row before reading/deleting its tags.

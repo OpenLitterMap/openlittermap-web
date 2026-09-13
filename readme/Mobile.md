@@ -173,7 +173,7 @@ The mobile app must join these to build a searchable index:
 
 ### Retired objects — a stale catalog keeps working
 
-An object or a category pairing can be retired into a survivor (`plasticBags` → `plastic_bag`; `other/dump` → `dumping/dumping`). Because a cached catalog cannot be refreshed on demand and an app release takes days to reach users, **the server accepts the retired `clo_id` and rewrites the tag onto the survivor pairing its tombstone records** rather than rejecting it. The survivor can be in a different category, and a submission with no `litter_object_type_id` receives the approved subtype of a type split, so the stored tag can differ from the submission in category, object and type. API writes never create category/object relationships. Quantity, materials, brands, custom tags and `picked_up` are preserved; a submitted `litter_object_type_id` that is not valid on the survivor is dropped. Chains resolve to the end (`A → B → C` lands on `C`).
+An object or a category pairing can be retired into a survivor (`plasticBags` → `plastic_bag`; `other/dump` → `dumping/dumping`). Because a cached catalog cannot be refreshed on demand and an app release takes days to reach users, **the server accepts the retired `clo_id` and rewrites the tag onto the survivor pairing its redirect records** rather than rejecting it. The survivor can be in a different category, and a submission with no `litter_object_type_id` receives the approved subtype of a type split, so the stored tag can differ from the submission in category, object and type. API writes never create category/object relationships. Quantity, materials, brands, custom tags and `picked_up` are preserved; a submitted `litter_object_type_id` that is not valid on the survivor is dropped. Chains resolve to the end (`A → B → C` lands on `C`).
 
 Consequences for the app:
 
@@ -249,8 +249,8 @@ See `MOBILE_API_CHANGES.md` at the project root for the full RN v7 change log.
 
 - **`filename` is a full URL.** The `filename` field in photo responses is a complete S3/CDN URL. Use it directly as an image source — do NOT prefix with a base URL.
 - **Tag editing via `PUT /api/v3/tags`.** Same CLO format as `POST`. Accepts empty `tags: []` to clear all tags from a photo (resets to untagged state).
-- **`new_tags` format.** Each tag includes `category`, `object`, `type`, `extra_tags`, and `picked_up` (bool). For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` may be null.
-- **`picked_up` is cast to `(bool)`** with fallback to photo-level `picked_up`.
+- **`new_tags` format.** Each tag includes `category`, `object`, `type`, `extra_tags`, and `picked_up` (`true`/`false`/`null`). For loose/extra-tag-only tags, `category`, `object`, and `category_litter_object_id` may be null.
+- **Tag collection status stays nullable.** No photo-level fallback; null means unknown.
 
 ---
 
@@ -261,3 +261,7 @@ See `MOBILE_API_CHANGES.md` at the project root for the full RN v7 change log.
 - **Tags.md** — v5 tag hierarchy, summary structure, XP system
 - **Upload.md** — Photo upload pipeline, MetricsService
 - **Teams.md** — Teams architecture, school pipeline
+
+### Historical catalogue entries
+
+Historical CLOs remain accepted for saved observations and quick tags but are omitted from discovery. Preserve each `new_tags[].picked_up` value independently, including null. The supported mobile build must be smoke-tested with null before this release; this repository cannot establish that from API tests alone.

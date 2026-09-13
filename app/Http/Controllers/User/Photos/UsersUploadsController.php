@@ -321,7 +321,7 @@ class UsersUploadsController extends Controller
                     : null,
                 'litter_object_type_id' => $photoTag->litter_object_type_id,
                 'quantity' => $photoTag->quantity,
-                'picked_up' => (bool) ($photoTag->picked_up ?? $photo->picked_up),
+                'picked_up' => ($photoTag->picked_up === null ? null : (bool) $photoTag->picked_up),
             ];
 
             // Add category + object only when both resolve (skip orphaned CLO references)

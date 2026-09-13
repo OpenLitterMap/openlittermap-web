@@ -8,7 +8,12 @@
                 </h2>
                 <button class="p-1 text-slate-400 hover:text-slate-600" @click="$emit('close')">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
                     </svg>
                 </button>
             </div>
@@ -35,60 +40,34 @@
             <div class="px-6 pb-4">
                 <h3 class="text-sm font-medium text-slate-700 mb-3">Tags</h3>
 
-                <div class="space-y-2">
-                    <div
-                        v-for="(tag, index) in editTags"
-                        :key="index"
-                        class="flex items-center gap-2"
-                    >
-                        <input
-                            v-model="tag.category"
-                            type="text"
-                            placeholder="Category"
-                            class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"
-                            :disabled="!canEdit"
-                        />
-                        <input
-                            v-model="tag.object"
-                            type="text"
-                            placeholder="Object"
-                            class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"
-                            :disabled="!canEdit"
-                        />
-                        <input
-                            v-model.number="tag.quantity"
-                            type="number"
-                            min="1"
-                            class="w-20 px-3 py-2 text-sm border border-slate-300 rounded-lg text-center"
-                            :disabled="!canEdit"
-                        />
-                        <label class="flex items-center gap-1 text-xs text-slate-500">
-                            <input
-                                v-model="tag.picked_up"
-                                type="checkbox"
-                                :disabled="!canEdit"
-                            />
-                            Picked up
-                        </label>
-                        <button
-                            v-if="canEdit"
-                            class="p-1 text-red-400 hover:text-red-600"
-                            @click="removeTag(index)"
-                        >
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
-                    </div>
+                <div v-if="canEdit" class="bg-gray-900 rounded-xl p-4 space-y-4 text-white">
+                    <UnifiedTagSearch
+                        v-model="searchQuery"
+                        :tags="searchableTags"
+                        :brands="tagsStore.brands"
+                        :materials="tagsStore.materials"
+                        @tag-selected="handleTagSelection"
+                        @custom-tag="handleCustomTag"
+                    />
+                    <ActiveTagsList
+                        :tags="editTags"
+                        :searchable-tags="searchableTags"
+                        :brands="tagsStore.brands"
+                        :materials="tagsStore.materials"
+                        @update-quantity="updateTagQuantity"
+                        @set-picked-up="setPickedUp"
+                        @set-type="setTagType"
+                        @add-detail="addTagDetail"
+                        @remove-tag="removeTag"
+                        @remove-detail="removeTagDetail"
+                    />
                 </div>
-
-                <button
-                    v-if="canEdit"
-                    class="mt-3 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    @click="addTag"
-                >
-                    + Add tag
-                </button>
+                <ul v-else class="space-y-2 text-sm text-slate-700">
+                    <li v-for="tag in editTags" :key="tag.id">
+                        {{ tag.quantity }} × {{ tag.object?.key || tag.brand?.key || tag.material?.key || tag.key }}
+                        <span v-if="tag.typeKey">({{ tag.typeKey }})</span>
+                    </li>
+                </ul>
 
                 <!-- Errors -->
                 <p v-if="error" class="mt-2 text-sm text-red-600">{{ error }}</p>
@@ -115,7 +94,7 @@
                     </button>
                     <button
                         v-if="canEdit"
-                        :disabled="saving"
+                        :disabled="saving || !ready"
                         class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                         @click="save"
                     >
@@ -127,102 +106,126 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useTeamPhotosStore } from '@/stores/teamPhotos';
+import { useTagsStore } from '@/stores/tags/index.js';
+import {
+    addCardDetail,
+    buildSearchableTags,
+    cardFromCustomTag,
+    cardFromSelection,
+    cardsFromApiTags,
+    payloadFromCards,
+    removeCardDetail,
+    setCardQuantity,
+    setCardType,
+} from '@/composables/useTagEditorState.js';
+import UnifiedTagSearch from '@/views/General/Tagging/v2/components/UnifiedTagSearch.vue';
+import ActiveTagsList from '@/views/General/Tagging/v2/components/ActiveTagsList.vue';
 import { resolvePhotoUrl } from '@/composables/usePhotoUrl';
 
-export default {
-    name: 'TeamPhotoEdit',
-    props: {
-        photo: { type: Object, required: true },
-        teamId: { type: Number, required: true },
-        isLeader: { type: Boolean, default: false },
-        isSchoolTeam: { type: Boolean, default: false },
-    },
-    emits: ['close', 'saved', 'deleted'],
-    setup(props, { emit }) {
-        const store = useTeamPhotosStore();
-        const editTags = ref([]);
-        const saving = ref(false);
-        const deleting = ref(false);
-        const error = ref('');
+const props = defineProps({
+    photo: { type: Object, required: true },
+    teamId: { type: Number, required: true },
+    isLeader: { type: Boolean, default: false },
+    isSchoolTeam: { type: Boolean, default: false },
+});
+const emit = defineEmits(['close', 'saved', 'deleted']);
 
-        const canEdit = computed(() => props.isLeader && props.isSchoolTeam);
+const store = useTeamPhotosStore();
+const tagsStore = useTagsStore();
+const searchQuery = ref('');
+const editTags = ref([]);
+const saving = ref(false);
+const ready = ref(false);
+const deleting = ref(false);
+const error = ref('');
 
-        onMounted(() => {
-            // Deep clone tags for editing
-            editTags.value = (props.photo.photo_tags || []).map((t) => ({
-                id: t.id,
-                category: t.category?.key || '',
-                object: t.object?.key || '',
-                quantity: t.quantity,
-                picked_up: !!t.picked_up,
-            }));
-        });
+const canEdit = computed(() => props.isLeader && props.isSchoolTeam);
+const searchableTags = computed(() => buildSearchableTags(tagsStore));
 
-        const addTag = () => {
-            editTags.value.push({
-                id: null,
-                category: '',
-                object: '',
-                quantity: 1,
-                picked_up: false,
-            });
-        };
+onMounted(async () => {
+    try {
+        if (!tagsStore.objects.length) await tagsStore.GET_ALL_TAGS();
+        editTags.value = cardsFromApiTags(props.photo.new_tags, tagsStore);
+        ready.value = true;
+    } catch (e) {
+        error.value = e.message || 'Unable to load tags.';
+    }
+});
 
-        const removeTag = (index) => {
-            editTags.value.splice(index, 1);
-        };
+const findCard = (tagId) => editTags.value.find((tag) => tag.id === tagId);
 
-        const save = async () => {
-            error.value = '';
-
-            // Validate
-            const validTags = editTags.value.filter((t) => t.category && t.object && t.quantity > 0);
-            if (validTags.length === 0) {
-                error.value = 'At least one valid tag is required.';
-                return;
-            }
-
-            saving.value = true;
-
-            const success = await store.updateTags(props.photo.id, validTags);
-
-            saving.value = false;
-
-            if (success) {
-                emit('saved');
-            } else {
-                error.value = 'Failed to save. Please try again.';
-            }
-        };
-
-        const deletePhoto = async () => {
-            if (!confirm('Delete this photo? This cannot be undone.')) return;
-
-            deleting.value = true;
-            const success = await store.deletePhoto(props.teamId, props.photo.id);
-            deleting.value = false;
-
-            if (success) {
-                emit('deleted');
-            } else {
-                error.value = 'Failed to delete photo.';
-            }
-        };
-
-        const formatDate = (date) => {
-            return new Intl.DateTimeFormat('en-IE', {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit',
-            }).format(new Date(date));
-        };
-
-        return {
-            editTags, saving, deleting, error, canEdit,
-            addTag, removeTag, save, deletePhoto, formatDate, resolvePhotoUrl,
-        };
-    },
+const handleTagSelection = (selected) => {
+    const card = selected?.raw ? cardFromSelection(selected, tagsStore) : null;
+    if (card) editTags.value.push(card);
 };
+const handleCustomTag = (customTag) => editTags.value.push(cardFromCustomTag(customTag));
+const updateTagQuantity = (tagId, quantity) => {
+    const tag = findCard(tagId);
+    if (tag) setCardQuantity(tag, quantity);
+};
+const setPickedUp = (tagId, value) => {
+    const tag = findCard(tagId);
+    if (tag) tag.pickedUp = value;
+};
+const setTagType = (tagId, typeId) => {
+    const tag = findCard(tagId);
+    if (tag) setCardType(tag, typeId, tagsStore);
+};
+const addTagDetail = (tagId, detail) => {
+    const tag = findCard(tagId);
+    if (tag) addCardDetail(tag, detail);
+};
+const removeTagDetail = (tagId, detail) => {
+    const tag = findCard(tagId);
+    if (tag) removeCardDetail(tag, detail);
+};
+const removeTag = (tagId) => {
+    editTags.value = editTags.value.filter((tag) => tag.id !== tagId);
+};
+
+const save = async () => {
+    error.value = '';
+
+    const validTags = payloadFromCards(editTags.value);
+    if (validTags.length === 0) {
+        error.value = 'At least one valid tag is required.';
+        return;
+    }
+
+    saving.value = true;
+    const success = await store.updateTags(props.photo.id, validTags);
+    saving.value = false;
+
+    if (success) {
+        emit('saved');
+    } else {
+        error.value = 'Failed to save. Please try again.';
+    }
+};
+
+const deletePhoto = async () => {
+    if (!confirm('Delete this photo? This cannot be undone.')) return;
+
+    deleting.value = true;
+    const success = await store.deletePhoto(props.teamId, props.photo.id);
+    deleting.value = false;
+
+    if (success) {
+        emit('deleted');
+    } else {
+        error.value = 'Failed to delete photo.';
+    }
+};
+
+const formatDate = (date) =>
+    new Intl.DateTimeFormat('en-IE', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(date));
 </script>

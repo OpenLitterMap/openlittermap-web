@@ -226,4 +226,19 @@ class VerifyTagIntegrityTest extends TestCase
         $this->assertSame($clo->category_id, $tag->category_id);
         $this->assertSame($clo->litter_object_id, $tag->litter_object_id);
     }
+
+    public function test_scoped_repair_does_not_change_another_photo(): void
+    {
+        $clo = CategoryObject::where('category_id', $this->category->id)->firstOrFail();
+        $wrong = CategoryObject::where('category_id', '!=', $this->category->id)->firstOrFail();
+        $tags = [];
+        foreach ([$this->photo, Photo::factory()->create()] as $photo) {
+            $tags[] = PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $clo->category_id,
+                'litter_object_id' => $clo->litter_object_id, 'category_litter_object_id' => $wrong->id, 'quantity' => 1]);
+        }
+        $this->artisan('olm:verify-tag-integrity', ['--fix' => true, '--photo-id' => $this->photo->id])
+            ->doesntExpectOutputToContain('Historical quick tags:')->assertExitCode(0);
+        $this->assertSame($clo->id, $tags[0]->fresh()->category_litter_object_id);
+        $this->assertSame($wrong->id, $tags[1]->fresh()->category_litter_object_id);
+    }
 }
