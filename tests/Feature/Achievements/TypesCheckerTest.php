@@ -3,6 +3,7 @@
 namespace Tests\Feature\Achievements;
 
 use App\Models\Achievements\Achievement;
+use App\Models\Litter\Tags\LitterObjectType;
 use App\Services\Achievements\Checkers\TypesChecker;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -85,22 +86,15 @@ class TypesCheckerTest extends TestCase
 
     public function test_it_unlocks_per_type_achievement(): void
     {
-        // Get a real type from the DB
-        $typeId = DB::table('litter_object_types')->first()?->id;
-
-        if (! $typeId) {
-            $this->markTestSkipped('No litter_object_types in test DB');
-        }
-
-        $typeKey = DB::table('litter_object_types')->where('id', $typeId)->value('key');
+        $type = LitterObjectType::factory()->create(['key' => 'beer']);
 
         $achievement = Achievement::create([
             'type' => 'type',
-            'tag_id' => $typeId,
+            'tag_id' => $type->id,
             'threshold' => 3,
         ]);
 
-        $counts = ['types' => [$typeKey => 5]];
+        $counts = ['types' => [$type->key => 5]];
         $definitions = Achievement::all();
 
         $unlocked = $this->checker->check($counts, $definitions, []);

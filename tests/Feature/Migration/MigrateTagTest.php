@@ -3,6 +3,10 @@
 namespace Tests\Feature\Migration;
 
 use App\Models\Litter\Tags\Category;
+use App\Models\Litter\Tags\BrandList;
+use App\Models\Litter\Tags\CustomTagNew;
+use App\Models\Litter\Tags\Materials;
+use App\Models\Litter\Tags\PhotoTagExtraTags;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\LitterObjectType;
@@ -33,19 +37,18 @@ class MigrateTagTest extends TestCase
         $this->seed(GenerateTagsSeeder::class);
 
         $this->category = Category::where('key', 'other')->firstOrFail();
-        $this->retired = LitterObject::firstOrCreate(['key' => 'plasticBags']);
-        $this->desired = LitterObject::firstOrCreate(['key' => 'plastic_bag']);
-        $this->retiredClo = CategoryObject::firstOrCreate([
+        $this->retired = LitterObject::where('key', 'plasticBags')->firstOrFail();
+        $this->desired = LitterObject::where('key', 'plastic_bag')->firstOrFail();
+        $this->retiredClo = CategoryObject::where([
             'category_id' => $this->category->id,
             'litter_object_id' => $this->retired->id,
-        ]);
+        ])->firstOrFail();
 
-        // The survivor pairing is declared taxonomy: in production the seeder creates it before
-        // any mapping runs. The command never invents it.
-        CategoryObject::firstOrCreate([
+        // - The destination must already exist; the command never invents a replacement choice.
+        CategoryObject::where([
             'category_id' => $this->category->id,
             'litter_object_id' => $this->desired->id,
-        ]);
+        ])->firstOrFail();
         CategoryObject::flushResolverCache();
 
         $this->photo = Photo::factory()->create([
@@ -234,6 +237,111 @@ class MigrateTagTest extends TestCase
 
         $this->migrate(['--apply' => true])->assertExitCode(0);
         $this->assertSame($this->desired->id, $this->tag->fresh()->litter_object_id);
+    }
+
+    public function test_resume_after_a_completed_batch_preserves_observations_and_counts_exactly_once(): void
+    {
+        $country = Country::factory()->create();
+        $location = ['country_id' => $country->id, 'state_id' => null, 'city_id' => null];
+        $this->photo->update($location);
+        $photos = collect([$this->photo])->concat(Photo::factory()->count(201)->create($location + [
+            'verified' => 2, 'user_id' => $this->photo->user_id,
+        ]));
+        foreach ($photos->skip(1) as $photo) {
+            PhotoTag::create(['photo_id' => $photo->id, 'category_id' => $this->category->id,
+                'litter_object_id' => $this->retired->id, 'quantity' => 2]);
+        }
+        $brand = BrandList::factory()->create();
+        $material = Materials::factory()->create();
+        $custom = CustomTagNew::factory()->create();
+        foreach ([0 => true, 200 => false, 201 => null] as $index => $pickedUp) {
+            $tag = $photos[$index]->photoTags()->sole();
+            $tag->update(['picked_up' => $pickedUp]);
+            foreach (['brand' => $brand, 'material' => $material, 'custom_tag' => $custom] as $kind => $extra) {
+                PhotoTagExtraTags::create(['photo_tag_id' => $tag->id, 'tag_type' => $kind,
+                    'tag_type_id' => $extra->id, 'quantity' => $kind === 'brand' ? 3 : 1]);
+            }
+        }
+        foreach ($photos as $photo) {
+            $photo->generateSummary();
+            app(MetricsService::class)->processPhoto($photo->fresh());
+        }
+        $quickId = DB::table('user_quick_tags')->insertGetId([
+            'user_id' => $this->photo->user_id, 'clo_id' => $this->retiredClo->id, 'quantity' => 4,
+            'materials' => json_encode([$material->id]),
+            'brands' => json_encode([['id' => $brand->id, 'quantity' => 3]]), 'sort_order' => 0,
+        ]);
+        $scopes = RedisKeys::getPhotoScopes($this->photo);
+        $userScope = RedisKeys::user($this->photo->user_id);
+        $unchanged = function () use ($scopes, $userScope, $quickId): array {
+            $redis = [];
+            foreach ($scopes as $scope) {
+                foreach (['stats', 'categories', 'brands', 'materials', 'customTags'] as $dimension) {
+                    $hash = Redis::hGetAll(RedisKeys::$dimension($scope));
+                    ksort($hash);
+                    $redis[$scope][$dimension] = $hash;
+                }
+                $redis[$scope]['xp'] = Redis::zScore(RedisKeys::xpRanking($scope), (string) $this->photo->user_id);
+            }
+            $redis['user'] = Redis::hGetAll(RedisKeys::stats($userScope));
+
+            return [
+                'tags' => DB::table('photo_tags')->orderBy('id')->get(['id', 'photo_id', 'category_id', 'quantity', 'picked_up'])->toJson(),
+                'extras' => DB::table('photo_tag_extra_tags')->orderBy('id')->get()->toJson(),
+                'photos' => DB::table('photos')->orderBy('id')->get(['id', 'xp', 'processed_xp'])->toJson(),
+                'userXp' => (int) User::findOrFail($this->photo->user_id)->xp,
+                'mysql' => DB::table('metrics')->get()->map(fn ($row) =>
+                    \Illuminate\Support\Arr::except((array) $row, ['created_at', 'updated_at']))->sort()->values()->all(),
+                'quick' => (array) DB::table('user_quick_tags')->where('id', $quickId)->first(['id', 'quantity', 'materials', 'brands', 'sort_order']),
+                'redis' => $redis,
+            ];
+        };
+        $before = $unchanged();
+        $this->assertSame(409, (int) Redis::hGet(RedisKeys::objects(RedisKeys::global()), (string) $this->retired->id));
+
+        // - Batch one completes; batch two processes one photo, then fails on its second.
+        // - Its SQL changes and queued Redis updates must both be discarded.
+        $this->app->instance(GeneratePhotoSummaryService::class, new class extends GeneratePhotoSummaryService
+        {
+            private int $calls = 0;
+
+            public function run(Photo $photo): Photo
+            {
+                if (++$this->calls === 202) {
+                    throw new \RuntimeException('second batch interrupted');
+                }
+
+                return parent::run($photo);
+            }
+        });
+        $this->migrate(['--apply' => true])->assertExitCode(1);
+        $this->assertSame(200, PhotoTag::where('litter_object_id', $this->desired->id)->count());
+        $this->assertSame(2, PhotoTag::where('litter_object_id', $this->retired->id)->count());
+        $this->assertSame($before, $unchanged());
+        foreach ($scopes as $scope) {
+            $this->assertSame(4, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->retired->id));
+            $this->assertSame(405, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->desired->id));
+        }
+
+        $this->app->instance(GeneratePhotoSummaryService::class, new GeneratePhotoSummaryService);
+        foreach (['resume', 'replay'] as $stage) {
+            $this->migrate(['--apply' => true])->assertExitCode(0);
+            $this->assertSame($before, $unchanged(), $stage);
+            $this->assertSame(202, PhotoTag::where('litter_object_id', $this->desired->id)->count());
+            foreach ($scopes as $scope) {
+                $this->assertSame(0, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->retired->id), $stage);
+                $this->assertSame(409, (int) Redis::hGet(RedisKeys::objects($scope), (string) $this->desired->id), $stage);
+            }
+        }
+        $this->assertSame(0, (int) Redis::hGet("{$userScope}:tags", 'obj:'.$this->retired->id));
+        $this->assertSame(409, (int) Redis::hGet("{$userScope}:tags", 'obj:'.$this->desired->id));
+        $desiredClo = CategoryObject::resolveId($this->category->id, $this->desired->id);
+        $this->assertSame($desiredClo, DB::table('user_quick_tags')->where('id', $quickId)->value('clo_id'));
+        foreach ($photos as $photo) {
+            $objects = $photo->fresh()->summary['keys']['objects'];
+            $this->assertArrayNotHasKey($this->retired->id, $objects);
+            $this->assertSame('plastic_bag', $objects[$this->desired->id]);
+        }
     }
 
     /**
@@ -638,11 +746,12 @@ class MigrateTagTest extends TestCase
         ])->expectsOutputToContain('XP per item: 1 → 10')->assertExitCode(0);
 
         $this->assertSame($survivor->id, $this->tag->fresh()->litter_object_id);
-        $this->assertGreaterThan(
-            $xpBefore,
-            (int) User::find($this->photo->user_id)->xp,
-            'the approved correction must re-score the tag'
-        );
+        // - Seven objects change from 1 to 10 XP each: exactly 63 extra XP, once.
+        $this->assertSame(70, (int) $this->photo->fresh()->xp);
+        $this->assertSame($xpBefore + 63, (int) User::find($this->photo->user_id)->xp);
+        $this->artisan('olm:migrate-tag', ['retired' => 'plasticBags', 'desired' => 'bags_litter',
+            '--apply' => true, '--allow-xp-change' => true])->assertExitCode(0);
+        $this->assertSame($xpBefore + 63, (int) User::find($this->photo->user_id)->xp);
     }
 
     private function approveXpDifferentSurvivor(): LitterObject
@@ -780,13 +889,127 @@ class MigrateTagTest extends TestCase
         ])->assertExitCode(1);
     }
 
-    public function test_missing_source_clo_is_refused_before_retirement(): void
+    /** @dataProvider missingSourceMappings */
+    public function test_missing_source_clo_is_recorded_on_apply_and_survives_resume(
+        string $categoryKey, string $sourceKey, string $destinationKey, ?string $typeKey
+    ): void
+    {
+        $category = Category::where('key', $categoryKey)->sole();
+        $source = LitterObject::where('key', $sourceKey)->sole();
+        $destination = LitterObject::where('key', $destinationKey)->sole();
+        $target = CategoryObject::where('category_id', $category->id)
+            ->where('litter_object_id', $destination->id)->sole();
+        $typeId = $typeKey === null ? null : LitterObjectType::where('key', $typeKey)->sole()->id;
+        $sourceFields = ['category_id' => $category->id, 'litter_object_id' => $source->id];
+        $this->tag->update($sourceFields + ['category_litter_object_id' => null, 'picked_up' => false]);
+        CategoryObject::where($sourceFields)->delete();
+        CategoryObject::flushResolverCache();
+        $this->assertNull(CategoryObject::resolveId($category->id, $source->id));
+        $extra = PhotoTagExtraTags::create(['photo_tag_id' => $this->tag->id, 'tag_type' => 'brand',
+            'tag_type_id' => BrandList::factory()->create()->id, 'quantity' => 3]);
+        $before = $this->tag->fresh()->getAttributes();
+        $extraBefore = $extra->fresh()->getAttributes();
+        $args = ['retired' => $sourceKey, 'desired' => $destinationKey];
+        if ($typeKey !== null) {
+            $args['--type'] = $typeKey;
+        }
+
+        $this->artisan('olm:migrate-tag', $args)
+            ->expectsOutputToContain('Would create 1 missing source CLO redirect(s)')->assertExitCode(0);
+        $this->assertDatabaseMissing('category_litter_object', $sourceFields);
+        $this->assertSame($before, $this->tag->fresh()->getAttributes());
+        $this->assertNull($source->fresh()->retired_at);
+
+        // - Fail after retirement but before a photo batch commits, then resume the same mapping.
+        $this->app->instance(GeneratePhotoSummaryService::class, new class extends GeneratePhotoSummaryService
+        {
+            public function run(Photo $photo): Photo
+            {
+                throw new \RuntimeException('photo batch interrupted');
+            }
+        });
+        $this->artisan('olm:migrate-tag', $args + ['--apply' => true])->assertExitCode(1);
+        $redirect = CategoryObject::where($sourceFields)->sole();
+        $this->assertFalse((bool) $redirect->is_selectable);
+        $this->assertSame($target->id, $redirect->merged_into_clo_id);
+        $this->assertSame($typeId, $redirect->merged_into_type_id);
+        $this->assertSame($redirect->id, CategoryObject::resolveId($category->id, $source->id));
+        $this->assertSame($before, $this->tag->fresh()->getAttributes());
+
+        $this->app->instance(GeneratePhotoSummaryService::class, new GeneratePhotoSummaryService);
+        $this->artisan('olm:migrate-tag', $args + ['--apply' => true])->assertExitCode(0);
+        $expected = array_replace($before, ['litter_object_id' => $destination->id,
+            'category_litter_object_id' => $target->id, 'litter_object_type_id' => $typeId]);
+        $this->assertSame($expected, $this->tag->fresh()->getAttributes());
+        $this->assertSame($extraBefore, $extra->fresh()->getAttributes());
+        $redirectBefore = $redirect->getAttributes();
+        $this->artisan('olm:migrate-tag', $args + ['--apply' => true])
+            ->expectsOutputToContain('Already applied')->assertExitCode(0);
+        $this->assertSame($redirectBefore, $redirect->fresh()->getAttributes());
+
+        // - An old object-format submission follows the newly recorded category/type mapping.
+        $owner = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $owner->id]);
+        $this->actingAs($owner)->postJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => [[
+            'object' => ['id' => $source->id], 'category_id' => $category->id, 'quantity' => 2,
+        ]]])->assertOk();
+        $lateTag = $photo->photoTags()->sole();
+        $this->assertSame($destination->id, $lateTag->litter_object_id);
+        $this->assertSame($category->id, $lateTag->category_id);
+        $this->assertSame($typeId, $lateTag->litter_object_type_id);
+        if ($typeKey !== null) {
+            $this->artisan('olm:migrate-tag', ['retired' => $sourceKey, 'desired' => $destinationKey, '--apply' => true])
+                ->expectsOutputToContain('already mapped')->assertExitCode(1);
+            $this->artisan('olm:migrate-tag', array_replace($args, ['--type' => 'soda', '--apply' => true]))
+                ->expectsOutputToContain('already mapped')->assertExitCode(1);
+            $this->assertSame($redirectBefore, $redirect->fresh()->getAttributes());
+        }
+    }
+
+    public static function missingSourceMappings(): array
+    {
+        return [
+            'plastic bags' => ['other', 'plasticBags', 'plastic_bag', null],
+            'energy cans' => ['softdrinks', 'energy_can', 'can', 'energy'],
+        ];
+    }
+
+    public function test_missing_source_is_not_created_when_destination_validation_fails(): void
     {
         $this->tag->update(['category_litter_object_id' => null]);
         $this->retiredClo->delete();
-        $this->migrate(['--apply' => true])->expectsOutputToContain('Missing source CLO')->assertExitCode(1);
+        CategoryObject::where('litter_object_id', $this->desired->id)->update(['is_selectable' => false]);
+        $this->migrate(['--apply' => true])->expectsOutputToContain('historical and not selectable')->assertExitCode(1);
+        $this->assertDatabaseMissing('category_litter_object', [
+            'category_id' => $this->category->id, 'litter_object_id' => $this->retired->id,
+        ]);
         $this->assertNull($this->retired->fresh()->retired_at);
         $this->assertSame($this->retired->id, $this->tag->fresh()->litter_object_id);
+    }
+
+    public function test_retired_object_without_any_source_clo_cannot_invent_a_retry_record(): void
+    {
+        $this->tag->update(['category_litter_object_id' => null]);
+        $this->retiredClo->delete();
+        $this->retired->update(['retired_at' => now(), 'merged_into_id' => $this->desired->id]);
+        $this->migrate(['--apply' => true])->expectsOutputToContain('cannot be verified')->assertExitCode(1);
+        $this->assertDatabaseMissing('category_litter_object', ['litter_object_id' => $this->retired->id]);
+    }
+
+    public function test_missing_source_clo_records_an_explicit_category_move(): void
+    {
+        $this->tag->update(['category_litter_object_id' => null]);
+        $this->retiredClo->delete();
+        $dumping = Category::where('key', 'dumping')->sole();
+        $target = CategoryObject::create(['category_id' => $dumping->id, 'litter_object_id' => $this->desired->id]);
+        $this->migrate(['--category' => 'dumping', '--apply' => true])->assertExitCode(0);
+        $source = CategoryObject::where('category_id', $this->category->id)
+            ->where('litter_object_id', $this->retired->id)->sole();
+        $this->assertSame($target->id, $source->merged_into_clo_id);
+        $this->assertSame($dumping->id, $this->tag->fresh()->category_id);
+        $this->migrate(['--category' => 'dumping', '--apply' => true])
+            ->expectsOutputToContain('Already applied')->assertExitCode(0);
+        $this->migrate(['--apply' => true])->expectsOutputToContain('already mapped')->assertExitCode(1);
     }
 
     public function test_historical_destination_is_refused_before_retirement(): void

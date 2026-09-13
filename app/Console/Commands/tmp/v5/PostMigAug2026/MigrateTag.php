@@ -44,6 +44,11 @@ class MigrateTag extends Command
 
     public function handle(GeneratePhotoSummaryService $summaryService, MetricsService $metricsService): int
     {
+        // - Artisan can reuse this command in one process; never carry options into the next run.
+        $this->typeId = null;
+        $this->typeKey = null;
+        $this->targetCategoryId = null;
+        $this->targetCategoryKey = null;
         $retiredKey = (string) $this->argument('retired');
         $desiredKey = (string) $this->argument('desired');
 
@@ -94,7 +99,11 @@ class MigrateTag extends Command
         if (!$this->option('apply')) {
             // - Run the same mapping checks in dry-run and --apply.
             try {
-                $this->planRetirement((int) $retired->id, (int) $desired->id);
+                $plan = $this->planRetirement((int) $retired->id, (int) $desired->id);
+                $missing = count(array_filter($plan['tombstones'], fn (array $redirect) => $redirect['retired_clo_id'] === null));
+                if ($missing > 0) {
+                    $this->line("Would create {$missing} missing source CLO redirect(s) during --apply.");
+                }
             } catch (\RuntimeException $e) {
                 $this->error('Would fail: ' . $e->getMessage());
 
@@ -194,8 +203,9 @@ class MigrateTag extends Command
         }
 
         // - A retired object whose CLO redirects are incomplete cannot prove what an earlier run recorded.
+        $sourceClos = $this->sourceClos((int) $retired->id);
         if ($retired->retired_at !== null
-            && $this->sourceClos((int) $retired->id)->contains(fn (object $clo) => $clo->merged_into_clo_id === null)) {
+            && ($sourceClos->isEmpty() || $sourceClos->contains(fn (object $clo) => $clo->merged_into_clo_id === null))) {
             $this->error('The retired object has incomplete CLO redirects; this retry cannot be verified.');
             return false;
         }
@@ -475,12 +485,14 @@ class MigrateTag extends Command
      * - Check the mapping without changing data; dry-run and --apply use these checks.
      * - Require active replacement CLOs and an allowed type when --type is supplied.
      * - Refuse conflicts with recorded redirects and unfinished earlier mappings.
+     * - Plan a redirect for a missing source CLO using the observation's recorded category.
+     * - Example: other/plasticBags can move to other/plastic_bag without seeding first.
      * - Example: if tags remain on an earlier retired CLO, finish that mapping first.
      * - Throw RuntimeException on the first failure.
      *
      * @return array{
      *     pivots: array<int, int>,
-     *     tombstones: array<int, array{retired_clo_id: int, desired_clo_id: int}>,
+     *     tombstones: array<int, array{category_id: int, retired_clo_id: int|null, desired_clo_id: int}>,
      *     backfills: array<int, array{category_id: int, desired_clo_id: int}>
      * } pivots: category ID => replacement CLO ID
      */
@@ -496,7 +508,7 @@ class MigrateTag extends Command
             ->unique()
             ->map('intval');
         if ($categoryIds->isEmpty() || DB::table('photo_tags')->where('litter_object_id', $retiredId)->whereNull('category_id')->exists()) {
-            throw new \RuntimeException('Source categories cannot be verified. Prepare historical CLOs before migrating.');
+            throw new \RuntimeException('Source categories cannot be verified. Every source observation must record its category.');
         }
         $pivots = [];
         $tombstones = [];
@@ -508,8 +520,8 @@ class MigrateTag extends Command
                 ->where('litter_object_id', $retiredId)
                 ->first(['id', 'merged_into_clo_id', 'merged_into_type_id']);
 
-            if ($retiredClo === null) {
-                throw new \RuntimeException('Missing source CLO. Declare the historical combination in TagsConfig and run GenerateTagsSeeder first.');
+            if ($retiredClo === null && DB::table('litter_objects')->where('id', $retiredId)->whereNotNull('retired_at')->exists()) {
+                throw new \RuntimeException('The retired object has a missing source CLO; its earlier mapping cannot be verified.');
             }
 
             // - Use --category when supplied; otherwise keep the tag's current category.
@@ -572,11 +584,11 @@ class MigrateTag extends Command
             }
 
             if ($desiredClo === null) {
-                // - Declare the replacement CLO in TagsConfig and create it with the tags seeder.
-                // - This command moves tags; it does not create missing CLOs.
+                // - The destination must already be approved and present.
+                // - Only missing source redirect records are created by this command.
                 throw new \RuntimeException(
                     "No approved pivot for the replacement tag in category {$categoryKey}. "
-                    . 'Declare the pairing in TagsConfig and run the seeder, or move the rows with --category.'
+                    . 'Prepare the approved destination CLO, or use --category for an approved category move.'
                 );
             }
 
@@ -588,8 +600,8 @@ class MigrateTag extends Command
             $pivots[$categoryId] = $desiredCloId;
             $backfills[] = ['category_id' => $targetCategoryId, 'desired_clo_id' => $desiredCloId];
 
-            if ($retiredClo !== null && (int) $retiredClo->id !== $desiredCloId && $retiredClo->merged_into_clo_id === null) {
-                $tombstones[] = ['retired_clo_id' => (int) $retiredClo->id, 'desired_clo_id' => $desiredCloId];
+            if ($retiredClo === null || ((int) $retiredClo->id !== $desiredCloId && $retiredClo->merged_into_clo_id === null)) {
+                $tombstones[] = ['category_id' => $categoryId, 'retired_clo_id' => $retiredClo === null ? null : (int) $retiredClo->id, 'desired_clo_id' => $desiredCloId];
             }
         }
 
@@ -631,6 +643,22 @@ class MigrateTag extends Command
             // - Example: beer_can's old CLO points to can's CLO with merged_into_type_id = beer's ID.
             // - Requests using the old CLO ID and saved quick tags follow this redirect.
             foreach ($plan['tombstones'] as $tombstone) {
+                // - Older observations can have a category and object without a source CLO.
+                // - Create that source only as a hidden redirect, inside this retirement transaction.
+                // - Example: softdrinks/energy_can records can + energy for retries and late submissions.
+                if ($tombstone['retired_clo_id'] === null) {
+                    DB::table('category_litter_object')->insert([
+                        'category_id' => $tombstone['category_id'],
+                        'litter_object_id' => $retiredId,
+                        'is_selectable' => false,
+                        'merged_into_clo_id' => $tombstone['desired_clo_id'],
+                        'merged_into_type_id' => $this->typeId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    continue;
+                }
+
                 DB::table('category_litter_object')
                     ->where('id', $tombstone['retired_clo_id'])
                     ->update([

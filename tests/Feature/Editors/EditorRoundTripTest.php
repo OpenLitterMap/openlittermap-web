@@ -123,8 +123,7 @@ class EditorRoundTripTest extends TestCase
     {
         return $this->runBridge([
             'photo' => $photo,
-            'cloMap' => CategoryObject::all()->mapWithKeys(fn ($c) => [$c->category_id . ':' . $c->litter_object_id => $c->id])->all(),
-            'types' => LitterObjectType::all(['id', 'key'])->toArray(),
+            'catalogue' => $this->getJson('/api/tags/all')->assertOk()->json(),
             'edit' => $newQuantity ? ['quantity' => $newQuantity] : null,
         ]);
     }
@@ -169,9 +168,9 @@ class EditorRoundTripTest extends TestCase
     }
 
     /** AddTags.vue: GET /api/v3/user/photos → PUT /api/v3/tags */
-    private function webRoundTrip(Photo $photo): array
+    private function webRoundTrip(Photo $photo, ?int $quantity = 5): array
     {
-        $r = $this->bridge($this->webApi($photo));
+        $r = $this->bridge($this->webApi($photo), $quantity);
         $this->assertFalse($r['unresolved'], 'web editor blocks submit on unresolved tag');
         $this->actingAs($this->owner)->putJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => $r['payload']])->assertOk();
 
@@ -179,18 +178,18 @@ class EditorRoundTripTest extends TestCase
     }
 
     /** AdminQueue.vue: GET /api/admin/photos → POST /api/admin/contentsupdatedelete */
-    private function adminRoundTrip(Photo $photo): array
+    private function adminRoundTrip(Photo $photo, ?int $quantity = 5): array
     {
-        $r = $this->bridge($this->adminApi($photo));
+        $r = $this->bridge($this->adminApi($photo), $quantity);
         $this->actingAs($this->admin)->postJson('/api/admin/contentsupdatedelete', ['photoId' => $photo->id, 'tags' => $r['payload']])->assertOk();
 
         return $r;
     }
 
     /** FacilitatorQueue.vue and TeamPhotoEdit.vue: GET /api/teams/photos → PATCH /api/teams/photos/{id}/tags */
-    private function teamRoundTrip(Photo $photo): array
+    private function teamRoundTrip(Photo $photo, ?int $quantity = 5): array
     {
-        $r = $this->bridge($this->teamApi($photo));
+        $r = $this->bridge($this->teamApi($photo), $quantity);
         $this->actingAs($this->teacher)->patchJson("/api/teams/photos/{$photo->id}/tags", ['tags' => $r['payload']])->assertOk();
 
         return $r;
@@ -418,6 +417,10 @@ class EditorRoundTripTest extends TestCase
         $this->seed(GenerateTagsSeeder::class);
         $category = Category::where('key', 'other')->firstOrFail();
         $historical = LitterObject::where('key', 'randomLitter')->firstOrFail();
+        $catalogue = $this->getJson('/api/tags/all')->assertOk()->json();
+        $choices = $this->runBridge(['catalogue' => $catalogue]);
+        $this->assertNotContains("obj-{$historical->id}-cat-{$category->id}", $choices['searchIds']);
+        $this->assertContains("brand-{$this->brandId}", $choices['searchIds']);
         $tags = [$this->fullTag(null), ['category_id' => $category->id, 'object' => ['id' => $historical->id], 'quantity' => 2, 'picked_up' => false]];
         $this->roundTripEachEditor($tags, function (Photo $photo, array $before, array $r, string $editor) {
             $this->assertSame($this->expectedAfterEdit($before), $this->shape($photo), $editor);
@@ -439,18 +442,90 @@ class EditorRoundTripTest extends TestCase
 
     public function test_new_custom_cards_remain_separate_and_award_seven_xp(): void
     {
-        $r = $this->runBridge(['cards' => [
-            ['custom' => true, 'key' => 'separate', 'quantity' => 2, 'pickedUp' => null],
-            ['custom' => true, 'key' => 'separate', 'quantity' => 5, 'pickedUp' => false],
+        $r = $this->runBridge(['actions' => [
+            ['kind' => 'custom', 'key' => 'separate'],
+            ['kind' => 'quantity', 'card' => 0, 'value' => 2],
+            ['kind' => 'custom', 'key' => 'separate'],
+            ['kind' => 'quantity', 'card' => 1, 'value' => 5],
+            ['kind' => 'pickedUp', 'card' => 1, 'value' => false],
         ]]);
         $photo = $this->ownerPhoto($r['payload']);
         $this->assertSame(7, $r['xp']);
         $this->assertSame(7, (int) $photo->xp);
         $this->assertSame([2, 5], $photo->photoTags()->orderBy('id')->pluck('quantity')->all());
+        $this->assertSame([null, 0], $photo->photoTags()->orderBy('id')->pluck('picked_up')->all());
         $r = $this->bridge($this->webApi($photo), null);
         $this->actingAs($this->owner)->putJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => $r['payload']])->assertOk();
         $this->assertSame(7, (int) $photo->fresh()->xp);
         $this->assertCount(2, $this->shape($photo));
+    }
+
+    public function test_picker_type_and_detail_changes_save_through_each_editor(): void
+    {
+        $clo = CategoryObject::findOrFail($this->clo);
+        $brand = ['type' => 'brand', 'value' => ['id' => $this->brandId, 'quantity' => 3]];
+        $material = ['type' => 'material', 'value' => ['id' => $this->materialId]];
+        $custom = ['type' => 'custom', 'value' => 'picker-note'];
+        $actions = [
+            ['kind' => 'select', 'id' => "obj-{$clo->litter_object_id}-cat-{$clo->category_id}", 'pickedUp' => false],
+            ['kind' => 'quantity', 'value' => 4],
+            ['kind' => 'type', 'value' => $this->typeId],
+            ['kind' => 'type', 'value' => null],
+        ];
+        foreach ([$brand, $material, $custom] as $detail) {
+            // - Adding the same detail twice keeps one; removing it empties the list.
+            $actions[] = ['kind' => 'addDetail', 'detail' => $detail];
+            $actions[] = ['kind' => 'addDetail', 'detail' => $detail];
+            $actions[] = ['kind' => 'removeDetail', 'detail' => $detail];
+        }
+        $catalogue = $this->getJson('/api/tags/all')->assertOk()->json();
+        $cleared = $this->runBridge(['catalogue' => $catalogue, 'actions' => $actions]);
+        $this->assertNull($cleared['payload'][0]['litter_object_type_id']);
+        $this->assertNull($cleared['cards'][0]['typeKey']);
+        foreach (['brands', 'materials', 'custom_tags'] as $key) {
+            $this->assertSame([], $cleared['payload'][0][$key]);
+        }
+        foreach ([$brand, $material, $custom] as $detail) {
+            $actions[] = ['kind' => 'addDetail', 'detail' => $detail];
+            $actions[] = ['kind' => 'addDetail', 'detail' => $detail];
+        }
+        $actions = array_merge($actions, [
+            ['kind' => 'type', 'value' => $this->typeId],
+            ['kind' => 'select', 'id' => "type-{$this->clo}-{$this->typeId}", 'pickedUp' => null],
+            ['kind' => 'select', 'id' => "brand-{$this->brandId}"],
+            ['kind' => 'quantity', 'card' => 2, 'value' => 3],
+            ['kind' => 'select', 'id' => "mat-{$this->materialId}"],
+            ['kind' => 'quantity', 'card' => 3, 'value' => 2],
+        ]);
+        $result = $this->runBridge(['catalogue' => $catalogue, 'actions' => $actions]);
+        $this->assertFalse($result['unresolved']);
+        $this->assertSame('audit_type', $result['cards'][0]['typeKey']);
+        $this->assertSame($this->typeId, $result['payload'][1]['litter_object_type_id']);
+        $this->assertSame([false, null, null, null], array_column($result['payload'], 'picked_up'));
+        // - Object card: 25 XP; typed object: 1; standalone brand: 9; standalone material: 4.
+        $this->assertSame(39, $result['xp']);
+
+        foreach (['web', 'admin', 'team'] as $editor) {
+            $photo = $editor === 'team' ? $this->schoolPhoto([$this->fullTag()]) : $this->ownerPhoto([$this->fullTag()]);
+            if ($editor === 'web') {
+                $this->actingAs($this->owner)->putJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => $result['payload']])->assertOk();
+            } elseif ($editor === 'admin') {
+                $this->actingAs($this->admin)->postJson('/api/admin/contentsupdatedelete', ['photoId' => $photo->id, 'tags' => $result['payload']])->assertOk();
+            } else {
+                $this->actingAs($this->teacher)->patchJson("/api/teams/photos/{$photo->id}/tags", ['tags' => $result['payload']])->assertOk();
+            }
+            $stored = $this->shape($photo);
+            $this->assertCount(4, $stored, $editor);
+            $this->assertSame($this->typeId, $stored[0]['type'], $editor);
+            $this->assertSame($this->typeId, $stored[1]['type'], $editor);
+            $this->assertCount(3, $stored[0]['extras'], $editor);
+            $this->assertSame($result['xp'], (int) $photo->fresh()->xp, $editor);
+            // - Approved photos leave the admin queue; their owner can reload them in the web editor.
+            $reloadEditor = $editor === 'admin' ? 'web' : $editor;
+            $this->{$reloadEditor.'RoundTrip'}($photo, null);
+            // - Serializers can reorder observations; all values and duplicate observations must survive.
+            $this->assertSame(collect($stored)->sort()->values()->all(), collect($this->shape($photo))->sort()->values()->all(), $editor);
+        }
     }
 
     public function test_type_weighted_xp_matches_the_editor_for_each_dumping_size(): void

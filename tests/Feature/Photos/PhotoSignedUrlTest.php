@@ -152,27 +152,32 @@ class PhotoSignedUrlTest extends TestCase
     /** @test */
     public function it_returns_503_when_signed_url_generation_fails()
     {
-        // Force production environment so signed URL path is used
-        app()->detectEnvironment(fn () => 'production');
+        // - Exercise the production URL path, then restore the test environment before cleanup.
+        $environment = app()->environment();
+        try {
+            app()->detectEnvironment(fn () => 'production');
 
-        $photo = Photo::factory()->create([
-            'is_public' => true,
-            'verified' => 2,
-            'filename' => 'https://olm-public.s3.amazonaws.com/2024/06/15/photo.jpg',
-        ]);
+            $photo = Photo::factory()->create([
+                'is_public' => true,
+                'verified' => 2,
+                'filename' => 'https://olm-public.s3.amazonaws.com/2024/06/15/photo.jpg',
+            ]);
 
-        // Mock Storage to throw
-        Storage::shouldReceive('disk')->with('s3')->andReturnSelf();
-        Storage::shouldReceive('url')->with('__placeholder__')->andReturn('https://olm-public.s3.amazonaws.com/__placeholder__');
-        Storage::shouldReceive('temporaryUrl')->andThrow(new \RuntimeException('S3 error'));
+            // Mock Storage to throw
+            Storage::shouldReceive('disk')->with('s3')->andReturnSelf();
+            Storage::shouldReceive('url')->with('__placeholder__')->andReturn('https://olm-public.s3.amazonaws.com/__placeholder__');
+            Storage::shouldReceive('temporaryUrl')->andThrow(new \RuntimeException('S3 error'));
 
-        $response = $this->getJson(
-            "{$this->endpoint}/{$photo->id}/signed-url",
-            ['Origin' => 'https://openlittermap.com']
-        );
+            $response = $this->getJson(
+                "{$this->endpoint}/{$photo->id}/signed-url",
+                ['Origin' => 'https://openlittermap.com']
+            );
 
-        $response->assertStatus(503);
-        $this->assertEquals('Image unavailable', $response->json('error'));
+            $response->assertStatus(503);
+            $this->assertEquals('Image unavailable', $response->json('error'));
+        } finally {
+            app()->detectEnvironment(fn () => $environment);
+        }
     }
 
     /** @test */
