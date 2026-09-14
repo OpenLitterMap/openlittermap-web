@@ -142,7 +142,7 @@ class AddNewTagsToPhotosTest extends TestCase
         ]);
     }
 
-    public function test_it_falls_back_when_object_does_not_match_category(): void
+    public function test_it_rejects_an_explicit_category_that_does_not_contain_the_object(): void
     {
         $this->seed(GenerateTagsSeeder::class);
 
@@ -154,7 +154,6 @@ class AddNewTagsToPhotosTest extends TestCase
         // "butts" belongs only to "smoking", not "alcohol"
         $object = LitterObject::where('key', 'butts')->first();
         $wrongCategory = Category::where('key', CategoryKey::Alcohol->value)->first();
-        $correctCategory = $object->categories()->first();
 
         $response = $this->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
@@ -166,14 +165,8 @@ class AddNewTagsToPhotosTest extends TestCase
             ]
         ]);
 
-        $response->assertOk();
-
-        // Falls back to the correct category (smoking) instead of erroring
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $correctCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+        $response->assertUnprocessable();
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 
     public function test_it_fails_to_upload_if_the_user_does_not_own_the_photo (): void
@@ -385,9 +378,9 @@ class AddNewTagsToPhotosTest extends TestCase
     }
 
     /**
-     * Multi-category object with WRONG category sent falls back to first().
+     * - Reject an explicit category that does not contain the object.
      */
-    public function test_multi_category_object_falls_back_when_wrong_category_sent(): void
+    public function test_multi_category_object_rejects_wrong_explicit_category(): void
     {
         $this->seed(GenerateTagsSeeder::class);
 
@@ -399,7 +392,6 @@ class AddNewTagsToPhotosTest extends TestCase
         // "bottle" belongs to "alcohol" and "soft_drinks" — NOT "smoking"
         $object = LitterObject::where('key', 'bottle')->first();
         $wrongCategory = Category::where('key', CategoryKey::Smoking->value)->first();
-        $firstCategory = $object->categories()->first();
 
         // Verify smoking is not a valid category for bottle
         $this->assertFalse(
@@ -418,20 +410,8 @@ class AddNewTagsToPhotosTest extends TestCase
             ],
         ]);
 
-        $response->assertOk();
-
-        // Should fall back to the first valid category, not the wrong one
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $firstCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
-
-        $this->assertDatabaseMissing('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $wrongCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+        $response->assertUnprocessable();
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 
     /**

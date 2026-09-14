@@ -53,7 +53,7 @@ class GetTagsController extends Controller
         $objectTypesMap = $objectMaps['types'];
         $objectMaterialsMap = $objectMaps['materials'];
 
-        $litterObjects = LitterObject::with(['categories:id,key'])
+        $litterObjects = LitterObject::with(['categories:id,key'])->whereNull('retired_at')
             ->whereHas('categories')
             ->select('id', 'key')
             ->orderBy('key')
@@ -72,9 +72,11 @@ class GetTagsController extends Controller
 
         $types = LitterObjectType::select('id', 'key', 'name')->orderBy('key')->get();
 
-        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')->get();
+        $categoryObjects = CategoryObject::select('id', 'category_id', 'litter_object_id')
+            ->whereHas('litterObject', fn ($q) => $q->whereNull('retired_at'))->get();
 
         $categoryObjectTypes = DB::table('category_object_types')
+            ->whereIn('category_litter_object_id', $categoryObjects->pluck('id'))
             ->select('category_litter_object_id', 'litter_object_type_id')
             ->get();
 
@@ -99,7 +101,7 @@ class GetTagsController extends Controller
         $materialsKeys = $request['materials'] ? explode(',', $request['materials']) : null;
         $searchQuery   = $request['search'] ?? null;
 
-        $query = CategoryObject::query();
+        $query = CategoryObject::whereHas('litterObject', fn ($q) => $q->whereNull('retired_at'));
 
         if ($categoryKey) {
             $query->whereHas('category', function($q) use ($categoryKey) {

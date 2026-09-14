@@ -16,6 +16,8 @@ class LitterObject extends Model
 
     protected $hidden = ['pivot'];
 
+    protected $casts = ['retired_at' => 'datetime', 'merged_into_id' => 'integer', 'merged_into_type_id' => 'integer'];
+
     public function getRouteKeyName(): string
     {
         return 'key';

@@ -38,6 +38,13 @@ V5 uses a normalized hierarchy: Photo -> PhotoTag (category + object + quantity)
 7. **No unique constraint on `photo_tags` for (CLO, type) pairs.** There is no DB-level unique constraint on `(photo_id, category_litter_object_id, litter_object_type_id)`. Duplicate CLO+type pairs are possible (each is a separate PhotoTag row). Do NOT assume uniqueness. Extra-tag deduplication (materials/brands within a single tag) is handled via `upsert` inside a single PhotoTag's extra tags, not across multiple PhotoTag rows.
 8. **`getNewTags()` serializer contract.** `UsersUploadsController::getNewTags()` conditionally includes `category` and `object` only when both `category_id` and `litter_object_id` resolve. For extra-tag-only PhotoTags (brand/material/custom-only), `category` and `object` are returned as `null`. Always includes `litter_object_type_id` (may be null), `quantity`, `picked_up` (cast to bool with photo-level fallback), and `extra_tags` array.
 
+## Object retirement
+
+- `olm:migrate-tag OLD NEW` previews one category-preserving object migration; `--apply` updates observations and records the replacement on the old object.
+- `ResolveLitterObject` follows `retired_at`, `merged_into_id` and `merged_into_type_id` before choosing the destination CLO. No source CLO or global seeder is required.
+- The latest recorded replacement type wins. Without a recorded type, invalid client types return 422. Explicit object-format categories are preserved or rejected.
+- See `readme/PostTagMigrationClean.md` for the write freeze, rehearsal, Redis recovery and follow-up scope.
+
 ## Patterns
 
 ### Creating a tag with extras

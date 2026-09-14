@@ -13,6 +13,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
+use App\Services\Tags\ResolveLitterObject;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Illuminate\Support\Facades\DB;
@@ -143,32 +144,13 @@ class AddTagsToPhotoAction
      */
     protected function createTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
     {
-        $cloId = $tag['category_litter_object_id'];
-        $clo = CategoryObject::find($cloId);
-
-        if (! $clo) {
-            throw ValidationException::withMessages([
-                'tags' => ["Invalid category_litter_object_id: {$cloId}"],
-            ]);
-        }
-
+        [$clo, $typeId] = app(ResolveLitterObject::class)->fromClo(
+            (int) $tag['category_litter_object_id'],
+            isset($tag['litter_object_type_id']) ? (int) $tag['litter_object_type_id'] : null
+        );
+        $cloId = $clo->id;
         $quantity = max(1, (int) ($tag['quantity'] ?? 1));
         $pickedUp = $tag['picked_up'] ?? null;
-
-        // Validate type if provided
-        $typeId = $tag['litter_object_type_id'] ?? null;
-        if ($typeId) {
-            $validType = DB::table('category_object_types')
-                ->where('category_litter_object_id', $cloId)
-                ->where('litter_object_type_id', $typeId)
-                ->exists();
-
-            if (! $validType) {
-                throw ValidationException::withMessages([
-                    'tags' => ["Type {$typeId} is not valid for CLO {$cloId}"],
-                ]);
-            }
-        }
 
         // Create the PhotoTag
         $photoTag = PhotoTag::create([
@@ -194,13 +176,32 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Legacy format tag creation (backward compatibility for old frontend/mobile).
+     * - Web editors can send object and category separately instead of category_litter_object_id.
+     * - Example: { object: "plasticBags", category_id: 8, quantity: 2 }.
+     * - Resolve retired objects before creating the observation.
      *
      * @throws \Exception
      */
     protected function createTagLegacy(int $userId, int $photoId, array $tag): PhotoTag
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
+
+        if (! $object) {
+            throw ValidationException::withMessages(['tags' => 'Unknown litter object.']);
+        }
+        if ($object->retired_at !== null) {
+            [$clo, $typeId] = app(ResolveLitterObject::class)->resolve(
+                $object, $category?->id,
+                isset($tag['litter_object_type_id']) ? (int) $tag['litter_object_type_id'] : null
+            );
+            $tag['category_litter_object_id'] = $clo->id;
+            $tag['litter_object_type_id'] = $typeId;
+
+            return $this->createTagFromClo($userId, $photoId, $tag);
+        }
+        if (! $category) {
+            throw ValidationException::withMessages(['tags' => 'Category does not contain object.']);
+        }
 
         // Resolve CLO from category + object
         $clo = null;
@@ -383,16 +384,14 @@ class AddTagsToPhotoAction
                 ? LitterObject::find($tag['object']['id'])
                 : LitterObject::where('key', $tag['object'])->first();
 
-            if ($object) {
-                // Validate provided category belongs to this object, fall back otherwise
-                if ($category && ! $object->categories()->where('categories.id', $category->id)->exists()) {
-                    $category = null;
-                }
-
-                if (! $category) {
-                    $category = $object->categories()->first();
-                }
+            if ($object && $object->retired_at === null && ! $category
+                && ! isset($tag['category_id']) && ! isset($tag['category'])) {
+                $category = $object->categories()->first();
             }
+        }
+
+        if ((isset($tag['category_id']) || isset($tag['category'])) && ! $category) {
+            throw ValidationException::withMessages(['tags' => 'Unknown category.']);
         }
 
         return [

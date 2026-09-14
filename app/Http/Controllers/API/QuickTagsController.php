@@ -58,6 +58,7 @@ class QuickTagsController extends Controller
             ->join('categories as c', 'c.id', '=', 'clo.category_id')
             ->join('litter_objects as lo', 'lo.id', '=', 'clo.litter_object_id')
             ->leftJoin('litter_object_types as lot', 'lot.id', '=', 'pt.litter_object_type_id')
+            ->whereNull('lo.retired_at')
             ->where('p.user_id', $userId)
             ->whereNotNull('pt.category_litter_object_id')
             ->select(

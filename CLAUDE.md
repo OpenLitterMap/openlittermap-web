@@ -109,8 +109,8 @@ tests/
 
 ## CI (GitHub Actions)
 
-Runs on push to `master`, `staging`, `upgrade/tagging-2025` and PRs.
-Pipeline: PHP 8.2, Node 18, MySQL 5.7, Redis 7 — composer install, npm build, phpunit.
+Runs on pushes and PRs targeting `master` or `upgrade/tagging-2025`.
+Pipeline: PHP 8.3, MySQL 8.0, Redis 7 — composer install, migrations and PHPUnit. No Node or frontend build step.
 
 ## Current State (v5 — shipped to `master`)
 
@@ -140,6 +140,7 @@ Built by a single developer over 17 years.
 - `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns. All three (`category_litter_object_id`, `category_id`, `litter_object_id`) are **nullable** — extra-tag-only PhotoTags have null CLO
 - `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
 - Replace tags (`PUT /api/v3/tags`) accepts empty `tags: []` to clear all tags from a photo
+- Object retirement uses `litter_objects.retired_at`, `merged_into_id` and `merged_into_type_id`; resolve the object replacement before choosing its CLO. `olm:migrate-tag` needs no source CLO or production seeder. See `readme/PostTagMigrationClean.md`.
 - `TagsConfig` provides helper methods: `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()` — use these instead of hardcoding lists
 - Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only
 - `Photo` model has `SoftDeletes` trait but all delete endpoints use `forceDelete()` for hard deletion. Cascading FKs on `photo_tags` (→ `photo_tag_extras`) handle relationship cleanup
@@ -153,7 +154,7 @@ Built by a single developer over 17 years.
 - Points API returns `page` (not `current_page`) at root level — frontend normalizes to `current_page`
 - Nav.vue `isAdmin` check includes `'superadmin'` role (not just `'admin'` and `'helper'`)
 - `MetricsService` is the SINGLE WRITER for all metrics (MySQL `metrics` table + Redis). Never use `DB::table('metrics')->increment()` or `Redis::hincrby()` directly
-- Redis is a derived cache, rebuildable from `metrics` table. Never treat Redis as source of truth
+- Redis is a derived cache; per-object counts rebuild from processed photo snapshots, not the totals-only `metrics` table. Never treat Redis as source of truth
 - Location tables store identity only (no aggregate counters). Stats live in Redis + `metrics` table
 - `auth:sanctum` routes in tests: use `actingAs($user)` with NO guard arg, NOT `actingAs($user, 'api')`
 - `result_string` and `total_litter` columns are write-only — all active endpoints use `summary` and `total_tags`
