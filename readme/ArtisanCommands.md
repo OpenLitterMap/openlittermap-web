@@ -64,7 +64,7 @@ These live in `tmp/` and are intended for the v5 migration period only.
 | Command | Purpose |
 |---------|---------|
 | `seed:tags` | Catalogue setup for a new local/test database; not a production migration step |
-| `olm:migrate-tag OLD NEW` | Preview one object migration; `--apply` updates data. Optional `--type`, `--create-destination`, `--allow-xp-change`. See [deployment guide](PostTagMigrationClean.md). |
+| `olm:migrate-tag OLD NEW` | Preview one object migration; `--apply` updates data. Optional `--type`. Destination CLOs and type associations must already exist; XP differences are informational. See [deployment guide](PostTagMigrationClean.md). |
 | `tags:verify-for-user-id {user_id}` | Verify remaining tags for a user |
 
 ---

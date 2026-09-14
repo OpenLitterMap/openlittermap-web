@@ -12,7 +12,6 @@ use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Photo;
 use App\Services\Metrics\MetricsService;
 use App\Services\Tags\GeneratePhotoSummaryService;
-use App\Tags\TagsConfig;
 use Illuminate\Console\Command;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +34,6 @@ class MigrateTag extends Command
         {old : Object key to retire}
         {new : Replacement object key}
         {--type= : Approved replacement type key}
-        {--create-destination : Create missing destination CLOs declared in TagsConfig}
-        {--allow-xp-change : Allow objects with different per-item XP}
         {--apply : Apply the migration; default is a read-only preview}';
 
     protected $description = 'Retire an object and migrate its data to its replacement.';
@@ -87,18 +84,7 @@ class MigrateTag extends Command
                 $plan = $this->plan($source, $destination, $typeId);
                 $destinations = [];
                 foreach ($plan as $categoryId => $entry) {
-                    $cloId = $entry['clo_id'];
-                    if ($cloId === null) {
-                        $cloId = CategoryObject::create([
-                            'category_id' => $categoryId, 'litter_object_id' => $destination->id,
-                        ])->id;
-                        foreach ($entry['create_types'] as $id) {
-                            DB::table('category_object_types')->insert([
-                                'category_litter_object_id' => $cloId, 'litter_object_type_id' => $id,
-                            ]);
-                        }
-                    }
-                    $destinations[$categoryId] = $cloId;
+                    $destinations[$categoryId] = $entry['clo_id'];
                 }
                 $source->update([
                     'retired_at' => $source->retired_at ?? now(),
@@ -209,35 +195,16 @@ class MigrateTag extends Command
         if ($this->sourceRows($source->id)->whereNotNull('litter_object_type_id')->exists()) {
             throw new RuntimeException('Already-typed source observations require a separately reviewed migration.');
         }
-        if (XpScore::getObjectXp($source->key) !== XpScore::getObjectXp($destination->key)
-            && ! $this->option('allow-xp-change')) {
-            throw new RuntimeException('Per-item object XP differs. Review and use --allow-xp-change if approved.');
-        }
-
         $categories = $this->sourceRows($source->id)->distinct()->pluck('category_id')
             ->merge($this->quickTags($source->id)->distinct()->pluck('clo.category_id'))->unique();
         $plan = [];
         foreach ($categories as $categoryId) {
             $category = Category::findOrFail($categoryId);
             $clo = CategoryObject::where('category_id', $categoryId)->where('litter_object_id', $destination->id)->first();
-            $createTypes = [];
             if ($clo === null) {
-                if (! $this->option('create-destination')) {
-                    throw new RuntimeException("Missing destination CLO: {$category->key}/{$destination->key}. Use --create-destination only after review.");
-                }
-                $config = TagsConfig::get()[$category->key] ?? [];
-                if (! array_key_exists($destination->key, $config)) {
-                    throw new RuntimeException("Destination {$category->key}/{$destination->key} is not declared in TagsConfig.");
-                }
-                foreach ($config[$destination->key]['types'] ?? [] as $key) {
-                    $id = LitterObjectType::where('key', $key)->value('id');
-                    if ($id === null) {
-                        throw new RuntimeException("Declared type {$key} is missing; no types will be created.");
-                    }
-                    $createTypes[] = (int) $id;
-                }
+                throw new RuntimeException("Missing destination CLO: {$category->key}/{$destination->key}. Prepare it separately before migrating.");
             }
-            $allowed = $clo ? $clo->types()->pluck('litter_object_types.id')->all() : $createTypes;
+            $allowed = $clo->types()->pluck('litter_object_types.id')->all();
             $quickTypes = $this->quickTags($source->id)->where('clo.category_id', $categoryId)->whereNotNull('qt.type_id')->distinct()->pluck('qt.type_id')->all();
             $required = $typeId === null ? $quickTypes : [$typeId];
             if (array_diff($required, $allowed)) {
@@ -245,7 +212,7 @@ class MigrateTag extends Command
                     ->whereNotNull('qt.type_id')->whereNotIn('qt.type_id', $allowed)->pluck('qt.id')->implode(', ');
                 throw new RuntimeException("Incompatible destination or quick-tag type for {$category->key}/{$destination->key}. Quick tag IDs: {$ids}");
             }
-            $plan[(int) $categoryId] = ['clo_id' => $clo?->id, 'category' => $category->key, 'create_types' => $createTypes];
+            $plan[(int) $categoryId] = ['clo_id' => $clo->id, 'category' => $category->key];
         }
         return $plan;
     }
@@ -274,22 +241,15 @@ class MigrateTag extends Command
         $this->line('Example photo IDs: '.$this->sourceRows($source->id)->select('photo_id')->distinct()->orderBy('photo_id')->limit(5)->pluck('photo_id')->implode(', '));
         $this->line('Quick tags to repoint: '.$this->quickTags($source->id)->count());
         foreach ($this->quickTags($source->id)->select('qt.id', 'qt.clo_id', 'qt.type_id', 'clo.category_id')->get() as $quick) {
-            $destinationClo = $plan[$quick->category_id]['clo_id'] ?? 'new destination CLO';
+            $destinationClo = $plan[$quick->category_id]['clo_id'];
             $destinationType = $type?->id ?? $quick->type_id ?? 'none';
             $this->line("Quick tag {$quick->id}: CLO {$quick->clo_id} → {$destinationClo}, type {$destinationType}.");
         }
         $this->line('Per-item object XP delta: '.(XpScore::getObjectXp($destination->key) - XpScore::getObjectXp($source->key)));
         $this->line('Whole-photo XP is recalculated using current rules; the per-item delta does not predict that total.');
         $this->line('Replacement type: '.($type?->key ?? 'none'));
-        foreach ($plan as $categoryId => $entry) {
-            if ($entry['clo_id'] === null) {
-                $this->line("Would create category_litter_object: category_id={$categoryId}, litter_object_id={$destination->id} ({$entry['category']}/{$destination->key}).");
-                foreach ($entry['create_types'] as $id) {
-                    $this->line("Would create category_object_types: new destination CLO, litter_object_type_id={$id}.");
-                }
-            } else {
-                $this->line("Destination: {$entry['category']}/{$destination->key}, CLO {$entry['clo_id']}.");
-            }
+        foreach ($plan as $entry) {
+            $this->line("Destination: {$entry['category']}/{$destination->key}, CLO {$entry['clo_id']}.");
         }
         $empty = CategoryObject::where('litter_object_id', $source->id)->whereNotIn('category_id', array_keys($plan))->count();
         $this->line("Unused source CLOs: {$empty} (informational; no destination required).");

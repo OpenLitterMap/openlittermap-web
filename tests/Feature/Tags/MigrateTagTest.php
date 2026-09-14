@@ -154,17 +154,19 @@ class MigrateTagTest extends TestCase
         $this->assertEquals(11, Redis::hget(RedisKeys::objects(RedisKeys::global()), $this->new->id));
     }
 
-    public function test_missing_destination_requires_explicit_creation_and_declaration(): void
+    public function test_missing_destination_is_refused_until_prepared_separately(): void
     {
         $this->destination->delete();
-        $this->observation();
+        $tag = $this->observation();
+        $this->migrate(['--apply' => false], 1);
         $this->migrate([], 1);
         $this->assertNull($this->old->fresh()->retired_at);
-        $this->migrate(['--create-destination' => true, '--apply' => false]);
+        $this->assertEquals($this->old->id, $tag->fresh()->litter_object_id);
         $this->assertDatabaseCount('category_litter_object', 0);
-        $this->migrate(['--create-destination' => true]);
+        CategoryObject::create(['category_id' => $this->category->id, 'litter_object_id' => $this->new->id]);
+        $this->migrate();
         $this->assertDatabaseCount('category_litter_object', 1);
-        $this->assertDatabaseHas('category_litter_object', ['litter_object_id' => $this->new->id, 'category_id' => $this->category->id]);
+        $this->assertEquals($this->new->id, $tag->fresh()->litter_object_id);
     }
 
     public function test_undeclared_destination_is_not_created(): void
@@ -172,7 +174,7 @@ class MigrateTagTest extends TestCase
         $this->destination->delete();
         $this->new->update(['key' => 'unapproved_destination']);
         $this->observation();
-        $this->migrate(['--create-destination' => true], 1);
+        $this->migrate([], 1);
         $this->assertDatabaseCount('category_litter_object', 0);
         $this->assertNull($this->old->fresh()->retired_at);
     }
@@ -410,37 +412,39 @@ class MigrateTagTest extends TestCase
         $this->assertDatabaseCount('photo_tags', 0);
     }
 
-    public function test_creating_a_destination_lists_and_creates_only_declared_existing_types(): void
+    public function test_xp_difference_is_reported_without_blocking_and_types_must_be_prepared(): void
     {
-        $this->destination->delete();
         $this->category->update(['key' => 'dumping']);
         $this->old->update(['key' => 'dumping_small']);
         $this->new->update(['key' => 'dumping']);
-        $this->observation();
+        $tag = $this->observation();
         $small = LitterObjectType::factory()->create(['key' => 'small']);
-        $this->migrate(['--create-destination' => true, '--type' => 'small', '--allow-xp-change' => true], 1);
+        $this->migrate(['--type' => 'small'], 1);
         $this->assertNull($this->old->fresh()->retired_at);
-        LitterObjectType::factory()->create(['key' => 'medium']);
-        LitterObjectType::factory()->create(['key' => 'large']);
-        $options = ['old' => $this->old->key, 'new' => $this->new->key, '--create-destination' => true, '--type' => 'small', '--allow-xp-change' => true];
-        $this->artisan('olm:migrate-tag', $options)
-            ->expectsOutput("Would create category_object_types: new destination CLO, litter_object_type_id={$small->id}.")->assertSuccessful();
         $this->assertDatabaseCount('category_object_types', 0);
+        $this->destination->types()->attach($small->id);
+        app(GeneratePhotoSummaryService::class)->run($tag->photo);
+        $this->assertEquals(20, $tag->photo->fresh()->xp);
+        $options = ['old' => $this->old->key, 'new' => $this->new->key, '--type' => 'small'];
+        $this->artisan('olm:migrate-tag', $options)
+            ->expectsOutput('Per-item object XP delta: -9')->assertSuccessful();
+        $this->assertEquals(20, $tag->photo->fresh()->xp);
         $this->migrate($options);
-        $this->assertDatabaseCount('category_object_types', 3);
+        $this->assertEquals(2, $tag->photo->fresh()->xp);
+        $this->assertEquals($small->id, $tag->fresh()->litter_object_type_id);
+        $this->assertDatabaseCount('category_object_types', 1);
         $this->assertDatabaseCount('taggables', 0);
-        $this->assertDatabaseCount('litter_object_types', 3);
+        $this->assertDatabaseCount('litter_object_types', 1);
     }
 
-    public function test_catalogue_creation_failure_rolls_back_the_retirement_transaction(): void
+    public function test_retirement_write_failure_rolls_back_the_transaction(): void
     {
-        $this->destination->delete();
         $tag = $this->observation();
-        \Illuminate\Support\Facades\Event::listen('eloquent.created: '.CategoryObject::class, function () {
-            throw new \RuntimeException('Simulated catalogue write failure.');
+        \Illuminate\Support\Facades\Event::listen('eloquent.updated: '.LitterObject::class, function () {
+            throw new \RuntimeException('Simulated retirement write failure.');
         });
-        $this->migrate(['--create-destination' => true], 1);
-        $this->assertDatabaseCount('category_litter_object', 0);
+        $this->migrate([], 1);
+        $this->assertDatabaseCount('category_litter_object', 1);
         $this->assertNull($this->old->fresh()->retired_at);
         $this->assertEquals($this->old->id, $tag->fresh()->litter_object_id);
     }

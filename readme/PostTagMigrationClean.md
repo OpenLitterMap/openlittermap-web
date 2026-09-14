@@ -53,7 +53,7 @@ Local database check on 2026-09-14: `olm_postmig_7` records exactly one retired 
 
 | Old key | New key | Replacement type | Local state |
 | --- | --- | --- | --- |
-| `plasticBags` | `plastic_bag` | None | Retirement recorded at `2026-09-14 19:16:19` (database value); zero old photo-tag records remain. |
+| `plasticBags` | `plastic_bag` | None | Local retirement recorded on `2026-09-14`; zero old photo-tag records remain. |
 
 The brand configuration and English translations have also been updated for this mapping. `energy_can → can --type=energy` is a proposed later run, not a completed migration. Add further completed mappings to this list only after checking their recorded replacements and remaining data.
 
@@ -72,11 +72,11 @@ php artisan olm:migrate-tag energy_can can --type=energy
 php artisan olm:migrate-tag energy_can can --type=energy --apply
 ```
 
-Optional `--create-destination` creates only missing destination CLOs declared in `TagsConfig`, plus their declared type associations. All those type records must already exist. The preview prints the exact proposed rows. It does not create objects, categories, materials or types, or run seeders. Neither of the first two mappings should need this flag if their approved destination CLOs already exist.
+Prepare destination catalogue changes separately in reviewed code before running this command. The destination object, CLO and any permitted type associations must already exist in the target database; changing `TagsConfig` alone does not update an existing database. The command never creates catalogue entries or runs seeders. Plastic bags and energy cans already have their required destinations in the checked local catalogue.
 
 Source observations with a null category or an existing type are refused. Category moves and migrations of already-typed observations are follow-up work. Incompatible destination types or saved quick-tag types stop the run before retirement. The same checks run in preview and apply.
 
-`--allow-xp-change` is required when the old and new object keys have different per-item XP under the existing summary calculator. A zero per-item delta is **not** a promise of zero whole-photo XP drift: every affected photo is rescored using current rules, including its other observations. Compare XP during rehearsal before approving a mapping.
+The preview reports the per-item XP difference without blocking the migration. Every affected photo is rescored using current rules, including its other observations; XP is not frozen or deferred by this command. A zero per-item delta does not promise zero whole-photo XP drift. Changes to XP rules and any later bulk rescore remain separate work.
 
 The latest non-null type recorded in an object replacement chain wins. Without a recorded type, a supplied type must be allowed at the final destination or the API returns 422 atomically. For a retired object submitted without a category, the destination and effective type must identify one category; otherwise the API returns 422. Explicit object-format categories are preserved or rejected, never silently substituted. See [API contract](API.md).
 
@@ -155,6 +155,6 @@ Before production, attach the tested commit, approved arguments, fresh-copy timi
 - Tested the uncommitted working tree on `fix/tags/migrate-tag`, based on `ac688aa6`, using PHP 8.3.16, local MySQL `olm_test` and Redis database 2.
 - Full PHPUnit suite: **1,388 tests, 6,997 assertions, zero failures, one skipped**. The existing `TypesCheckerTest::test_it_unlocks_per_type_achievement` skips because its fixture has no types; achievement changes remain follow-up work.
 - `npm run build` passes, with the existing large-chunk warning. PHP syntax and `git diff --check` pass.
-- Covered missing source CLOs, explicit destination creation, dry runs, stale object/CLO submissions, type rules, quick tags, observation/extras/timestamp preservation, school approval, ownerless/deleted photos, retry agreement, chains and actual wide/long CSV output.
+- Covered missing source CLOs, dry runs, stale object/CLO submissions, type rules, quick tags, observation/extras/timestamp preservation, school approval, ownerless/deleted photos, retry agreement, chains and actual wide/long CSV output. Automatic destination creation was covered in that earlier run but has since been removed; destinations now require separate preparation.
 - The interruption test commits 200 photos, fails the next batch, resumes the remaining photo and verifies replay and Redis rebuild without double-counting. A second MySQL connection verifies advisory-lock contention. This is exception-based interruption coverage, not a process-kill rehearsal.
 - No mounted browser session, concurrent editor execution, final-commit CI or fresh production-copy rehearsal was run. Production and `olm_postmig_6` were not modified. Those deployment checks remain pending.
