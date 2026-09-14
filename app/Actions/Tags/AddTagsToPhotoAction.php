@@ -13,6 +13,7 @@ use App\Models\Litter\Tags\LitterObject;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
+use App\Services\Tags\ResolveLitterObject;
 use App\Models\Teams\Team;
 use App\Models\Users\User;
 use Illuminate\Support\Facades\DB;
@@ -58,9 +59,8 @@ class AddTagsToPhotoAction
     /**
      * Create PhotoTag records with extra tags (materials, brands, custom tags).
      *
-     * Accepts two payload formats:
-     * - New: { category_litter_object_id, litter_object_type_id?, ... }
-     * - Legacy: { object: {id, key}, category?, brand_only?, material_only?, ... }
+     * - Accept a CLO ID, object/category fields, or standalone extras.
+     * - Example: { category_litter_object_id: 111, quantity: 2 }.
      *
      * @throws \Exception
      */
@@ -71,11 +71,11 @@ class AddTagsToPhotoAction
         foreach ($tags as $tag) {
             // Detect payload format
             if (isset($tag['category_litter_object_id'])) {
-                $photoTags[] = $this->createTagFromClo($userId, $photoId, $tag);
+                $photoTags[] = $this->createPhotoTagFromClo($userId, $photoId, $tag);
             } elseif ($this->isExtraTagOnly($tag)) {
                 $photoTags[] = $this->createExtraTagOnly($userId, $photoId, $tag);
             } else {
-                $photoTags[] = $this->createTagLegacy($userId, $photoId, $tag);
+                $photoTags[] = $this->createPhotoTagFromObject($userId, $photoId, $tag);
             }
         }
 
@@ -137,38 +137,21 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * New CLO-based tag creation.
+     * - Create a PhotoTag from category_litter_object_id and attach its extras.
+     * - Follow a retired object's replacement before saving.
+     * - Example: { category_litter_object_id: 111, quantity: 2 }.
      *
      * @throws \Exception
      */
-    protected function createTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
+    protected function createPhotoTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
     {
-        $cloId = $tag['category_litter_object_id'];
-        $clo = CategoryObject::find($cloId);
-
-        if (! $clo) {
-            throw ValidationException::withMessages([
-                'tags' => ["Invalid category_litter_object_id: {$cloId}"],
-            ]);
-        }
-
+        [$clo, $typeId] = app(ResolveLitterObject::class)->fromClo(
+            (int) $tag['category_litter_object_id'],
+            isset($tag['litter_object_type_id']) ? (int) $tag['litter_object_type_id'] : null
+        );
+        $cloId = $clo->id;
         $quantity = max(1, (int) ($tag['quantity'] ?? 1));
         $pickedUp = $tag['picked_up'] ?? null;
-
-        // Validate type if provided
-        $typeId = $tag['litter_object_type_id'] ?? null;
-        if ($typeId) {
-            $validType = DB::table('category_object_types')
-                ->where('category_litter_object_id', $cloId)
-                ->where('litter_object_type_id', $typeId)
-                ->exists();
-
-            if (! $validType) {
-                throw ValidationException::withMessages([
-                    'tags' => ["Type {$typeId} is not valid for CLO {$cloId}"],
-                ]);
-            }
-        }
 
         // Create the PhotoTag
         $photoTag = PhotoTag::create([
@@ -194,13 +177,32 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * Legacy format tag creation (backward compatibility for old frontend/mobile).
+     * - Web editors can send object and category separately instead of category_litter_object_id.
+     * - Example: { object: "plasticBags", category_id: 8, quantity: 2 }.
+     * - Resolve retired objects before creating the observation.
      *
      * @throws \Exception
      */
-    protected function createTagLegacy(int $userId, int $photoId, array $tag): PhotoTag
+    protected function createPhotoTagFromObject(int $userId, int $photoId, array $tag): PhotoTag
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
+
+        if (! $object) {
+            throw ValidationException::withMessages(['tags' => 'Unknown litter object.']);
+        }
+        if ($object->retired_at !== null) {
+            [$clo, $typeId] = app(ResolveLitterObject::class)->resolve(
+                $object, $category?->id,
+                isset($tag['litter_object_type_id']) ? (int) $tag['litter_object_type_id'] : null
+            );
+            $tag['category_litter_object_id'] = $clo->id;
+            $tag['litter_object_type_id'] = $typeId;
+
+            return $this->createPhotoTagFromClo($userId, $photoId, $tag);
+        }
+        if (! $category) {
+            throw ValidationException::withMessages(['tags' => 'Category does not contain object.']);
+        }
 
         // Resolve CLO from category + object
         $clo = null;
@@ -363,7 +365,8 @@ class AddTagsToPhotoAction
     /**
      * Resolve category and object from tag input (legacy format).
      * Accepts either { id: int } or string key for both.
-     * Auto-resolves category from object if not explicitly provided.
+     * - Preserve an explicit category.
+     * - Otherwise prefer an existing other CLO, then a sole category; reject ambiguity.
      */
     protected function resolveTag(array $tag): array
     {
@@ -383,16 +386,15 @@ class AddTagsToPhotoAction
                 ? LitterObject::find($tag['object']['id'])
                 : LitterObject::where('key', $tag['object'])->first();
 
-            if ($object) {
-                // Validate provided category belongs to this object, fall back otherwise
-                if ($category && ! $object->categories()->where('categories.id', $category->id)->exists()) {
-                    $category = null;
-                }
-
-                if (! $category) {
-                    $category = $object->categories()->first();
-                }
+            if ($object && $object->retired_at === null && ! $category
+                && ! isset($tag['category_id']) && ! isset($tag['category'])) {
+                [$clo] = app(ResolveLitterObject::class)->resolve($object, null);
+                $category = $clo->category;
             }
+        }
+
+        if ((isset($tag['category_id']) || isset($tag['category'])) && ! $category) {
+            throw ValidationException::withMessages(['tags' => 'Unknown category.']);
         }
 
         return [

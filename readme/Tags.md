@@ -73,6 +73,20 @@ The category+object pairing is identified by a single `category_litter_object_id
 | `custom_tags_new` | `CustomTagNew` | User-generated custom tags |
 | `litter_states` | `LitterState` | Physical condition (degraded, micro, macro) — orthogonal, wired via `taggables` |
 
+### Active and retired objects
+
+```php
+LitterObject::active()       // Same as retired(false): retired_at is null.
+LitterObject::retired()      // retired_at is not null.
+LitterObject::retired(false) // Objects that have not been retired.
+```
+
+- Use `active()` explicitly for the tag catalogue, search and generated top tags.
+- There is **no global scope** hiding retired objects. Ordinary lookups can find both active and retired records.
+- Keep retired objects available to migration retries, replacement-chain resolution and historical observations.
+- Example: looking up `plasticBags` must still find the retired record so a stale submission can resolve to `plastic_bag`.
+- An ordinary lookup does not authorise saving a retired object. Tag writes must follow its recorded replacement before choosing the CLO.
+
 ### Relationship pivots
 
 ```sql
@@ -243,9 +257,9 @@ XP details and level thresholds: see `readme/XP.md`.
 `AddTagsToPhotoAction::run($userId, $photoId, $tags, $skipVerification = false)` is the single entry point for adding tags. Everything runs inside a `DB::transaction()`:
 
 1. **Create rows** — `addTagsToPhoto()` iterates the payload, detecting the format per tag:
-   - `createTagFromClo()` when `category_litter_object_id` is present (resolves denormalised `category_id`/`litter_object_id` from the CLO).
+   - `createPhotoTagFromClo()` when `category_litter_object_id` is present (follows retired-object replacements, then takes the category and object from the destination CLO).
    - `createExtraTagOnly()` when the tag is brand-only / material-only / custom-only (null CLO fields).
-   - `createTagLegacy()` for the legacy `{ object: {id, key}, … }` payload (auto-resolves category from the object).
+   - `createPhotoTagFromObject()` for an object/category payload, such as `{ object: {id, key}, category_id, quantity }` (preserves an explicit category and resolves retired objects before creating the PhotoTag).
 2. **Generate summary + XP** — `$photo->generateSummary()` calls `GeneratePhotoSummaryService`, populating `summary`, `xp`, `total_tags`, `total_brands`.
 3. **Verification** — unless `skipVerification` is true, `updateVerification()` runs. For trusted/non-school users it fires `TagsVerifiedByAdmin`, which drives `ProcessPhotoMetrics → MetricsService::processPhoto()`. Admin controllers pass `skipVerification = true` because they handle verification + metrics atomically themselves.
 

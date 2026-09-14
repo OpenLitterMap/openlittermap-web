@@ -24,7 +24,7 @@ class RedisMetricsCollectorLocationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Redis::flushall();
+        Redis::flushdb();
         TagKeyCache::forgetAll();
 
         // Seed brands for tests that need them
@@ -36,7 +36,7 @@ class RedisMetricsCollectorLocationTest extends TestCase
 
     protected function tearDown(): void
     {
-        Redis::flushall();
+        Redis::flushdb();
         TagKeyCache::forgetAll();
         parent::tearDown();
     }
