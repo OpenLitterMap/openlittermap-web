@@ -529,7 +529,7 @@ class AddNewTagsToPhotosTest extends TestCase
     }
 
     /**
-     * Custom tags attached to an object with . ' / save (createTagFromClo path).
+     * Custom tags attached to an object with . ' / save (createPhotoTagFromClo path).
      */
     public function test_object_custom_tags_with_punctuation_save(): void
     {

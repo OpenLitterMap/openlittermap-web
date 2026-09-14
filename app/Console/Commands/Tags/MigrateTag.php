@@ -69,6 +69,9 @@ class MigrateTag extends Command
             $this->report($source, $destination, $type, $plan);
             if ($plan === [] && $source->retired_at !== null) {
                 $this->info('Already applied: no source observations or quick tags remain.');
+                if ($this->option('apply')) {
+                    $this->reportCompletion($source, $destination, $type, 0, 0, 0, 0);
+                }
                 return self::SUCCESS;
             }
             if (! $this->option('apply')) {
@@ -76,7 +79,7 @@ class MigrateTag extends Command
             }
 
             $this->checkConnections();
-            $destinations = DB::transaction(function () use ($source, $destination, $typeId) {
+            [$destinations, $quickTagsMoved] = DB::transaction(function () use ($source, $destination, $typeId) {
                 $objects = LitterObject::whereIn('id', [$source->id, $destination->id])
                     ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
                 $source = $objects[$source->id];
@@ -102,20 +105,27 @@ class MigrateTag extends Command
                     'merged_into_id' => $destination->id,
                     'merged_into_type_id' => $typeId,
                 ]);
+                $quickTagsMoved = 0;
                 foreach ($destinations as $categoryId => $cloId) {
                     $values = ['clo_id' => $cloId];
                     if ($typeId !== null) {
                         $values['type_id'] = $typeId;
                     }
-                    DB::table('user_quick_tags')->whereIn('clo_id',
+                    $quickTagsMoved += DB::table('user_quick_tags')->whereIn('clo_id',
                         DB::table('category_litter_object')->where('litter_object_id', $source->id)
                             ->where('category_id', $categoryId)->select('id')
                     )->update($values);
                 }
-                return $destinations;
+                return [$destinations, $quickTagsMoved];
             });
 
             $moved = 0;
+            $quantityMoved = 0;
+            $photosUpdated = 0;
+            $totalRows = $this->sourceRows($source->id)->count();
+            if ($totalRows > 0) {
+                $this->line('Progress: 0.0% (0/'.number_format($totalRows).' photo-tag records committed this run).');
+            }
             while (true) {
                 $this->checkConnections();
                 $photoIds = $this->sourceRows($source->id)->select('photo_id')->distinct()
@@ -124,8 +134,9 @@ class MigrateTag extends Command
                     break;
                 }
                 $started = microtime(true);
-                $count = DB::transaction(function () use ($photoIds, $source, $destination, $typeId, $destinations, $summaries, $metrics) {
+                [$count, $quantity, $photoCount] = DB::transaction(function () use ($photoIds, $source, $destination, $typeId, $destinations, $summaries, $metrics) {
                     $photos = Photo::withTrashed()->whereIn('id', $photoIds)->orderBy('id')->lockForUpdate()->get();
+                    $quantity = (int) $this->sourceRows($source->id)->whereIn('photo_id', $photos->modelKeys())->sum('quantity');
                     $count = 0;
                     foreach ($photos as $photo) {
                         foreach ($destinations as $categoryId => $cloId) {
@@ -141,15 +152,24 @@ class MigrateTag extends Command
                             $metrics->processPhoto($photo);
                         }
                     }
-                    return $count;
+                    return [$count, $quantity, $photos->count()];
                 });
                 if ($count === 0) {
                     throw new RuntimeException('Source rows remain but the batch made no progress. Keep writes paused and inspect.');
                 }
                 $moved += $count;
-                $this->line(sprintf('Committed %d photos, %d rows (%.2fs); %d rows moved.', $photoIds->count(), $count, microtime(true) - $started, $moved));
+                $quantityMoved += $quantity;
+                $photosUpdated += $photoCount;
+                // - Advance only after commit; do not round unfinished work up to 100%.
+                $percent = floor($moved / max(1, $totalRows) * 1000) / 10;
+                $this->line(sprintf(
+                    'Progress: %.1f%% (%s/%s photo-tag records committed this run). Batch: %d photos, %.2fs.',
+                    $percent, number_format($moved), number_format($totalRows), $photoCount, microtime(true) - $started
+                ));
             }
-            $this->info('Migration complete. Verify summaries, XP, exports and Redis deltas before reopening writes.');
+            $this->info('Migration complete.');
+            $this->reportCompletion($source, $destination, $type, $moved, $quantityMoved, $photosUpdated, $quickTagsMoved);
+            $this->warn('Verify summaries, XP, exports and Redis deltas before reopening writes. These counts do not verify those checks.');
             return self::SUCCESS;
         } catch (Throwable $e) {
             $this->error($e->getMessage());
@@ -273,6 +293,27 @@ class MigrateTag extends Command
         }
         $empty = CategoryObject::where('litter_object_id', $source->id)->whereNotIn('category_id', array_keys($plan))->count();
         $this->line("Unused source CLOs: {$empty} (informational; no destination required).");
+    }
+
+    /**
+     * - Report committed work from this invocation, including a resumed run.
+     * - Destination totals include observations that existed before this run.
+     */
+    private function reportCompletion(LitterObject $source, LitterObject $destination, ?LitterObjectType $type, int $rows, int $quantity, int $photos, int $quickTags): void
+    {
+        $this->newLine();
+        $this->info("Post-migration summary: {$source->key} → {$destination->key}");
+        $this->line('Replacement type: '.($type?->key ?? 'none'));
+        $this->line('Photo-tag records migrated this run: '.number_format($rows));
+        $this->line('Total quantity migrated this run: '.number_format($quantity));
+        $this->line('Photos with summaries regenerated this run: '.number_format($photos));
+        $this->line('Saved quick tags repointed this run: '.number_format($quickTags));
+        $this->line('Source photo-tag records remaining: '.number_format($this->sourceRows($source->id)->count()));
+        $this->line('Source quick tags remaining: '.number_format($this->quickTags($source->id)->count()));
+        $this->line("Current {$destination->key} totals (all categories/types, including existing records): "
+            .number_format($this->sourceRows($destination->id)->count()).' photo-tag records, '
+            .number_format((int) $this->sourceRows($destination->id)->sum('quantity')).' total quantity.');
+        $this->line('Source object is retired; its recorded replacement remains available for old submissions.');
     }
 
     private function checkConnections(): void

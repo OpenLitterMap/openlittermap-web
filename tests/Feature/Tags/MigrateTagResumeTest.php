@@ -56,7 +56,11 @@ class MigrateTagResumeTest extends TestCase
         });
         $this->app->instance(GeneratePhotoSummaryService::class, $mock);
         $options = ['old' => 'plasticBags', 'new' => 'plastic_bag', '--apply' => true];
-        $this->artisan('olm:migrate-tag', $options)->assertFailed();
+        $this->artisan('olm:migrate-tag', $options)
+            ->expectsOutput('Progress: 0.0% (0/201 photo-tag records committed this run).')
+            ->expectsOutputToContain('Progress: 99.5% (200/201 photo-tag records committed this run).')
+            ->doesntExpectOutputToContain('Progress: 100.0%')
+            ->assertFailed();
         $this->assertEquals(0, DB::transactionLevel());
         $this->assertEquals(200, PhotoTag::where('litter_object_id', $new->id)->count());
         $this->assertEquals(1, PhotoTag::where('litter_object_id', $old->id)->count());
@@ -64,8 +68,20 @@ class MigrateTagResumeTest extends TestCase
         $this->assertEquals(400, Redis::hget(RedisKeys::objects(RedisKeys::global()), $new->id));
         $this->assertEquals(2, Redis::hget(RedisKeys::objects(RedisKeys::global()), $old->id));
         $this->app->instance(GeneratePhotoSummaryService::class, $summaries);
-        $this->artisan('olm:migrate-tag', $options)->assertSuccessful();
-        $this->artisan('olm:migrate-tag', $options)->assertSuccessful();
+        $this->artisan('olm:migrate-tag', $options)
+            ->expectsOutput('Progress: 0.0% (0/1 photo-tag records committed this run).')
+            ->expectsOutputToContain('Progress: 100.0% (1/1 photo-tag records committed this run).')
+            ->expectsOutput('Photo-tag records migrated this run: 1')
+            ->expectsOutput('Total quantity migrated this run: 2')
+            ->expectsOutput('Photos with summaries regenerated this run: 1')
+            ->expectsOutput('Current plastic_bag totals (all categories/types, including existing records): 201 photo-tag records, 402 total quantity.')
+            ->assertSuccessful();
+        $this->artisan('olm:migrate-tag', $options)
+            ->expectsOutput('Photo-tag records migrated this run: 0')
+            ->expectsOutput('Total quantity migrated this run: 0')
+            ->expectsOutput('Photos with summaries regenerated this run: 0')
+            ->expectsOutput('Current plastic_bag totals (all categories/types, including existing records): 201 photo-tag records, 402 total quantity.')
+            ->assertSuccessful();
         $this->assertEquals(201, PhotoTag::where('litter_object_id', $new->id)->count());
         $this->assertEquals(0, PhotoTag::where('litter_object_id', $old->id)->count());
         foreach (RedisKeys::getPhotoScopes($first) as $scope) {

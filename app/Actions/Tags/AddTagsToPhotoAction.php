@@ -59,9 +59,8 @@ class AddTagsToPhotoAction
     /**
      * Create PhotoTag records with extra tags (materials, brands, custom tags).
      *
-     * Accepts two payload formats:
-     * - New: { category_litter_object_id, litter_object_type_id?, ... }
-     * - Legacy: { object: {id, key}, category?, brand_only?, material_only?, ... }
+     * - Accept a CLO ID, object/category fields, or standalone extras.
+     * - Example: { category_litter_object_id: 111, quantity: 2 }.
      *
      * @throws \Exception
      */
@@ -72,11 +71,11 @@ class AddTagsToPhotoAction
         foreach ($tags as $tag) {
             // Detect payload format
             if (isset($tag['category_litter_object_id'])) {
-                $photoTags[] = $this->createTagFromClo($userId, $photoId, $tag);
+                $photoTags[] = $this->createPhotoTagFromClo($userId, $photoId, $tag);
             } elseif ($this->isExtraTagOnly($tag)) {
                 $photoTags[] = $this->createExtraTagOnly($userId, $photoId, $tag);
             } else {
-                $photoTags[] = $this->createTagLegacy($userId, $photoId, $tag);
+                $photoTags[] = $this->createPhotoTagFromObject($userId, $photoId, $tag);
             }
         }
 
@@ -138,11 +137,13 @@ class AddTagsToPhotoAction
     }
 
     /**
-     * New CLO-based tag creation.
+     * - Create a PhotoTag from category_litter_object_id and attach its extras.
+     * - Follow a retired object's replacement before saving.
+     * - Example: { category_litter_object_id: 111, quantity: 2 }.
      *
      * @throws \Exception
      */
-    protected function createTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
+    protected function createPhotoTagFromClo(int $userId, int $photoId, array $tag): PhotoTag
     {
         [$clo, $typeId] = app(ResolveLitterObject::class)->fromClo(
             (int) $tag['category_litter_object_id'],
@@ -182,7 +183,7 @@ class AddTagsToPhotoAction
      *
      * @throws \Exception
      */
-    protected function createTagLegacy(int $userId, int $photoId, array $tag): PhotoTag
+    protected function createPhotoTagFromObject(int $userId, int $photoId, array $tag): PhotoTag
     {
         [$category, $object, $quantity, $pickedUp] = $this->resolveTag($tag);
 
@@ -197,7 +198,7 @@ class AddTagsToPhotoAction
             $tag['category_litter_object_id'] = $clo->id;
             $tag['litter_object_type_id'] = $typeId;
 
-            return $this->createTagFromClo($userId, $photoId, $tag);
+            return $this->createPhotoTagFromClo($userId, $photoId, $tag);
         }
         if (! $category) {
             throw ValidationException::withMessages(['tags' => 'Category does not contain object.']);

@@ -17,6 +17,10 @@ php artisan olm:migrate-tag plasticBags plastic_bag
 
 The old `plasticBags` object records `plastic_bag` as its replacement. Existing `photo_tags` rows get the new object ID and the destination category's CLO ID. Row IDs, categories, quantities, collection status, extras and both observation timestamps stay unchanged. Existing `plastic_bag` observations stay unchanged too.
 
+During migration, each committed batch prints the percentage complete, migrated/total photo-tag records and batch time. Progress covers the records remaining at the start of this invocation; a resumed run starts at 0% of its remaining work. It advances only after a batch commits.
+
+After applying, the command prints the photo-tag records and total quantity migrated, photos with regenerated summaries, saved quick tags repointed, remaining source records and quick tags, and current destination totals. Migrated counts cover **this invocation only**: a resumed run counts only its remaining work, and an already-completed replay reports zero migrated. Destination totals include existing observations across all categories and types. This summary does not certify XP, exports or Redis reconciliation; those checks remain separate.
+
 Every affected photo gets a regenerated summary using the existing XP rules; `photos.updated_at` changes. Previously processed, non-deleted photos get metrics deltas, regardless of verification level. Unprocessed school photos wait for approval. Soft-deleted photos get corrected rows and summaries without metrics updates. The command does not approve or publish photos.
 
 Old object submissions and old CLO submissions resolve through the recorded replacement before saving. Retired objects disappear from the catalogue, search and generated top tags. Saved quick tags move to the destination CLO; their other fields stay intact, except an explicitly recorded replacement type overrides their type.
@@ -28,8 +32,8 @@ The command updates stored data. It does **not** rename references in PHP, JavaS
 For `plasticBags → plastic_bag`:
 
 - **Catalogue:** `TagsConfig` already declares `other/plastic_bag`. The replacement object and its category/object entry (CLO) already exist in the fresh local database. Confirm they exist in the deployment database too; no production seeder is needed for this mapping.
-- **Brand configuration — still to update:** replace the 12 `plasticBags` references in `app/Tags/BrandsConfig.php` with `plastic_bag`. For example, Aldi's `other` objects should contain `plastic_bag`. No current runtime reader of this configuration was found; updating the file keeps its associations consistent. It does not update stored brand relationships or require running the old brand tooling.
-- **Translations — still to update:** add `"plastic_bag": "Plastic Bags"` under `litter.other` in `resources/js/langs/en.json`, which the current web app loads. Add the same entry under `other` in `resources/js/langs/en/litter.json`. Keep the old entries so historical data can still display a label. Without the new entry, tagging search falls back to “Plastic Bag” from the key.
+- **Brand configuration — updated:** all 12 associations in `app/Tags/BrandsConfig.php` now use `plastic_bag`. For example, Aldi's `other` objects contain `plastic_bag`. No current runtime reader of this configuration was found; the change keeps its associations consistent. It does not update stored brand relationships or require running the old brand tooling.
+- **Translations — updated:** `"plastic_bag": "Plastic Bags"` is present under `litter.other` in `resources/js/langs/en.json`, which the current web app loads, and under `other` in `resources/js/langs/en/litter.json`. The old entries remain so historical data can still display a label. Deploy the rebuilt frontend to deliver the new translation.
 - **Photo summaries:** the command regenerates affected summaries with the new object ID and key. For example, five `plasticBags` become five `plastic_bag`; the quantity stays five.
 - **Downloads:** newly generated CSV exports read the updated catalogue and summaries, so they use `plastic_bag`. The command does not rewrite previously generated or downloaded files; generate a fresh export to see the change.
 - **Suggestions and saved choices:** the server hides the retired object from new suggestions and updates saved quick tags that reference its CLO. An already-open app can still hold an old catalogue; supported stale submissions use the recorded replacement when saved. Refresh the catalogue during smoke checks.
@@ -41,7 +45,22 @@ Keep `plasticBags` where it describes the old data:
 - Migration tests, command examples and audit records showing the old-to-new mapping.
 - Legacy translations needed to display old data. The older `plastic_bags` database columns are separate historical fields; do not rename them with this object migration.
 
-Before deployment, finish the pending configuration and translation edits above, build the frontend, and check the displayed label and a fresh export. These edits are separate from `--apply`; running the command alone does not complete them.
+Before deployment, build the frontend and check the displayed label and a fresh export. The configuration and translation edits above ship with the application; running `--apply` alone does not deploy them.
+
+## Recorded tag updates and seeding
+
+Local database check on 2026-09-14: `olm_postmig_7` records exactly one retired object. This is local execution evidence, not a record of production deployment or completed reconciliation.
+
+| Old key | New key | Replacement type | Local state |
+| --- | --- | --- | --- |
+| `plasticBags` | `plastic_bag` | None | Retirement recorded at `2026-09-14 19:16:19` (database value); zero old photo-tag records remain. |
+
+The brand configuration and English translations have also been updated for this mapping. `energy_can → can --type=energy` is a proposed later run, not a completed migration. Add further completed mappings to this list only after checking their recorded replacements and remaining data.
+
+- **Fresh database:** `GenerateTagsSeeder` reads `TagsConfig`, which already declares `other/plastic_bag`. It creates the current object and CLO without needing to create or migrate `plasticBags`.
+- **Existing database:** run the reviewed `olm:migrate-tag OLD NEW --apply` command separately, with the write freeze and verification described here. The command records the old object's replacement and updates its existing observations.
+- **Normal seeding:** do not call data-migration commands automatically from `DatabaseSeeder` or `CreateAllTagsSeeder`. A seed would then change observations, summaries, XP and Redis, and a fresh database may not even contain the old object required by the command.
+- **Future automation:** if several approved runs need a runner, make it a separate explicit command with structured old/new/type arguments and failure handling. Listing a mapping must not automatically execute it during seeding. No runner is needed for the single completed mapping above.
 
 ## Supported mappings and limits
 
@@ -65,7 +84,7 @@ Matching retries resume the remaining rows; conflicting object/type arguments fa
 
 ## Rehearsal and production window
 
-1. Record the candidate commit, MySQL/Redis identities and versions, and reviewed mapping arguments. Rehearse on a **fresh disposable production copy** with production-compatible runtimes. The current local baseline is `olm_postmig_7`; keep it read-only and rehearse on a separate copy. It has 10,051 `plasticBags` observations and no retirement columns as checked on 2026-09-14. Install the retirement schema on the rehearsal copy before previewing the command. Earlier `_6` rehearsal figures are historical evidence, not this baseline.
+1. Record the candidate commit, MySQL/Redis identities and versions, and reviewed mapping arguments. Rehearse on a **fresh disposable production copy** with production-compatible runtimes. `olm_postmig_7` initially had 10,051 `plasticBags` observations and no retirement columns, but now contains the user's completed plastic-bag run; it is no longer an untouched baseline. Use a fresh import or a verified pre-run backup for a new rehearsal, and install the retirement schema on that disposable copy before previewing the command. Earlier `_6` figures are historical evidence too.
 2. Take verified database backups. Record source rows/quantities by category, destination totals, extras, saved quick tags, per-photo/user XP, MySQL metric values, and Redis object counts in every affected global/location/user scope. Record unresolved combinations separately; this command does not fix unrelated tags.
 3. Measure the actual mapping, including batch time, summary regeneration and verification. Earlier estimates were about 51 photo batches for plastic bags and 103 for energy cans; size the window from the fresh rehearsal, not those estimates.
 4. Freeze uploads, tag edits, approvals and other writes on **every node**. Drain in-flight requests, pause schedules and workers, and verify they are stopped. `horizon:terminate` alone allows a supervisor to restart workers.

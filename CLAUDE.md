@@ -109,7 +109,7 @@ tests/
 
 ## CI (GitHub Actions)
 
-Runs on pushes and PRs targeting `master` or `upgrade/tagging-2025`.
+Runs on pushes and PRs targeting `master` or another branch.
 Pipeline: PHP 8.3, MySQL 8.0, Redis 7 — composer install, migrations and PHPUnit. No Node or frontend build step.
 
 ## Current State (v5 — shipped to `master`)

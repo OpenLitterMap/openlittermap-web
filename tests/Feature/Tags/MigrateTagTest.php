@@ -115,7 +115,15 @@ class MigrateTagTest extends TestCase
         $xp = $photo->xp;
         $userXp = $photo->user->xp;
         $metricTotals = DB::table('metrics')->get()->map(fn ($r) => [$r->tags, $r->litter, $r->xp, $r->uploads])->all();
-        $this->migrate();
+        $this->artisan('olm:migrate-tag', ['old' => 'plasticBags', 'new' => 'plastic_bag', '--apply' => true])
+            ->expectsOutput('Photo-tag records migrated this run: 3')
+            ->expectsOutput('Total quantity migrated this run: 6')
+            ->expectsOutput('Photos with summaries regenerated this run: 1')
+            ->expectsOutput('Saved quick tags repointed this run: 0')
+            ->expectsOutput('Source photo-tag records remaining: 0')
+            ->expectsOutput('Source quick tags remaining: 0')
+            ->expectsOutput('Current plastic_bag totals (all categories/types, including existing records): 4 photo-tag records, 11 total quantity.')
+            ->assertSuccessful();
         foreach ($tags as $index => $row) {
             $expected = $before[$index];
             $expected['litter_object_id'] = $this->new->id;
@@ -219,7 +227,9 @@ class MigrateTagTest extends TestCase
         $tag = $this->observation();
         app(GeneratePhotoSummaryService::class)->run($tag->photo);
         app(MetricsService::class)->processPhoto($tag->photo);
-        $this->migrate(['--type' => 'energy']);
+        $this->artisan('olm:migrate-tag', ['old' => $this->old->key, 'new' => $this->new->key, '--type' => 'energy', '--apply' => true])
+            ->expectsOutput('Saved quick tags repointed this run: 1')
+            ->assertSuccessful();
         $this->assertEquals(2, Redis::hget(RedisKeys::types(RedisKeys::global()), $type->id));
         $before['clo_id'] = $this->destination->id;
         $before['type_id'] = $type->id;
