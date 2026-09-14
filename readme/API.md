@@ -512,11 +512,11 @@ Category is auto-resolved from `category_litter_object_id`. Generates summary, c
 - Old object IDs/keys and old `category_litter_object_id` values resolve to the current replacement before saving. A retired object need not have a CLO when submitted in object format.
 - The object's recorded replacement type overrides a stale submitted type. Across a chain, the latest non-null recorded type wins. Without a recorded type, the supplied type must be valid at the final destination.
 - An explicit object-format `category_id` or `category` is preserved or rejected; the API no longer silently substitutes another category. PUT now validates and retains `category_id`, as POST already does.
-- For retired objects without a category, the destination plus effective type must identify a single category. Example: `energy_can → can --type=energy` can identify `softdrinks/can` when only that category permits energy. Ambiguous choices return 422.
+- For retired objects without a category, first filter destination CLOs by the effective type when present. Prefer an existing `other` CLO among those choices; otherwise require a single category. Example: `energy_can → can --type=energy` can identify `softdrinks/can` when only that category permits energy. Ambiguous choices return 422.
 - Unknown objects/categories, unresolved combinations, broken replacement chains and incompatible destination types return 422. Rejected PUTs leave the existing photo, observations and extras intact. The usual response is `{ "message": "...", "errors": { "tags": ["..."] } }`; older unresolved-combination errors may contain structured details in `errors.tags`.
 - Quick-tag sync resolves old CLOs and validates the final type before replacing presets. Invalid syncs preserve the old presets. GET catalogue/search/top-tags excludes retired objects.
 
-This release does not change the existing first-category inference for **active** object-only submissions. Send a category or CLO to avoid that ambiguity. It also does not make unrelated unresolved observations editable: a full-photo replacement containing one still fails atomically.
+For **active** object-only submissions, prefer an existing `other` CLO; otherwise use the object's sole category. If several categories remain, return 422 asking the caller to choose a category. No CLO is created. Editors should always send the recorded category or CLO to preserve it. Unrelated unresolved observations remain uneditable: a full-photo replacement containing one still fails atomically.
 
 ### PUT /api/v3/tags — Replace All Tags on Photo
 

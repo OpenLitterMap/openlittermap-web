@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Actions\QuickTags\SyncQuickTagsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SyncQuickTagsRequest;
+use App\Models\Litter\Tags\LitterObject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,9 +57,8 @@ class QuickTagsController extends Controller
             ->join('photos as p', 'p.id', '=', 'pt.photo_id')
             ->join('category_litter_object as clo', 'clo.id', '=', 'pt.category_litter_object_id')
             ->join('categories as c', 'c.id', '=', 'clo.category_id')
-            ->join('litter_objects as lo', 'lo.id', '=', 'clo.litter_object_id')
+            ->joinSub(LitterObject::active()->select('id', 'key'), 'lo', 'lo.id', '=', 'clo.litter_object_id')
             ->leftJoin('litter_object_types as lot', 'lot.id', '=', 'pt.litter_object_type_id')
-            ->whereNull('lo.retired_at')
             ->where('p.user_id', $userId)
             ->whereNotNull('pt.category_litter_object_id')
             ->select(

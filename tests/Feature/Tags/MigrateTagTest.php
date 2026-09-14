@@ -305,10 +305,45 @@ class MigrateTagTest extends TestCase
         $this->observation($photo, ['category_litter_object_id' => $clo->id, 'quantity' => 3]);
         $this->old->update(['retired_at' => now(), 'merged_into_id' => $this->new->id]);
         $all = $this->getJson('/api/tags/all')->assertOk();
+        $this->assertSame([$this->old->id], LitterObject::retired()->pluck('id')->all());
         $this->assertNotContains($this->old->id, array_column($all->json('objects'), 'id'));
         $this->assertNotContains($clo->id, array_column($all->json('category_objects'), 'id'));
         $this->getJson('/api/tags?search=plasticBags')->assertOk()->assertJsonCount(0, 'tags');
         $this->actingAs($user)->getJson('/api/v3/user/top-tags')->assertOk()->assertJsonCount(0, 'tags');
+    }
+
+    public function test_category_defaults_prefer_other_then_a_sole_category_for_active_and_retired_objects(): void
+    {
+        $this->category->update(['key' => 'coffee']);
+        $other = Category::factory()->create(['key' => 'other']);
+        $otherClo = CategoryObject::create(['category_id' => $other->id, 'litter_object_id' => $this->new->id]);
+        $this->old->update(['retired_at' => now(), 'merged_into_id' => $this->new->id]);
+        $user = User::factory()->create();
+        $photo = Photo::factory()->create(['user_id' => $user->id]);
+        $this->actingAs($user);
+
+        foreach ([$this->new->key, $this->old->key] as $key) {
+            $payload = ['photo_id' => $photo->id, 'tags' => [['object' => $key, 'quantity' => 2]]];
+            $this->putJson('/api/v3/tags', $payload)->assertOk();
+            $this->assertEquals($otherClo->id, $photo->photoTags()->sole()->category_litter_object_id);
+            $payload['tags'][0]['category_id'] = $this->category->id;
+            $this->putJson('/api/v3/tags', $payload)->assertOk();
+            $this->assertEquals($this->destination->id, $photo->photoTags()->sole()->category_litter_object_id);
+        }
+
+        $otherClo->delete();
+        foreach ([$this->new->key, $this->old->key] as $key) {
+            $this->putJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => [['object' => $key, 'quantity' => 2]]])->assertOk();
+            $this->assertEquals($this->destination->id, $photo->photoTags()->sole()->category_litter_object_id);
+        }
+
+        CategoryObject::create(['category_id' => Category::factory()->create(['key' => 'alcohol'])->id, 'litter_object_id' => $this->new->id]);
+        $before = $photo->photoTags()->sole()->getRawOriginal();
+        foreach ([$this->new->key, $this->old->key] as $key) {
+            $this->putJson('/api/v3/tags', ['photo_id' => $photo->id, 'tags' => [['object' => $key, 'quantity' => 3]]])
+                ->assertUnprocessable()->assertJsonValidationErrors('tags');
+            $this->assertSame($before, $photo->photoTags()->sole()->getRawOriginal());
+        }
     }
 
     public function test_chain_and_matching_replay_after_a_second_migration(): void
@@ -398,6 +433,7 @@ class MigrateTagTest extends TestCase
 
     public function test_cycles_missing_targets_and_ambiguous_replacements_are_rejected(): void
     {
+        $this->category->update(['key' => 'coffee']);
         $user = User::factory()->create();
         $photo = Photo::factory()->create(['user_id' => $user->id]);
         $this->old->update(['retired_at' => now(), 'merged_into_id' => $this->new->id]);

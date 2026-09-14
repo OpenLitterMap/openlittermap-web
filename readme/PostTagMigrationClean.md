@@ -25,6 +25,8 @@ Every affected photo gets a regenerated summary using the existing XP rules; `ph
 
 Old object submissions and old CLO submissions resolve through the recorded replacement before saving. Retired objects disappear from the catalogue, search and generated top tags. Saved quick tags move to the destination CLO; their other fields stay intact, except an explicitly recorded replacement type overrides their type.
 
+Those discovery queries explicitly use `LitterObject::active()`, which delegates to `retired(false)`. `retired()` selects retired objects. There is no global scope: ordinary lookups must still find `plasticBags` for stale submissions, migration retries and replacement chains. See [object scopes](Tags.md#active-and-retired-objects).
+
 ## What else changes when a key is renamed?
 
 The command updates stored data. It does **not** rename references in PHP, JavaScript, translations or the mobile app. Review these references for every approved mapping.
@@ -78,7 +80,7 @@ Source observations with a null category or an existing type are refused. Catego
 
 The preview reports the per-item XP difference without blocking the migration. Every affected photo is rescored using current rules, including its other observations; XP is not frozen or deferred by this command. A zero per-item delta does not promise zero whole-photo XP drift. Changes to XP rules and any later bulk rescore remain separate work.
 
-The latest non-null type recorded in an object replacement chain wins. Without a recorded type, a supplied type must be allowed at the final destination or the API returns 422 atomically. For a retired object submitted without a category, the destination and effective type must identify one category; otherwise the API returns 422. Explicit object-format categories are preserved or rejected, never silently substituted. See [API contract](API.md).
+The latest non-null type recorded in an object replacement chain wins. Without a recorded type, a supplied type must be allowed at the final destination or the API returns 422 atomically. When no category is supplied, prefer an existing `other` CLO, otherwise require a sole category; retired-object choices are first filtered by the effective type. Ambiguous choices return 422. Explicit object-format categories are preserved or rejected, never silently substituted. See [API contract](API.md).
 
 Matching retries resume the remaining rows; conflicting object/type arguments fail. A completed A → B can be replayed after B → C. B → C is refused while an earlier migration into B still has source rows or quick tags. The command uses one MySQL advisory lock for the entire apply, with source and destination row locks in ID order during retirement. It checks lock ownership and Redis connectivity before each batch of 200 photos. This does not replace the write freeze.
 

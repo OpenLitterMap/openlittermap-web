@@ -138,9 +138,10 @@ Built by a single developer over 17 years.
 - `VerificationStatus` enum cast is on Photo model — use `->value` for `>=`/`<` comparisons, direct enum for `===`
 - `Photo.geom` column is binary spatial data — hidden from JSON via `$hidden` array
 - `photo_tags` table uses FK columns (`category_id`, `litter_object_id`), NOT string columns. All three (`category_litter_object_id`, `category_id`, `litter_object_id`) are **nullable** — extra-tag-only PhotoTags have null CLO
-- `AddTagsToPhotoAction` (v5) auto-resolves category from object — frontend need not send category. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
+- `AddTagsToPhotoAction` preserves explicit categories. Without one, prefer an existing `other` CLO, then a sole category; reject ambiguity. Editors should send the recorded category or CLO. Brand-only, material-only, and custom-only tags use `createExtraTagOnly()` with null CLO
 - Replace tags (`PUT /api/v3/tags`) accepts empty `tags: []` to clear all tags from a photo
 - Object retirement uses `litter_objects.retired_at`, `merged_into_id` and `merged_into_type_id`; resolve the object replacement before choosing its CLO. `olm:migrate-tag` needs no source CLO or production seeder. See `readme/PostTagMigrationClean.md`.
+- `LitterObject::active()` delegates to `retired(false)`; `retired()` selects retired objects. Use `active()` explicitly for catalogue/search/top tags. No global scope: stale submissions, migration retries and historical reads need retired records. See `readme/Tags.md#active-and-retired-objects`.
 - `TagsConfig` provides helper methods: `buildObjectMap()`, `buildObjectMaps()`, `allMaterialKeys()`, `allTypeKeys()` — use these instead of hardcoding lists
 - Legacy v1/v2 mobile endpoints removed (2026-03-01) — mobile uses v3 endpoints with CLO format only
 - `Photo` model has `SoftDeletes` trait but all delete endpoints use `forceDelete()` for hard deletion. Cascading FKs on `photo_tags` (→ `photo_tag_extras`) handle relationship cleanup

@@ -73,6 +73,20 @@ The category+object pairing is identified by a single `category_litter_object_id
 | `custom_tags_new` | `CustomTagNew` | User-generated custom tags |
 | `litter_states` | `LitterState` | Physical condition (degraded, micro, macro) — orthogonal, wired via `taggables` |
 
+### Active and retired objects
+
+```php
+LitterObject::active()       // Same as retired(false): retired_at is null.
+LitterObject::retired()      // retired_at is not null.
+LitterObject::retired(false) // Objects that have not been retired.
+```
+
+- Use `active()` explicitly for the tag catalogue, search and generated top tags.
+- There is **no global scope** hiding retired objects. Ordinary lookups can find both active and retired records.
+- Keep retired objects available to migration retries, replacement-chain resolution and historical observations.
+- Example: looking up `plasticBags` must still find the retired record so a stale submission can resolve to `plastic_bag`.
+- An ordinary lookup does not authorise saving a retired object. Tag writes must follow its recorded replacement before choosing the CLO.
+
 ### Relationship pivots
 
 ```sql

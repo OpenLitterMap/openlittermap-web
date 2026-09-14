@@ -342,9 +342,9 @@ class AddNewTagsToPhotosTest extends TestCase
     }
 
     /**
-     * Multi-category object with no category sent falls back to first().
+     * - Bottle has multiple categories and no other CLO, so the caller must choose.
      */
-    public function test_multi_category_object_falls_back_when_no_category_sent(): void
+    public function test_multi_category_object_requires_a_category_when_other_is_unavailable(): void
     {
         $this->seed(GenerateTagsSeeder::class);
 
@@ -353,10 +353,10 @@ class AddNewTagsToPhotosTest extends TestCase
 
         $photo = $this->createPhotoFromImageAttributes($this->imageAndAttributes, $user);
 
-        // "bottle" belongs to "alcohol" and "soft_drinks"
+        // "bottle" belongs to "alcohol" and "softdrinks".
         $object = LitterObject::where('key', 'bottle')->first();
-        $firstCategory = $object->categories()->first();
-        $this->assertNotNull($firstCategory);
+        $this->assertGreaterThan(1, $object->categories()->count());
+        $this->assertFalse($object->categories()->where('key', 'other')->exists());
 
         $response = $this->postJson('/api/v3/tags', [
             'photo_id' => $photo->id,
@@ -368,13 +368,8 @@ class AddNewTagsToPhotosTest extends TestCase
             ],
         ]);
 
-        $response->assertOk();
-
-        $this->assertDatabaseHas('photo_tags', [
-            'photo_id' => $photo->id,
-            'category_id' => $firstCategory->id,
-            'litter_object_id' => $object->id,
-        ]);
+        $response->assertUnprocessable()->assertJsonValidationErrors('tags');
+        $this->assertDatabaseMissing('photo_tags', ['photo_id' => $photo->id]);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Services\Tags;
 
+use App\Enums\CategoryKey;
 use App\Models\Litter\Tags\CategoryObject;
 use App\Models\Litter\Tags\LitterObject;
 use Illuminate\Validation\ValidationException;
@@ -12,6 +13,7 @@ class ResolveLitterObject
      * - Follow retired objects before choosing the category's CLO.
      * - Example: other/plasticBags becomes other/plastic_bag, even without an old CLO.
      * - The latest recorded replacement type wins; otherwise validate the submitted type.
+     * - Without a category, prefer an existing other CLO; otherwise require one category.
      *
      * @return array{0: CategoryObject, 1: ?int}
      */
@@ -36,7 +38,10 @@ class ResolveLitterObject
         } elseif ($typeId !== null) {
             $choices->whereHas('types', fn ($query) => $query->where('litter_object_types.id', $typeId));
         }
-        $clos = $choices->limit(2)->get();
+        $other = $categoryId === null
+            ? (clone $choices)->whereHas('category', fn ($query) => $query->where('key', CategoryKey::Other->value))->first()
+            : null;
+        $clos = $other ? collect([$other]) : $choices->limit(2)->get();
         if ($clos->count() !== 1) {
             throw ValidationException::withMessages(['tags' => $clos->isEmpty()
                 ? 'Category does not contain the replacement object.' : 'Choose a category for this object.']);

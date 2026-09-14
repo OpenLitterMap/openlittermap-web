@@ -365,7 +365,8 @@ class AddTagsToPhotoAction
     /**
      * Resolve category and object from tag input (legacy format).
      * Accepts either { id: int } or string key for both.
-     * Auto-resolves category from object if not explicitly provided.
+     * - Preserve an explicit category.
+     * - Otherwise prefer an existing other CLO, then a sole category; reject ambiguity.
      */
     protected function resolveTag(array $tag): array
     {
@@ -387,7 +388,8 @@ class AddTagsToPhotoAction
 
             if ($object && $object->retired_at === null && ! $category
                 && ! isset($tag['category_id']) && ! isset($tag['category'])) {
-                $category = $object->categories()->first();
+                [$clo] = app(ResolveLitterObject::class)->resolve($object, null);
+                $category = $clo->category;
             }
         }
 
