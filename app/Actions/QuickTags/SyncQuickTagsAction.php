@@ -3,6 +3,7 @@
 namespace App\Actions\QuickTags;
 
 use App\Models\Users\User;
+use App\Services\Tags\ResolveLitterObject;
 use App\Models\Users\UserQuickTag;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,15 @@ class SyncQuickTagsAction
     public function run(User $user, array $tags)
     {
         return DB::transaction(function () use ($user, $tags) {
+            foreach ($tags as &$tag) {
+                [$clo, $typeId] = app(ResolveLitterObject::class)->fromClo(
+                    (int) $tag['clo_id'], isset($tag['type_id']) ? (int) $tag['type_id'] : null
+                );
+                $tag['clo_id'] = $clo->id;
+                $tag['type_id'] = $typeId;
+            }
+            unset($tag);
+
             UserQuickTag::where('user_id', $user->id)->delete();
 
             $now = now();

@@ -22,12 +22,12 @@ class RedisMetricsCollectorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Redis::flushall();
+        Redis::flushdb();
     }
 
     protected function tearDown(): void
     {
-        Redis::flushall();
+        Redis::flushdb();
         parent::tearDown();
     }
 

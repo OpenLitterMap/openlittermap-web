@@ -382,6 +382,10 @@ class QuickTagsApiTest extends TestCase
         $user = User::factory()->create();
         $clo = $this->createClo();
         $typeId = $this->createType();
+        DB::table('category_object_types')->insert([
+            'category_litter_object_id' => $clo,
+            'litter_object_type_id' => $typeId,
+        ]);
 
         $this->actingAs($user)
             ->putJson('/api/v3/user/quick-tags', [

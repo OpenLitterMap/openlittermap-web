@@ -13,6 +13,14 @@ class PhotoSignedUrlTest extends TestCase
 
     private string $endpoint = '/api/photos';
 
+    protected function tearDown(): void
+    {
+        if ($this->app) {
+            $this->app->detectEnvironment(fn () => 'testing');
+        }
+        parent::tearDown();
+    }
+
     /** @test */
     public function it_returns_403_without_origin_header()
     {

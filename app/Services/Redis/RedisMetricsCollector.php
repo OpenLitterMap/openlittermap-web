@@ -20,13 +20,15 @@ use Illuminate\Support\Facades\Redis;
 final class RedisMetricsCollector
 {
     /**
-     * Process a photo into Redis (called by MetricsService after MySQL update)
+     * - Update Redis after MetricsService commits MySQL changes.
+     * - Count ownerless photos in global and location totals.
+     * - Skip user rankings for those photos; a null user must not become an empty member.
      */
     public static function processPhoto(Photo $photo, array $metrics, string $operation): void
     {
         try {
             $scopes = RedisKeys::getPhotoScopes($photo);
-            $userId = $photo->user_id;
+            $userId = $photo->user_id === null ? null : (int) $photo->user_id;
 
             Redis::pipeline(function($pipe) use ($scopes, $userId, $metrics, $operation, $photo) {
                 foreach ($scopes as $scope) {
@@ -35,16 +37,6 @@ final class RedisMetricsCollector
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'photos', 1);
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', $metrics['litter']);
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', $metrics['xp']);
-
-                        // Track unique contributors (append-only)
-                        $pipe->pfAdd(RedisKeys::hll($scope), [(string)$userId]);
-
-                        // Contributor ranking
-                        $pipe->zIncrBy(RedisKeys::contributorRanking($scope), 1, (string)$userId);
-
-                        // XP leaderboard ranking
-                        $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
-
                     } elseif ($operation === 'update') {
                         // Apply deltas only
                         if (isset($metrics['litter']) && $metrics['litter'] !== 0) {
@@ -52,7 +44,6 @@ final class RedisMetricsCollector
                         }
                         if (isset($metrics['xp']) && $metrics['xp'] !== 0) {
                             $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', $metrics['xp']);
-                            $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], (string)$userId);
                         }
 
                     } elseif ($operation === 'delete') {
@@ -60,15 +51,9 @@ final class RedisMetricsCollector
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'photos', -1);
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'litter', -abs($metrics['litter']));
                         $pipe->hIncrBy(RedisKeys::stats($scope), 'xp', -abs($metrics['xp']));
-
-                        // Decrement contributor ranking (HLL cannot be decremented)
-                        $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, (string)$userId);
-
-                        // XP leaderboard ranking — decrement then prune members at ≤ 0
-                        // to keep Redis consistent with MySQL (which filters xp > 0)
-                        $pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), (string)$userId);
-                        $pipe->zRemRangeByScore(RedisKeys::xpRanking($scope), '-inf', '0');
                     }
+
+                    self::updateUserRankings($pipe, $scope, $userId, $metrics, $operation);
 
                     // Update tag counts and rankings
                     self::updateTags($pipe, $scope, $metrics['tags'] ?? [], $operation);
@@ -84,6 +69,39 @@ final class RedisMetricsCollector
                 'operation' => $operation,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * - Update contributor counts and rankings only when the photo has an owner.
+     */
+    private static function updateUserRankings($pipe, string $scope, ?int $userId, array $metrics, string $operation): void
+    {
+        if ($userId === null) {
+            return;
+        }
+
+        $member = (string) $userId;
+
+        if ($operation === 'create') {
+            // Unique contributors (append-only) + contributor and XP rankings
+            $pipe->pfAdd(RedisKeys::hll($scope), [$member]);
+            $pipe->zIncrBy(RedisKeys::contributorRanking($scope), 1, $member);
+            $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], $member);
+
+        } elseif ($operation === 'update') {
+            if (isset($metrics['xp']) && $metrics['xp'] !== 0) {
+                $pipe->zIncrBy(RedisKeys::xpRanking($scope), $metrics['xp'], $member);
+            }
+
+        } elseif ($operation === 'delete') {
+            // Decrement contributor ranking (HLL cannot be decremented)
+            $pipe->zIncrBy(RedisKeys::contributorRanking($scope), -1, $member);
+
+            // XP leaderboard ranking — decrement then prune members at ≤ 0
+            // to keep Redis consistent with MySQL (which filters xp > 0)
+            $pipe->zIncrBy(RedisKeys::xpRanking($scope), -abs($metrics['xp']), $member);
+            $pipe->zRemRangeByScore(RedisKeys::xpRanking($scope), '-inf', '0');
         }
     }
 
@@ -121,8 +139,12 @@ final class RedisMetricsCollector
     /**
      * Update user-specific metrics
      */
-    private static function updateUserMetrics($pipe, int $userId, array $metrics, string $operation, Photo $photo): void
+    private static function updateUserMetrics($pipe, ?int $userId, array $metrics, string $operation, Photo $photo): void
     {
+        if ($userId === null) {
+            return;
+        }
+
         $userScope = RedisKeys::user($userId);
 
         if ($operation === 'create') {

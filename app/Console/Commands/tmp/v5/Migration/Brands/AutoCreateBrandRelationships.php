@@ -409,6 +409,10 @@ class AutoCreateBrandRelationships extends Command
 
         // Get or create object
         $object = LitterObject::firstOrCreate(['key' => $normalizedObjectKey]);
+        if ($object->retired_at !== null) {
+            $this->warn("Skipping retired object: {$normalizedObjectKey}");
+            return;
+        }
 
         // Get or create CategoryObject pivot
         $categoryObject = CategoryObject::firstOrCreate([

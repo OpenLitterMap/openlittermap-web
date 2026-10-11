@@ -30,7 +30,7 @@ class LongTermAchievementsTest extends TestCase
         parent::setUp();
 
         // Complete Redis flush
-        Redis::flushall();
+        Redis::flushdb();
         Cache::flush();
         TagKeyCache::forgetAll();
 

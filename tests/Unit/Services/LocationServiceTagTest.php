@@ -18,7 +18,7 @@ class LocationServiceTagTest extends TestCase
     {
         parent::setUp();
         $this->service = new LocationService();
-        Redis::flushall();
+        Redis::flushdb();
         Cache::flush();
 
         // Seed test tags in database

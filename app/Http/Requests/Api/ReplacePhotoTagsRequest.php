@@ -36,6 +36,7 @@ class ReplacePhotoTagsRequest extends FormRequest
             'tags.*.custom_tags' => 'sometimes|array',
 
             // Legacy format fields (backward compat)
+            'tags.*.category_id' => 'nullable|integer|exists:categories,id',
             'tags.*.category' => 'sometimes',
             'tags.*.object' => 'sometimes',
             'tags.*.brand_only' => 'sometimes',

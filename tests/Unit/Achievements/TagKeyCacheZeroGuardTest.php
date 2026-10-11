@@ -22,7 +22,7 @@ class TagKeyCacheZeroGuardTest extends TestCase
         // Start from a completely cold state
         TagKeyCache::forgetAll();
         Cache::flush();
-        Redis::flushall();
+        Redis::flushdb();
 
         // *** Intentionally DO NOT pre-insert 'alcohol' ***
         // We want getOrCreateId() to exercise the full upsert path.

@@ -23,11 +23,6 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        if (! app()->environment('testing')) {
-            echo "Warning: Not using testing env. Please run php artisan cache:clear \n";
-            return;
-        }
-
         // Flush Redis before each test
         Redis::connection()->flushdb();
 
@@ -110,8 +105,10 @@ abstract class TestCase extends BaseTestCase
      */
     protected function tearDown(): void
     {
-        // Flush Redis after each test
-        Redis::connection()->flushdb();
+        if ($this->app) {
+            $this->assertSafeTestConfiguration($this->app);
+            Redis::connection()->flushdb();
+        }
 
         parent::tearDown();
     }
