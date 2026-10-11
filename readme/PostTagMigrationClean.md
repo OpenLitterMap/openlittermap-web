@@ -2,6 +2,8 @@
 
 `olm:migrate-tag OLD NEW` updates one object at a time. This release keeps each observation's category. It does not require a source CLO or run `GenerateTagsSeeder` in production.
 
+See [remaining tag migrations](audit/RemainingTagMigrations.md) for the current local backlog, proposed mappings, disputed destinations and catalogue repairs. The list is a review inventory, not an approved batch execution plan.
+
 ## Plastic bags first
 
 ```bash
@@ -51,25 +53,26 @@ Before deployment, build the frontend and check the displayed label and a fresh 
 
 ## Recorded tag updates and seeding
 
-Local database check on 2026-09-14: `olm_postmig_7` records exactly one retired object. This is local execution evidence, not a record of production deployment or completed reconciliation.
+Local database check on 2026-10-11: `olm_postmig_7` records two retired objects. This is local execution evidence, not a record of production deployment or completed reconciliation.
 
 | Old key | New key | Replacement type | Local state |
 | --- | --- | --- | --- |
 | `plasticBags` | `plastic_bag` | None | Local retirement recorded on `2026-09-14`; zero old photo-tag records remain. |
+| `energy_can` | `can` | `energy` | Local retirement recorded on `2026-10-11`; zero old photo-tag records remain. SQL checks passed; Redis reconciliation remains outstanding. |
 
-The brand configuration and English translations have also been updated for this mapping. `energy_can → can --type=energy` is a proposed later run, not a completed migration. Add further completed mappings to this list only after checking their recorded replacements and remaining data.
+The brand configuration and English translations have been updated for plastic bags. The energy-can run moved 20,498 observations representing 20,931 items locally; its subsequent Redis audit found inconsistent counters. See the [current backlog and completion notes](audit/RemainingTagMigrations.md#completed-locally). Add further completed mappings only after checking their recorded replacements and remaining data, and record any outstanding reconciliation separately.
 
 - **Fresh database:** `GenerateTagsSeeder` reads `TagsConfig`, which already declares `other/plastic_bag`. It creates the current object and CLO without needing to create or migrate `plasticBags`.
 - **Existing database:** run the reviewed `olm:migrate-tag OLD NEW --apply` command separately, with the write freeze and verification described here. The command records the old object's replacement and updates its existing observations.
 - **Normal seeding:** do not call data-migration commands automatically from `DatabaseSeeder` or `CreateAllTagsSeeder`. A seed would then change observations, summaries, XP and Redis, and a fresh database may not even contain the old object required by the command.
-- **Future automation:** if several approved runs need a runner, make it a separate explicit command with structured old/new/type arguments and failure handling. Listing a mapping must not automatically execute it during seeding. No runner is needed for the single completed mapping above.
+- **Future automation:** if several approved runs need a runner, make it a separate explicit command with structured old/new/type arguments and failure handling. Listing a mapping must not automatically execute it during seeding. The individual runs above do not require a runner.
 
 ## Supported mappings and limits
 
 Both objects must already exist. The destination must be active and have a CLO in each source category with observations or saved quick tags. Empty source CLOs do not require destinations. No source CLO is created.
 
 ```bash
-# Separate, later mapping — review and rehearse independently
+# Energy-can mapping — completed locally; review and rehearse separately for production
 php artisan olm:migrate-tag energy_can can --type=energy
 php artisan olm:migrate-tag energy_can can --type=energy --apply
 ```
@@ -132,7 +135,7 @@ The current PR already carries the single-object command, replacement-aware subm
 
 ### Later migrations do not each need a new PR
 
-- After plastic bags passes verification, review and rehearse energy cans as a separate command run. Other supported mappings can follow independently.
+- Plastic bags and energy cans have been applied locally; production runs still require separate review, rehearsal and reconciliation. Other supported mappings can follow independently from the [remaining migration list](audit/RemainingTagMigrations.md).
 - A mapping needs code changes only when its destination declarations, translations, brand configuration or required command behaviour are missing. Review those references as described above.
 - Confirm meaning before execution: for example, whether a legacy size distinction should be retained. Do not turn an unreviewed inventory into an approved execution list.
 

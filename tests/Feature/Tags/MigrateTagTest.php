@@ -4,6 +4,7 @@ namespace Tests\Feature\Tags;
 
 use App\Console\Commands\Tags\MigrateTag;
 use App\Exports\CreateCSVExport;
+use App\Mail\ExportWithLink;
 use App\Models\Litter\Tags\BrandList;
 use App\Models\Litter\Tags\Category;
 use App\Models\Litter\Tags\CategoryObject;
@@ -13,13 +14,16 @@ use App\Models\Litter\Tags\LitterObjectType;
 use App\Models\Litter\Tags\Materials;
 use App\Models\Litter\Tags\PhotoTag;
 use App\Models\Photo;
+use App\Models\Teams\Team;
 use App\Models\Users\User;
 use App\Models\Users\UserQuickTag;
 use App\Services\Metrics\MetricsService;
 use App\Services\Redis\RedisKeys;
 use App\Services\Tags\GeneratePhotoSummaryService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MigrateTagTest extends TestCase
@@ -522,6 +526,90 @@ class MigrateTagTest extends TestCase
             $this->assertStringContainsString('plastic_bag', $csv);
             $this->assertStringNotContainsString('plasticBags', $csv);
         }
+    }
+
+    /** @dataProvider migratedDownloadFormats */
+    public function test_download_links_contain_migrated_quantities_for_the_requested_user_or_team(string $scope, string $layout, string $format): void
+    {
+        Mail::fake();
+        Storage::fake('s3');
+        $user = User::factory()->create();
+        $teammate = User::factory()->create();
+        $team = Team::factory()->create(['leader' => $user->id]);
+        $user->teams()->attach($team);
+        $teammate->teams()->attach($team);
+
+        $photo = Photo::factory()->create(['user_id' => $user->id, 'team_id' => $team->id, 'verified' => 2]);
+        $oldTag = $this->observation($photo);
+        $oldTag->attachExtraTags([['id' => Materials::factory()->create()->id]], 'material');
+        $this->observation($photo, [
+            'litter_object_id' => $this->new->id,
+            'category_litter_object_id' => $this->destination->id,
+            'quantity' => 5,
+        ]);
+
+        // User export includes their off-team photo; team export includes another member.
+        foreach ([
+            [$user->id, null, 2, 11],
+            [$teammate->id, $team->id, 2, 3],
+            [$teammate->id, null, 2, 13],
+            [$teammate->id, $team->id, 0, 17],
+        ] as [$owner, $teamId, $verified, $quantity]) {
+            $other = Photo::factory()->create(['user_id' => $owner, 'team_id' => $teamId, 'verified' => $verified]);
+            $this->observation($other, ['quantity' => $quantity]);
+        }
+        $this->migrate();
+
+        $params = ['layout' => $layout, 'format' => $format];
+        $this->actingAs($user);
+        $response = $scope === 'user'
+            ? $this->getJson('/api/user/profile/download?'.http_build_query($params))
+            : $this->postJson('/api/teams/download', $params + ['team_id' => $team->id]);
+        $response->assertOk()->assertJson(['success' => true]);
+
+        Mail::assertSent(ExportWithLink::class, 1);
+        Mail::assertSent(ExportWithLink::class, function (ExportWithLink $mail) use ($user, $scope, $layout) {
+            $this->assertTrue($mail->hasTo($user->email));
+            Storage::disk('s3')->assertExists($mail->path);
+            $csv = Storage::disk('s3')->get($mail->path);
+            $this->assertStringContainsString('plastic_bag', $csv);
+            $this->assertStringNotContainsString('plasticBags', $csv);
+
+            $stream = fopen('php://memory', 'r+');
+            fwrite($stream, $csv);
+            rewind($stream);
+            $headers = fgetcsv($stream);
+            $quantity = 0;
+            $photoIds = [];
+            while (($cells = fgetcsv($stream)) !== false) {
+                $row = array_combine($headers, $cells);
+                $photoIds[] = $row[$layout === 'long' ? 'photo_id' : 'id'];
+                if ($layout === 'wide') {
+                    $quantity += (int) $row['plastic_bag'];
+                } elseif ($row['object'] === 'plastic_bag'
+                    && $row['material'] === '' && $row['brand'] === '' && $row['custom_tag'] === '') {
+                    // Full-detail CSV repeats the parent object on extra-dimension rows.
+                    $quantity += (int) $row['quantity'];
+                }
+            }
+            fclose($stream);
+            $this->assertCount(2, array_unique($photoIds));
+            $this->assertSame($scope === 'user' ? 18 : 10, $quantity);
+
+            return true;
+        });
+    }
+
+    public static function migratedDownloadFormats(): array
+    {
+        return [
+            'user split' => ['user', 'wide', 'split'],
+            'user joined' => ['user', 'wide', 'joined'],
+            'user full detail' => ['user', 'long', 'split'],
+            'team split' => ['team', 'wide', 'split'],
+            'team joined' => ['team', 'wide', 'joined'],
+            'team full detail' => ['team', 'long', 'split'],
+        ];
     }
 
     public function test_another_connection_holding_the_lock_blocks_apply(): void
